@@ -1,6 +1,6 @@
 document.getElementById("save").addEventListener("click", function(){
 	let userListString = document.getElementById("userList").value;
-	chrome.storage.sync.set({ "userList": userListString }, function(){
+	chrome.storage.local.set({ "userList": userListString }, function(){
 		blinkSavedMsg(); // set status message to 'saved'
 	});
 });
@@ -21,7 +21,7 @@ function blinkSavedMsg() {
 document.getElementById("getSaves").addEventListener("click", function(){
 	let userListString = '';
 	let userListArray = [];
-	chrome.storage.sync.get("userList", function(items){
+	chrome.storage.local.get("userList", function(items){
 		userListString = items.userList;
 		userListArray = userListString.split("\n");
 		document.getElementById("userList").value = userListString;

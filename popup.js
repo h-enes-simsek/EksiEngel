@@ -20,10 +20,10 @@ openSettings.onclick = function(element) {
 
 // start navigation when #startNavigation button is clicked
 startNavigation.onclick = function(element) {
-	// get saved user list from sync api
+	// get saved user list from storage api
 	let userListArray = [];
-	chrome.storage.sync.get("userList", function(items){
-		if(items != undefined){
+	chrome.storage.local.get("userList", function(items){
+		if(items != undefined && items.userList != undefined){
 			userListArray = items.userList.split("\n");
 			
 			let userNumber = userListArray.length;
