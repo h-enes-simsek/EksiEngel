@@ -2,14 +2,16 @@
 
 console.log("popup.js has been started.");
 
-// list of urls to navigate
-/*
-let urls_list = [
-	"https://eksisozluk.com/biri/oray",
-	"https://eksisozluk.com/biri/amonares",
-	"https://eksisozluk.com/biri/damarlarinizdaki-asil-kan"
-];
-*/
+// special thanks to stackoverflow:Aryan Beezadhur
+function isURLValid(str) {
+  var pattern = new RegExp('^(https?:\\/\\/)?'+ // protocol
+    '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|'+ // domain name
+    '((\\d{1,3}\\.){3}\\d{1,3}))'+ // OR ip (v4) address
+    '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*'+ // port and path
+    '(\\?[;&a-z\\d%_.~+=-]*)?'+ // query string
+    '(\\#[-a-z\\d_]*)?$','i'); // fragment locator
+  return !!pattern.test(str);
+}
 
 // go to settings page
 openSettings.onclick = function(element) {
@@ -35,6 +37,20 @@ startNavigation.onclick = function(element) {
 				alert("Eklenti ayarlarından engellenecek yazarları ekleyin.");
 			}
 			else{
+				// control array 
+				for(let i=userNumber-1; i>=0; i--) {
+					if(!isURLValid(userListArray[i])){
+						if(userListArray[i] == ''){
+							userListArray.splice(i, 1); // remove ith element
+						}
+						else{
+							// make nickname a url
+							userListArray[i] = "https://eksisozluk.com/biri/" + userListArray[i];
+						}
+					}
+				}
+				userNumber = userListArray.length; // update after removing invalid elements
+				
 				// query the current tab to find its id
 				chrome.tabs.query({active: true, currentWindow: true}, async function(tabs) {
 					for(let i=0; i<userNumber; i++) {

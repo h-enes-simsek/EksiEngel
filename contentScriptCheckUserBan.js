@@ -8,7 +8,7 @@ if (document.readyState == "complete") {
 	let banUserPostItem = document.getElementById("blocked-link");
 
 	//check the text of the button
-	if(banUserPostItem.innerHTML === "<span>engellemeyi bırak</span>"){
+	if(banUserPostItem != null && banUserPostItem.innerHTML === "<span>engellemeyi bırak</span>"){
 		chrome.runtime.sendMessage(null, "checkuserban::success");
 		console.log("User has been banned successfully.");
 	}

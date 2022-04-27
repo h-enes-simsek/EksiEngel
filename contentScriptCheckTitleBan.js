@@ -8,7 +8,7 @@ if (document.readyState == "complete") {
 	let banUserPostItem = document.getElementById("blocked-index-title-link");
 
 	//check the text of the button
-	if(banUserPostItem.innerHTML === "<span>başlıkları engellenmiş</span>"){
+	if(banUserPostItem != null && banUserPostItem.innerHTML === "<span>başlıkları engellenmiş</span>"){
 		chrome.runtime.sendMessage(null, "checktitleban::success");
 		console.log("User's titles have been banned successfully.");
 	}
