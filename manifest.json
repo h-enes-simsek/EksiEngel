@@ -13,12 +13,13 @@
 		"default_title": "Ekşi Engel",
 		"default_popup": "popup.html"
 	},
-	"permissions": ["declarativeContent", "activeTab", "tabs", "downloads", "scripting"], 
+	"permissions": ["declarativeContent", "activeTab", "tabs", "downloads", "scripting", "storage"], 
 	"host_permissions": [
 		"http://www.eksisozluk.com/",
 		"*://*/*"
   ],
 	"background": {
 		"service_worker": "background.js"
-	}
+	},
+	"options_page": "options.html"
 }

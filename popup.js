@@ -3,31 +3,63 @@
 console.log("popup.js has been started.");
 
 // list of urls to navigate
+/*
 let urls_list = [
-	"https://eksisozluk.com/biri/ekayazol",
-	"https://eksisozluk.com/biri/amonares"
+	"https://eksisozluk.com/biri/oray",
+	"https://eksisozluk.com/biri/amonares",
+	"https://eksisozluk.com/biri/damarlarinizdaki-asil-kan"
 ];
+*/
+
+// go to settings page
+openSettings.onclick = function(element) {
+	chrome.runtime.openOptionsPage();
+};
 
 // start navigation when #startNavigation button is clicked
 startNavigation.onclick = function(element) {
-	let userNumber = urls_list.length;
-	let successfullBans = 0;
-	
-	// query the current tab to find its id
-	chrome.tabs.query({active: true, currentWindow: true}, async function(tabs) {
-		for(let i=0; i<userNumber; i++) {
-			// navigate to next url
-			let result = await goToPage(urls_list[i], tabs[0].id);
+	// get saved user list from sync api
+	let userListArray = [];
+	chrome.storage.sync.get("userList", function(items){
+		if(items != undefined){
+			userListArray = items.userList.split("\n");
 			
-			if(result === "promise::success"){
-				successfullBans++;
+			let userNumber = userListArray.length;
+			let successfullBans = 0;
+			
+			console.log("number of user to ban: " + userNumber);
+			if(userNumber < 0){
+				alert("Eklenti ayarlarından engellenecek yazarları ekleyin.");
 			}
-		}
+			else if(userNumber == 1 && userListArray[0] == ''){
+				alert("Eklenti ayarlarından engellenecek yazarları ekleyin.");
+			}
+			else{
+				// query the current tab to find its id
+				chrome.tabs.query({active: true, currentWindow: true}, async function(tabs) {
+					for(let i=0; i<userNumber; i++) {
+						// navigate to next url
+						let result = await goToPage(userListArray[i], tabs[0].id);
+						
+						if(result === "promise::success"){
+							successfullBans++;
+						}
+					}
 
-		// navigation of all pages is finished
-		alert(userNumber + ' kisilik listedeki ' + successfullBans + ' kisi engellendi.');
+					// navigation of all pages is finished
+					alert(userNumber + ' kisilik listedeki ' + successfullBans + ' kisi engellendi.');
+				});
+			}
+		}else{
+			alert("Eklenti ayarlarından engellenecek yazarları ekleyin.");
+		}
 	});
+
 };
+
+function startToNavigate(){
+	
+}
 
 async function goToPage(url, tab_id) {
 	return new Promise(function(resolve, reject) {
