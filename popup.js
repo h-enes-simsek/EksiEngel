@@ -2,17 +2,6 @@
 
 console.log("popup.js has been started.");
 
-// special thanks to stackoverflow:Aryan Beezadhur
-function isURLValid(str) {
-  var pattern = new RegExp('^(https?:\\/\\/)?'+ // protocol
-    '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|'+ // domain name
-    '((\\d{1,3}\\.){3}\\d{1,3}))'+ // OR ip (v4) address
-    '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*'+ // port and path
-    '(\\?[;&a-z\\d%_.~+=-]*)?'+ // query string
-    '(\\#[-a-z\\d_]*)?$','i'); // fragment locator
-  return !!pattern.test(str);
-}
-
 // go to settings page
 openSettings.onclick = function(element) {
 	chrome.runtime.openOptionsPage();
@@ -20,6 +9,9 @@ openSettings.onclick = function(element) {
 
 // start navigation when #startNavigation button is clicked
 startNavigation.onclick = function(element) {
+	// send start msg to background.js
+	chrome.runtime.sendMessage(null, "popup::start");
+	/*
 	// get saved user list from storage api
 	let userListArray = [];
 	chrome.storage.local.get("userList", function(items){
@@ -75,12 +67,9 @@ startNavigation.onclick = function(element) {
 		}
 	});
 
+	*/
 };
-
-function startToNavigate(){
-	
-}
-
+/*
 async function goToPage(url, tab_id) {
 	return new Promise(function(resolve, reject) {
 		
@@ -197,3 +186,4 @@ async function goToPage(url, tab_id) {
 		
 	});
 }
+*/
