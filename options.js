@@ -1,7 +1,11 @@
 document.getElementById("save").addEventListener("click", function(){
 	let userListString = document.getElementById("userList").value;
 	chrome.storage.local.set({ "userList": userListString }, function(){
-		blinkSavedMsg(); // set status message to 'saved'
+		if(!chrome.runtime.error){
+			blinkSavedMsg(); // set status message to 'saved'
+		}else{
+			console.log("chrome.storage.local.set runtime error");
+		}
 	});
 });
 
@@ -22,9 +26,13 @@ document.getElementById("getSaves").addEventListener("click", function(){
 	let userListString = '';
 	let userListArray = [];
 	chrome.storage.local.get("userList", function(items){
-		userListString = items.userList;
-		userListArray = userListString.split("\n");
-		document.getElementById("userList").value = userListString;
+		if(!chrome.runtime.error){
+			userListString = items.userList;
+			userListArray = userListString.split("\n");
+			document.getElementById("userList").value = userListString;
+		}else{
+			console.log("chrome.storage.local.get runtime error");
+		}
 	});
 });
 

@@ -23,51 +23,55 @@ startNavigation.onclick = function(element) {
 	// get saved user list from storage api
 	let userListArray = [];
 	chrome.storage.local.get("userList", function(items){
-		if(items != undefined && items.userList != undefined){
-			userListArray = items.userList.split("\n");
-			
-			let userNumber = userListArray.length;
-			let successfullBans = 0;
-			
-			console.log("number of user to ban: " + userNumber);
-			if(userNumber < 0){
-				alert("Eklenti ayarlarından engellenecek yazarları ekleyin.");
-			}
-			else if(userNumber == 1 && userListArray[0] == ''){
-				alert("Eklenti ayarlarından engellenecek yazarları ekleyin.");
-			}
-			else{
-				// control array 
-				for(let i=userNumber-1; i>=0; i--) {
-					if(!isURLValid(userListArray[i])){
-						if(userListArray[i] == ''){
-							userListArray.splice(i, 1); // remove ith element
-						}
-						else{
-							// make nickname a url
-							userListArray[i] = "https://eksisozluk.com/biri/" + userListArray[i];
-						}
-					}
-				}
-				userNumber = userListArray.length; // update after removing invalid elements
+		if(!chrome.runtime.error){
+			if(items != undefined && items.userList != undefined){
+				userListArray = items.userList.split("\n");
 				
-				// query the current tab to find its id
-				chrome.tabs.query({active: true, currentWindow: true}, async function(tabs) {
-					for(let i=0; i<userNumber; i++) {
-						// navigate to next url
-						let result = await goToPage(userListArray[i], tabs[0].id);
-						
-						if(result === "promise::success"){
-							successfullBans++;
+				let userNumber = userListArray.length;
+				let successfullBans = 0;
+				
+				console.log("number of user to ban: " + userNumber);
+				if(userNumber < 0){
+					alert("Eklenti ayarlarından engellenecek yazarları ekleyin.");
+				}
+				else if(userNumber == 1 && userListArray[0] == ''){
+					alert("Eklenti ayarlarından engellenecek yazarları ekleyin.");
+				}
+				else{
+					// control array 
+					for(let i=userNumber-1; i>=0; i--) {
+						if(!isURLValid(userListArray[i])){
+							if(userListArray[i] == ''){
+								userListArray.splice(i, 1); // remove ith element
+							}
+							else{
+								// make nickname a url
+								userListArray[i] = "https://eksisozluk.com/biri/" + userListArray[i];
+							}
 						}
 					}
+					userNumber = userListArray.length; // update after removing invalid elements
+					
+					// query the current tab to find its id
+					chrome.tabs.query({active: true, currentWindow: true}, async function(tabs) {
+						for(let i=0; i<userNumber; i++) {
+							// navigate to next url
+							let result = await goToPage(userListArray[i], tabs[0].id);
+							
+							if(result === "promise::success"){
+								successfullBans++;
+							}
+						}
 
-					// navigation of all pages is finished
-					alert(userNumber + ' kisilik listedeki ' + successfullBans + ' kisi engellendi.');
-				});
+						// navigation of all pages is finished
+						alert(userNumber + ' kisilik listedeki ' + successfullBans + ' kisi engellendi.');
+					});
+				}
+			}else{
+				alert("Eklenti ayarlarından engellenecek yazarları ekleyin.");
 			}
 		}else{
-			alert("Eklenti ayarlarından engellenecek yazarları ekleyin.");
+			alert("chrome.storage.local runtime hatası");
 		}
 	});
 
