@@ -2,6 +2,8 @@
 
 console.log("background.js has been started.");
 
+let isProgramActive = false; // track isProgramActive info to prevent multiple starts from gui
+
 // backgroung.js dont have a html page so cannot alert, istead notifications can be used
 function makeNotification(message){
   chrome.notifications.create({
@@ -26,11 +28,12 @@ function isURLValid(str) {
 
 chrome.runtime.onMessage.addListener(async function popupMessageListener(message, sender, sendResponse) {
   sendResponse({status: 'ok'}); // added to suppress 'message port closed before a response was received' error
-  if(message === 'popup::start'){ 
-    
+  if(message === 'popup::start' && !isProgramActive){ 
+    console.log("Program has been started, isProgramActive: " + isProgramActive);
+    isProgramActive = true; // this will prevent multiple start from gui
     let userListArray = []; // get saved user list from storage api
     
-    chrome.storage.local.get("userList",async function(items){
+    chrome.storage.local.get("userList", async function(items){
       if(!chrome.runtime.error){
         if(items != undefined && items.userList != undefined){
           userListArray = items.userList.split("\n");
@@ -79,7 +82,7 @@ chrome.runtime.onMessage.addListener(async function popupMessageListener(message
               for (let tab of tabs) {
                 if(tab.id == pageResult.tabID){
                   isTabExist = true;
-                  console.log("last tab could not be closedWWW");
+                  console.log("last tab will be closed");
                   chrome.tabs.remove(pageResult.tabID); // close last page
                 }
               }
@@ -96,6 +99,9 @@ chrome.runtime.onMessage.addListener(async function popupMessageListener(message
       }else {
         makeNotification("chrome.storage.local runtime hatası");
       }
+      
+      isProgramActive = false; // program can be started again from gui
+      console.log("Program has been finished, isProgramActive: " + isProgramActive);
     });
   }
 });
@@ -181,7 +187,7 @@ async function goToPage(url) {
     chrome.runtime.onMessage.addListener(function ContentScriptMessageListener(message, sender, sendResponse) {
       sendResponse({status: 'ok'}); // added to suppress 'message port closed before a response was received' error
       contentScriptResult = message; // update status to track
-      console.log(message);
+      console.log("ContentScriptMessageListener:: incoming msg: " + message);
       
       if(message === 'script1::error'){
         // script1::success will be handled by PageUpdateListener
@@ -234,7 +240,7 @@ async function goToPage(url) {
       }
       
       else{
-        console.log("ContentScriptMessageListener: unhandled msg " + message);
+        console.log("ContentScriptMessageListener:: unhandled msg: " + message);
       }
 
       
