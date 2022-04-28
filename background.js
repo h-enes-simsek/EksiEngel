@@ -3,6 +3,7 @@
 console.log("background.js has been started.");
 
 let isProgramActive = false; // track isProgramActive info to prevent multiple starts from gui
+let earlyStopCommand = false; // early stop command recevied from gui to stop program execution
 
 // backgroung.js dont have a html page so cannot alert, istead notifications can be used
 function makeNotification(message){
@@ -71,6 +72,12 @@ chrome.runtime.onMessage.addListener(async function popupMessageListener(message
               if(pageResult.result === "promise::success"){
                 successfullBans++;
               }
+              
+              // early stop mechanism
+              if(earlyStopCommand) {
+                earlyStopCommand = false; // clear to reuse this variable
+                break;
+              }
             }
 
             // navigation of all pages is finished
@@ -103,6 +110,9 @@ chrome.runtime.onMessage.addListener(async function popupMessageListener(message
       isProgramActive = false; // program can be started again from gui
       console.log("Program has been finished, isProgramActive: " + isProgramActive);
     });
+  } else if(message === 'popup::stop' && isProgramActive) {
+    earlyStopCommand = true;
+    console.log("early stop command has been received.");
   }
 });
 
@@ -186,7 +196,13 @@ async function goToPage(url) {
     // fired when content script sends a message
     chrome.runtime.onMessage.addListener(function ContentScriptMessageListener(message, sender, sendResponse) {
       sendResponse({status: 'ok'}); // added to suppress 'message port closed before a response was received' error
-      contentScriptResult = message; // update status to track
+      // update status to track (it should be filtered, because popup messages interfere)
+      if(message === "script1::success" || message === "script1::error" || 
+         message === "script2::success" || message === "script2::error" ||
+         message === "checkuserban::error" || message === "checkuserban::success" ||
+         message === "checktitleban::error" || message === "checktitleban::success") {
+        contentScriptResult = message; 
+      }
       console.log("ContentScriptMessageListener:: incoming msg: " + message);
       
       if(message === 'script1::error'){
