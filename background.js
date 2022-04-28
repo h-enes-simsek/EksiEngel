@@ -76,18 +76,34 @@ chrome.runtime.onMessage.addListener(async function popupMessageListener(message
             }
             userNumber = userListArray.length; // update after removing invalid elements
             
-          
+            let pageResult;
             for(let i=0; i<userNumber; i++) {
               // navigate to next url
-              let result = await goToPage(userListArray[i]);
+              pageResult = await goToPage(userListArray[i]);
               
-              if(result === "promise::success"){
+              if(pageResult.result === "promise::success"){
                 successfullBans++;
               }
             }
 
             // navigation of all pages is finished
             makeNotification(userNumber + ' kisilik listedeki ' + successfullBans + ' kisi engellendi.');
+            
+            // close last tab
+            let isTabExist = false;
+            chrome.tabs.query({}, function(tabs) {
+              for (let tab of tabs) {
+                if(tab.id == pageResult.tabID){
+                  isTabExist = true;
+                  console.log("last tab could not be closedWWW");
+                  chrome.tabs.remove(pageResult.tabID); // close last page
+                }
+              }
+              if(!isTabExist){
+                console.log("last tab could not be closed");
+              }
+            }); 
+            
             
           }
         }else {
@@ -224,10 +240,10 @@ async function goToPage(url) {
           
         // resolve Promise after content script has executed
         if(isBanUserSuccessfull && isBanTitleSuccessfull){
-          resolve("promise::success");
+          resolve({result:"promise::success", tabID: tab_id});
         }
         else{
-          resolve("promise::fail");
+          resolve({result:"promise::fail", tabID: tab_id});
         }
         
       }
