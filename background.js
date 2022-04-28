@@ -24,8 +24,8 @@ function isURLValid(str) {
   return !!pattern.test(str);
 }
 
-chrome.runtime.onMessage.addListener(async function popupMessageListener(message) {
-  
+chrome.runtime.onMessage.addListener(async function popupMessageListener(message, sender, sendResponse) {
+  sendResponse({status: 'ok'}); // added to suppress 'message port closed before a response was received' error
   if(message === 'popup::start'){ 
     
     let userListArray = []; // get saved user list from storage api
@@ -103,7 +103,7 @@ chrome.runtime.onMessage.addListener(async function popupMessageListener(message
 
 let tab_id = -1;
 async function goToPage(url) {
-  return new Promise(function(resolve, reject) {
+  return new Promise(async function(resolve, reject) {
     
     // create new tab or update current tab if any
     // active:false means, it will not be focused
@@ -178,7 +178,8 @@ async function goToPage(url) {
     chrome.tabs.onUpdated.addListener(PageUpdateListener);
     
     // fired when content script sends a message
-    chrome.runtime.onMessage.addListener(async function ContentScriptMessageListener(message) {
+    chrome.runtime.onMessage.addListener(function ContentScriptMessageListener(message, sender, sendResponse) {
+      sendResponse({status: 'ok'}); // added to suppress 'message port closed before a response was received' error
       contentScriptResult = message; // update status to track
       console.log(message);
       
@@ -235,10 +236,9 @@ async function goToPage(url) {
       else{
         console.log("ContentScriptMessageListener: unhandled msg " + message);
       }
+
       
     });
-    
-    
     
     
   });
