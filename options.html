@@ -3,19 +3,46 @@
 <head>
   <meta charset="UTF-8">
   <title>EkşiEngel Ayarlar</title>
+  <link href='http://fonts.googleapis.com/css?family=Lato:400,700' rel='stylesheet' type='text/css'>
+
+<style>
+* {
+  font-family: 'Lato', sans-serif;
+}
+#text {
+  text-align: center;
+}
+#userList {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  width: 75%;
+  height: auto;
+}
+#inputContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+input {
+  margin: 2px;
+}
+
+</style>
 </head>
 <body>
 
-Engellenecek yazar listesi:
+<p id="text">Engellenecek yazar listesi:</p>
 <br><br>
 
-<textarea rows="20" cols="100" id="userList">
-</textarea>
+<textarea id="userList" rows=10></textarea>
 
 <br><br>
-
+<div id="inputContainer">
 <input type="button" id="save" value="Kaydet">
 <input type="button" id="getSaves" value="Kaydedilenleri Göster">
+</div>
 <p id="status"></p>
 
 <script src="options.js"></script>

@@ -1,25 +1,46 @@
 <!DOCTYPE html>
 <html>
 <head>
-
 <meta charset="UTF-8">
+<link href='http://fonts.googleapis.com/css?family=Lato:400,700' rel='stylesheet' type='text/css'>
+<link href='https://fonts.googleapis.com/css?family=STIX%20Two%20Text:400,700%27' rel='stylesheet' type='text/css'>
+
 <style>
+#title {
+  text-align: center;
+  font-family: 'STIX Two Text', sans-serif;
+  font-size: 25px;
+}
+img {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 2px;
+}
 button {
-    height: 30px;
-    width: 80px;
-    outline: none;
-    border: none;
-    background-color: orange;
-    border: 2px solid #000000;
+  font-family: 'Lato', sans-serif;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 2px;
+  margin-bottom: 2px;
+  height: 30px;
+  width: 100%;
+  outline: none;
+  border: none;
+  background-color: #5086bd;
+  border: 2px solid #000000;
 }
 </style>
 
 </head>
 <body>
+<p id="title">Ekşi Engel</p>
+<img src="images/eksiengel128.png"> 
+<button id="startNavigation">Başla</button> 
+<button id="stopNavigation">Dur</button> 
+<button id="openSettings">Ayarlar</button> 
 
-<button id="startNavigation">Basla</button>
-<button id="stopNavigation">Dur</button>
-<button id="openSettings">Ayarlar</button>
 <script src="popup.js"></script>
 
 </body>
