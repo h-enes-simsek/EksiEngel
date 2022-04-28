@@ -2,22 +2,6 @@
 
 console.log("background.js has been started.");
 
-const rules = [{
-    conditions: [
-        new chrome.declarativeContent.PageStateMatcher({
-            pageUrl: {hostEquals: 'eksisozluk.com'},
-        })
-    ],
-    actions: [new chrome.declarativeContent.ShowPageAction()]
-}];
-
-//activate extension in the page eksisozluk.com
-chrome.runtime.onInstalled.addListener(function() {
-  chrome.declarativeContent.onPageChanged.removeRules(undefined, function() {
-    chrome.declarativeContent.onPageChanged.addRules(rules);
-  });
-});
-
 // backgroung.js dont have a html page so cannot alert, istead notifications can be used
 function makeNotification(message){
   chrome.notifications.create({
