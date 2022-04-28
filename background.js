@@ -173,14 +173,14 @@ async function goToPage(url) {
           // script1::error will be handled by ContentScriptMessageListener
           console.log("PageUpdateListener: script1::success so contentScriptCheckUserBan.js will be exec");
           chrome.scripting.executeScript({ target: {tabId: tabID}, files: ['contentScriptCheckUserBan.js'] }, function() {
-          console.log("popup.js::contentScriptCheckUserBan has been executed.");
+          console.log("contentScriptCheckUserBan has been executed.");
           });
         }
         else if(contentScriptResult === "script2::success"){
           // script2::error will be handled by ContentScriptMessageListener
           console.log("PageUpdateListener: script2::success so contentScriptCheckTitleBan.js will be exec");
           chrome.scripting.executeScript({ target: {tabId: tabID}, files: ['contentScriptCheckTitleBan.js'] }, function() {
-          console.log("popup.js::contentScriptCheckTitleBan has been executed.");
+          console.log("contentScriptCheckTitleBan has been executed.");
           });
         }
         else{
@@ -202,7 +202,7 @@ async function goToPage(url) {
         // script1::success will be handled by PageUpdateListener
         console.log("contentScriptCheckUserBan will be executed");
         chrome.scripting.executeScript({ target: {tabId: tab_id}, files: ['contentScriptCheckUserBan.js'] }, function() {
-          console.log("popup.js::contentScriptCheckUserBan has been executed.");
+          console.log("contentScriptCheckUserBan has been executed.");
         });
         
       }
@@ -221,7 +221,7 @@ async function goToPage(url) {
         // execute content script to check if script2 is successfull
         console.log("contentScriptCheckTitleBan will be executed");
         chrome.scripting.executeScript({ target: {tabId: tab_id}, files: ['contentScriptCheckTitleBan.js'] }, function() {
-          console.log("popup.js::contentScriptCheckTitleBan has been executed.");
+          console.log("contentScriptCheckTitleBan has been executed.");
         });
       }
       
