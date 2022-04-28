@@ -1,19 +1,8 @@
-console.log("checktitleban content will be staterted.");
-
-
 if (document.readyState == "complete") {
-	console.log("checktitleban content staterted.");
-	
-	//get html elements to click buttons
-	let banUserPostItem = document.getElementById("blocked-index-title-link");
-
-	//check the text of the button
-	if(banUserPostItem != null && banUserPostItem.innerHTML === "<span>başlıkları engellenmiş</span>"){
-		chrome.runtime.sendMessage(null, "checktitleban::success");
-		console.log("User's titles have been banned successfully.");
-	}
-	else{
-		chrome.runtime.sendMessage(null, "checktitleban::error");
-		console.log("User's titles could not be banned.");
-	}
+  let banUserPostItem = document.getElementById("blocked-index-title-link"); // get html element, button, to click
+  if(banUserPostItem != null && banUserPostItem.innerHTML === "<span>başlıkları engellenmiş</span>") {
+    chrome.runtime.sendMessage(null, "checktitleban::success"); // send message back to background script
+  } else {
+    chrome.runtime.sendMessage(null, "checktitleban::error"); // send message back to background script
+  }
 }
