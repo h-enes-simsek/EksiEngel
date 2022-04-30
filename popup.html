@@ -2,13 +2,12 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<link href='http://fonts.googleapis.com/css?family=Lato:400,700' rel='stylesheet' type='text/css'>
-<link href='https://fonts.googleapis.com/css?family=STIX%20Two%20Text:400,700%27' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="buttons.css">
 
 <style>
 #title {
   text-align: center;
-  font-family: 'STIX Two Text', sans-serif;
+  font-family: 'Montserrat', sans-serif;
   font-size: 25px;
 }
 img {
@@ -18,16 +17,13 @@ img {
   margin-bottom: 2px;
 }
 button {
-  font-family: 'Lato', sans-serif;
-  display: block;
   margin-left: auto;
   margin-right: auto;
   margin-top: 2px;
   margin-bottom: 2px;
+  padding: 1px !important;
   height: 30px;
   width: 100%;
-  outline: none;
-  border: none;
   background-color: #5086bd;
   border: 2px solid #000000;
 }
@@ -37,9 +33,9 @@ button {
 <body>
 <p id="title">Ekşi Engel</p>
 <img src="images/eksiengel128.png"> 
-<button id="startNavigation">Başla</button> 
-<button id="stopNavigation">Dur</button> 
-<button id="openSettings">Ayarlar</button> 
+<button id="startNavigation" class="btn btn-dark">Başla</button> 
+<button id="stopNavigation" class="btn btn-dark">Dur</button> 
+<button id="openSettings" class="btn btn-dark">Ayarlar</button> 
 
 <script src="popup.js"></script>
 
