@@ -9,7 +9,7 @@ let earlyStopCommand = false; // early stop command recevied from gui to stop pr
 function makeNotification(message){
   chrome.notifications.create({
     type: 'basic',
-    iconUrl: 'images/eksiengel16.png',
+    iconUrl: 'icons/eksiengel16.png',
     title: 'Notification',
     message: message,
     priority: 1
