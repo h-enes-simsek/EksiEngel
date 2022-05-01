@@ -1,0 +1,1 @@
+Bu klasör(/docs) https://h-enes-simsek.github.io/EksiEngel adresinde bir web sitesi host etmek kullanılıyor.
