@@ -2,7 +2,7 @@
 	"manifest_version": 3,
   "name": "Ekşi Engel",
   "version": "1.0",
-  "description": "Ekşisözlük'te toplu olarak engelleme/başlıklarını engelleme işlemini yapın.",
+  "description": "Ekşi Sözlük'te toplu olarak engelleme/başlıklarını engelleme işlemi yapın.",
 	"icons": {
 		"16": "images/eksiengel16.png",
 		"32": "images/eksiengel32.png",
