@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <title>EkşiEngel Ayarlar</title>
   <link rel="stylesheet" href="buttons.css">
+  <!-- for linkedin button design -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" integrity="sha512-KfkfwYDsLkIlwQp6LFnl8zNdLGxu9YAA1QvwINks4PhcElQSvqcyVLLD9aMhXd13uQjoXtEKNosOWaZqXgel0g==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  
 <style>
 .content {
   width: 80vw;
@@ -51,6 +54,22 @@ textarea {
 body {
   font-size: 100%;
 }
+.footer {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  text-align: center;
+}
+hr {
+  width: 100vh;
+  border: 2px solid black;
+  background-color: black;
+}
+#developer, #copyr {
+  display: inline;
+  font-family: 'Montserrat', sans-serif;
+}
 </style>
 </head>
 <body>
@@ -68,6 +87,16 @@ body {
 </div>
 <p id="status"></p>
 
+<div class="footer">
+<hr>
+<div id="copyr">&copy; 2022</div>
+<br>
+<a href = "mailto:enes1406@gmail.com"><i class="fa-solid fa-envelope" style="font-size:24px;color:black"></i></a>
+&bull;
+<a href="https://www.linkedin.com/in/h-enes-simsek"><i class="fa-brands fa-linkedin" style="font-size:22px;color:black"></i></a>
+&bull;
+<div id="developer">Hasan Enes Şimşek</div>
+</div>
 <script src="options.js"></script>
 </body>
 </html>
