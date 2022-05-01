@@ -16,7 +16,7 @@ document.getElementById("getSaves").addEventListener("click", function(){
   let userListString = '';
   let userListArray = [];
   chrome.storage.local.get("userList", function(items){
-    if(!chrome.runtime.error){
+    if(!chrome.runtime.error && items != undefined && items.userList != undefined){
       userListString = items.userList;
       userListArray = userListString.split("\n");
       document.getElementById("userList").value = userListString;
