@@ -21,8 +21,7 @@
   },
   "permissions": ["tabs", "scripting", "storage", "notifications"], 
   "host_permissions": [
-    "http://www.eksisozluk.com/",
-    "*://*/*"
+    "https://eksisozluk.com/*"
   ],
   "background": {
     "service_worker": "background.js"
