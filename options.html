@@ -42,6 +42,13 @@ textarea {
   align-items: center;
   height: 100%;
 }
+#howToUse {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-decoration: none;
+  margin-left: 5px;
+}
 
 #save, #getSaves {
   font-family: 'Montserrat', sans-serif;
@@ -63,12 +70,13 @@ body {
 }
 hr {
   width: 100vh;
-  border: 2px solid black;
+  border: 1px solid black;
   background-color: black;
 }
-#developer, #copyr {
+#developer, #copyr, #iconDesigner {
   display: inline;
   font-family: 'Montserrat', sans-serif;
+  font-size: 13px;
 }
 </style>
 </head>
@@ -84,18 +92,21 @@ hr {
 <div id="inputContainer">
 <input type="button" id="save" value="Kaydet" class="btn btn-dark">
 <input type="button" id="getSaves" value="Kaydedilenleri Göster" class="btn btn-dark">
+<a href="faq.html" id="howToUse"><i class="fa fa-question-circle" aria-hidden="true"style="font-size:30px;color:black" id="questionMark"></i></a>
+
 </div>
 <p id="status"></p>
 
 <div class="footer">
 <hr>
-<div id="copyr">&copy; 2022</div>
-<br>
-<a href = "mailto:enes1406@gmail.com"><i class="fa-solid fa-envelope" style="font-size:24px;color:black"></i></a>
-&bull;
-<a href="https://www.linkedin.com/in/h-enes-simsek"><i class="fa-brands fa-linkedin" style="font-size:22px;color:black"></i></a>
-&bull;
-<div id="developer">Hasan Enes Şimşek</div>
+  <div id="copyr">&copy; 2022</div>
+  &bull;
+  <a href = "mailto:enes1406@gmail.com"><i class="fa-solid fa-envelope" style="font-size:20px;color:black"></i></a>
+  <a href="https://www.linkedin.com/in/h-enes-simsek"><i class="fa-brands fa-linkedin" style="font-size:19px;color:black"></i></a>
+  <div id="developer">Hasan Enes Şimşek (geliştirici)</div>
+  &bull;
+  <div id="iconDesigner">Beyza Yolcular (ikon tasarımı)</div>
+  
 </div>
 <script src="options.js"></script>
 </body>

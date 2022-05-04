@@ -30,7 +30,7 @@ document.getElementById("getSaves").addEventListener("click", function(){
 // if local storage save is successfull, show a message to the user
 function blinkSavedMsg() {
   var elem = document.getElementById('status');
-  elem.innerHTML = "Kaydedildi.";
+  elem.innerHTML = "Kaydedildi, engellemeye başlayabilirsiniz.";
   var counter = 4;
   var blinkInterval = setInterval(function(){
     counter--;
