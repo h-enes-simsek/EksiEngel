@@ -1,6 +1,6 @@
 # Ekşi Engel
 <div float="left">
-<img src="icons/eksiengel128.png" width="128" height="128">
+<img src="icons/eksiengel48.png" width="48" height="48">
 </div>
 Ekşisözlük'te toplu olarak engelle/başlıklarını engelle işlemi yapılmasına yardımcı olan Google Chrome eklentisi.
 
@@ -20,8 +20,8 @@ Gerek bu ortamda gerek başka ortamlarda anonim olmadığım için bir liste pay
 Ama liste oluşturmak için de bir oylama mekanizmasının yer aldığı websitesi hazırlamak gibi bir düşüncem de var.
 
 <div float="left">
-<img src="publish/ss/popup.png" width="640" height="400">
-<img src="publish/ss/settings.png" width="640" height="400">
+<img src="publish/ss/popup.png" width="480" height="300">
+<img src="publish/ss/settings.png" width="480" height="300">
 </div>
 
 # English Description
