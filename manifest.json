@@ -26,5 +26,13 @@
   "background": {
     "service_worker": "background.js"
   },
-  "options_page": "options.html"
+  "options_page": "options.html",
+	"web_accessible_resources": [
+    {
+      "resources": ["icons/eksiengel16.png", "icons/eksiengel32.png", "icons/eksiengel48.png", "icons/eksiengel128.png", 
+										"icons/mailicon.svg", "icons/linkedinicon.svg", "icons/questionicon.svg",
+										"script1.js", "script2.js", "popup.js", "options.js", "contentScriptCheckTitleBan.js", "contentScriptCheckUserBan.js"],
+      "matches": ["http://*/*", "https://*/*"]
+    }
+  ]
 }
