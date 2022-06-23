@@ -13,15 +13,10 @@ Ayrıca kullanıcıya kaç yazarın başarıyla engellendiği de bir uyarı ile 
 
 Uzun zamandır bazı yazarların liste yapıp paylaştığını görüyordum. Bu işi kolayca eklenti ile yapabiliriz diye düşündüm.
 
-<h3>Engellenecek Yazarların Listesini Nerden Bulabiliriz?</h3>
-
-Gerek bu ortamda gerek başka ortamlarda anonim olmadığım için bir liste paylaşmaya çekiniyorum. 
-Ama liste oluşturmak için de bir oylama mekanizmasının yer aldığı websitesi hazırlamak gibi bir düşüncem de var.
-
 <div float="left">
 <img src="publish/ss/popup.png" width="480" height="300">
 <img src="publish/ss/settings.png" width="480" height="300">
 </div>
 
 <h2>English Description</h2>
-Google Chrome extension that helps blocking at social media platform Ekşi Sözlük in bulk.
+A Google Chrome extension that helps blocking at social media platform Ekşi Sözlük in bulk.
