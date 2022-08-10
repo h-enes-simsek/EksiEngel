@@ -21,8 +21,8 @@ document.getElementById("getSaves").addEventListener("click", function(){
       userListArray = userListString.split("\n");
       document.getElementById("userList").value = userListString;
     }else{
-      console.log("chrome.storage.local.get runtime error");
-      alert("chrome.storage.local.set runtime error");
+      console.log("chrome.storage.local.get runtime error (yazar eklememiş olabilirsiniz)");
+      alert("chrome.storage.local.set runtime error (yazar eklememiş olabilirsiniz)");
     }
   });
 });

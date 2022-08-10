@@ -2,119 +2,59 @@
 
 console.log("background.js has been started.");
 
-let isProgramActive = false; // track isProgramActive info to prevent multiple starts from gui
-let earlyStopCommand = false; // early stop command recevied from gui to stop program execution
+let g_isProgramActive = false; // track g_isProgramActive info to prevent multiple starts from gui
+let g_earlyStopCommand = false; // early stop command might be recevied from gui to stop program execution
 
-// backgroung.js dont have a html page so cannot alert, istead notifications can be used
-function makeNotification(message){
-  chrome.notifications.create({
-    type: 'basic',
-    iconUrl: 'icons/eksiengel16.png',
-    title: 'Notification',
-    message: message,
-    priority: 1
-  });
-}
-
-// special thanks to stackoverflow: Aryan Beezadhur
-function isURLValid(str) {
-  var pattern = new RegExp('^(https?:\\/\\/)?'+ // protocol
-    '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|'+ // domain name
-    '((\\d{1,3}\\.){3}\\d{1,3}))'+ // OR ip (v4) address
-    '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*'+ // port and path
-    '(\\?[;&a-z\\d%_.~+=-]*)?'+ // query string
-    '(\\#[-a-z\\d_]*)?$','i'); // fragment locator
-  return !!pattern.test(str);
-}
-
-chrome.runtime.onMessage.addListener(async function popupMessageListener(message, sender, sendResponse) {
+// listen popup.js for runtime messages
+chrome.runtime.onMessage.addListener(function popupMessageListener(message, sender, sendResponse) {
   sendResponse({status: 'ok'}); // added to suppress 'message port closed before a response was received' error
-  if(message === 'popup::start' && !isProgramActive){ 
-    console.log("Program has been started, isProgramActive: " + isProgramActive);
-    isProgramActive = true; // this will prevent multiple start from gui
-    let userListArray = []; // get saved user list from storage api
-    
-    chrome.storage.local.get("userList", async function(items){
-      if(!chrome.runtime.error){
-        if(items != undefined && items.userList != undefined){
-          userListArray = items.userList.split("\n");
-          
-          let userNumber = userListArray.length;
-          let successfullBans = 0;
-          
-          console.log("number of user to ban: " + userNumber);
-          if(userNumber < 0){
-            makeNotification("Eklenti ayarlarından engellenecek yazarları ekleyin.");
-          }
-          else if(userNumber == 1 && userListArray[0] == ''){
-            makeNotification("Eklenti ayarlarından engellenecek yazarları ekleyin.");
-          }
-          else{
-            // control array 
-            for(let i=userNumber-1; i>=0; i--) {
-              if(!isURLValid(userListArray[i])){
-                if(userListArray[i] == ''){
-                  userListArray.splice(i, 1); // remove ith element
-                }
-                else{
-                  // make nickname a url
-                  userListArray[i] = "https://eksisozluk.com/biri/" + userListArray[i];
-                }
-              }
-            }
-            userNumber = userListArray.length; // update after removing invalid elements
-            
-            let pageResult;
-            for(let i=0; i<userNumber; i++) {
-              // navigate to next url
-              pageResult = await goToPage(userListArray[i]);
-              
-              if(pageResult.result === "promise::success"){
-                successfullBans++;
-              }
-              
-              // early stop mechanism
-              if(earlyStopCommand) {
-                earlyStopCommand = false; // clear to reuse this variable
-                break;
-              }
-            }
-
-            // navigation of all pages is finished
-            makeNotification(userNumber + ' kisilik listedeki ' + successfullBans + ' kisi engellendi.');
-            
-            // close last tab
-            let isTabExist = false;
-            chrome.tabs.query({}, function(tabs) {
-              for (let tab of tabs) {
-                if(tab.id == pageResult.tabID){
-                  isTabExist = true;
-                  console.log("last tab will be closed");
-                  chrome.tabs.remove(pageResult.tabID); // close last page
-                }
-              }
-              if(!isTabExist){
-                console.log("last tab could not be closed");
-              }
-            }); 
-            
-            
-          }
-        }else {
-          makeNotification("Eklenti ayarlarından engellenecek yazarları ekleyin.");
-        }
-      }else {
-        makeNotification("chrome.storage.local runtime hatası");
-      }
-      
-      isProgramActive = false; // program can be started again from gui
-      console.log("Program has been finished, isProgramActive: " + isProgramActive);
-    });
-  } else if(message === 'popup::stop' && isProgramActive) {
-    earlyStopCommand = true;
-    console.log("early stop command has been received.");
+  if(message === 'popup::start' && !g_isProgramActive)
+  { 
+    g_isProgramActive = true; // this will prevent multiple start from gui
+    console.log("Program has been started.");
+    startProcess();
+  } 
+  else if(message === 'popup::stop' && g_isProgramActive) 
+  {
+    g_earlyStopCommand = true;
+    console.log("Early stop command has been received.");
   }
 });
+
+async function startProcess()
+{
+  let userListArray = await getUserList(); 
+  cleanUserList(userListArray); // clean the collected data
+  console.log("number of user to ban (after cleaning): " + userListArray.length);
+  
+  if(userListArray.length == 0){
+    makeNotification("Eklenti ayarlarından engellenecek yazarları ekleyin.");
+  }
+  else{
+    let successfullBans = 0;
+    let pageResult;
+    for(let i = 0; i < userListArray.length; i++) {
+      
+      pageResult = await goToPage(userListArray[i]); // navigate to next url
+      
+      if(pageResult.result === "promise::success"){
+        successfullBans++;
+      }
+      
+      // early stop mechanism
+      if(g_earlyStopCommand) {
+        g_earlyStopCommand = false; // clear to reuse this variable
+        break;
+      }
+    }
+
+    makeNotification(userListArray.length + ' kisilik listedeki ' + successfullBans + ' kisi engellendi.');
+    closeLastTab(pageResult.tabID);    
+  }
+  
+  g_isProgramActive = false; // program can be started again from gui
+  console.log("Program has been finished (getUserList function failed)");
+}
 
 
 let tab_id = -1;
@@ -263,5 +203,101 @@ async function goToPage(url) {
     });
     
     
+  });
+}
+
+
+
+/* <---------------------------     UTILS     --------------------------------------> */
+/* <--------------------------------------------------------------------------------> */
+/* <--------------------------------------------------------------------------------> */
+
+// backgroung.js dont have a html page so cannot alert, instead notifications can be used
+function makeNotification(message)
+{
+  chrome.notifications.create({
+    type: 'basic',
+    iconUrl: 'icons/eksiengel16.png',
+    title: 'Notification',
+    message: message,
+    priority: 1
+  });
+}
+
+// special thanks to @Aryan Beezadhur from stackoverflow
+function isURLValid(str) 
+{
+  var pattern = new RegExp('^(https?:\\/\\/)?'+ // protocol
+    '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|'+ // domain name
+    '((\\d{1,3}\\.){3}\\d{1,3}))'+ // OR ip (v4) address
+    '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*'+ // port and path
+    '(\\?[;&a-z\\d%_.~+=-]*)?'+ // query string
+    '(\\#[-a-z\\d_]*)?$','i'); // fragment locator
+  return !!pattern.test(str);
+}
+
+// clean collected user list by erasing empty inputs 
+// convert convert nickname to the url
+function cleanUserList(arr)
+{
+  for(let i = arr.length - 1; i >= 0; i--) 
+  {
+    if(!isURLValid(arr[i]))
+    {
+      // if empty, delete it
+      if(arr[i] == ''){
+        arr.splice(i, 1); // remove ith element
+      }
+      else{
+        // convert nickname to the url
+        arr[i] = "https://eksisozluk.com/biri/" + arr[i];
+      }
+    }
+  }
+}
+
+function closeLastTab(target_tab_id)
+{
+  let isTabExist = false; // somehow last tab could be closed already
+  chrome.tabs.query({}, function(tabs) {
+    // access all the open tabs and compare
+    for (let tab of tabs) {
+      if(tab.id == target_tab_id){
+        isTabExist = true;
+        console.log("last tab will be closed");
+        chrome.tabs.remove(tab.id); // close last tab
+      }
+    }
+    if(!isTabExist){
+      console.log("Last tab could not be closed. (may be already closed)");
+    }
+  }); 
+}
+
+// get userList from storage api
+// output: array (if fails, returns empty array)
+async function getUserList()
+{
+  return new Promise((resolve, reject) => {
+    chrome.storage.local.get("userList", function(items){
+      if(!chrome.runtime.error)
+      {
+        if(items != undefined && items.userList != undefined)
+        {
+          resolve(items.userList.split("\n"));  
+        }
+        else 
+        {
+          console.log("empty list from storage api");
+          resolve([]);
+        }
+      }
+      else 
+      {
+        console.log("chrome.storage.local runtime err");
+        makeNotification("chrome.storage.local runtime hatası");
+        resolve([]);
+      }
+    }); 
   });
 }
