@@ -17,6 +17,3 @@ Uzun zamandır bazı yazarların liste yapıp paylaştığını görüyordum. Bu
 <img src="publish/ss/popup.png" width="480" height="300">
 <img src="publish/ss/settings.png" width="480" height="300">
 </div>
-
-<h2>English Description</h2>
-A Google Chrome extension that helps blocking at social media platform Ekşi Sözlük in bulk.
