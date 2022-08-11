@@ -4,6 +4,7 @@ console.log("background.js has been started.");
 
 let g_isProgramActive = false; // track g_isProgramActive info to prevent multiple starts from gui
 let g_earlyStopCommand = false; // early stop command might be recevied from gui to stop program execution
+let g_tabId = -1; // chrome assigns an id for every tab 
 
 // listen popup.js for runtime messages
 chrome.runtime.onMessage.addListener(function popupMessageListener(message, sender, sendResponse) {
@@ -35,11 +36,13 @@ async function startProcess()
     let pageResult;
     for(let i = 0; i < userListArray.length; i++) {
       
-      pageResult = await goToPage(userListArray[i]); // navigate to next url
+      pageResult = await pageProcess(userListArray[i]); // navigate to next url
       
       if(pageResult.result === "promise::success"){
         successfullBans++;
       }
+			
+			console.log("page result received");
       
       // early stop mechanism
       if(g_earlyStopCommand) {
@@ -57,42 +60,22 @@ async function startProcess()
 }
 
 
-let tab_id = -1;
-async function goToPage(url) {
+
+async function pageProcess(url) {
   return new Promise(async function(resolve, reject) {
     
-    // create new tab or update current tab if any
-    // active:false means, it will not be focused
-    if(tab_id === -1){
-      chrome.tabs.create({url: url, active: false}, function(newTab) {
-        tab_id = newTab.id;
-      });
-    }
-    else{
-      // firsty check are there tab whose is is tab_id, if any then update
-      // if the tab is not exist (possibly closed) then create a new one
-      let isTabExist = false;
-      chrome.tabs.query({}, function(tabs) {
-        for (let tab of tabs) {
-          if(tab.id == tab_id){
-            isTabExist = true;
-            chrome.tabs.update(tab_id, {url: url, active: false});
-          }
-        }
-        if(!isTabExist){
-          console.log("previous tab is closed, so new tab will be opened.");
-          chrome.tabs.create({url: url, active: false}, function(newTab) {
-            tab_id = newTab.id;
-          });
-        }
-      }); 
-      
-    }
+		await handleTabOperations(url);
 
     let counter = 0; // number of times the page is loaded
     let contentScriptResult = ""; // current status of the content scripts
     let isBanUserSuccessfull = false;
     let isBanTitleSuccessfull = false;
+		
+		// register function to call every time the page is updated
+    chrome.tabs.onUpdated.addListener(PageUpdateListener);
+		
+		// register function to call every time a content script sends a message
+    chrome.runtime.onMessage.addListener(ContentScriptMessageListener);
     
     // this function will be called every time the page is updated (reloaded)
     function PageUpdateListener(tabID, changeInfo) {
@@ -100,7 +83,6 @@ async function goToPage(url) {
       
       if(changeInfo.status === 'complete') {
         counter++;
-        console.log("page counter " + counter);
         
         if(counter === 1){
           // execute content script1
@@ -129,18 +111,17 @@ async function goToPage(url) {
         
       }
     }
-    
-    // register function to call every time the page is updated
-    chrome.tabs.onUpdated.addListener(PageUpdateListener);
-    
-    // fired when content script sends a message
-    chrome.runtime.onMessage.addListener(function ContentScriptMessageListener(message, sender, sendResponse) {
+		
+		// this function will be called every time a content script sends a message
+		function ContentScriptMessageListener(message, sender, sendResponse) {
       sendResponse({status: 'ok'}); // added to suppress 'message port closed before a response was received' error
-      // update status to track (it should be filtered, because popup messages interfere)
-      if(message === "script1::success" || message === "script1::error" || 
-         message === "script2::success" || message === "script2::error" ||
-         message === "checkuserban::error" || message === "checkuserban::success" ||
-         message === "checktitleban::error" || message === "checktitleban::success") {
+			
+      // update status to track (it should be filtered, because popup messages interferes)
+      if(message === "script1::success" 		|| message === "script1::error" 				|| 
+         message === "script2::success" 		|| message === "script2::error" 				||
+         message === "checkuserban::error" 	|| message === "checkuserban::success" 	||
+         message === "checktitleban::error" || message === "checktitleban::success") 
+			{
         contentScriptResult = message; 
       }
       console.log("ContentScriptMessageListener:: incoming msg: " + message);
@@ -148,7 +129,7 @@ async function goToPage(url) {
       if(message === 'script1::error'){
         // script1::success will be handled by PageUpdateListener
         console.log("contentScriptCheckUserBan will be executed");
-        chrome.scripting.executeScript({ target: {tabId: tab_id}, files: ['contentScriptCheckUserBan.js'] }, function() {
+        chrome.scripting.executeScript({ target: {tabId: g_tabId}, files: ['contentScriptCheckUserBan.js'] }, function() {
           console.log("contentScriptCheckUserBan has been executed.");
         });
         
@@ -159,7 +140,7 @@ async function goToPage(url) {
         
         // execute content script2 after script1 and checkuserban
         console.log("script2 will be executed");
-        chrome.scripting.executeScript({ target: {tabId: tab_id}, files: ['script2.js'] }, function() {
+        chrome.scripting.executeScript({ target: {tabId: g_tabId}, files: ['script2.js'] }, function() {
           console.log("script2 has been executed.");
         });
       }
@@ -167,7 +148,7 @@ async function goToPage(url) {
         // script2::success will be handled by PageUpdateListener
         // execute content script to check if script2 is successfull
         console.log("contentScriptCheckTitleBan will be executed");
-        chrome.scripting.executeScript({ target: {tabId: tab_id}, files: ['contentScriptCheckTitleBan.js'] }, function() {
+        chrome.scripting.executeScript({ target: {tabId: g_tabId}, files: ['contentScriptCheckTitleBan.js'] }, function() {
           console.log("contentScriptCheckTitleBan has been executed.");
         });
       }
@@ -187,10 +168,10 @@ async function goToPage(url) {
           
         // resolve Promise after content script has executed
         if(isBanUserSuccessfull && isBanTitleSuccessfull){
-          resolve({result:"promise::success", tabID: tab_id});
+          resolve({result:"promise::success", tabID: g_tabId});
         }
         else{
-          resolve({result:"promise::fail", tabID: tab_id});
+          resolve({result:"promise::fail", tabID: g_tabId});
         }
         
       }
@@ -200,7 +181,7 @@ async function goToPage(url) {
       }
 
       
-    });
+    }
     
     
   });
@@ -211,6 +192,56 @@ async function goToPage(url) {
 /* <---------------------------     UTILS     --------------------------------------> */
 /* <--------------------------------------------------------------------------------> */
 /* <--------------------------------------------------------------------------------> */
+
+async function handleTabOperations(url)
+{
+		if(g_tabId === -1){
+			// create new tab when program started
+			g_tabId = await createNewTab(url);
+			return 0;
+    }
+    else{
+      chrome.tabs.query({}, async function(tabs) {
+        
+				for (let tab of tabs) {
+          if(tab.id == g_tabId){
+						// the tab that was opened by this program exist, redirect the tab to a new url
+            await redirectNewURL(url, g_tabId);
+						return 0;
+          }
+        }
+				
+				// the tab that was opened by this program not exist (possibly closed by user), create a new tabID
+				console.log("previous tab is closed, so new tab will be opened.");
+				g_tabId = await createNewTab(url);
+				return 0;
+      }); 
+    }
+}
+
+// input: url string
+// output: tab id of the new tab opened
+async function createNewTab(url)
+{
+  return new Promise((resolve, reject) => {
+		// active:false means, it will not be focused
+		chrome.tabs.create({url: url, active: false}, function(newTab) {
+			resolve(newTab.id);
+		});
+  });
+}
+
+// input: url string, tab_id
+// output: - (promise)
+async function redirectNewURL(url, tab_id)
+{
+  return new Promise((resolve, reject) => {
+		// active:false means, it will not be focused
+		chrome.tabs.update(tab_id, {url: url, active: false}, function(newTab) {
+			resolve();
+		});
+  });
+}
 
 // backgroung.js dont have a html page so cannot alert, instead notifications can be used
 function makeNotification(message)
@@ -237,7 +268,7 @@ function isURLValid(str)
 }
 
 // clean collected user list by erasing empty inputs 
-// convert convert nickname to the url
+// convert nicknames to the url
 function cleanUserList(arr)
 {
   for(let i = arr.length - 1; i >= 0; i--) 
