@@ -256,6 +256,7 @@ function makeNotification(message)
   });
 }
 
+/* time consuming, url validation no longer exist
 // special thanks to @Aryan Beezadhur from stackoverflow
 function isURLValid(str) 
 {
@@ -267,6 +268,7 @@ function isURLValid(str)
     '(\\#[-a-z\\d_]*)?$','i'); // fragment locator
   return !!pattern.test(str);
 }
+*/
 
 // clean collected user list by erasing empty inputs 
 // convert nicknames to the url
@@ -274,17 +276,14 @@ function cleanUserList(arr)
 {
   for(let i = arr.length - 1; i >= 0; i--) 
   {
-    if(!isURLValid(arr[i]))
-    {
-      // if empty, delete it
-      if(arr[i] == ''){
-        arr.splice(i, 1); // remove ith element
-      }
-      else{
-        // convert nickname to the url
-        arr[i] = "https://eksisozluk.com/biri/" + arr[i];
-      }
-    }
+		// if empty, delete it
+		if(arr[i] == ''){
+			arr.splice(i, 1); // remove ith element
+		}
+		else{
+			// convert nickname to the url
+			arr[i] = "https://eksisozluk.com/biri/" + arr[i];
+		}
   }
 }
 
