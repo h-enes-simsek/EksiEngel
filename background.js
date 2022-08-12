@@ -31,6 +31,7 @@ async function startProcess()
   
   if(userListArray.length == 0){
     makeNotification("Eklenti ayarlarından engellenecek yazarları ekleyin.");
+		console.log("Program has been finished (getUserList function failed)");
   }
   else{
     let successfullBans = 0;
@@ -53,11 +54,12 @@ async function startProcess()
     }
 
     makeNotification(userListArray.length + ' kisilik listedeki ' + successfullBans + ' kisi engellendi.');
-    closeLastTab(pageResult.tabID);    
+    closeLastTab(pageResult.tabID);   
+		console.log("Program has been finished");		
   }
   
   g_isProgramActive = false; // program can be started again from gui
-  console.log("Program has been finished (getUserList function failed)");
+  
 }
 
 
@@ -272,6 +274,7 @@ function isURLValid(str)
 
 // clean collected user list by erasing empty inputs 
 // convert nicknames to the url
+// whitespaces should be - according to ekşisözlük name rules
 function cleanUserList(arr)
 {
   for(let i = arr.length - 1; i >= 0; i--) 
@@ -281,6 +284,9 @@ function cleanUserList(arr)
 			arr.splice(i, 1); // remove ith element
 		}
 		else{
+			// replace every whitespace with -
+			arr[i].replace(/ /gi, "-");
+			
 			// convert nickname to the url
 			arr[i] = "https://eksisozluk.com/biri/" + arr[i];
 		}
