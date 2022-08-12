@@ -24,6 +24,8 @@ chrome.runtime.onMessage.addListener(function popupMessageListener(message, send
 
 async function startProcess()
 {
+  g_tabId = -1; // clear variable
+  
   let userListArray = await getUserList(); 
 	console.log("number of user to ban (before cleaning): " + userListArray.length);
   cleanUserList(userListArray); // clean the collected data
@@ -73,12 +75,45 @@ async function pageProcess(url) {
     let contentScriptResult = ""; // current status of the content scripts
     let isBanUserSuccessfull = false;
     let isBanTitleSuccessfull = false;
+    
+    let isTabClosedByUser = false;
+    
+    // register function to call every time a page is closed (will be called multiple times because of iframes)
+    chrome.tabs.onRemoved.addListener(PageCloseListener);
 		
 		// register function to call every time the page is updated
     chrome.tabs.onUpdated.addListener(PageUpdateListener);
 		
 		// register function to call every time a content script sends a message
     chrome.runtime.onMessage.addListener(ContentScriptMessageListener);
+    
+    function PageCloseListener(tabid, w)
+    {
+      if(g_tabId === tabid && !isTabClosedByUser)
+      {
+        // this is required because chrome.tabs.onRemoved fired multiple times
+        // each by main page and iframes
+        isTabClosedByUser = true;
+        
+        console.log("tab " + tabid + " closed by user");
+        console.log("automatically early stop command was generated to stop the process.")
+        g_earlyStopCommand = true;
+        
+        // last actions should be taken to properly stop process
+        
+        // remove onMessage event as it may get duplicated
+        console.log("ContentScriptMessageListener removed.");
+        chrome.runtime.onMessage.removeListener(ContentScriptMessageListener);
+        
+        // remove tab onUpdate event to prevent duplicated listener
+        console.log("PageUpdateListener removed.");
+        chrome.tabs.onUpdated.removeListener(PageUpdateListener);
+          
+        // resolve Promise after content script has executed
+        resolve({result:"promise::fail", tabID: g_tabId});
+        
+      } 
+    }
     
     // this function will be called every time any page is updated (reloaded)
     function PageUpdateListener(tabID, changeInfo) {
@@ -169,6 +204,10 @@ async function pageProcess(url) {
         // remove tab onUpdate event to prevent duplicated listener
         console.log("PageUpdateListener removed.");
         chrome.tabs.onUpdated.removeListener(PageUpdateListener);
+        
+        // remove tab close event listener to prevent starting the process 'early stop' caused by usual closed tabs
+        console.log("PageCloseListener removed.");
+        chrome.tabs.onRemoved.removeListener(PageCloseListener);
           
         // resolve Promise after content script has executed
         if(isBanUserSuccessfull && isBanTitleSuccessfull){
