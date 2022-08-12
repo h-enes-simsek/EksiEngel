@@ -80,11 +80,12 @@ async function pageProcess(url) {
 		// register function to call every time a content script sends a message
     chrome.runtime.onMessage.addListener(ContentScriptMessageListener);
     
-    // this function will be called every time the page is updated (reloaded)
+    // this function will be called every time any page is updated (reloaded)
     function PageUpdateListener(tabID, changeInfo) {
-      console.log("tab id: "+ tabID + " changeinfo.status: " + changeInfo.status);
+      console.log("tab id: "+ tabID + " changeinfo.status: " + changeInfo.status + " url: " + changeInfo.url);
       
-      if(changeInfo.status === 'complete') {
+      // filter other page updates by using tab id
+      if(changeInfo.status === 'complete' && tabID === g_tabId) {
         counter++;
         
         if(counter === 1){
