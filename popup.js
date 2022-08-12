@@ -41,17 +41,3 @@ openSettings.onclick = function(element) {
 openFaq.onclick = function(element) {
   chrome.tabs.create({ url: chrome.runtime.getURL("faq.html") });
 };
-
-/* Start, Stop features are disabled
-// start navigation when id=#startNavigation button is clicked
-startNavigation.onclick = function(element) {
-  // send start msg to background.js
-  chrome.runtime.sendMessage(null, "popup::start");
-};
-
-// stop navigation when id=#stopNavigation button is clicked
-stopNavigation.onclick = function(element) {
-  // send stop msg to background.js
-  chrome.runtime.sendMessage(null, "popup::stop");
-};
-*/

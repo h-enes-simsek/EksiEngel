@@ -1,6 +1,6 @@
-// save text from textarea to local storage
-document.getElementById("save").addEventListener("click", function(){
-  let userListString = document.getElementById("userList").value;
+function saveAuthorListToStorage()
+{
+	let userListString = document.getElementById("userList").value;
   chrome.storage.local.set({ "userList": userListString }, function(){
     if(!chrome.runtime.error){
       blinkSavedMsg(); // set status text to 'saved' for gui
@@ -9,28 +9,18 @@ document.getElementById("save").addEventListener("click", function(){
       alert("chrome.storage.local.set runtime error");
     }
   });
-});
+}
 
-// get saved text from local storage to textarea
-document.getElementById("getSaves").addEventListener("click", function(){
-  let userListString = '';
-  let userListArray = [];
-  chrome.storage.local.get("userList", function(items){
-    if(!chrome.runtime.error && items != undefined && items.userList != undefined){
-      userListString = items.userList;
-      userListArray = userListString.split("\n");
-      document.getElementById("userList").value = userListString;
-    }else{
-      console.log("chrome.storage.local.get runtime error (yazar eklememiş olabilirsiniz)");
-      alert("chrome.storage.local.set runtime error (yazar eklememiş olabilirsiniz)");
-    }
-  });
+// send message to background.js to start banning process
+document.getElementById("startBan").addEventListener("click", function(){
+	saveAuthorListToStorage();
+	chrome.runtime.sendMessage(null, "options::start");
 });
 
 // if local storage save is successfull, show a message to the user
 function blinkSavedMsg() {
   var elem = document.getElementById('status');
-  elem.innerHTML = "Kaydedildi, engellemeye başlayabilirsiniz.";
+  elem.innerHTML = "Girilen yazarlar yerel hafızaya kaydedildi, engelleme işlemi başlayacak.";
   var counter = 4;
   var blinkInterval = setInterval(function(){
     counter--;

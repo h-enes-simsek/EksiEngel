@@ -9,7 +9,7 @@ let g_tabId = -1; // chrome assigns an id for every tab
 // listen popup.js for runtime messages
 chrome.runtime.onMessage.addListener(function popupMessageListener(message, sender, sendResponse) {
   sendResponse({status: 'ok'}); // added to suppress 'message port closed before a response was received' error
-  if((message === 'popup::start' || message === 'scriptScrapAuthorsFromEntry::start') && !g_isProgramActive)
+  if((message === 'popup::start' || message === 'scriptScrapAuthorsFromEntry::start' || message === 'options::start') && !g_isProgramActive)
   { 
     g_isProgramActive = true; // this will prevent multiple start from gui
     console.log("Program has been started.");

@@ -13,13 +13,21 @@ try
 {
 	// click to open the list of authors
 	let dropDownListElement = document.getElementsByClassName("favorite-count")[1];
+	if(!dropDownListElement)
+		alert("Ekşisözlük hesabınıza giriş yapmış olmanız gerekiyor.");
+	
 	dropDownListElement.click();
 	
 	// after clicking, a new html element will appear, however it is time consuming
-	var existCondition = setInterval(function() 
+	var existCondition = setInterval(function()	
 	{
-	 if (getAuthorListHTMLElement()) 
+		if( typeof this.counter == 'undefined' ) {
+        this.counter = 0;
+    }
+		this.counter++;
+	 if (getAuthorListHTMLElement() && getAuthorListHTMLElement().length != 0) 
 	 {
+		  console.log("timer cleared");
 			clearInterval(existCondition);
 			
 			let dropDownList;
@@ -64,6 +72,12 @@ try
 					}
 				});
 			}
+	 }
+	 else
+	 {
+		 console.log("html element holding author list could not be read");
+		 if(this.counter > 100)
+			 clearInterval(existCondition); // clear interval after 10sec
 	 }
 	}, 100); // check every 100ms
 
