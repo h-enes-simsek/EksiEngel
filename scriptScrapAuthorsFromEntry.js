@@ -9,19 +9,25 @@ function getAuthorListHTMLElement()
 	}
 }
 
-try
+programflow: try
 {
+  // prevent duplicated timers
+  if(typeof this.existCondition != 'undefined') {
+    console.log("a timer already exist to find author list");
+    break programflow; // break the try block
+  }
+  
 	// click to open the list of authors
 	let dropDownListElement = document.getElementsByClassName("favorite-count")[1];
 	if(!dropDownListElement)
 		alert("Ekşisözlük hesabınıza giriş yapmış olmanız gerekiyor.");
 	
 	dropDownListElement.click();
-	
+    
 	// after clicking, a new html element will appear, however it is time consuming
-	var existCondition = setInterval(function()	
+	let existCondition = setInterval(function()	
 	{
-		if( typeof this.counter == 'undefined' ) {
+		if(typeof this.counter == 'undefined') {
         this.counter = 0;
     }
 		this.counter++;
@@ -76,8 +82,12 @@ try
 	 else
 	 {
 		 console.log("html element holding author list could not be read");
-		 if(this.counter > 100)
-			 clearInterval(existCondition); // clear interval after 10sec
+		 if(this.counter > 10)
+     {
+      clearInterval(existCondition); // clear interval after 100ms*10=1sec
+      console.log("html element holding author list could not be read (timer stopped)");
+     }
+			 
 	 }
 	}, 100); // check every 100ms
 
