@@ -31,8 +31,8 @@
     {
       "resources": ["icons/eksiengel16.png", "icons/eksiengel32.png", "icons/eksiengel48.png", "icons/eksiengel128.png", "semsiye.png",
 										"icons/mailicon.svg", "icons/linkedinicon.svg", "icons/questionicon.svg",
-										"script1.js", "script2.js", "popup.js", "options.js", "contentScriptCheckTitleBan.js", "contentScriptCheckUserBan.js",
-										"scriptScrapAuthorsFromEntry.js"],
+										"banUser.js", "banTitle.js", "popup.js", "options.js", "isTitleBanned.js", "isUserBanned.js",
+										"scrapAuthors.js"],
       "matches": ["http://*/*", "https://*/*"]
     }
   ]

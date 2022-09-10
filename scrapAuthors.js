@@ -71,7 +71,7 @@ programflow: try
 					if(!chrome.runtime.error){
 						console.log("Author list saved into local storage");
 						// send start msg to background.js
-						chrome.runtime.sendMessage(null, "scriptScrapAuthorsFromEntry::start");
+						chrome.runtime.sendMessage(null, "scrapAuthors::start");
 					}else{
 						console.log("chrome.storage.local.set runtime error");
 						alert("chrome.storage.local.set runtime error");
@@ -94,5 +94,5 @@ programflow: try
 }
 catch
 {
-	console.log("scriptScrapAuthorsFromEntry: Author list could not be obtained.");
+	console.log("scrapAuthors: Author list could not be obtained.");
 }

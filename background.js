@@ -9,7 +9,7 @@ let g_tabId = -1; // chrome assigns an id for every tab
 // listen popup.js for runtime messages
 chrome.runtime.onMessage.addListener(function popupMessageListener(message, sender, sendResponse) {
   sendResponse({status: 'ok'}); // added to suppress 'message port closed before a response was received' error
-  if((message === 'popup::start' || message === 'scriptScrapAuthorsFromEntry::start' || message === 'options::start') && !g_isProgramActive)
+  if((message === 'popup::start' || message === 'scrapAuthors::start' || message === 'options::start') && !g_isProgramActive)
   { 
     g_isProgramActive = true; // this will prevent multiple start from gui
     console.log("Program has been started.");
@@ -124,24 +124,24 @@ async function pageProcess(url) {
         counter++;
         
         if(counter === 1){
-          // execute content script1
-          console.log("PageUpdateListener: script1 will be exec");
-          chrome.scripting.executeScript({ target: {tabId: tabID}, files: ['script1.js'] }, function() {
-            console.log("script1 has been executed.");
+          // execute content banUser
+          console.log("PageUpdateListener: banUser will be exec");
+          chrome.scripting.executeScript({ target: {tabId: tabID}, files: ['banUser.js'] }, function() {
+            console.log("banUser has been executed.");
           });
         }
-        else if(contentScriptResult === "script1::success"){
-          // script1::error will be handled by ContentScriptMessageListener
-          console.log("PageUpdateListener: script1::success so contentScriptCheckUserBan.js will be exec");
-          chrome.scripting.executeScript({ target: {tabId: tabID}, files: ['contentScriptCheckUserBan.js'] }, function() {
-          console.log("contentScriptCheckUserBan has been executed.");
+        else if(contentScriptResult === "banUser::success"){
+          // banUser::error will be handled by ContentScriptMessageListener
+          console.log("PageUpdateListener: banUser::success so isUserBanned.js will be exec");
+          chrome.scripting.executeScript({ target: {tabId: tabID}, files: ['isUserBanned.js'] }, function() {
+          console.log("isUserBanned has been executed.");
           });
         }
-        else if(contentScriptResult === "script2::success"){
-          // script2::error will be handled by ContentScriptMessageListener
-          console.log("PageUpdateListener: script2::success so contentScriptCheckTitleBan.js will be exec");
-          chrome.scripting.executeScript({ target: {tabId: tabID}, files: ['contentScriptCheckTitleBan.js'] }, function() {
-          console.log("contentScriptCheckTitleBan has been executed.");
+        else if(contentScriptResult === "banTitle::success"){
+          // banTitle::error will be handled by ContentScriptMessageListener
+          console.log("PageUpdateListener: banTitle::success so isTitleBanned.js will be exec");
+          chrome.scripting.executeScript({ target: {tabId: tabID}, files: ['isTitleBanned.js'] }, function() {
+          console.log("isTitleBanned has been executed.");
           });
         }
         else{
@@ -156,8 +156,8 @@ async function pageProcess(url) {
       sendResponse({status: 'ok'}); // added to suppress 'message port closed before a response was received' error
 			
       // update status to track (it should be filtered, because popup messages interferes)
-      if(message === "script1::success" 		|| message === "script1::error" 				|| 
-         message === "script2::success" 		|| message === "script2::error" 				||
+      if(message === "banUser::success" 		|| message === "banUser::error" 				|| 
+         message === "banTitle::success" 		|| message === "banTitle::error" 				||
          message === "checkuserban::error" 	|| message === "checkuserban::success" 	||
          message === "checktitleban::error" || message === "checktitleban::success") 
 			{
@@ -165,11 +165,11 @@ async function pageProcess(url) {
       }
       console.log("ContentScriptMessageListener:: incoming msg: " + message);
       
-      if(message === 'script1::error'){
-        // script1::success will be handled by PageUpdateListener
-        console.log("contentScriptCheckUserBan will be executed");
-        chrome.scripting.executeScript({ target: {tabId: g_tabId}, files: ['contentScriptCheckUserBan.js'] }, function() {
-          console.log("contentScriptCheckUserBan has been executed.");
+      if(message === 'banUser::error'){
+        // banUser::success will be handled by PageUpdateListener
+        console.log("isUserBanned will be executed");
+        chrome.scripting.executeScript({ target: {tabId: g_tabId}, files: ['isUserBanned.js'] }, function() {
+          console.log("isUserBanned has been executed.");
         });
         
       }
@@ -177,18 +177,18 @@ async function pageProcess(url) {
         
         isBanUserSuccessfull = message === "checkuserban::success";
         
-        // execute content script2 after script1 and checkuserban
-        console.log("script2 will be executed");
-        chrome.scripting.executeScript({ target: {tabId: g_tabId}, files: ['script2.js'] }, function() {
-          console.log("script2 has been executed.");
+        // execute content banTitle after banUser and checkuserban
+        console.log("banTitle will be executed");
+        chrome.scripting.executeScript({ target: {tabId: g_tabId}, files: ['banTitle.js'] }, function() {
+          console.log("banTitle has been executed.");
         });
       }
-      else if(message === 'script2::error'){
-        // script2::success will be handled by PageUpdateListener
-        // execute content script to check if script2 is successfull
-        console.log("contentScriptCheckTitleBan will be executed");
-        chrome.scripting.executeScript({ target: {tabId: g_tabId}, files: ['contentScriptCheckTitleBan.js'] }, function() {
-          console.log("contentScriptCheckTitleBan has been executed.");
+      else if(message === 'banTitle::error'){
+        // banTitle::success will be handled by PageUpdateListener
+        // execute content script to check if banTitle is successfull
+        console.log("isTitleBanned will be executed");
+        chrome.scripting.executeScript({ target: {tabId: g_tabId}, files: ['isTitleBanned.js'] }, function() {
+          console.log("isTitleBanned has been executed.");
         });
       }
       
