@@ -82,9 +82,9 @@ programflow: try
 	 else
 	 {
 		 console.log("html element holding author list could not be read");
-		 if(this.counter > 10)
+		 if(this.counter > 150)
      {
-      clearInterval(existCondition); // clear interval after 100ms*10=1sec
+      clearInterval(existCondition); // clear interval after 100ms*150=15sec
       console.log("html element holding author list could not be read (timer stopped)");
      }
 			 
