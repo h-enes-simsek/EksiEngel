@@ -19,7 +19,7 @@
     "default_title": "Ekşi Engel",
     "default_popup": "popup.html"
   },
-  "permissions": ["tabs", "scripting", "storage", "notifications"], 
+  "permissions": ["tabs", "scripting", "storage", "notifications", "webNavigation"], 
   "host_permissions": [
     "https://eksisozluk.com/*"
   ],

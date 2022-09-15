@@ -57,7 +57,7 @@ async function startProcess()
 
     makeNotification(userListArray.length + ' kisilik listedeki ' + successfullBans + ' kisi engellendi.');
     closeLastTab(pageResult.tabID);   
-		console.log("Program has been finished");		
+		console.log("Program has been finished (banned:" + successfullBans + ", total:" + userListArray.length + ")");		
   }
   
   g_isProgramActive = false; // program can be started again from gui
@@ -77,12 +77,15 @@ async function pageProcess(url) {
     let isBanTitleSuccessfull = false;
     
     let isTabClosedByUser = false;
+		
+		
     
     // register function to call every time a page is closed (will be called multiple times because of iframes)
     chrome.tabs.onRemoved.addListener(PageCloseListener);
 		
 		// register function to call every time the page is updated
-    chrome.tabs.onUpdated.addListener(PageUpdateListener);
+    // chrome.tabs.onUpdated.addListener(PageUpdateListener);
+		chrome.webNavigation.onDOMContentLoaded.addListener(DOMContentLoadedListener)
 		
 		// register function to call every time a content script sends a message
     chrome.runtime.onMessage.addListener(ContentScriptMessageListener);
@@ -115,7 +118,7 @@ async function pageProcess(url) {
       } 
     }
     
-    // this function will be called every time any page is updated (reloaded)
+    // this function will be called every time any page is updated
     function PageUpdateListener(tabID, changeInfo) {
       console.log("tab id: "+ tabID + " changeinfo.status: " + changeInfo.status + " url: " + changeInfo.url);
       
@@ -151,6 +154,43 @@ async function pageProcess(url) {
       }
     }
 		
+		// this function will be called every time any page is updated (when domcontent loaded)
+    function DOMContentLoadedListener(details) {
+      //console.log("tab id: "+ details.tabId + " frame id: " + details.frameId + " url: " + details.url);
+      
+      // filter other page updates by using tab id
+      if(details.tabId === g_tabId && decodeURIComponentForEksi(details.url) === url) {
+        counter++;
+        
+        if(counter === 1){
+          // execute content banUser
+          console.log("DOMContentLoadedListener: banUser will be exec");
+          chrome.scripting.executeScript({ target: {tabId: details.tabId, frameIds: [0]}, files: ['banUser.js'] }, function() {
+            console.log("banUser has been executed.");
+          });
+        }
+        else if(contentScriptResult === "banUser::success"){
+          // banUser::error will be handled by ContentScriptMessageListener
+          console.log("DOMContentLoadedListener: banUser::success so isUserBanned.js will be exec");
+          chrome.scripting.executeScript({ target: {tabId: details.tabId, frameIds: [0]}, files: ['isUserBanned.js'] }, function() {
+          console.log("isUserBanned has been executed.");
+          });
+        }
+        else if(contentScriptResult === "banTitle::success"){
+          // banTitle::error will be handled by ContentScriptMessageListener
+          console.log("DOMContentLoadedListener: banTitle::success so isTitleBanned.js will be exec");
+          chrome.scripting.executeScript({ target: {tabId: details.tabId, frameIds: [0]}, files: ['isTitleBanned.js'] }, function() {
+          console.log("isTitleBanned has been executed.");
+          });
+        }
+        else{
+          //console.log("DOMContentLoadedListener: unhandled status contentScriptResult: " + contentScriptResult);
+        }
+        
+      }
+    }
+		
+		
 		// this function will be called every time a content script sends a message
 		function ContentScriptMessageListener(message, sender, sendResponse) {
       sendResponse({status: 'ok'}); // added to suppress 'message port closed before a response was received' error
@@ -158,8 +198,8 @@ async function pageProcess(url) {
       // update status to track (it should be filtered, because popup messages interferes)
       if(message === "banUser::success" 		|| message === "banUser::error" 				|| 
          message === "banTitle::success" 		|| message === "banTitle::error" 				||
-         message === "checkuserban::error" 	|| message === "checkuserban::success" 	||
-         message === "checktitleban::error" || message === "checktitleban::success") 
+         message === "isUserBanned::error" 	|| message === "isUserBanned::success" 	||
+         message === "isTitleBanned::error" || message === "isTitleBanned::success") 
 			{
         contentScriptResult = message; 
       }
@@ -168,18 +208,18 @@ async function pageProcess(url) {
       if(message === 'banUser::error'){
         // banUser::success will be handled by PageUpdateListener
         console.log("isUserBanned will be executed");
-        chrome.scripting.executeScript({ target: {tabId: g_tabId}, files: ['isUserBanned.js'] }, function() {
+        chrome.scripting.executeScript({ target: {tabId: g_tabId, frameIds: [0]}, files: ['isUserBanned.js'] }, function() {
           console.log("isUserBanned has been executed.");
         });
         
       }
-      else if(message === "checkuserban::error" || message === "checkuserban::success"){
+      else if(message === "isUserBanned::error" || message === "isUserBanned::success"){
         
-        isBanUserSuccessfull = message === "checkuserban::success";
+        isBanUserSuccessfull = message === "isUserBanned::success";
         
-        // execute content banTitle after banUser and checkuserban
+        // execute content banTitle after banUser and isUserBanned
         console.log("banTitle will be executed");
-        chrome.scripting.executeScript({ target: {tabId: g_tabId}, files: ['banTitle.js'] }, function() {
+        chrome.scripting.executeScript({ target: {tabId: g_tabId, frameIds: [0]}, files: ['banTitle.js'] }, function() {
           console.log("banTitle has been executed.");
         });
       }
@@ -187,15 +227,15 @@ async function pageProcess(url) {
         // banTitle::success will be handled by PageUpdateListener
         // execute content script to check if banTitle is successfull
         console.log("isTitleBanned will be executed");
-        chrome.scripting.executeScript({ target: {tabId: g_tabId}, files: ['isTitleBanned.js'] }, function() {
+        chrome.scripting.executeScript({ target: {tabId: g_tabId, frameIds: [0]}, files: ['isTitleBanned.js'] }, function() {
           console.log("isTitleBanned has been executed.");
         });
       }
       
-      else if(message === "checktitleban::error" || message === "checktitleban::success"){
+      else if(message === "isTitleBanned::error" || message === "isTitleBanned::success"){
         //all actions have been completed.
         
-        isBanTitleSuccessfull = message === "checktitleban::success"; 
+        isBanTitleSuccessfull = message === "isTitleBanned::success"; 
         
         // remove onMessage event as it may get duplicated
         console.log("ContentScriptMessageListener removed.");
@@ -377,4 +417,12 @@ async function getUserList()
       }
     }); 
   });
+}
+
+function decodeURIComponentForEksi(url)
+{
+	let decodedUrl = decodeURIComponent(url);
+	// replace every whitespace with -
+	decodedUrl.replace(/ /gi, "-");
+	return decodedUrl;
 }
