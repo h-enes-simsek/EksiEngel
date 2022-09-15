@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <title>Nasıl Kullanılır</title>
   <link rel="stylesheet" href="buttons.css">
-
 <style>
 .content {
   font-family: 'Montserrat', sans-serif;
@@ -19,7 +18,6 @@
     width: 60vw;
   }
 }
-
 body {
   font-size: 100%;
 }
@@ -41,10 +39,14 @@ hr {
   font-size: 13px;
 }
 #semsiye {
-    display: block;
-    margin: 0 auto;
-    max-height: 30%;
-    padding-bottom: 10vh;
+	display: block;
+	margin: 0 auto;
+	max-height: 30%;
+	padding-bottom: 10vh;
+}
+#pena {
+	display: block;
+	max-height: 30%;
 }
 #howToUse {
   height: 80vh
@@ -60,7 +62,7 @@ margin-bottom: 8px;
   
   <i class="fa fa-question-circle" aria-hidden="true"style="font-size:30px;color:black" id="questionMark" onclick="alert('sdf');"></i>
   <div id="howToUse">
-  <b style="color:green">Ekşi Engel</b>  Kullanım Klavuzu
+  <h3><b style="color:green">Ekşi Engel</b>  Kullanım Klavuzu</h3>
 	<ul>
 		<li>Bir Entry'i Favorileyen Yazarları Nasıl Engellerim?</li>
 		
@@ -70,7 +72,7 @@ margin-bottom: 8px;
           <br>
           Eğer bir başlıktaki entry'i engellemek istiyorsanız entry'nin yazıldığı tarihe tıklayın.
           <br>
-          <img width="600" height="280" src="icons/pena.png">
+          <img width="600" height="280" src="icons/pena.png" id="pena">
         </li>
 				<li>Eklenti simgesine <img src="icons/eksiengel16.png"> tıklayın, ardından <b style="text-decoration: none; color:black;">Bu Entry'i Favlayanları Engelle</b> butonuna tıklayın.</li>
 			</ol>
@@ -90,7 +92,7 @@ margin-bottom: 8px;
 	
   
   
-  Sıkça Sorulan Sorular
+  <h3>Sıkça Sorulan Sorular</h3>
   <ol>
     <li>
       Uygulama çalışmıyor, yapacağınız işe...
