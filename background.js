@@ -84,7 +84,7 @@ async function pageProcess(url) {
     chrome.tabs.onRemoved.addListener(PageCloseListener);
 		
 		// register function to call every time the page is updated
-    // chrome.tabs.onUpdated.addListener(PageUpdateListener);
+    // chrome.tabs.onUpdated.addListener(DOMContentLoadedListener);
 		chrome.webNavigation.onDOMContentLoaded.addListener(DOMContentLoadedListener)
 		
 		// register function to call every time a content script sends a message
@@ -109,8 +109,8 @@ async function pageProcess(url) {
         chrome.runtime.onMessage.removeListener(ContentScriptMessageListener);
         
         // remove tab onUpdate event to prevent duplicated listener
-        console.log("PageUpdateListener removed.");
-        chrome.tabs.onUpdated.removeListener(PageUpdateListener);
+        console.log("DOMContentLoadedListener removed.");
+        chrome.tabs.onUpdated.removeListener(DOMContentLoadedListener);
           
         // resolve Promise after content script has executed
         resolve({result:"promise::fail", tabID: g_tabId});
@@ -118,42 +118,6 @@ async function pageProcess(url) {
       } 
     }
     
-    // this function will be called every time any page is updated
-    function PageUpdateListener(tabID, changeInfo) {
-      console.log("tab id: "+ tabID + " changeinfo.status: " + changeInfo.status + " url: " + changeInfo.url);
-      
-      // filter other page updates by using tab id
-      if(changeInfo.status === 'complete' && tabID === g_tabId) {
-        counter++;
-        
-        if(counter === 1){
-          // execute content banUser
-          console.log("PageUpdateListener: banUser will be exec");
-          chrome.scripting.executeScript({ target: {tabId: tabID}, files: ['banUser.js'] }, function() {
-            console.log("banUser has been executed.");
-          });
-        }
-        else if(contentScriptResult === "banUser::success"){
-          // banUser::error will be handled by ContentScriptMessageListener
-          console.log("PageUpdateListener: banUser::success so isUserBanned.js will be exec");
-          chrome.scripting.executeScript({ target: {tabId: tabID}, files: ['isUserBanned.js'] }, function() {
-          console.log("isUserBanned has been executed.");
-          });
-        }
-        else if(contentScriptResult === "banTitle::success"){
-          // banTitle::error will be handled by ContentScriptMessageListener
-          console.log("PageUpdateListener: banTitle::success so isTitleBanned.js will be exec");
-          chrome.scripting.executeScript({ target: {tabId: tabID}, files: ['isTitleBanned.js'] }, function() {
-          console.log("isTitleBanned has been executed.");
-          });
-        }
-        else{
-          console.log("PageUpdateListener: unhandled status contentScriptResult: " + contentScriptResult);
-        }
-        
-      }
-    }
-		
 		// this function will be called every time any page is updated (when domcontent loaded)
     function DOMContentLoadedListener(details) {
       //console.log("tab id: "+ details.tabId + " frame id: " + details.frameId + " url: " + details.url);
@@ -206,7 +170,7 @@ async function pageProcess(url) {
       console.log("ContentScriptMessageListener:: incoming msg: " + message);
       
       if(message === 'banUser::error'){
-        // banUser::success will be handled by PageUpdateListener
+        // banUser::success will be handled by DOMContentLoadedListener
         console.log("isUserBanned will be executed");
         chrome.scripting.executeScript({ target: {tabId: g_tabId, frameIds: [0]}, files: ['isUserBanned.js'] }, function() {
           console.log("isUserBanned has been executed.");
@@ -224,7 +188,7 @@ async function pageProcess(url) {
         });
       }
       else if(message === 'banTitle::error'){
-        // banTitle::success will be handled by PageUpdateListener
+        // banTitle::success will be handled by DOMContentLoadedListener
         // execute content script to check if banTitle is successfull
         console.log("isTitleBanned will be executed");
         chrome.scripting.executeScript({ target: {tabId: g_tabId, frameIds: [0]}, files: ['isTitleBanned.js'] }, function() {
@@ -242,8 +206,8 @@ async function pageProcess(url) {
         chrome.runtime.onMessage.removeListener(ContentScriptMessageListener);
         
         // remove tab onUpdate event to prevent duplicated listener
-        console.log("PageUpdateListener removed.");
-        chrome.tabs.onUpdated.removeListener(PageUpdateListener);
+        console.log("DOMContentLoadedListener removed.");
+        chrome.tabs.onUpdated.removeListener(DOMContentLoadedListener);
         
         // remove tab close event listener to prevent starting the process 'early stop' caused by usual closed tabs
         console.log("PageCloseListener removed.");
