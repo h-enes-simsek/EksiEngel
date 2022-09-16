@@ -130,21 +130,36 @@ async function pageProcess(url) {
           // execute content banUser
           console.log("DOMContentLoadedListener: banUser will be exec");
           chrome.scripting.executeScript({ target: {tabId: details.tabId, frameIds: [0]}, files: ['banUser.js'] }, function() {
-            console.log("banUser has been executed.");
+            if(chrome.runtime.lastError) {
+              console.log("banUser could not be executed.");
+              console.log(chrome.runtime.lastError);
+            } else {
+              console.log("banUser has been executed.");
+            }
           });
         }
         else if(contentScriptResult === "banUser::success"){
           // banUser::error will be handled by ContentScriptMessageListener
           console.log("DOMContentLoadedListener: banUser::success so isUserBanned.js will be exec");
           chrome.scripting.executeScript({ target: {tabId: details.tabId, frameIds: [0]}, files: ['isUserBanned.js'] }, function() {
-          console.log("isUserBanned has been executed.");
+            if(chrome.runtime.lastError) {
+              console.log("isUserBanned could not be executed.");
+              console.log(chrome.runtime.lastError);
+            } else {
+              console.log("isUserBanned has been executed.");
+            }
           });
         }
         else if(contentScriptResult === "banTitle::success"){
           // banTitle::error will be handled by ContentScriptMessageListener
           console.log("DOMContentLoadedListener: banTitle::success so isTitleBanned.js will be exec");
           chrome.scripting.executeScript({ target: {tabId: details.tabId, frameIds: [0]}, files: ['isTitleBanned.js'] }, function() {
-          console.log("isTitleBanned has been executed.");
+            if(chrome.runtime.lastError) {
+              console.log("isTitleBanned could not be executed.");
+              console.log(chrome.runtime.lastError);
+            } else {
+              console.log("isTitleBanned has been executed.");
+            }          
           });
         }
         else{
@@ -173,7 +188,12 @@ async function pageProcess(url) {
         // banUser::success will be handled by DOMContentLoadedListener
         console.log("isUserBanned will be executed");
         chrome.scripting.executeScript({ target: {tabId: g_tabId, frameIds: [0]}, files: ['isUserBanned.js'] }, function() {
-          console.log("isUserBanned has been executed.");
+          if(chrome.runtime.lastError) {
+            console.log("isUserBanned could not be executed.");
+            console.log(chrome.runtime.lastError);
+          } else {
+            console.log("isUserBanned has been executed.");
+          } 
         });
         
       }
@@ -184,7 +204,12 @@ async function pageProcess(url) {
         // execute content banTitle after banUser and isUserBanned
         console.log("banTitle will be executed");
         chrome.scripting.executeScript({ target: {tabId: g_tabId, frameIds: [0]}, files: ['banTitle.js'] }, function() {
-          console.log("banTitle has been executed.");
+          if(chrome.runtime.lastError) {
+            console.log("banTitle could not be executed.");
+            console.log(chrome.runtime.lastError);
+          } else {
+            console.log("banTitle has been executed.");
+          } 
         });
       }
       else if(message === 'banTitle::error'){
@@ -192,7 +217,12 @@ async function pageProcess(url) {
         // execute content script to check if banTitle is successfull
         console.log("isTitleBanned will be executed");
         chrome.scripting.executeScript({ target: {tabId: g_tabId, frameIds: [0]}, files: ['isTitleBanned.js'] }, function() {
-          console.log("isTitleBanned has been executed.");
+          if(chrome.runtime.lastError) {
+            console.log("isTitleBanned could not be executed.");
+            console.log(chrome.runtime.lastError);
+          } else {
+            console.log("isTitleBanned has been executed.");
+          } 
         });
       }
       
