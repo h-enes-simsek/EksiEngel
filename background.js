@@ -9,17 +9,12 @@ let g_tabId = -1; // chrome assigns an id for every tab
 // listen popup.js for runtime messages
 chrome.runtime.onMessage.addListener(function popupMessageListener(message, sender, sendResponse) {
   sendResponse({status: 'ok'}); // added to suppress 'message port closed before a response was received' error
-  if((message === 'popup::start' || message === 'scrapAuthors::start' || message === 'options::start') && !g_isProgramActive)
+  if((message === 'scrapAuthors::start' || message === 'options::start') && !g_isProgramActive)
   { 
     g_isProgramActive = true; // this will prevent multiple start from gui
     console.log("Program has been started.");
     startProcess();
   } 
-  else if(message === 'popup::stop' && g_isProgramActive) 
-  {
-    g_earlyStopCommand = true;
-    console.log("Early stop command has been received.");
-  }
 });
 
 async function startProcess()
@@ -28,7 +23,7 @@ async function startProcess()
   
   let userListArray = await getUserList(); 
 	console.log("number of user to ban (before cleaning): " + userListArray.length);
-  cleanUserList(userListArray); // clean the collected data
+  console.log(userListArray);
   console.log("number of user to ban (after cleaning): " + userListArray.length);
   
   if(userListArray.length == 0){
@@ -44,10 +39,11 @@ async function startProcess()
       
       if(pageResult.result === "promise::success"){
         successfullBans++;
+        console.log("page result: success (" + userListArray[i] +")");
+      } else {
+        console.log("page result: fail (" + userListArray[i] +")");
       }
 			
-			console.log("page result received");
-      
       // early stop mechanism
       if(g_earlyStopCommand) {
         g_earlyStopCommand = false; // clear to reuse this variable
@@ -59,12 +55,8 @@ async function startProcess()
     closeLastTab(pageResult.tabID);   
 		console.log("Program has been finished (banned:" + successfullBans + ", total:" + userListArray.length + ")");		
   }
-  
-  g_isProgramActive = false; // program can be started again from gui
-  
+  g_isProgramActive = false; // program can be started again from gui  
 }
-
-
 
 async function pageProcess(url) {
   return new Promise(async function(resolve, reject) {
@@ -75,11 +67,8 @@ async function pageProcess(url) {
     let contentScriptResult = ""; // current status of the content scripts
     let isBanUserSuccessfull = false;
     let isBanTitleSuccessfull = false;
-    
     let isTabClosedByUser = false;
 		
-		
-    
     // register function to call every time a page is closed (will be called multiple times because of iframes)
     chrome.tabs.onRemoved.addListener(PageCloseListener);
 		
@@ -288,20 +277,6 @@ function makeNotification(message)
   });
 }
 
-/* time consuming, url validation no longer exist
-// special thanks to @Aryan Beezadhur from stackoverflow
-function isURLValid(str) 
-{
-  var pattern = new RegExp('^(https?:\\/\\/)?'+ // protocol
-    '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|'+ // domain name
-    '((\\d{1,3}\\.){3}\\d{1,3}))'+ // OR ip (v4) address
-    '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*'+ // port and path
-    '(\\?[;&a-z\\d%_.~+=-]*)?'+ // query string
-    '(\\#[-a-z\\d_]*)?$','i'); // fragment locator
-  return !!pattern.test(str);
-}
-*/
-
 // clean collected user list by erasing empty inputs 
 // convert nicknames to the url
 // whitespaces should be - according to ekşisözlük name rules
@@ -315,7 +290,7 @@ function cleanUserList(arr)
 		}
 		else{
 			// replace every whitespace with -
-			arr[i].replace(/ /gi, "-");
+			arr[i] = arr[i].replace(/ /gi, "-");
 			
 			// convert nickname to the url
 			arr[i] = "https://eksisozluk.com/biri/" + arr[i];
@@ -369,10 +344,12 @@ async function getUserList()
   });
 }
 
+// example input: abc%20def%21gh
+// output: abc-def!gh
 function decodeURIComponentForEksi(url)
 {
 	let decodedUrl = decodeURIComponent(url);
-	// replace every whitespace with -
+	// replace every whitespace with - (eksisozluk.com convention)
 	decodedUrl.replace(/ /gi, "-");
 	return decodedUrl;
 }
@@ -390,8 +367,7 @@ function executeScriptFile(fileName)
 function printExecuteScriptResult(fileName)
 {
   if(chrome.runtime.lastError) {
-    console.log(fileName + " could not be executed.");
-    console.log(chrome.runtime.lastError);
+    console.log(fileName + " could not be executed, err: " + chrome.runtime.lastError.message);
   } else {
     console.log(fileName + " has been executed.");
   }

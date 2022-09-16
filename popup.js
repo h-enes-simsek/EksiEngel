@@ -25,10 +25,6 @@ startBanFavorites.onclick = function(element) {
 			}
 		}
 	}); 
-
-	
-  // send start msg to background.js
-  chrome.runtime.sendMessage(null, "popup::startFavBan");
 };
 
 // go to settings page when id=#openSettings button is clicked
