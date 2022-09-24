@@ -23,7 +23,7 @@ async function startProcess()
   
   let userListArray = await getUserList(); 
 	console.log("number of user to ban (before cleaning): " + userListArray.length);
-  console.log(userListArray);
+  cleanUserList(userListArray);
   console.log("number of user to ban (after cleaning): " + userListArray.length);
   
   if(userListArray.length == 0){
