@@ -58,3 +58,4 @@ firefox desteği (hiçbir şey düzgün çalışmıyor, manifest v3 desteği bil
 listeneden engelleme için ekşi hesabına girilip girilmediği kontrol edilmeli
 log mekanizması daha iyi hale getirilmeli
 engellenen yazarların engeli kaldırılabilmeli
+google analytics
