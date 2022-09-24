@@ -41,6 +41,8 @@ kullanıcı sayfayı eliyle kapattığında uygulamanın çökmesi engellendi.
 arayüz sadeleştirildi başlatma ve durdurma butonları kaldırıldı 
 eklenti çalışırken diğer sayfalarda yapılan işlemlerin eklentiye etki etmesi problemi çözüldü.
 ekşi nicknamelerindeki whitespaceler tire-ye çevrilerek bug çözüldü.
+sayfanın yüklenmesi tab listener api ile dinlendiğinde gereksiz yere bekleniyordu yerine webnavigation api kullanıldı. 
+böylece adblocker gibi sayfaya müdahale eden eklentilerin neden olduğu sorunlar giderildi.
 url validation uzun sürdüğü için kaldırıldı.
 yazılımın bazı kısımları daha modüler hale getirildi.
 js dosyalarının isimleri ve içerikleri refactor edildi.
@@ -48,7 +50,6 @@ js dosyalarının isimleri ve içerikleri refactor edildi.
 SONRAKİ GÜNCELLEMEDE YAPILMASI PLANLANANLAR
 10000 yazarı engellediği görüldü (5000 yazar ekşi limiti) readme sayfasına eklenebilir.
 listeden yazar engelle sayfası options page olmamalı (yerine normal sayfa) 
-sayfanın yüklenmesi tab listener api ile dinlendiğinde gereksiz yere bekliyoruz. yerine webnavigation api kullanılabilir mi?
 çok uzun yazarlı entrylerde liste scrap edilirken bilgisayar ya da internet yavaşsa timeout olabiliyor şu an 15 saniye limiti var 
 github sayfasını ekle(projenin)
 github readme güncelle
