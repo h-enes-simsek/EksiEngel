@@ -1,0 +1,10 @@
+Web Mağazası Metni
+-------------------------------------------------
+Ekşi Sözlük'te toplu olarak engelleme/başlıklarını engelleme işlemi yapın.
+Görmek istemediğiniz Ekşi Sözlük hesaplarını ve açtıkları başlıkları engelleyebilirsiniz. Eğer yüzlerce hesabı engellemek isterseniz bu eklenti sizin yerinize yapar.
+
+Ekşi Engel iki şekilde kullanılabilir:
+- Bir entry'i favorileyen tüm yazarları engelleyebilirsiniz.
+- Bir liste halinde gireceğiniz yazarları engelleyebilirsiniz.
+
+Versiyon notları için: https://h-enes-simsek.github.io/EksiEngel

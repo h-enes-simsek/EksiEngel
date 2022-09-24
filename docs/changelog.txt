@@ -1,0 +1,60 @@
+Versiyon notları (Son kullanıcı için)
+-------------------------------------------------
+v1.0 
+kullanıcıdan alınan listedeki yazarlar engellendi. 
+
+v1.1 
+market sayfasındaki resimler güncellendi.
+
+v1.2
+yeni özellik: bir entry'i favlayan yazarları engellemesi
+arayüz sadeleştirildi. 
+bug fix: adblocker gibi sayfaya müdahele eden eklentilerin neden olduğu sorunlar giderildi.
+bug fix: engelleme devam ederken sayfa kapatıldığında uygulamanın çökmesi engellendi. 
+bug fix: nickinde whitespace olan yazarların engellenememesi sorunu çözüldü.
+
+Versiyon notları ve TODO listesi (detaylı) 
+-------------------------------------------------
+v1.0  
+alınan liste validate edildi.
+alınan liste iki formatı destekliyor: url ve yazar isimleri
+sayfa  aktif değilken (aktif tab) uygulamanın çalışmasının durması engellendi.
+son sayfanın otomatik olarak kapanması sağlandı.
+bir nedenle alınan tab_id ile sayfa güncellenemiyorsa yeni sayfa açıldı ve tab_id güncellenerek engellemenin devam etmesi sağlandı.  
+gereksiz izinler tespit edildi ve manifestten çıkarıldı: active tab, declerative content, downloads.
+'message port closed before a response was received' hatası giderildi. 
+uygulamanın iki kez başlaması engellendi.
+uygulamayı yarısında durdurma özelliği bir buton ile sağlandı.
+tüm sitedelerde değil sadece ekşide çalışması (injected js'nin) sağlandı.
+popup sayfası tasarım  
+ayar sayfası tasarım  
+ikon tasarım 
+kayıtları getir sayfasında undefined check yapıldı. 
+
+v1.1
+eklenti marketinde ikonların bazılarının arkasının beyaz olduğu fark edildi, transparan hale getirildi.
+
+v1.2
+yeni özellik: entryi favlayanları engelle 
+ekşi hesabına giriş yapılmadıysa uyarı vermesi sağlandı. (sadece fav'dan engelleme modu için)
+kullanıcı sayfayı eliyle kapattığında uygulamanın çökmesi engellendi. 
+arayüz sadeleştirildi başlatma ve durdurma butonları kaldırıldı 
+eklenti çalışırken diğer sayfalarda yapılan işlemlerin eklentiye etki etmesi problemi çözüldü.
+ekşi nicknamelerindeki whitespaceler tire-ye çevrilerek bug çözüldü.
+url validation uzun sürdüğü için kaldırıldı.
+yazılımın bazı kısımları daha modüler hale getirildi.
+js dosyalarının isimleri ve içerikleri refactor edildi.
+
+SONRAKİ GÜNCELLEMEDE YAPILMASI PLANLANANLAR
+10000 yazarı engellediği görüldü (5000 yazar ekşi limiti) readme sayfasına eklenebilir.
+listeden yazar engelle sayfası options page olmamalı (yerine normal sayfa) 
+sayfanın yüklenmesi tab listener api ile dinlendiğinde gereksiz yere bekliyoruz. yerine webnavigation api kullanılabilir mi?
+çok uzun yazarlı entrylerde liste scrap edilirken bilgisayar ya da internet yavaşsa timeout olabiliyor şu an 15 saniye limiti var 
+github sayfasını ekle(projenin)
+github readme güncelle
+
+BİR ARA YAPILMASI PLANLANANLAR
+firefox desteği (hiçbir şey düzgün çalışmıyor, manifest v3 desteği bile tam gelmemiş)
+listeneden engelleme için ekşi hesabına girilip girilmediği kontrol edilmeli
+log mekanizması daha iyi hale getirilmeli
+engellenen yazarların engeli kaldırılabilmeli
