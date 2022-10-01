@@ -27,9 +27,9 @@ startBanFavorites.onclick = function(element) {
 	}); 
 };
 
-// go to settings page when id=#openSettings button is clicked
-openSettings.onclick = function(element) {
-  chrome.runtime.openOptionsPage();
+// go to authorListPage page when id=#openauthorListPage button is clicked
+openauthorListPage.onclick = function(element) {
+  chrome.tabs.create({ url: chrome.runtime.getURL("authorListPage.html") });
 };
 
 // go to faq, how to use, page when id=#openFaq button is clicked

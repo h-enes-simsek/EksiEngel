@@ -14,7 +14,7 @@ function saveAuthorListToStorage()
 // send message to background.js to start banning process
 document.getElementById("startBan").addEventListener("click", function(){
 	saveAuthorListToStorage();
-	chrome.runtime.sendMessage(null, "options::start");
+	chrome.runtime.sendMessage(null, "authorListPage::start");
 });
 
 // if local storage save is successfull, show a message to the user

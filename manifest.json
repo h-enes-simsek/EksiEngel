@@ -26,7 +26,6 @@
   "background": {
     "service_worker": "background.js"
   },
-  "options_page": "options.html",
 	"web_accessible_resources": [
     {
       "resources": ["icons/eksiengel16.png", 
@@ -40,7 +39,7 @@
 										"assets/img/githubicon.svg", 
 										"assets/img/pena.png",
 										"popup.js", 
-										"options.js",
+										"authorListPage.js",
 										"assets/js/banUser.js", 
 										"assets/js/banTitle.js",
 										"assets/js/isTitleBanned.js", 

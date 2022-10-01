@@ -30,5 +30,5 @@ Versiyon notları [linki](https://h-enes-simsek.github.io/EksiEngel/versionnotes
 
 <div float="left">
 <img src="publish/ss/popup.png" width="480" height="300">
-<img src="publish/ss/settings.png" width="480" height="300">
+<img src="publish/ss/authorListPage.png" width="480" height="300">
 </div>
