@@ -29,8 +29,16 @@
   "options_page": "options.html",
 	"web_accessible_resources": [
     {
-      "resources": ["icons/eksiengel16.png", "icons/eksiengel32.png", "icons/eksiengel48.png", "icons/eksiengel128.png", "semsiye.png",
-										"icons/mailicon.svg", "icons/linkedinicon.svg", "icons/questionicon.svg", "icons/githubicon.svg", "icons/pena.png",
+      "resources": ["icons/eksiengel16.png", 
+										"icons/eksiengel32.png", 
+										"icons/eksiengel48.png", 
+										"icons/eksiengel128.png", 
+										"icons/semsiye.png",
+										"icons/mailicon.svg", 
+										"icons/linkedinicon.svg", 
+										"icons/questionicon.svg", 
+										"icons/githubicon.svg", 
+										"icons/pena.png",
 										"banUser.js", "banTitle.js", "popup.js", "options.js", "isTitleBanned.js", "isUserBanned.js",
 										"scrapAuthors.js"],
       "matches": ["http://*/*", "https://*/*"]
