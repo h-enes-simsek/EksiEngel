@@ -34,7 +34,8 @@ kayıtları getir sayfasında undefined check yapıldı.
 v1.1
 eklenti marketinde ikonların bazılarının arkasının beyaz olduğu fark edildi, transparan hale getirildi.
 
-v1.2
+v1.2 
+# gözden geçirme: 24.09.2022 yayın: 27.09.2022
 yeni özellik: entryi favlayanları engelle 
 ekşi hesabına giriş yapılmadıysa uyarı vermesi sağlandı. (sadece fav'dan engelleme modu için)
 kullanıcı sayfayı eliyle kapattığında uygulamanın çökmesi engellendi. 

@@ -359,7 +359,7 @@ function executeScriptFile(fileName)
   console.log(fileName + " will be executed");
   chrome.scripting.executeScript({
     target: {tabId: g_tabId, frameIds: [0]}, // frame 0 is the main frame, there may be other frames (ads, google analytics etc)
-    files: [fileName + '.js'] }, // this file will be executed
+    files: ["assets/js/" + fileName + '.js'] }, // this file will be executed
     ()=>{printExecuteScriptResult(fileName); // callback function
   });
 }

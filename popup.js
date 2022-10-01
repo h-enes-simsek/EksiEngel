@@ -12,7 +12,7 @@ startBanFavorites.onclick = function(element) {
 				if(tab.url.includes("https://eksisozluk.com/entry"))
 				{
 					console.log("popup.js: scrapAuthors will be exec");
-					chrome.scripting.executeScript({ target: {tabId: tab.id}, files: ['scrapAuthors.js'] }, function() {
+					chrome.scripting.executeScript({ target: {tabId: tab.id}, files: ['assets/js/scrapAuthors.js'] }, function() {
 						console.log("scrapAuthors has been executed.");
 					});
 				}
