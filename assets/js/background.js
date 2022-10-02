@@ -270,7 +270,7 @@ function makeNotification(message)
 {
   chrome.notifications.create({
     type: 'basic',
-    iconUrl: 'icons/eksiengel16.png',
+    iconUrl: '../img/eksiengel16.png',
     title: 'Notification',
     message: message,
     priority: 1

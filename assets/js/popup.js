@@ -29,10 +29,10 @@ startBanFavorites.onclick = function(element) {
 
 // go to authorListPage page when id=#openauthorListPage button is clicked
 openauthorListPage.onclick = function(element) {
-  chrome.tabs.create({ url: chrome.runtime.getURL("authorListPage.html") });
+  chrome.tabs.create({ url: chrome.runtime.getURL("assets/html/authorListPage.html") });
 };
 
 // go to faq, how to use, page when id=#openFaq button is clicked
 openFaq.onclick = function(element) {
-  chrome.tabs.create({ url: chrome.runtime.getURL("faq.html") });
+  chrome.tabs.create({ url: chrome.runtime.getURL("assets/html/faq.html") });
 };

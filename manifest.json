@@ -4,42 +4,47 @@
   "version": "1.2",
   "description": "Ekşi Sözlük'te toplu olarak engelleme/başlıklarını engelleme işlemi yapın.",
 	"icons": {
-		"16": "icons/eksiengel16.png",
-		"32": "icons/eksiengel32.png",
-		"48": "icons/eksiengel48.png",
-		"128": "icons/eksiengel128.png"
+		"16": "assets/img/eksiengel16.png",
+		"32": "assets/img/eksiengel32.png",
+		"48": "assets/img/eksiengel48.png",
+		"128": "assets/img/eksiengel128.png"
 		},
   "action": {
     "default_icon": {
-      "16": "icons/eksiengel16.png",
-      "32": "icons/eksiengel32.png",
-      "48": "icons/eksiengel48.png",
-      "128": "icons/eksiengel128.png"
+      "16": "assets/img/eksiengel16.png",
+      "32": "assets/img/eksiengel32.png",
+      "48": "assets/img/eksiengel48.png",
+      "128": "assets/img/eksiengel128.png"
       },
     "default_title": "Ekşi Engel",
-    "default_popup": "popup.html"
+    "default_popup": "assets/html/popup.html"
   },
   "permissions": ["tabs", "scripting", "storage", "notifications", "webNavigation"], 
   "host_permissions": [
     "https://eksisozluk.com/*"
   ],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "assets/js/background.js"
   },
 	"web_accessible_resources": [
     {
-      "resources": ["icons/eksiengel16.png", 
-										"icons/eksiengel32.png", 
-										"icons/eksiengel48.png", 
-										"icons/eksiengel128.png", 
+      "resources": ["assets/img/eksiengel16.png", 
+										"assets/img/eksiengel32.png", 
+										"assets/img/eksiengel48.png", 
+										"assets/img/eksiengel128.png", 
 										"assets/img/semsiye.png",
 										"assets/img/mailicon.svg", 
 										"assets/img/linkedinicon.svg", 
 										"assets/img/questionicon.svg", 
 										"assets/img/githubicon.svg", 
 										"assets/img/pena.png",
-										"popup.js", 
-										"authorListPage.js",
+										
+										"assets/html/faq.html",
+										"assets/html/popup.html",
+										"assets/html/authorListPage.html",
+										
+										"assets/js/popup.js", 
+										"assets/js/authorListPage.js",
 										"assets/js/banUser.js", 
 										"assets/js/banTitle.js",
 										"assets/js/isTitleBanned.js", 

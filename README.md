@@ -1,5 +1,5 @@
 <div float="left">
-<h2><img src="icons/eksiengel48.png" width="48" height="48"> Ekşi Engel</h2>
+<h2><img src="assets/img/eksiengel48.png" width="48" height="48"> Ekşi Engel</h2>
 </div>
 Ekşisözlük'te toplu olarak engelle/başlıklarını engelle işlemi yapılmasına yardımcı olan Google Chrome eklentisi.
 
