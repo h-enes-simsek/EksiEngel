@@ -43,12 +43,9 @@
 										"assets/html/popup.html",
 										"assets/html/authorListPage.html",
 										
+										"assets/js/ban.js",
 										"assets/js/popup.js", 
 										"assets/js/authorListPage.js",
-										"assets/js/banUser.js", 
-										"assets/js/banTitle.js",
-										"assets/js/isTitleBanned.js", 
-										"assets/js/isUserBanned.js",
 										"assets/js/scrapAuthors.js"],
       "matches": ["http://*/*", "https://*/*"]
     }

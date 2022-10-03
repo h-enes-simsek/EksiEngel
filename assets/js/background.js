@@ -61,14 +61,14 @@ async function startProcess()
 async function pageProcess(url) {
   return new Promise(async function(resolve, reject) {
     
-		await handleTabOperations(url);
-
+    console.log("page processing started for " + url);
+    
     let counter = 0; // number of times the page is loaded
-    let contentScriptResult = ""; // current status of the content scripts
+    let latestContentScriptInfo = ""; // JSON Obj, info about latest executed content script
     let isBanUserSuccessfull = false;
     let isBanTitleSuccessfull = false;
     let isTabClosedByUser = false;
-		
+    
     // register function to call every time a page is closed (will be called multiple times because of iframes)
     chrome.tabs.onRemoved.addListener(PageCloseListener);
 		
@@ -79,6 +79,8 @@ async function pageProcess(url) {
 		// register function to call every time a content script sends a message
     chrome.runtime.onMessage.addListener(ContentScriptMessageListener);
     
+		await handleTabOperations(url);
+
     function PageCloseListener(tabid, w)
     {
       if(g_tabId === tabid && !isTabClosedByUser)
@@ -109,29 +111,47 @@ async function pageProcess(url) {
     
 		// this function will be called every time any page is updated (when domcontent loaded)
     function DOMContentLoadedListener(details) {
-      //console.log("tab id: "+ details.tabId + " frame id: " + details.frameId + " url: " + details.url);
+      
+      
+      // saved values from latest executed content script
+      let res = latestContentScriptInfo.res;
+      let op = latestContentScriptInfo.op;
+      let mode = latestContentScriptInfo.mode;
+      let target = latestContentScriptInfo.target;
+      
+      // outgoing values to content script
+      let executeOp = "";
+      let executeMode = "";
+      let executeTarget = "";
       
       // filter other page updates by using tab id
       if(details.tabId === g_tabId && decodeURIComponentForEksi(details.url) === url) {
         counter++;
+        console.log("tab id: "+ details.tabId + " counter: " + counter + " frame id: " + details.frameId + " url: " + details.url);
         
         if(counter === 1){
-          // execute content banUser
-          let fileName = "banUser";
-          executeScriptFile(fileName);
+          // execute content script to ban user
+          executeOp = "op::action";
+          executeMode = "mode::ban";
+          executeTarget = "target::user";
+          executeContentScript(executeOp, executeMode, executeTarget);
         }
-        else if(contentScriptResult === "banUser::success"){
-          // banUser::error will be handled by ContentScriptMessageListener
-          let fileName = "isUserBanned";
-          executeScriptFile(fileName);
+        else if(op === "op::action" && mode === "mode::ban" && target === "target::user" && res === "res::success"){
+          // res::fail will be handled by ContentScriptMessageListener
+          executeOp = "op::control";
+          executeMode = "mode::ban";
+          executeTarget = "target::user";
+          executeContentScript(executeOp, executeMode, executeTarget);
         }
-        else if(contentScriptResult === "banTitle::success"){
-          // banTitle::error will be handled by ContentScriptMessageListener
-          let fileName = "isTitleBanned";
-          executeScriptFile(fileName);
+        else if(op === "op::action" && mode === "mode::ban" && target === "target::title" && res === "res::success"){
+          // res::fail will be handled by ContentScriptMessageListener
+          executeOp = "op::control";
+          executeMode = "mode::ban";
+          executeTarget = "target::title";
+          executeContentScript(executeOp, executeMode, executeTarget);
         }
         else{
-          //console.log("DOMContentLoadedListener: unhandled status contentScriptResult: " + contentScriptResult);
+          console.log("DOMContentLoadedListener: unhandled latestContentScriptInfo: " + JSON.stringify(latestContentScriptInfo));
         }
         
       }
@@ -141,40 +161,58 @@ async function pageProcess(url) {
 		// this function will be called every time a content script sends a message
 		function ContentScriptMessageListener(message, sender, sendResponse) {
       sendResponse({status: 'ok'}); // added to suppress 'message port closed before a response was received' error
-			
-      // update status to track (it should be filtered, because popup messages interferes)
-      if(message === "banUser::success" 		|| message === "banUser::error" 				|| 
-         message === "banTitle::success" 		|| message === "banTitle::error" 				||
-         message === "isUserBanned::error" 	|| message === "isUserBanned::success" 	||
-         message === "isTitleBanned::error" || message === "isTitleBanned::success") 
-			{
-        contentScriptResult = message; 
-      }
+      
       console.log("ContentScriptMessageListener:: incoming msg: " + message);
       
-      if(message === 'banUser::error'){
-        // banUser::success will be handled by DOMContentLoadedListener
-        let fileName = "isUserBanned";
-        executeScriptFile(fileName);
+      // incoming values from content script
+      let incomingObj;
+      try
+      {
+        incomingObj = JSON.parse(message);
       }
-      else if(message === "isUserBanned::error" || message === "isUserBanned::success"){
-        isBanUserSuccessfull = message === "isUserBanned::success";
-        
-        // execute content banTitle after banUser and isUserBanned
-        let fileName = "banTitle";
-        executeScriptFile(fileName);
-      }
-      else if(message === 'banTitle::error'){
-        // banTitle::success will be handled by DOMContentLoadedListener
-        // execute content script to check if banTitle is successfull
-        let fileName = "isTitleBanned";
-        executeScriptFile(fileName);
-      }
+      catch
+      {}
+      let res = incomingObj.res;
+      let op = incomingObj.op;
+      let mode = incomingObj.mode;
+      let target = incomingObj.target;
       
-      else if(message === "isTitleBanned::error" || message === "isTitleBanned::success"){
+      // outgoing values to content script
+      let executeOp = "";
+      let executeMode = "";
+      let executeTarget = "";
+			
+      // update status to track (it should be filtered, because popup messages interferes)
+      if(res && op && mode && target)
+        latestContentScriptInfo = JSON.parse(message); 
+      
+      if(op === "op::action" && mode === "mode::ban" && target === "target::user" && res === "res::fail"){
+        // res::success will be handled by DOMContentLoadedListener
+        executeOp = "op::control";
+        executeMode = "mode::ban";
+        executeTarget = "target::user";
+        executeContentScript(executeOp, executeMode, executeTarget);
+      }
+      else if(op === "op::control" && mode === "mode::ban" && target === "target::user"){
+        isBanUserSuccessfull = res === "res::success";
+        // execute content to ban title after banning user and controlling is user banned
+        executeOp = "op::action";
+        executeMode = "mode::ban";
+        executeTarget = "target::title";
+        executeContentScript(executeOp, executeMode, executeTarget);
+      }
+      else if(op === "op::action" && mode === "mode::ban" && target === "target::title" && res === "res::fail"){
+        // res::success will be handled by DOMContentLoadedListener
+        // execute content script to check if banning the title was successfull
+        executeOp = "op::control";
+        executeMode = "mode::ban";
+        executeTarget = "target::title";
+        executeContentScript(executeOp, executeMode, executeTarget);
+      }
+      else if(op === "op::control" && mode === "mode::ban" && target === "target::title"){
         //all actions have been completed.
         
-        isBanTitleSuccessfull = message === "isTitleBanned::success"; 
+        isBanTitleSuccessfull = res === "res::success"; 
         
         // remove onMessage event as it may get duplicated
         console.log("ContentScriptMessageListener removed.");
@@ -192,13 +230,12 @@ async function pageProcess(url) {
         if(isBanUserSuccessfull && isBanTitleSuccessfull){
           resolve({result:"promise::success", tabID: g_tabId});
         }
-        else{
+        else {
           resolve({result:"promise::fail", tabID: g_tabId});
         }
         
       }
-      
-      else{
+      else {
         console.log("ContentScriptMessageListener:: unhandled msg: " + message);
       }
 
@@ -209,7 +246,7 @@ async function pageProcess(url) {
   });
 }
 
-
+  
 
 /* <---------------------------     UTILS     --------------------------------------> */
 /* <--------------------------------------------------------------------------------> */
@@ -354,21 +391,35 @@ function decodeURIComponentForEksi(url)
 	return decodedUrl;
 }
 
-function executeScriptFile(fileName)
+function executeContentScript(op, mode, target)
 {
-  console.log(fileName + " will be executed");
+  let configText = op + " " + mode + " " + target;
+  console.log("content script will be exed " + configText);
   chrome.scripting.executeScript({
-    target: {tabId: g_tabId, frameIds: [0]}, // frame 0 is the main frame, there may be other frames (ads, google analytics etc)
-    files: ["assets/js/" + fileName + '.js'] }, // this file will be executed
-    ()=>{printExecuteScriptResult(fileName); // callback function
-  });
+      target: {tabId: g_tabId, frameIds: [0]}, // frame 0 is the main frame, there may be other frames (ads, google analytics etc)
+      func: (_op, _mode, _target)=>{
+                  window.configEksiEngelOp = _op;
+                  window.configEksiEngelMode = _mode;
+                  window.configEksiEngelTarget = _target;
+                },
+      args: [op, mode, target]
+    }, // firstly this code will be executed
+    ()=>{
+      chrome.scripting.executeScript({
+        target: {tabId: g_tabId, frameIds: [0]}, // frame 0 is the main frame, there may be other frames (ads, google analytics etc)
+        files: ["assets/js/ban.js"] }, // secondly this file will be executed
+        ()=>{printExecuteScriptResult(configText); // callback function
+      });
+    } // callback function
+  );
+  
 }
 
-function printExecuteScriptResult(fileName)
+function printExecuteScriptResult(configText)
 {
   if(chrome.runtime.lastError) {
-    console.log(fileName + " could not be executed, err: " + chrome.runtime.lastError.message);
+    console.log(configText + " could not be executed, err: " + chrome.runtime.lastError.message);
   } else {
-    console.log(fileName + " has been executed.");
+    console.log(configText + " has been executed.");
   }
 }
