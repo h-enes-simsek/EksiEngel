@@ -5,7 +5,15 @@ console.log("background.js has been started.");
 let g_isProgramActive = false; // track g_isProgramActive info to prevent multiple starts from gui
 let g_earlyStopCommand = false; // early stop command might be recevied from gui to stop program execution
 let g_tabId = -1; // chrome assigns an id for every tab 
-
+let g_counter = 0; // number of times the page is loaded
+let g_latestContentScriptInfo = ""; // JSON Obj, info about latest executed content script
+let g_url = "";
+let g_isTabClosedByUser = false;
+let g_isBanUserSuccessfull = false;
+let g_isBanTitleSuccessfull = false;
+let g_ResolvePageProcess; // resolve function of page process's promise
+let g_rejectPageProcess; // reject function of page process's promise
+    
 // listen popup.js for runtime messages
 chrome.runtime.onMessage.addListener(function popupMessageListener(message, sender, sendResponse) {
   sendResponse({status: 'ok'}); // added to suppress 'message port closed before a response was received' error
@@ -35,6 +43,7 @@ async function startProcess()
     let pageResult;
     for(let i = 0; i < userListArray.length; i++) {
       
+      g_url = userListArray[i];
       pageResult = await pageProcess(userListArray[i]); // navigate to next url
       
       if(pageResult.result === "promise::success"){
@@ -58,16 +67,176 @@ async function startProcess()
   g_isProgramActive = false; // program can be started again from gui  
 }
 
+function PageCloseListener(tabid, removeInfo)
+{
+  if(g_tabId === tabid && !g_isTabClosedByUser)
+  {
+    // this is required because chrome.tabs.onRemoved fired multiple times
+    // each by main page and iframes
+    g_isTabClosedByUser = true;
+    
+    console.log("tab " + tabid + " closed by user");
+    console.log("automatically early stop command was generated to stop the process.")
+    g_earlyStopCommand = true;
+    
+    // last actions should be taken to properly stop process
+    
+    // remove onMessage event as it may get duplicated
+    console.log("ContentScriptMessageListener removed.");
+    chrome.runtime.onMessage.removeListener(ContentScriptMessageListener);
+    
+    // remove tab onUpdate event to prevent duplicated listener
+    console.log("DOMContentLoadedListener removed.");
+    chrome.tabs.onUpdated.removeListener(DOMContentLoadedListener);
+      
+    // resolve Promise after content script has executed
+    g_ResolvePageProcess({result:"promise::fail", tabID: g_tabId});
+    
+  } 
+}
+
+// this function will be called every time any page is updated (when domcontent loaded)
+function DOMContentLoadedListener(details) {
+  
+  // saved values from latest executed content script
+  let res = g_latestContentScriptInfo.res;
+  let op = g_latestContentScriptInfo.op;
+  let mode = g_latestContentScriptInfo.mode;
+  let target = g_latestContentScriptInfo.target;
+  
+  // outgoing values to content script
+  let executeOp = "";
+  let executeMode = "";
+  let executeTarget = "";
+  
+  // filter other page updates by using tab id
+  if(details.tabId === g_tabId && decodeURIComponentForEksi(details.url) === g_url) {
+    g_counter++;
+    console.log("g_counter: " + g_counter + " tab id: "+ details.tabId + " frame id: " + details.frameId + " url: " + details.url);
+    
+    if(g_counter === 1){
+      // execute content script to ban user
+      executeOp = "op::action";
+      executeMode = "mode::ban";
+      executeTarget = "target::user";
+      executeContentScript(executeOp, executeMode, executeTarget);
+    }
+    else if(op === "op::action" && mode === "mode::ban" && target === "target::user" && res === "res::success"){
+      // res::fail will be handled by ContentScriptMessageListener
+      executeOp = "op::control";
+      executeMode = "mode::ban";
+      executeTarget = "target::user";
+      executeContentScript(executeOp, executeMode, executeTarget);
+    }
+    else if(op === "op::action" && mode === "mode::ban" && target === "target::title" && res === "res::success"){
+      // res::fail will be handled by ContentScriptMessageListener
+      executeOp = "op::control";
+      executeMode = "mode::ban";
+      executeTarget = "target::title";
+      executeContentScript(executeOp, executeMode, executeTarget);
+    }
+    else{
+      console.log("DOMContentLoadedListener: unhandled g_latestContentScriptInfo: " + JSON.stringify(g_latestContentScriptInfo));
+    }
+    
+  }
+}
+
+
+// this function will be called every time a content script sends a message
+function ContentScriptMessageListener(message, sender, sendResponse) {
+  sendResponse({status: 'ok'}); // added to suppress 'message port closed before a response was received' error
+  
+  console.log("ContentScriptMessageListener:: incoming msg: " + message);
+  
+  // incoming values from content script
+  let incomingObj;
+  try
+  {
+    incomingObj = JSON.parse(message);
+  }
+  catch
+  {}
+  let res = incomingObj.res;
+  let op = incomingObj.op;
+  let mode = incomingObj.mode;
+  let target = incomingObj.target;
+  
+  // outgoing values to content script
+  let executeOp = "";
+  let executeMode = "";
+  let executeTarget = "";
+  
+  // update status to track (it should be filtered, because popup messages interferes)
+  if(res && op && mode && target)
+    g_latestContentScriptInfo = JSON.parse(message); 
+  
+  if(op === "op::action" && mode === "mode::ban" && target === "target::user" && res === "res::fail"){
+    // res::success will be handled by DOMContentLoadedListener
+    executeOp = "op::control";
+    executeMode = "mode::ban";
+    executeTarget = "target::user";
+    executeContentScript(executeOp, executeMode, executeTarget);
+  }
+  else if(op === "op::control" && mode === "mode::ban" && target === "target::user"){
+    g_isBanUserSuccessfull = res === "res::success";
+    // execute content to ban title after banning user and controlling is user banned
+    executeOp = "op::action";
+    executeMode = "mode::ban";
+    executeTarget = "target::title";
+    executeContentScript(executeOp, executeMode, executeTarget);
+  }
+  else if(op === "op::action" && mode === "mode::ban" && target === "target::title" && res === "res::fail"){
+    // res::success will be handled by DOMContentLoadedListener
+    // execute content script to check if banning the title was successfull
+    executeOp = "op::control";
+    executeMode = "mode::ban";
+    executeTarget = "target::title";
+    executeContentScript(executeOp, executeMode, executeTarget);
+  }
+  else if(op === "op::control" && mode === "mode::ban" && target === "target::title"){
+    //all actions have been completed.
+    
+    g_isBanTitleSuccessfull = res === "res::success"; 
+    
+    // remove onMessage event as it may get duplicated
+    console.log("ContentScriptMessageListener removed.");
+    chrome.runtime.onMessage.removeListener(ContentScriptMessageListener);
+    
+    // remove tab onUpdate event to prevent duplicated listener
+    console.log("DOMContentLoadedListener removed.");
+    chrome.tabs.onUpdated.removeListener(DOMContentLoadedListener);
+    
+    // remove tab close event listener to prevent starting the process 'early stop' caused by usual closed tabs
+    console.log("PageCloseListener removed.");
+    chrome.tabs.onRemoved.removeListener(PageCloseListener);
+      
+    // resolve Promise after content script has executed
+    if(g_isBanUserSuccessfull && g_isBanTitleSuccessfull){
+      g_ResolvePageProcess({result:"promise::success", tabID: g_tabId});
+    }
+    else {
+      g_ResolvePageProcess({result:"promise::fail", tabID: g_tabId});
+    }
+    
+  }
+  else {
+    console.log("ContentScriptMessageListener:: unhandled msg: " + message);
+  }  
+}
+
 async function pageProcess(url) {
   return new Promise(async function(resolve, reject) {
+    g_ResolvePageProcess = resolve;
+    g_rejectPageProcess = reject;
     
     console.log("page processing started for " + url);
     
-    let counter = 0; // number of times the page is loaded
-    let latestContentScriptInfo = ""; // JSON Obj, info about latest executed content script
-    let isBanUserSuccessfull = false;
-    let isBanTitleSuccessfull = false;
-    let isTabClosedByUser = false;
+    g_counter = 0; // reset
+    g_latestContentScriptInfo = ""; // reset
+    g_isBanUserSuccessfull = false;
+    g_isBanTitleSuccessfull = false;
+    g_isTabClosedByUser = false;
     
     // register function to call every time a page is closed (will be called multiple times because of iframes)
     chrome.tabs.onRemoved.addListener(PageCloseListener);
@@ -81,168 +250,6 @@ async function pageProcess(url) {
     
 		await handleTabOperations(url);
 
-    function PageCloseListener(tabid, w)
-    {
-      if(g_tabId === tabid && !isTabClosedByUser)
-      {
-        // this is required because chrome.tabs.onRemoved fired multiple times
-        // each by main page and iframes
-        isTabClosedByUser = true;
-        
-        console.log("tab " + tabid + " closed by user");
-        console.log("automatically early stop command was generated to stop the process.")
-        g_earlyStopCommand = true;
-        
-        // last actions should be taken to properly stop process
-        
-        // remove onMessage event as it may get duplicated
-        console.log("ContentScriptMessageListener removed.");
-        chrome.runtime.onMessage.removeListener(ContentScriptMessageListener);
-        
-        // remove tab onUpdate event to prevent duplicated listener
-        console.log("DOMContentLoadedListener removed.");
-        chrome.tabs.onUpdated.removeListener(DOMContentLoadedListener);
-          
-        // resolve Promise after content script has executed
-        resolve({result:"promise::fail", tabID: g_tabId});
-        
-      } 
-    }
-    
-		// this function will be called every time any page is updated (when domcontent loaded)
-    function DOMContentLoadedListener(details) {
-      
-      
-      // saved values from latest executed content script
-      let res = latestContentScriptInfo.res;
-      let op = latestContentScriptInfo.op;
-      let mode = latestContentScriptInfo.mode;
-      let target = latestContentScriptInfo.target;
-      
-      // outgoing values to content script
-      let executeOp = "";
-      let executeMode = "";
-      let executeTarget = "";
-      
-      // filter other page updates by using tab id
-      if(details.tabId === g_tabId && decodeURIComponentForEksi(details.url) === url) {
-        counter++;
-        console.log("tab id: "+ details.tabId + " counter: " + counter + " frame id: " + details.frameId + " url: " + details.url);
-        
-        if(counter === 1){
-          // execute content script to ban user
-          executeOp = "op::action";
-          executeMode = "mode::ban";
-          executeTarget = "target::user";
-          executeContentScript(executeOp, executeMode, executeTarget);
-        }
-        else if(op === "op::action" && mode === "mode::ban" && target === "target::user" && res === "res::success"){
-          // res::fail will be handled by ContentScriptMessageListener
-          executeOp = "op::control";
-          executeMode = "mode::ban";
-          executeTarget = "target::user";
-          executeContentScript(executeOp, executeMode, executeTarget);
-        }
-        else if(op === "op::action" && mode === "mode::ban" && target === "target::title" && res === "res::success"){
-          // res::fail will be handled by ContentScriptMessageListener
-          executeOp = "op::control";
-          executeMode = "mode::ban";
-          executeTarget = "target::title";
-          executeContentScript(executeOp, executeMode, executeTarget);
-        }
-        else{
-          console.log("DOMContentLoadedListener: unhandled latestContentScriptInfo: " + JSON.stringify(latestContentScriptInfo));
-        }
-        
-      }
-    }
-		
-		
-		// this function will be called every time a content script sends a message
-		function ContentScriptMessageListener(message, sender, sendResponse) {
-      sendResponse({status: 'ok'}); // added to suppress 'message port closed before a response was received' error
-      
-      console.log("ContentScriptMessageListener:: incoming msg: " + message);
-      
-      // incoming values from content script
-      let incomingObj;
-      try
-      {
-        incomingObj = JSON.parse(message);
-      }
-      catch
-      {}
-      let res = incomingObj.res;
-      let op = incomingObj.op;
-      let mode = incomingObj.mode;
-      let target = incomingObj.target;
-      
-      // outgoing values to content script
-      let executeOp = "";
-      let executeMode = "";
-      let executeTarget = "";
-			
-      // update status to track (it should be filtered, because popup messages interferes)
-      if(res && op && mode && target)
-        latestContentScriptInfo = JSON.parse(message); 
-      
-      if(op === "op::action" && mode === "mode::ban" && target === "target::user" && res === "res::fail"){
-        // res::success will be handled by DOMContentLoadedListener
-        executeOp = "op::control";
-        executeMode = "mode::ban";
-        executeTarget = "target::user";
-        executeContentScript(executeOp, executeMode, executeTarget);
-      }
-      else if(op === "op::control" && mode === "mode::ban" && target === "target::user"){
-        isBanUserSuccessfull = res === "res::success";
-        // execute content to ban title after banning user and controlling is user banned
-        executeOp = "op::action";
-        executeMode = "mode::ban";
-        executeTarget = "target::title";
-        executeContentScript(executeOp, executeMode, executeTarget);
-      }
-      else if(op === "op::action" && mode === "mode::ban" && target === "target::title" && res === "res::fail"){
-        // res::success will be handled by DOMContentLoadedListener
-        // execute content script to check if banning the title was successfull
-        executeOp = "op::control";
-        executeMode = "mode::ban";
-        executeTarget = "target::title";
-        executeContentScript(executeOp, executeMode, executeTarget);
-      }
-      else if(op === "op::control" && mode === "mode::ban" && target === "target::title"){
-        //all actions have been completed.
-        
-        isBanTitleSuccessfull = res === "res::success"; 
-        
-        // remove onMessage event as it may get duplicated
-        console.log("ContentScriptMessageListener removed.");
-        chrome.runtime.onMessage.removeListener(ContentScriptMessageListener);
-        
-        // remove tab onUpdate event to prevent duplicated listener
-        console.log("DOMContentLoadedListener removed.");
-        chrome.tabs.onUpdated.removeListener(DOMContentLoadedListener);
-        
-        // remove tab close event listener to prevent starting the process 'early stop' caused by usual closed tabs
-        console.log("PageCloseListener removed.");
-        chrome.tabs.onRemoved.removeListener(PageCloseListener);
-          
-        // resolve Promise after content script has executed
-        if(isBanUserSuccessfull && isBanTitleSuccessfull){
-          resolve({result:"promise::success", tabID: g_tabId});
-        }
-        else {
-          resolve({result:"promise::fail", tabID: g_tabId});
-        }
-        
-      }
-      else {
-        console.log("ContentScriptMessageListener:: unhandled msg: " + message);
-      }
-
-      
-    }
-    
-    
   });
 }
 
