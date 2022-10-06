@@ -56,6 +56,14 @@ manifestteki semsiye.png'nin web accessable resource path'i düzenlendi.
 listeden yazar engelle sayfası options page yerine normal sayfaya çevrildi.
 
 SONRAKİ GÜNCELLEMEDE YAPILMASI PLANLANANLAR
+kullanıcıların benzersiz idsi alınmalı
+logger mekanizması geliştirilmeli
+toplanan veriler (loglar) servera gönderilmeli
+server yazılımı yazılmalı
+server ile haberleşme şifreli olmalı
+[belki]engel nedeni seçilebilmeli
+istatiki sonuçlar görüntülenebilmeli
+[belki]istatistiki verilere göre engel yapılabilmeli
 10000 yazarı engellediği görüldü (5000 yazar ekşi limiti) readme sayfasına eklenebilir.
 çok uzun yazarlı entrylerde liste scrap edilirken bilgisayar ya da internet yavaşsa timeout olabiliyor şu an 15 saniye limiti var 
 github sayfasını ekle(projenin)
