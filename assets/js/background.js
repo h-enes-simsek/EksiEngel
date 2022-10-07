@@ -19,7 +19,7 @@ let g_clientName = "";
 // listen popup.js for runtime messages
 chrome.runtime.onMessage.addListener(function popupMessageListener(message, sender, sendResponse) {
   sendResponse({status: 'ok'}); // added to suppress 'message port closed before a response was received' error
-  if((message === 'scrapAuthors::start' || message === 'authorListPage::start') && !g_isProgramActive)
+  if((message === 'scrapeAuthors::start' || message === 'authorListPage::start') && !g_isProgramActive)
   { 
     g_isProgramActive = true; // this will prevent multiple start from gui
     console.log("Program has been started.");

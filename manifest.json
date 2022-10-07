@@ -46,7 +46,7 @@
 										"assets/js/ban.js",
 										"assets/js/popup.js", 
 										"assets/js/authorListPage.js",
-										"assets/js/scrapAuthors.js",
+										"assets/js/scrapeAuthors.js",
 										"assets/js/scrapeClientName.js"],
       "matches": ["http://*/*", "https://*/*"]
     }

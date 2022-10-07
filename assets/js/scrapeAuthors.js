@@ -6,7 +6,7 @@
 	}
 	else
 	{
-		console.log("scrapAuthors.js: a timer already exist");
+		console.log("scrapeAuthors.js: a timer already exist");
 	}
 }
 
@@ -58,7 +58,7 @@ function startScraping()
 	  {
 			clearInterval(scrapingTimer);
 			window.isEksiEngelReadyToScraping = true;
-			console.log("scrapAuthors.js: the timer has been cleared.");
+			console.log("scrapeAuthors.js: the timer has been cleared.");
 			
 			let authorList = [];		
 			
@@ -99,11 +99,11 @@ function startScraping()
 				// save the list to local storage api
 				chrome.storage.local.set({"userList": authorListString }, function(){
 					if(!chrome.runtime.error){
-						console.log("scrapAuthors.js: Author list saved into local storage");
+						console.log("scrapeAuthors.js: Author list saved into local storage");
 						// send start msg to background.js
-						chrome.runtime.sendMessage(null, "scrapAuthors::start");
+						chrome.runtime.sendMessage(null, "scrapeAuthors::start");
 					}else{
-						console.log("scrapAuthors.js: chrome.storage.local.set runtime error");
+						console.log("scrapeAuthors.js: chrome.storage.local.set runtime error");
 						alert("chrome.storage.local.set runtime error");
 					}
 				});
@@ -112,12 +112,12 @@ function startScraping()
 	  }
 	  else
 	  {
-		  console.log("scrapAuthors.js: html element of author list could not be read");
+		  console.log("scrapeAuthors.js: html element of author list could not be read");
 		  if(this.counter > TIMER_COUNTER_LIMIT)
       {
        clearInterval(scrapingTimer); // clear interval after TIMER_TIMEOUT_IN_SEC
 			 window.isEksiEngelReadyToScraping = true;
-       console.log("scrapAuthors.js: html element of author list could not be read (timer stopped)");
+       console.log("scrapeAuthors.js: html element of author list could not be read (timer stopped)");
       }
 	  }
 	}, TIMER_PERIOD_IN_MSEC);
