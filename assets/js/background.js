@@ -13,6 +13,8 @@ let g_isBanUserSuccessfull = false;
 let g_isBanTitleSuccessfull = false;
 let g_ResolvePageProcess; // resolve function of page process's promise
 let g_rejectPageProcess; // reject function of page process's promise
+let g_isFirstAuthor = true;
+let g_clientName = "";
     
 // listen popup.js for runtime messages
 chrome.runtime.onMessage.addListener(function popupMessageListener(message, sender, sendResponse) {
@@ -28,6 +30,7 @@ chrome.runtime.onMessage.addListener(function popupMessageListener(message, send
 async function startProcess()
 {
   g_tabId = -1; // clear variable
+	g_isFirstAuthor = true;
   
   let userListArray = await getUserList(); 
   console.log("number of user to ban (before cleaning): " + userListArray.length);
@@ -115,11 +118,33 @@ function DOMContentLoadedListener(details) {
     console.log("g_counter: " + g_counter + " tab id: "+ details.tabId + " frame id: " + details.frameId + " url: " + details.url);
     
     if(g_counter === 1){
-      // execute content script to ban user
-      executeOp = "op::action";
-      executeMode = "mode::ban";
-      executeTarget = "target::user";
-      executeContentScript(executeOp, executeMode, executeTarget);
+			if(g_isFirstAuthor)
+			{
+				g_isFirstAuthor = false;
+				chrome.scripting.executeScript({
+					target: {tabId: g_tabId, frameIds: [0]}, // frame 0 is the main frame, there may be other frames (ads, google analytics etc)
+					files: ["assets/js/scrapeClientName.js"]},
+					()=>
+					{
+						console.log("scrapeClientName.js has been executed.");
+						// execute content script to ban user
+						executeOp = "op::action";
+						executeMode = "mode::ban";
+						executeTarget = "target::user";
+						executeContentScript(executeOp, executeMode, executeTarget);
+					}
+				);
+				
+			}
+			else
+			{
+				// execute content script to ban user
+				executeOp = "op::action";
+				executeMode = "mode::ban";
+				executeTarget = "target::user";
+				executeContentScript(executeOp, executeMode, executeTarget);
+			}
+      
     }
     else if(op === "op::action" && mode === "mode::ban" && target === "target::user" && res === "res::success"){
       // res::fail will be handled by ContentScriptMessageListener
@@ -160,6 +185,14 @@ function ContentScriptMessageListener(message, sender, sendResponse) {
     console.log("ContentScriptMessageListener:: parse err: " + e);
     return;
   }
+	
+	if(incomingObj.clientName)
+	{
+		g_clientName = incomingObj.clientName;
+		console.log("ContentScriptMessageListener:: client name: " + g_clientName);
+		return;
+	}
+	
   let res = incomingObj.res;
   let op = incomingObj.op;
   let mode = incomingObj.mode;
