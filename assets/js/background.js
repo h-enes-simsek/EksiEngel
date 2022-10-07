@@ -30,13 +30,13 @@ async function startProcess()
   g_tabId = -1; // clear variable
   
   let userListArray = await getUserList(); 
-	console.log("number of user to ban (before cleaning): " + userListArray.length);
+  console.log("number of user to ban (before cleaning): " + userListArray.length);
   cleanUserList(userListArray);
   console.log("number of user to ban (after cleaning): " + userListArray.length);
   
   if(userListArray.length == 0){
     makeNotification("Eklenti ayarlarından engellenecek yazarları ekleyin.");
-		console.log("Program has been finished (getUserList function failed)");
+    console.log("Program has been finished (getUserList function failed)");
   }
   else{
     let successfullBans = 0;
@@ -52,7 +52,7 @@ async function startProcess()
       } else {
         console.log("page result: fail (" + userListArray[i] +")");
       }
-			
+      
       // early stop mechanism
       if(g_earlyStopCommand) {
         g_earlyStopCommand = false; // clear to reuse this variable
@@ -62,7 +62,7 @@ async function startProcess()
 
     makeNotification(userListArray.length + ' kisilik listedeki ' + successfullBans + ' kisi engellendi.');
     closeLastTab(pageResult.tabID);   
-		console.log("Program has been finished (banned:" + successfullBans + ", total:" + userListArray.length + ")");		
+    console.log("Program has been finished (banned:" + successfullBans + ", total:" + userListArray.length + ")");    
   }
   g_isProgramActive = false; // program can be started again from gui  
 }
@@ -155,8 +155,11 @@ function ContentScriptMessageListener(message, sender, sendResponse) {
   {
     incomingObj = JSON.parse(message);
   }
-  catch
-  {}
+  catch(e)
+  {
+    console.log("ContentScriptMessageListener:: parse err: " + e);
+    return;
+  }
   let res = incomingObj.res;
   let op = incomingObj.op;
   let mode = incomingObj.mode;
@@ -240,15 +243,15 @@ async function pageProcess(url) {
     
     // register function to call every time a page is closed (will be called multiple times because of iframes)
     chrome.tabs.onRemoved.addListener(PageCloseListener);
-		
-		// register function to call every time the page is updated
+    
+    // register function to call every time the page is updated
     // chrome.tabs.onUpdated.addListener(DOMContentLoadedListener);
-		chrome.webNavigation.onDOMContentLoaded.addListener(DOMContentLoadedListener)
-		
-		// register function to call every time a content script sends a message
+    chrome.webNavigation.onDOMContentLoaded.addListener(DOMContentLoadedListener)
+    
+    // register function to call every time a content script sends a message
     chrome.runtime.onMessage.addListener(ContentScriptMessageListener);
     
-		await handleTabOperations(url);
+    await handleTabOperations(url);
 
   });
 }
@@ -261,26 +264,26 @@ async function pageProcess(url) {
 
 async function handleTabOperations(url)
 {
-		if(g_tabId === -1){
-			// create new tab when program started
-			g_tabId = await createNewTab(url);
-			return 0;
+    if(g_tabId === -1){
+      // create new tab when program started
+      g_tabId = await createNewTab(url);
+      return 0;
     }
     else{
       chrome.tabs.query({}, async function(tabs) {
         
-				for (let tab of tabs) {
+        for (let tab of tabs) {
           if(tab.id == g_tabId){
-						// the tab that was opened by this program exist, redirect the tab to a new url
+            // the tab that was opened by this program exist, redirect the tab to a new url
             await redirectNewURL(url, g_tabId);
-						return 0;
+            return 0;
           }
         }
-				
-				// the tab that was opened by this program not exist (possibly closed by user), create a new tabID
-				console.log("previous tab is closed, so new tab will be opened.");
-				g_tabId = await createNewTab(url);
-				return 0;
+        
+        // the tab that was opened by this program not exist (possibly closed by user), create a new tabID
+        console.log("previous tab is closed, so new tab will be opened.");
+        g_tabId = await createNewTab(url);
+        return 0;
       }); 
     }
 }
@@ -290,10 +293,10 @@ async function handleTabOperations(url)
 async function createNewTab(url)
 {
   return new Promise((resolve, reject) => {
-		// active:false means, it will not be focused
-		chrome.tabs.create({url: url, active: false}, function(newTab) {
-			resolve(newTab.id);
-		});
+    // active:false means, it will not be focused
+    chrome.tabs.create({url: url, active: false}, function(newTab) {
+      resolve(newTab.id);
+    });
   });
 }
 
@@ -302,10 +305,10 @@ async function createNewTab(url)
 async function redirectNewURL(url, tab_id)
 {
   return new Promise((resolve, reject) => {
-		// active:false means, it will not be focused
-		chrome.tabs.update(tab_id, {url: url, active: false}, function(newTab) {
-			resolve();
-		});
+    // active:false means, it will not be focused
+    chrome.tabs.update(tab_id, {url: url, active: false}, function(newTab) {
+      resolve();
+    });
   });
 }
 
@@ -328,17 +331,17 @@ function cleanUserList(arr)
 {
   for(let i = arr.length - 1; i >= 0; i--) 
   {
-		// if empty, delete it
-		if(arr[i] == ''){
-			arr.splice(i, 1); // remove ith element
-		}
-		else{
-			// replace every whitespace with -
-			arr[i] = arr[i].replace(/ /gi, "-");
-			
-			// convert nickname to the url
-			arr[i] = "https://eksisozluk.com/biri/" + arr[i];
-		}
+    // if empty, delete it
+    if(arr[i] == ''){
+      arr.splice(i, 1); // remove ith element
+    }
+    else{
+      // replace every whitespace with -
+      arr[i] = arr[i].replace(/ /gi, "-");
+      
+      // convert nickname to the url
+      arr[i] = "https://eksisozluk.com/biri/" + arr[i];
+    }
   }
 }
 
@@ -392,10 +395,10 @@ async function getUserList()
 // output: abc-def!gh
 function decodeURIComponentForEksi(url)
 {
-	let decodedUrl = decodeURIComponent(url);
-	// replace every whitespace with - (eksisozluk.com convention)
-	decodedUrl.replace(/ /gi, "-");
-	return decodedUrl;
+  let decodedUrl = decodeURIComponent(url);
+  // replace every whitespace with - (eksisozluk.com convention)
+  decodedUrl.replace(/ /gi, "-");
+  return decodedUrl;
 }
 
 function executeContentScript(op, mode, target)
