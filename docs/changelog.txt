@@ -52,11 +52,14 @@ js dosyalarının isimleri ve içerikleri refactor edildi.
 
 v1.3
 klasör yapısı düzenlendi.
+background scripti modüler hale getirildi.
 manifestteki semsiye.png'nin web accessable resource path'i düzenlendi.
 listeden yazar engelle sayfası options page yerine normal sayfaya çevrildi.
+kullanıcıların ekşi nickleri scrape edildi.
+bug fix: url yönlendirmenin bazen çalışmaması durumu nedeniyle timer mekanizması eklendi.
+test yazılımı(geliştiriliyor.)
 
 SONRAKİ GÜNCELLEMEDE YAPILMASI PLANLANANLAR
-kullanıcıların benzersiz idsi alınmalı
 logger mekanizması geliştirilmeli
 toplanan veriler (loglar) servera gönderilmeli
 server yazılımı yazılmalı
