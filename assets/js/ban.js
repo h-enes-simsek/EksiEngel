@@ -1,6 +1,6 @@
-// this script is to ban/undoban a user/title
+// this script is to ban/undoban a user/user's titles
 {
-  // op -> op::action   or op::control
+  // op        -> op::action   or op::control
   // mode      -> mode::ban    or mode::undoban
   // target    -> target::user or target::title
   // these config parameters was previously injected by background script
@@ -60,6 +60,6 @@
   console.log("html inner element(targ): " + htmlElementText);
   console.log(responseObjText);
   
-  if(op === "op::action")
+  if(op === "op::action" && responseObj.res === "res::success")
     htmlElement.click();
 }
