@@ -57,9 +57,10 @@ manifestteki semsiye.png'nin web accessable resource path'i düzenlendi.
 listeden yazar engelle sayfası options page yerine normal sayfaya çevrildi.
 kullanıcıların ekşi nickleri scrape edildi.
 bug fix: url yönlendirmenin bazen çalışmaması durumu nedeniyle timer mekanizması eklendi.
-test yazılımı(geliştiriliyor.)
+bug fix: execute script'in çalışmaması durumu handle edildi artık hata üretmiyor ama loglanıyor.
 
 SONRAKİ GÜNCELLEMEDE YAPILMASI PLANLANANLAR
+takip edilen yazarlar engellensin mi ayarı eklenebilir
 logger mekanizması geliştirilmeli
 toplanan veriler (loglar) servera gönderilmeli
 server yazılımı yazılmalı
@@ -69,9 +70,9 @@ istatiki sonuçlar görüntülenebilmeli
 [belki]istatistiki verilere göre engel yapılabilmeli
 10000 yazarı engellediği görüldü (5000 yazar ekşi limiti) readme sayfasına eklenebilir.
 çok uzun yazarlı entrylerde liste scrap edilirken bilgisayar ya da internet yavaşsa timeout olabiliyor şu an 15 saniye limiti var 
-github sayfasını ekle(projenin)
 
 BİR ARA YAPILMASI PLANLANANLAR
+test yazılımı(geliştiriliyor.)
 firefox desteği (hiçbir şey düzgün çalışmıyor, manifest v3 desteği bile tam gelmemiş)
 listeneden engelleme için ekşi hesabına girilip girilmediği kontrol edilmeli
 log mekanizması daha iyi hale getirilmeli

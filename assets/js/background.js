@@ -2,12 +2,13 @@
 console.log("bg: init");
 
 try {
-  importScripts("redirectHandler.js", "utils.js");
+  importScripts("redirectHandler.js", "utils.js", "log.js");
 } catch (error) {
   console.error(error);
 }
 
 let redirectHandler = new RedirectHandler();
+let log = new Log();
 
 let g_isProgramActive = false;        // to prevent multiple starts from gui
 let g_earlyStopCommand = false;       // early stop command might be recevied from gui to stop program execution
