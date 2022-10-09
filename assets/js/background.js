@@ -1,5 +1,5 @@
 'use strict';
-console.log("bg: init.");
+console.log("bg: init");
 
 try {
   importScripts("redirectHandler.js", "utils.js");
@@ -24,22 +24,26 @@ let g_rejectPageProcess;              // function, reject function of page proce
 let g_isFirstAuthor = true;           // is the program tries to ban the first user in list
 let g_clientName = "";                // client's author name
     
-// listen popup.js for runtime messages
-chrome.runtime.onMessage.addListener(function popupMessageListener(message, sender, sendResponse) {
+chrome.runtime.onMessage.addListener(async function popupMessageListener(message, sender, sendResponse) {
   sendResponse({status: 'ok'}); // added to suppress 'message port closed before a response was received' error
-  if((message === 'scrapeAuthors::start' || message === 'authorListPage::start') && !g_isProgramActive)
+  if((message === 'scrapeAuthors::start' || message === 'authorListPage::start'))
   { 
-    g_isProgramActive = true; // this will prevent multiple start from gui
-    console.log("Program has been started.");
-    startProcess();
+    if(g_isProgramActive)
+    {
+      console.log("bg.js: another start attempt from " + message);
+    }
+    else 
+    {
+      g_isProgramActive = true; // prevent multiple starts
+      await startProcess();
+      g_isProgramActive = false; // program can be started again
+    }
   } 
 });
 
 async function startProcess()
 {
-  RedirectHandler.prepareHandler();
-  g_tabId = -1; // clear variable
-	g_isFirstAuthor = true;
+  console.log("Program has been started.");
   
   let userListArray = await getUserList(); 
   console.log("number of user to ban (before cleaning): " + userListArray.length);
@@ -51,14 +55,19 @@ async function startProcess()
     console.log("Program has been finished (getUserList function failed)");
   }
   else{
-    
+    // register function to call every time a page is closed
     chrome.tabs.onRemoved.addListener(PageCloseListener);
+    
     // register function to call every time the page is updated
-    // chrome.tabs.onUpdated.addListener(DOMContentLoadedListener);
+    // Note: chrome.tabs.onUpdated doesn't work properly
     chrome.webNavigation.onDOMContentLoaded.addListener(DOMContentLoadedListener)
     
     // register function to call every time a content script sends a message
     chrome.runtime.onMessage.addListener(ContentScriptMessageListener);
+    
+    RedirectHandler.prepareHandler();
+    g_tabId = -1; // clear variable
+    g_isFirstAuthor = true;
     
     let successfullBans = 0;
     let pageResult;
@@ -81,11 +90,9 @@ async function startProcess()
       }
     }
     
-    // remove onMessage event as it may get duplicated
     console.log("ContentScriptMessageListener removed.");
     chrome.runtime.onMessage.removeListener(ContentScriptMessageListener);
     
-    // remove tab onUpdate event to prevent duplicated listener
     console.log("DOMContentLoadedListener removed.");
     chrome.tabs.onUpdated.removeListener(DOMContentLoadedListener);
     
@@ -93,12 +100,13 @@ async function startProcess()
     chrome.tabs.onRemoved.removeListener(PageCloseListener);
 
     makeNotification(userListArray.length + ' kisilik listedeki ' + successfullBans + ' kisi engellendi.');
-    closeLastTab(pageResult.tabID);   
-    console.log("Program has been finished (banned:" + successfullBans + ", total:" + userListArray.length + ")");    
-  }
-  g_isProgramActive = false; // program can be started again from gui  
+    console.log("Program has been finished (banned:" + successfullBans + ", total:" + userListArray.length + ")");
+    
+    await closeLastTab(pageResult.tabID);   
+  }  
 }
 
+// this function will be called every time any page is closed (iframes will call as well)
 function PageCloseListener(tabid, removeInfo)
 {
   if(g_tabId === tabid && !g_isTabClosedByUser)
@@ -113,7 +121,6 @@ function PageCloseListener(tabid, removeInfo)
       
     // resolve Promise after content script has executed
     g_ResolvePageProcess({result:"promise::fail", tabID: g_tabId});
-    
   } 
 }
 
@@ -286,34 +293,61 @@ async function pageProcess(url) {
   });
 }
 
-function executeContentScript(op, mode, target)
+async function executeContentScript(op, mode, target)
 {
-  let configText = op + " " + mode + " " + target;
-  console.log("content script will be exed " + configText);
-  chrome.scripting.executeScript({
-      target: {tabId: g_tabId, frameIds: [0]}, // frame 0 is the main frame, there may be other frames (ads, google analytics etc)
-      func: (_op, _mode, _target)=>{
-                  window.configEksiEngelOp = _op;
-                  window.configEksiEngelMode = _mode;
-                  window.configEksiEngelTarget = _target;
-                },
-      args: [op, mode, target]
-    }, // firstly this code will be executed
-    ()=>{
-      chrome.scripting.executeScript({
-        target: {tabId: g_tabId, frameIds: [0]}, // frame 0 is the main frame, there may be other frames (ads, google analytics etc)
-        files: ["assets/js/ban.js"] }, // secondly this file will be executed
-        ()=>{printExecuteScriptResult(configText); // callback function
-      });
-    } // callback function
-  );
-}
-
-function printExecuteScriptResult(configText)
-{
-  if(chrome.runtime.lastError) {
-    console.log(configText + " could not be executed, err: " + chrome.runtime.lastError.message);
-  } else {
-    console.log(configText + " has been executed.");
-  }
+  return new Promise(async (resolve, reject) => {
+    let configText = op + " " + mode + " " + target;
+    console.log("content script will be exed " + configText);
+    
+    let isTabExist = await isTargetTabExist(g_tabId);
+    if(!isTabExist)
+    {
+      console.log("content script could not be executed. target tab is not exist. tab: " + g_tabId + " content: " + configText);
+      return resolve(false);
+    }
+    
+    // frame 0 is the main frame, there may be other frames (ads, google analytics etc)
+    chrome.scripting.executeScript(
+      {
+        // firstly this code will be executed
+        target: {tabId: g_tabId, frameIds: [0]}, 
+        func: (_op, _mode, _target)=>
+        {
+          window.configEksiEngelOp = _op;
+          window.configEksiEngelMode = _mode;
+          window.configEksiEngelTarget = _target;
+        },
+        args: [op, mode, target]
+      }, 
+      ()=>
+      {
+        if(chrome.runtime.lastError) 
+        {
+          console.log("content script could not be executed(part1), content: " + configText + " err: " + chrome.runtime.lastError.message);
+          return resolve(false); // parent function will continue executing
+        }
+        
+        // secondly this file will be executed
+        chrome.scripting.executeScript(
+          {
+            target: {tabId: g_tabId, frameIds: [0]},
+            files: ["assets/js/ban.js"]
+          }, 
+          ()=>
+          {
+            if(chrome.runtime.lastError) 
+            {
+              console.log("content script could not be executed(part2), content: " + configText + " err: " + chrome.runtime.lastError.message);
+              return resolve(false); // parent functions will continue executing
+            } 
+            else 
+            {
+              console.log("content script has been executed, content: " + configText);
+              return resolve(true); // parent functions will continue executing
+            }
+          }
+        );
+      }
+    );
+  });
 }

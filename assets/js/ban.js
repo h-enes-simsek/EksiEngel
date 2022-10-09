@@ -56,8 +56,11 @@
   
   let responseObjText = JSON.stringify(responseObj);
   chrome.runtime.sendMessage(null, responseObjText); // send message back to background script
-  console.log("html inner element(org): " + htmlElement.innerHTML);
-  console.log("html inner element(targ): " + htmlElementText);
+  if(htmlElement != null)
+    console.log("html inner element is: " + htmlElement.innerHTML);
+  else
+    console.log("html inner element is: " + "null");
+  console.log("html inner element should be: " + htmlElementText);
   console.log(responseObjText);
   
   if(op === "op::action" && responseObj.res === "res::success")

@@ -31,22 +31,33 @@ function cleanUserList(arr)
   }
 }
 
-function closeLastTab(target_tab_id)
+async function closeLastTab(tabid)
+{ 
+  let isTabExist = await isTargetTabExist(tabid);
+  if(isTabExist)
+  {
+    console.log("last tab will be closed");
+    chrome.tabs.remove(tab.id);
+  }
+  else
+  {
+    console.log("Last tab could not be closed. (may be already closed)");
+  }
+}
+
+async function isTargetTabExist(tabid)
 {
-  let isTabExist = false; // somehow last tab could be closed already
-  chrome.tabs.query({}, function(tabs) {
-    // access all the open tabs and compare
-    for (let tab of tabs) {
-      if(tab.id == target_tab_id){
-        isTabExist = true;
-        console.log("last tab will be closed");
-        chrome.tabs.remove(tab.id); // close last tab
+  return new Promise((resolve, reject) => {
+    chrome.tabs.query({}, function(tabs) {
+      // access all the open tabs and compare
+      for (let tab of tabs) {
+        if(tab.id == tabid){
+          return resolve(true);
+        }
       }
-    }
-    if(!isTabExist){
-      console.log("Last tab could not be closed. (may be already closed)");
-    }
-  }); 
+      return resolve(false);
+    }); 
+  });
 }
 
 // get userList from storage api
