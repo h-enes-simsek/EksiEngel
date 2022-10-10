@@ -37,7 +37,7 @@ async function closeLastTab(tabid)
   if(isTabExist)
   {
     console.log("last tab will be closed");
-    chrome.tabs.remove(tab.id);
+    chrome.tabs.remove(tabid);
   }
   else
   {

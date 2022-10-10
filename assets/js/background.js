@@ -144,7 +144,6 @@ function DOMContentLoadedListener(details) {
     let executeMode = "";
     let executeTarget = "";
     
-    
     if(g_counter === 1){
       RedirectHandler.stopRedirectTimer();
 			if(g_isFirstAuthor)
@@ -163,7 +162,6 @@ function DOMContentLoadedListener(details) {
 						executeContentScript(executeOp, executeMode, executeTarget);
 					}
 				);
-				
 			}
 			else
 			{
@@ -173,7 +171,6 @@ function DOMContentLoadedListener(details) {
 				executeTarget = "target::user";
 				executeContentScript(executeOp, executeMode, executeTarget);
 			}
-      
     }
     else if(op === "op::action" && mode === "mode::ban" && target === "target::user" && res === "res::success"){
       // res::fail will be handled by ContentScriptMessageListener
@@ -192,7 +189,6 @@ function DOMContentLoadedListener(details) {
     else{
       console.log("DOMContentLoadedListener: unhandled g_latestContentScriptInfo: " + JSON.stringify(g_latestContentScriptInfo));
     }
-    
   }
 }
 
