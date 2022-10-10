@@ -1,14 +1,23 @@
 'use strict';
-console.log("bg: init");
 
 try {
-  importScripts("redirectHandler.js", "utils.js", "log.js");
+	// log.js will be imported first, so others can use logger
+  importScripts("log.js");
 } catch (error) {
   console.error(error);
 }
 
-let redirectHandler = new RedirectHandler();
 let log = new Log();
+log.setlevel = Log.Levels.INFO;
+log.info("bg: init");
+
+try {
+	importScripts("redirectHandler.js", "utils.js");
+} catch (error) {
+	console.error(error);
+}
+
+let redirectHandler = new RedirectHandler();
 
 let g_isProgramActive = false;        // to prevent multiple starts from gui
 let g_earlyStopCommand = false;       // early stop command might be recevied from gui to stop program execution
@@ -31,7 +40,7 @@ chrome.runtime.onMessage.addListener(async function popupMessageListener(message
   { 
     if(g_isProgramActive)
     {
-      console.log("bg.js: another start attempt from " + message);
+      log.info("bg.js: another start attempt from " + message);
     }
     else 
     {
@@ -44,16 +53,16 @@ chrome.runtime.onMessage.addListener(async function popupMessageListener(message
 
 async function startProcess()
 {
-  console.log("Program has been started.");
+  log.info("Program has been started.");
   
   let userListArray = await getUserList(); 
-  console.log("number of user to ban (before cleaning): " + userListArray.length);
+  log.info("number of user to ban (before cleaning): " + userListArray.length);
   cleanUserList(userListArray);
-  console.log("number of user to ban (after cleaning): " + userListArray.length);
+  log.useful("number of user to ban (after cleaning): " + userListArray.length);
   
   if(userListArray.length == 0){
     makeNotification("Eklenti ayarlarından engellenecek yazarları ekleyin.");
-    console.log("Program has been finished (getUserList function failed)");
+    log.err("Program has been finished (getUserList function failed)");
   }
   else{
     // register function to call every time a page is closed
@@ -79,9 +88,9 @@ async function startProcess()
       
       if(pageResult.result === "promise::success"){
         successfullBans++;
-        console.log("page result: success (" + userListArray[i] +")");
+        log.info("page result: success (" + userListArray[i] +")");
       } else {
-        console.log("page result: fail (" + userListArray[i] +")");
+        log.info("page result: fail (" + userListArray[i] +")");
       }
       
       // early stop mechanism
@@ -91,19 +100,28 @@ async function startProcess()
       }
     }
     
-    console.log("ContentScriptMessageListener removed.");
+    log.info("ContentScriptMessageListener removed.");
     chrome.runtime.onMessage.removeListener(ContentScriptMessageListener);
     
-    console.log("DOMContentLoadedListener removed.");
+    log.info("DOMContentLoadedListener removed.");
     chrome.tabs.onUpdated.removeListener(DOMContentLoadedListener);
     
-    console.log("PageCloseListener removed.");
+    log.info("PageCloseListener removed.");
     chrome.tabs.onRemoved.removeListener(PageCloseListener);
 
     makeNotification(userListArray.length + ' kisilik listedeki ' + successfullBans + ' kisi engellendi.');
-    console.log("Program has been finished (banned:" + successfullBans + ", total:" + userListArray.length + ")");
+    log.useful("Program has been finished (banned:" + successfullBans + ", total:" + userListArray.length + ")");
     
-    await closeLastTab(pageResult.tabID);   
+    await closeLastTab(pageResult.tabID);
+
+		let logArrayInfo = log.getData(Log.Levels.INFO);		
+		let logArrayWarn = log.getData(Log.Levels.WARN);		
+		let logArrayErr = log.getData(Log.Levels.ERR);		
+		let logArrayUseful = log.getData(Log.Levels.USEFUL);		
+		console.log(logArrayInfo);
+		console.log(logArrayWarn);
+		console.log(logArrayErr);
+		console.log(logArrayUseful);
   }  
 }
 
@@ -116,8 +134,8 @@ function PageCloseListener(tabid, removeInfo)
     // each by main page and iframes
     g_isTabClosedByUser = true;
     
-    console.log("tab " + tabid + " closed by user");
-    console.log("automatically early stop command was generated to stop the process.")
+    log.info("tab " + tabid + " closed by user");
+    log.info("automatically early stop command was generated to stop the process.")
     g_earlyStopCommand = true;
       
     // resolve Promise after content script has executed
@@ -131,7 +149,7 @@ function DOMContentLoadedListener(details) {
   // filter other page updates by using tab id
   if(details.tabId === g_tabId && decodeURIComponentForEksi(details.url) === g_url) {
     g_counter++;
-    console.log("g_counter: " + g_counter + " tab id: "+ details.tabId + " frame id: " + details.frameId + " url: " + details.url);
+    log.info("g_counter: " + g_counter + " tab id: "+ details.tabId + " frame id: " + details.frameId + " url: " + details.url);
     
     // saved values from latest executed content script
     let res = g_latestContentScriptInfo.res;
@@ -154,7 +172,7 @@ function DOMContentLoadedListener(details) {
 					files: ["assets/js/scrapeClientName.js"]},
 					()=>
 					{
-						console.log("scrapeClientName.js has been executed.");
+						log.info("scrapeClientName.js has been executed.");
 						// execute content script to ban user
 						executeOp = "op::action";
 						executeMode = "mode::ban";
@@ -187,7 +205,7 @@ function DOMContentLoadedListener(details) {
       executeContentScript(executeOp, executeMode, executeTarget);
     }
     else{
-      console.log("DOMContentLoadedListener: unhandled g_latestContentScriptInfo: " + JSON.stringify(g_latestContentScriptInfo));
+      log.info("DOMContentLoadedListener: unhandled g_latestContentScriptInfo: " + JSON.stringify(g_latestContentScriptInfo));
     }
   }
 }
@@ -196,7 +214,7 @@ function DOMContentLoadedListener(details) {
 function ContentScriptMessageListener(message, sender, sendResponse) {
   sendResponse({status: 'ok'}); // added to suppress 'message port closed before a response was received' error
   
-  console.log("ContentScriptMessageListener:: incoming msg: " + message);
+  //log.info("ContentScriptMessageListener:: incoming msg: " + message);
   
   // incoming values from content script
   let incomingObj;
@@ -206,14 +224,14 @@ function ContentScriptMessageListener(message, sender, sendResponse) {
   }
   catch(e)
   {
-    console.log("ContentScriptMessageListener:: parse err: " + e);
+    log.info("ContentScriptMessageListener:: parse err: " + e);
     return;
   }
 	
 	if(incomingObj.clientName)
 	{
 		g_clientName = incomingObj.clientName;
-		console.log("ContentScriptMessageListener:: client name: " + g_clientName);
+		log.useful("ContentScriptMessageListener:: client name: " + g_clientName);
 		return;
 	}
 	
@@ -269,7 +287,7 @@ function ContentScriptMessageListener(message, sender, sendResponse) {
     
   }
   else {
-    console.log("ContentScriptMessageListener:: unhandled msg: " + message);
+    log.info("ContentScriptMessageListener:: unhandled msg: " + message);
   }  
 }
 
@@ -278,7 +296,7 @@ async function pageProcess(url) {
     g_ResolvePageProcess = resolve;
     g_rejectPageProcess = reject;
     
-    console.log("page processing started for " + url);
+    log.info("page processing started for " + url);
     
     g_counter = 0; // reset
     g_latestContentScriptInfo = ""; // reset
@@ -294,12 +312,12 @@ async function executeContentScript(op, mode, target)
 {
   return new Promise(async (resolve, reject) => {
     let configText = op + " " + mode + " " + target;
-    console.log("content script will be exed " + configText);
+    log.info("content script will be exed " + configText);
     
     let isTabExist = await isTargetTabExist(g_tabId);
     if(!isTabExist)
     {
-      console.log("content script could not be executed. target tab is not exist. tab: " + g_tabId + " content: " + configText);
+      log.err("content script could not be executed. target tab is not exist. tab: " + g_tabId + " content: " + configText);
       return resolve(false);
     }
     
@@ -320,7 +338,7 @@ async function executeContentScript(op, mode, target)
       {
         if(chrome.runtime.lastError) 
         {
-          console.log("content script could not be executed(part1), content: " + configText + " err: " + chrome.runtime.lastError.message);
+          log.err("content script could not be executed(part1), content: " + configText + " err: " + chrome.runtime.lastError.message);
           return resolve(false); // parent function will continue executing
         }
         
@@ -334,12 +352,12 @@ async function executeContentScript(op, mode, target)
           {
             if(chrome.runtime.lastError) 
             {
-              console.log("content script could not be executed(part2), content: " + configText + " err: " + chrome.runtime.lastError.message);
+              log.err("content script could not be executed(part2), content: " + configText + " err: " + chrome.runtime.lastError.message);
               return resolve(false); // parent functions will continue executing
             } 
             else 
             {
-              console.log("content script has been executed, content: " + configText);
+              log.info("content script has been executed, content: " + configText);
               return resolve(true); // parent functions will continue executing
             }
           }

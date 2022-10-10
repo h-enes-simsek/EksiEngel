@@ -1,5 +1,5 @@
 'use strict';
-console.log("redirectHandler: init");
+log.info("redirectHandler: init");
 
 let CONFIG_REDIRECT_CONTROL_PERIOD_IN_SEC = 5;
 
@@ -23,7 +23,7 @@ class RedirectHandler
     RedirectHandler.redirectTimerCounter += 1;
     if(RedirectHandler.redirectTimer) 
     {
-      console.log("bg.js: duplicate attempt to redirect timer, counter: " + RedirectHandler.redirectTimerCounter);
+      log.warn("bg.js: duplicate attempt to redirect timer, counter: " + RedirectHandler.redirectTimerCounter);
     }
     else
     { 
@@ -73,7 +73,7 @@ class RedirectHandler
             let current_url = RedirectHandler.decodeURIComponentForEksi(tab.url);
             if(url !== current_url)
             {
-              console.log("bg.js: request url: " + url + " current url " + current_url);
+              log.info("bg.js: request url: " + url + " current url " + current_url);
               await RedirectHandler.redirect(url, RedirectHandler.tab_id);
               
               // the tab will be redirected if the redirect was not worked 
@@ -84,7 +84,7 @@ class RedirectHandler
             else
             {
               // ideally program should not be here
-              console.log("bg.js: multiple redirection attempt, url: " + url);
+              log.warn("bg.js: multiple redirection attempt, url: " + url);
               return resolve();
             }
           }
@@ -103,12 +103,12 @@ class RedirectHandler
       if(RedirectHandler.tab_id === -1){
         // create new tab when program started
         RedirectHandler.tab_id = await RedirectHandler.createNewTab(url);
-        console.log("bg.js: new tab created, id: " + RedirectHandler.tab_id);
+        log.info("bg.js: new tab created, id: " + RedirectHandler.tab_id);
         return resolve(RedirectHandler.tab_id);
       }
       else{
         // redirect the tab to new url
-        console.log("bg.js: will redirect to url: " + url);
+        log.info("bg.js: will redirect to url: " + url);
         await RedirectHandler.redirectUntilSuccessfull(url); 
         return resolve(RedirectHandler.tab_id);
       }

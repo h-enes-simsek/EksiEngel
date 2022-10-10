@@ -5,26 +5,36 @@ class Log
   constructor()
   {
     this.g_LoggedData = createArray(4, 0); // dimension: 4x0
+		this.level = Log.Levels.INFO;
   }
+	
+	setLevel(level)
+	{
+		this.level = level;
+	}
   
   info(data)
   {
-    this.g_LoggedData[0].push("INF " + data);
+		if(this.level >= Log.Levels.INFO)
+			this.g_LoggedData[Log.Levels.INFO].push("INF " + this.getDateString() + data);
   }
   
   warn(data)
   {
-    this.g_LoggedData[1].push("WRN " + data);
+		if(this.level >= Log.Levels.WARN)
+			this.g_LoggedData[Log.Levels.WARN].push("WRN " + this.getDateString() + data);
   }
   
   err(data)
   {
-    this.g_LoggedData[2].push("ERR " + data);
+		if(this.level >= Log.Levels.ERR)
+			this.g_LoggedData[Log.Levels.ERR].push("ERR " + this.getDateString() + data);
   }
   
-  useful()
+  useful(data)
   {
-    this.g_LoggedData[3].push("USF " + data);
+		// always log
+    this.g_LoggedData[Log.Levels.USEFUL].push("USF " + this.getDateString() + data);
   }
   
   getData(level)
@@ -38,7 +48,24 @@ class Log
     this.g_LoggedData = 0;
     this.g_LoggedData = createArray(4, 0); // dimension: 4x0
   }
-  
+	
+	getDateString()
+	{
+		let date = new Date;
+
+		let miliseconds = date.getMilliseconds();
+		let seconds = date.getSeconds();
+		let minutes = date.getMinutes();
+		let hour = date.getHours();
+
+		let year = date.getFullYear();
+		let month = date.getMonth() + 1;
+		let day = date.getDate();
+		
+		let d = year + "_" + month + "_" + day+  "_" + hour + "_" + minutes + "_" + seconds + "_" + miliseconds + " ";
+		return d;
+	}
+	
   static Levels = 
   {
     INFO:   0,
@@ -46,6 +73,7 @@ class Log
     ERR:    2,
     USEFUL: 3,
   }
+	
 }
 
 // thanks to stackoverflow:@Matthew Crumley

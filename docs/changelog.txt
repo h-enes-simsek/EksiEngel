@@ -7,11 +7,12 @@ v1.1
 market sayfasındaki resimler güncellendi.
 
 v1.2
+yayın: 27.09.2022
 yeni özellik: bir entry'i favlayan yazarları engellemesi
-arayüz sadeleştirildi. 
 bug fix: adblocker gibi sayfaya müdahele eden eklentilerin neden olduğu sorunlar giderildi.
 bug fix: engelleme devam ederken sayfa kapatıldığında uygulamanın çökmesi engellendi. 
 bug fix: nickinde whitespace olan yazarların engellenememesi sorunu çözüldü.
+arayüz sadeleştirildi. 
 
 v1.3
 
@@ -37,7 +38,7 @@ v1.1
 eklenti marketinde ikonların bazılarının arkasının beyaz olduğu fark edildi, transparan hale getirildi.
 
 v1.2 
-# gözden geçirme: 24.09.2022 yayın: 27.09.2022
+gönderim: 24.09.2022 - yayın: 27.09.2022
 yeni özellik: entryi favlayanları engelle 
 ekşi hesabına giriş yapılmadıysa uyarı vermesi sağlandı. (sadece fav'dan engelleme modu için)
 kullanıcı sayfayı eliyle kapattığında uygulamanın çökmesi engellendi. 
@@ -51,15 +52,16 @@ yazılımın bazı kısımları daha modüler hale getirildi.
 js dosyalarının isimleri ve içerikleri refactor edildi.
 
 v1.3
+bug fix: url yönlendirmenin bazen çalışmaması durumu nedeniyle timer mekanizması eklendi.
+bug fix: execute script'in çalışmaması durumu handle edildi artık hata üretmiyor ama loglanıyor.
 klasör yapısı düzenlendi.
 background scripti modüler hale getirildi.
 manifestteki semsiye.png'nin web accessable resource path'i düzenlendi.
 listeden yazar engelle sayfası options page yerine normal sayfaya çevrildi.
 kullanıcıların ekşi nickleri scrape edildi.
-bug fix: url yönlendirmenin bazen çalışmaması durumu nedeniyle timer mekanizması eklendi.
-bug fix: execute script'in çalışmaması durumu handle edildi artık hata üretmiyor ama loglanıyor.
 
 SONRAKİ GÜNCELLEMEDE YAPILMASI PLANLANANLAR
+performans analizi yapılmalı
 takip edilen yazarlar engellensin mi ayarı eklenebilir
 logger mekanizması geliştirilmeli
 toplanan veriler (loglar) servera gönderilmeli

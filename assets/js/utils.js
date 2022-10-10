@@ -36,12 +36,12 @@ async function closeLastTab(tabid)
   let isTabExist = await isTargetTabExist(tabid);
   if(isTabExist)
   {
-    console.log("last tab will be closed");
+    log.info("last tab will be closed");
     chrome.tabs.remove(tabid);
   }
   else
   {
-    console.log("Last tab could not be closed. (may be already closed)");
+    log.info("Last tab could not be closed. (may be already closed)");
   }
 }
 
@@ -74,13 +74,13 @@ async function getUserList()
         }
         else 
         {
-          console.log("empty list from storage api");
+          log.err("empty list from storage api");
           resolve([]);
         }
       }
       else 
       {
-        console.log("chrome.storage.local runtime err");
+        log.err("chrome.storage.local runtime err");
         makeNotification("chrome.storage.local runtime hatası");
         resolve([]);
       }
