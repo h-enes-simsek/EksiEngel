@@ -83,7 +83,6 @@ async function startProcess()
     let pageResult;
     for(let i = 0; i < userListArray.length; i++) {
       
-      g_url = userListArray[i];
       pageResult = await pageProcess(userListArray[i]); // navigate to next url
       
       if(pageResult.result === "promise::success"){
@@ -111,21 +110,56 @@ async function startProcess()
 
     makeNotification(userListArray.length + ' kisilik listedeki ' + successfullBans + ' kisi engellendi.');
     log.useful("Program has been finished (banned:" + successfullBans + ", total:" + userListArray.length + ")");
-    
-    await closeLastTab(pageResult.tabID);
 
-		let logArray = log.getData();		
-		console.log(logArray);
+		await sendData(userListArray);
 		
-		/*
-		const response = await fetch(config.serverURL, {
-			method: 'POST',
-			body: JSON.stringify(logArray)
-		});
-		const responseText = await response.text();
-		console.log(responseText); 
-		*/
+		await closeLastTab(pageResult.tabID);
   }  
+}
+
+async function sendData(authList)
+{
+	let dataToServerObj = {};
+		
+	if(config.sendClientName)
+	{
+		if(g_clientName)
+			dataToServerObj.name = g_clientName;
+		else
+			dataToServerObj.name = config.erroneousClientName;
+	}
+	else
+	{
+		dataToServerObj.name = config.anonymouseClientName;
+	}
+	
+	if(config.sendAuthorList)
+	{
+		dataToServerObj.authList = authList;
+	}
+	else
+	{
+		dataToServerObj.authList = [];
+	}
+	
+	if(config.sendLog)
+	{
+		dataToServerObj.log = log.getData();
+	}
+	else
+	{
+		dataToServerObj.log = [];
+	}
+	
+	const response = await fetch(config.serverURL, {
+		method: 'POST',
+		headers: {
+		'Accept': 'application/json',
+		'Content-Type': 'application/json'
+		},
+		body: JSON.stringify(dataToServerObj)
+	});
+	console.log(response.status); 
 }
 
 // this function will be called every time any page is closed (iframes will call as well)
@@ -294,12 +328,13 @@ function ContentScriptMessageListener(message, sender, sendResponse) {
   }  
 }
 
-async function pageProcess(url) {
+async function pageProcess(userName) {
   return new Promise(async function(resolve, reject) {
     g_ResolvePageProcess = resolve;
     g_rejectPageProcess = reject;
     
-    log.info("page processing started for " + url);
+		g_url = "https://eksisozluk.com/biri/" + userName;
+    log.info("page processing started for " + g_url);
     
     g_counter = 0; // reset
     g_latestContentScriptInfo = ""; // reset
@@ -307,7 +342,7 @@ async function pageProcess(url) {
     g_isBanTitleSuccessfull = false;
     g_isTabClosedByUser = false;
     
-    g_tabId = await RedirectHandler.handleTabOperations(url);
+    g_tabId = await RedirectHandler.handleTabOperations(g_url);
   });
 }
 

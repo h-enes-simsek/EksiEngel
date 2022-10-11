@@ -11,7 +11,6 @@ function makeNotification(message)
 }
 
 // clean collected user list by erasing empty inputs 
-// convert nicknames to the url
 // whitespaces should be - according to ekşisözlük name rules
 function cleanUserList(arr)
 {
@@ -24,9 +23,6 @@ function cleanUserList(arr)
     else{
       // replace every whitespace with -
       arr[i] = arr[i].replace(/ /gi, "-");
-      
-      // convert nickname to the url
-      arr[i] = "https://eksisozluk.com/biri/" + arr[i];
     }
   }
 }

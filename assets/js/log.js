@@ -15,25 +15,25 @@ class Log
   
 	info = (data) =>
   {
-		if(config.isLogEnabled)
+		if(config.enableLog)
 			this.logData("INF " + this.getDateString() + data, Log.Levels.INFO);
   }
   
 	warn = (data) =>
   {
-		if(config.isLogEnabled)
+		if(config.enableLog)
 			this.logData("WRN " + this.getDateString() + data, Log.Levels.WRN);
   }
   
 	err = (data) =>
   {
-		if(config.isLogEnabled)
+		if(config.enableLog)
 			this.logData("ERR " + this.getDateString() + data, Log.Levels.ERR);
   }
   
 	useful = (data) =>
   {
-		if(config.isLogEnabled)
+		if(config.enableLog)
 			this.logData("USF " + this.getDateString() + data, Log.Levels.USEFUL);
   }
 	
