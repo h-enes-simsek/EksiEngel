@@ -1,9 +1,11 @@
 Versiyon notları (Son kullanıcı için)
 -------------------------------------------------
 v1.0 
+yayın: 06.05.2022
 kullanıcıdan alınan listedeki yazarlar engellendi. 
 
 v1.1 
+yayın: 09.05.2022
 market sayfasındaki resimler güncellendi.
 
 v1.2
@@ -15,55 +17,55 @@ bug fix: nickinde whitespace olan yazarların engellenememesi sorunu çözüldü
 arayüz sadeleştirildi. 
 
 v1.3
+yayın: 
+
 
 Versiyon notları ve TODO listesi (detaylı) 
 -------------------------------------------------
 v1.0  
-alınan liste validate edildi.
-alınan liste iki formatı destekliyor: url ve yazar isimleri
+yayın: 06.05.2022
+kullanıcıdan alınan listedeki yazarlar engellendi. 
+liste iki formatı destekliyor: url ve yazar isimleri [v1.2 ile kaldırıldı]
+liste validate edildi. [v1.2 ile kaldırıldı]
 sayfa  aktif değilken (aktif tab) uygulamanın çalışmasının durması engellendi.
 son sayfanın otomatik olarak kapanması sağlandı.
-bir nedenle alınan tab_id ile sayfa güncellenemiyorsa yeni sayfa açıldı ve tab_id güncellenerek engellemenin devam etmesi sağlandı.  
+açılan tab kapatıldığında yeniden açılarak engellemenin devam etmesi sağlandı. [v1.2 ile kaldırıldı]  
 gereksiz izinler tespit edildi ve manifestten çıkarıldı: active tab, declerative content, downloads.
 'message port closed before a response was received' hatası giderildi. 
 uygulamanın iki kez başlaması engellendi.
-uygulamayı yarısında durdurma özelliği bir buton ile sağlandı.
+uygulamayı yarısında durdurma özelliği bir buton ile sağlandı. [v1.2 ile kaldırıldı] 
 tüm sitedelerde değil sadece ekşide çalışması (injected js'nin) sağlandı.
-popup sayfası tasarım  
-ayar sayfası tasarım  
-ikon tasarım 
+popup vs ayar sayfası tasarımı yapıldı.
+ikon tasarımı yapıldı.
 kayıtları getir sayfasında undefined check yapıldı. 
 
 v1.1
+yayın: 09.05.2022
 eklenti marketinde ikonların bazılarının arkasının beyaz olduğu fark edildi, transparan hale getirildi.
 
 v1.2 
 gönderim: 24.09.2022 - yayın: 27.09.2022
-yeni özellik: entryi favlayanları engelle 
+yeni özellik: bir entry'i favlayan yazarları engellemesi
+bug fix: kullanıcı sayfayı eliyle kapattığında uygulamanın çökmesi engellendi. 
+bug fix: ekşi nicknamelerindeki whitespaceler tire-ye çevrilerek bug çözüldü.
+bug fix: eklenti çalışırken diğer sayfalarda yapılan işlemlerin eklentiye etki etmesi problemi çözüldü.
+bug fix: böylece adblocker gibi sayfaya müdahale eden eklentilerin neden olduğu sorunlar giderildi.
 ekşi hesabına giriş yapılmadıysa uyarı vermesi sağlandı. (sadece fav'dan engelleme modu için)
-kullanıcı sayfayı eliyle kapattığında uygulamanın çökmesi engellendi. 
 arayüz sadeleştirildi başlatma ve durdurma butonları kaldırıldı 
-eklenti çalışırken diğer sayfalarda yapılan işlemlerin eklentiye etki etmesi problemi çözüldü.
-ekşi nicknamelerindeki whitespaceler tire-ye çevrilerek bug çözüldü.
 sayfanın yüklenmesi tab listener api ile dinlendiğinde gereksiz yere bekleniyordu yerine webnavigation api kullanıldı. 
-böylece adblocker gibi sayfaya müdahale eden eklentilerin neden olduğu sorunlar giderildi.
 url validation uzun sürdüğü için kaldırıldı.
-yazılımın bazı kısımları daha modüler hale getirildi.
-js dosyalarının isimleri ve içerikleri refactor edildi.
 
 v1.3
 bug fix: url yönlendirmenin bazen çalışmaması durumu nedeniyle timer mekanizması eklendi.
 bug fix: execute script'in çalışmaması durumu handle edildi artık hata üretmiyor ama loglanıyor.
-klasör yapısı düzenlendi.
-background scripti modüler hale getirildi.
-manifestteki semsiye.png'nin web accessable resource path'i düzenlendi.
+bug fix: semsiye.png'nin manifest içinde web accessable resource path'i düzenlendi. (ama yine de çalışıyordu)
 listeden yazar engelle sayfası options page yerine normal sayfaya çevrildi.
-kullanıcıların ekşi nickleri scrape edildi.
+kullanıcının ekşi nickleri scrape edildi.
+custom bir logger mekanizması geliştirildi.
 
 SONRAKİ GÜNCELLEMEDE YAPILMASI PLANLANANLAR
 performans analizi yapılmalı
 takip edilen yazarlar engellensin mi ayarı eklenebilir
-logger mekanizması geliştirilmeli
 toplanan veriler (loglar) servera gönderilmeli
 server yazılımı yazılmalı
 server ile haberleşme şifreli olmalı

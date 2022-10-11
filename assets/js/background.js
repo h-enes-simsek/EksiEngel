@@ -1,12 +1,12 @@
 'use strict';
 
 try {
-	// log.js will be imported first, so others can use logger
-  importScripts("log.js");
+  importScripts("config.js", "log.js");
 } catch (error) {
   console.error(error);
 }
 
+// log.js will be imported first, so others can use logger
 let log = new Log();
 log.setlevel = Log.Levels.INFO;
 log.info("bg: init");
@@ -114,14 +114,17 @@ async function startProcess()
     
     await closeLastTab(pageResult.tabID);
 
-		let logArrayInfo = log.getData(Log.Levels.INFO);		
-		let logArrayWarn = log.getData(Log.Levels.WARN);		
-		let logArrayErr = log.getData(Log.Levels.ERR);		
-		let logArrayUseful = log.getData(Log.Levels.USEFUL);		
-		console.log(logArrayInfo);
-		console.log(logArrayWarn);
-		console.log(logArrayErr);
-		console.log(logArrayUseful);
+		let logArray = log.getData();		
+		console.log(logArray);
+		
+		/*
+		const response = await fetch(config.serverURL, {
+			method: 'POST',
+			body: JSON.stringify(logArray)
+		});
+		const responseText = await response.text();
+		console.log(responseText); 
+		*/
   }  
 }
 
