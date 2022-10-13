@@ -14,13 +14,19 @@ function saveAuthorListToStorage()
 // send message to background.js to start banning process
 document.getElementById("startBan").addEventListener("click", function(){
 	saveAuthorListToStorage();
-	chrome.runtime.sendMessage(null, "authorListPage::start");
+	chrome.runtime.sendMessage(null, "authorListPage::ban");
+});
+
+// send message to background.js to start banning process
+document.getElementById("startUndoban").addEventListener("click", function(){
+	saveAuthorListToStorage();
+	chrome.runtime.sendMessage(null, "authorListPage::undoban");
 });
 
 // if local storage save is successfull, show a message to the user
 function blinkSavedMsg() {
   var elem = document.getElementById('status');
-  elem.innerHTML = "Girilen yazarlar yerel hafızaya kaydedildi, engelleme işlemi başlayacak.";
+  elem.innerHTML = "Girilen yazarlar yerel hafızaya kaydedildi, engelleme/engeli kaldırma işlemi başlayacak.";
   var counter = 4;
   var blinkInterval = setInterval(function(){
     counter--;

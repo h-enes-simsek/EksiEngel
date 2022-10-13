@@ -33,27 +33,40 @@ let g_ResolvePageProcess;             // function, resolve function of page proc
 let g_rejectPageProcess;              // function, reject function of page process's promise
 let g_isFirstAuthor = true;           // is the program tries to ban the first user in list
 let g_clientName = "";                // client's author name
+let g_executeMode = "mode::ban";			// mode of the program, will ban or undoban
     
 chrome.runtime.onMessage.addListener(async function popupMessageListener(message, sender, sendResponse) {
   sendResponse({status: 'ok'}); // added to suppress 'message port closed before a response was received' error
-  if((message === 'scrapeAuthors::start' || message === 'authorListPage::start'))
-  { 
-    if(g_isProgramActive)
-    {
-      log.info("bg.js: another start attempt from " + message);
-    }
-    else 
-    {
-      g_isProgramActive = true; // prevent multiple starts
-      await startProcess();
-      g_isProgramActive = false; // program can be started again
-    }
-  } 
+	
+	if(g_isProgramActive)
+	{
+		log.info("bg: another start attempt from " + message);
+	}
+	else 
+	{
+		g_isProgramActive = true; // prevent multiple starts
+		
+		if((message === 'scrapeAuthors::start' || message === 'authorListPage::ban'))
+		{
+			await startProcess("mode::ban");
+		}
+		else if(message === 'authorListPage::undoban')
+		{
+			// scrape the page to obtain banned author list 
+			syncExecuteScript(sender.tab.id, "assets/js/scrapeBannedAuthors");
+		}
+		else if(message === 'scrapeBannedAuthors::undoban')
+		{
+			await startProcess("mode::undoban");
+		}
+		
+		g_isProgramActive = false; // program can be started again
+	}
 });
 
-async function startProcess()
+async function startProcess(mode="mode::ban")
 {
-  log.info("Program has been started.");
+  log.info("Program has been started with mode: " + mode);
   
   let userListArray = await getUserList(); 
   log.info("number of user to ban (before cleaning): " + userListArray.length);
@@ -61,7 +74,7 @@ async function startProcess()
   log.useful("number of user to ban (after cleaning): " + userListArray.length);
   
   if(userListArray.length == 0){
-    makeNotification("Eklenti ayarlarından engellenecek yazarları ekleyin.");
+    makeNotification("Programı kullanmak için yazar ekleyin.");
     log.err("Program has been finished (getUserList function failed)");
   }
   else{
@@ -78,6 +91,7 @@ async function startProcess()
     RedirectHandler.prepareHandler();
     g_tabId = -1; // clear variable
     g_isFirstAuthor = true;
+		g_executeMode = mode;
     
     let successfullBans = 0;
     let pageResult;
@@ -108,10 +122,19 @@ async function startProcess()
     log.info("PageCloseListener removed.");
     chrome.tabs.onRemoved.removeListener(PageCloseListener);
 
-    makeNotification(userListArray.length + ' kisilik listedeki ' + successfullBans + ' kisi engellendi.');
-    log.useful("Program has been finished (banned:" + successfullBans + ", total:" + userListArray.length + ")");
-
-		await sendData(userListArray);
+		if(mode === "mode::ban")
+		{
+			makeNotification(userListArray.length + ' kisilik listedeki ' + successfullBans + ' kisi engellendi.');
+			log.useful("Program has been finished (banned:" + successfullBans + ", total:" + userListArray.length + ")");
+		}
+		else if(mode === "mode::undoban")
+		{
+			makeNotification(userListArray.length + ' kisilik listedeki ' + successfullBans + ' kisinin engeli kaldirildi.');
+			log.useful("Program has been finished (unbanned:" + successfullBans + ", total:" + userListArray.length + ")");
+		}
+    
+		if(config.sendData)
+			await sendData(userListArray);
 		
 		await closeLastTab(pageResult.tabID);
   }  
@@ -191,12 +214,11 @@ function DOMContentLoadedListener(details) {
     // saved values from latest executed content script
     let res = g_latestContentScriptInfo.res;
     let op = g_latestContentScriptInfo.op;
-    let mode = g_latestContentScriptInfo.mode;
+    //let mode = g_latestContentScriptInfo.mode;
     let target = g_latestContentScriptInfo.target;
     
     // outgoing values to content script
     let executeOp = "";
-    let executeMode = "";
     let executeTarget = "";
     
     if(g_counter === 1){
@@ -212,9 +234,8 @@ function DOMContentLoadedListener(details) {
 						log.info("scrapeClientName.js has been executed.");
 						// execute content script to ban user
 						executeOp = "op::action";
-						executeMode = "mode::ban";
 						executeTarget = "target::user";
-						executeContentScript(executeOp, executeMode, executeTarget);
+						executeContentScript(executeOp, g_executeMode, executeTarget);
 					}
 				);
 			}
@@ -222,24 +243,21 @@ function DOMContentLoadedListener(details) {
 			{
 				// execute content script to ban user
 				executeOp = "op::action";
-				executeMode = "mode::ban";
 				executeTarget = "target::user";
-				executeContentScript(executeOp, executeMode, executeTarget);
+				executeContentScript(executeOp, g_executeMode, executeTarget);
 			}
     }
-    else if(op === "op::action" && mode === "mode::ban" && target === "target::user" && res === "res::success"){
+    else if(op === "op::action" && target === "target::user" && res === "res::success"){
       // res::fail will be handled by ContentScriptMessageListener
       executeOp = "op::control";
-      executeMode = "mode::ban";
       executeTarget = "target::user";
-      executeContentScript(executeOp, executeMode, executeTarget);
+      executeContentScript(executeOp, g_executeMode, executeTarget);
     }
-    else if(op === "op::action" && mode === "mode::ban" && target === "target::title" && res === "res::success"){
+    else if(op === "op::action" && target === "target::title" && res === "res::success"){
       // res::fail will be handled by ContentScriptMessageListener
       executeOp = "op::control";
-      executeMode = "mode::ban";
       executeTarget = "target::title";
-      executeContentScript(executeOp, executeMode, executeTarget);
+      executeContentScript(executeOp, g_executeMode, executeTarget);
     }
     else{
       log.info("DOMContentLoadedListener: unhandled g_latestContentScriptInfo: " + JSON.stringify(g_latestContentScriptInfo));
@@ -274,42 +292,38 @@ function ContentScriptMessageListener(message, sender, sendResponse) {
 	
   let res = incomingObj.res;
   let op = incomingObj.op;
-  let mode = incomingObj.mode;
+  // let mode = incomingObj.mode;
   let target = incomingObj.target;
   
   // outgoing values to content script
   let executeOp = "";
-  let executeMode = "";
   let executeTarget = "";
   
   // update status to track (it should be filtered, because popup messages interferes)
-  if(res && op && mode && target)
+  if(res && op && target)
     g_latestContentScriptInfo = JSON.parse(message); 
   
-  if(op === "op::action" && mode === "mode::ban" && target === "target::user" && res === "res::fail"){
+  if(op === "op::action" && target === "target::user" && res === "res::fail"){
     // res::success will be handled by DOMContentLoadedListener
     executeOp = "op::control";
-    executeMode = "mode::ban";
     executeTarget = "target::user";
-    executeContentScript(executeOp, executeMode, executeTarget);
+    executeContentScript(executeOp, g_executeMode, executeTarget);
   }
-  else if(op === "op::control" && mode === "mode::ban" && target === "target::user"){
+  else if(op === "op::control" && target === "target::user"){
     g_isBanUserSuccessfull = res === "res::success";
     // execute content to ban title after banning user and controlling is user banned
     executeOp = "op::action";
-    executeMode = "mode::ban";
     executeTarget = "target::title";
-    executeContentScript(executeOp, executeMode, executeTarget);
+    executeContentScript(executeOp, g_executeMode, executeTarget);
   }
-  else if(op === "op::action" && mode === "mode::ban" && target === "target::title" && res === "res::fail"){
+  else if(op === "op::action" && target === "target::title" && res === "res::fail"){
     // res::success will be handled by DOMContentLoadedListener
     // execute content script to check if banning the title was successfull
     executeOp = "op::control";
-    executeMode = "mode::ban";
     executeTarget = "target::title";
-    executeContentScript(executeOp, executeMode, executeTarget);
+    executeContentScript(executeOp, g_executeMode, executeTarget);
   }
-  else if(op === "op::control" && mode === "mode::ban" && target === "target::title"){
+  else if(op === "op::control" && target === "target::title"){
     //all actions have been completed.
     
     g_isBanTitleSuccessfull = res === "res::success"; 

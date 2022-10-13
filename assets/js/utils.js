@@ -64,7 +64,7 @@ async function getUserList()
     chrome.storage.local.get("userList", function(items){
       if(!chrome.runtime.error)
       {
-        if(items != undefined && items.userList != undefined)
+        if(items != undefined && items.userList != undefined && items.userList.length != 0)
         {
           resolve(items.userList.split("\n"));  
         }
@@ -92,4 +92,50 @@ function decodeURIComponentForEksi(url)
   // replace every whitespace with - (eksisozluk.com convention)
   decodedUrl.replace(/ /gi, "-");
   return decodedUrl;
+}
+
+async function AsyncExecuteScript(tabid, file)
+{
+	return new Promise((resolve, reject) => {
+		chrome.scripting.executeScript(
+      {
+				target: {tabId: tabid, frameIds: [0]},
+				files: [file]
+			}, 
+			()=>
+			{
+				if(chrome.runtime.lastError) 
+				{
+					log.err("content script could not be executed, file: " + file + " err: " + chrome.runtime.lastError.message);
+					return resolve(false); 
+				} 
+				else 
+				{
+					log.info("content script has been executed, file: " + file);
+					return resolve(true); 
+				}
+			}
+		);
+	});
+}
+
+function syncExecuteScript(tabid, file)
+{
+	chrome.scripting.executeScript(
+		{
+			target: {tabId: tabid, frameIds: [0]},
+			files: [file]
+		}, 
+		()=>
+		{
+			if(chrome.runtime.lastError) 
+			{
+				log.err("content script could not be executed, file: " + file + " err: " + chrome.runtime.lastError.message);
+			} 
+			else 
+			{
+				log.info("content script has been executed, file: " + file);
+			}
+		}
+	);
 }

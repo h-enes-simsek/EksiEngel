@@ -48,7 +48,7 @@ textarea {
   margin-left: 5px;
 }
 
-#startBan {
+#startBan, #startUndoban {
   font-family: 'Montserrat', sans-serif;
   margin: 2px;
   font-size: 100%;
@@ -81,14 +81,15 @@ body {
 <body>
 
 <section class="content">
-  Engellenecek Yazar Listesi
-   <textarea class="boxSizing-borderBox" placeholder="ornek_yazar_1&#10;ornek_yazar_2&#10;" id="userList"></textarea>
+  Engellenecek veya Engeli Kaldırılacak Yazar Listesi
+   <textarea class="boxSizing-borderBox" placeholder="ornek_yazar_1&#10;ornek_yazar_2&#10;ornek_yazar_3&#10;" id="userList"></textarea>
 </section>
 
 <br><br>
 
 <div id="inputContainer">
-<input type="button" id="startBan" value="Engellemeye Başla" class="btn btn-dark">
+<input type="button" id="startBan" value="Engelle" class="btn btn-dark">
+<input type="button" id="startUndoban" value="Engeli Kaldır" class="btn btn-dark">
 <a href="faq.html" id="howToUse"><img src="../img/questionicon.svg" style="width:35px" id="questionMark"></img></a>
 
 </div>

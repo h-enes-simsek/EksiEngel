@@ -9,12 +9,18 @@ startBanFavorites.onclick = function(element) {
 			// get active tab
 			if(tab.active)
 			{
-				if(tab.url.includes("https://eksisozluk.com/entry"))
+				if(tab.url.includes("eksisozluk.com/entry"))
 				{
+					
 					console.log("popup.js: scrapeAuthors will be exec");
 					chrome.scripting.executeScript({ target: {tabId: tab.id}, files: ['assets/js/scrapeAuthors.js'] }, function() {
 						console.log("scrapeAuthors has been executed.");
 					});
+					
+					/*
+					console.log("popup: message will be sent to background script to start ban");
+					chrome.runtime.sendMessage(null, "popup::banForFavs");
+					*/
 				}
 				else
 				{
