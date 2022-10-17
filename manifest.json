@@ -47,6 +47,7 @@
 										"assets/html/authorListPage.html",
 										
 										"assets/js/ban.js",
+										"assets/js/undobanAll.js",
 										"assets/js/popup.js", 
 										"assets/js/authorListPage.js",
 										"assets/js/scrapeAuthors.js",

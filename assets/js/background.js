@@ -48,21 +48,72 @@ chrome.runtime.onMessage.addListener(async function popupMessageListener(message
 		
 		if((message === 'scrapeAuthors::start' || message === 'authorListPage::ban'))
 		{
+			// list is exist in storage
 			await startProcess("mode::ban");
 		}
 		else if(message === 'authorListPage::undoban')
 		{
-			// scrape the page to obtain banned author list 
-			syncExecuteScript(sender.tab.id, "assets/js/scrapeBannedAuthors");
-		}
-		else if(message === 'scrapeBannedAuthors::undoban')
-		{
+			// list is exist in storage
 			await startProcess("mode::undoban");
+		}
+		else if(message === 'popup::undobanAll')
+		{
+			await undobanAllProcess();
 		}
 		
 		g_isProgramActive = false; // program can be started again
 	}
 });
+
+function ContentScriptMessageListenerUndobanAll(message, sender, sendResponse) {
+  sendResponse({status: 'ok'}); // added to suppress 'message port closed before a response was received' error
+	
+	// incoming values from content script
+  let incomingObj;
+  try
+  {
+    incomingObj = JSON.parse(message);
+  }
+  catch(e)
+  {
+    log.info("ContentScriptMessageListener:: parse err: " + e);
+    return;
+  }
+	
+	if(incomingObj.source !== "source::undobanAll")
+		return;
+	
+	if(incomingObj.clientName)
+	{
+		log.useful("ContentScriptMessageListenerUndobanAll:: client name: " + incomingObj.clientName);
+	}
+	
+	let clientName = incomingObj.clientName;
+  let res = incomingObj.res;
+	let total = incomingObj.total;
+	
+	makeNotification(total + ' kisinin engeli kaldırıldı.');
+	log.useful("Program has been finished (total:" + total + ")");
+	
+	g_ResolvePageProcess();
+}
+
+async function undobanAllProcess()
+{
+	return new Promise(async function(resolve, reject) {
+		g_ResolvePageProcess = resolve;
+    g_rejectPageProcess = reject;
+		
+		log.info("Program has been started for undoban all");
+		
+		// register function to call every time a content script sends a message
+    chrome.runtime.onMessage.addListener(ContentScriptMessageListenerUndobanAll);
+		
+		let tabId = await RedirectHandler.createNewTab("https://eksisozluk.com/takip-engellenmis");
+		
+		syncExecuteScript(tabId, "assets/js/undobanAll.js");
+	});
+}
 
 async function startProcess(mode="mode::ban")
 {

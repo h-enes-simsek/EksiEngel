@@ -33,6 +33,10 @@ startBanFavorites.onclick = function(element) {
 	}); 
 };
 
+startUndobanAll.onclick = function(element) {
+	chrome.runtime.sendMessage(null, "popup::undobanAll");
+};
+
 // go to authorListPage page when id=#openauthorListPage button is clicked
 openauthorListPage.onclick = function(element) {
   chrome.tabs.create({ url: chrome.runtime.getURL("assets/html/authorListPage.html") });
