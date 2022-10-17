@@ -14,12 +14,13 @@ log.setlevel = Log.Levels.INFO;
 log.info("bg: init");
 
 try {
-	importScripts("redirectHandler.js", "utils.js");
+	importScripts("redirectHandler.js", "commHandler.js", "utils.js");
 } catch (error) {
 	console.error(error);
 }
 
 let redirectHandler = new RedirectHandler();
+let commHandler = new CommHandler(log);
 
 let g_isProgramActive = false;        // to prevent multiple starts from gui
 let g_earlyStopCommand = false;       // early stop command might be recevied from gui to stop program execution
@@ -188,55 +189,10 @@ async function startProcess(mode="mode::ban")
 		}
     
 		if(config.sendData)
-			await sendData(userListArray);
+			await commHandler.sendData(config, userListArray, g_clientName)
 		
 		await closeLastTab(pageResult.tabID);
   }  
-}
-
-async function sendData(authList)
-{
-	let dataToServerObj = {};
-		
-	if(config.sendClientName)
-	{
-		if(g_clientName)
-			dataToServerObj.name = g_clientName;
-		else
-			dataToServerObj.name = config.erroneousClientName;
-	}
-	else
-	{
-		dataToServerObj.name = config.anonymouseClientName;
-	}
-	
-	if(config.sendAuthorList)
-	{
-		dataToServerObj.authList = authList;
-	}
-	else
-	{
-		dataToServerObj.authList = [];
-	}
-	
-	if(config.sendLog)
-	{
-		dataToServerObj.log = log.getData();
-	}
-	else
-	{
-		dataToServerObj.log = [];
-	}
-	
-	const response = await fetch(config.serverURL, {
-		method: 'POST',
-		headers: {
-		'Accept': 'application/json',
-		'Content-Type': 'application/json'
-		},
-		body: JSON.stringify(dataToServerObj)
-	});
-	console.log(response.status); 
 }
 
 // this function will be called every time any page is closed (iframes will call as well)
