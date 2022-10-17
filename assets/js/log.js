@@ -4,42 +4,54 @@ class Log
 {
   constructor()
   {
-    this.g_LoggedData = [];
-		this.level = Log.Levels.INFO;
+    this.g_LoggedData = [];					/* logged data */
+		this.level = Log.Levels.INFO;		/* minimum log level that will be logged */
+		this.isEnabled = true;					/* on-off logger */
+		this.logConsole = true;					/* log to console as well */
   }
 	
 	setLevel = (level) =>
 	{
 		this.level = level;
 	}
+	 
+	setEnableStatus = (isEnabled) =>
+	{
+		this.isEnabled = isEnabled;
+	}
+	
+	setLogConsole = (logConsole) =>
+	{
+		this.logConsole = logConsole;
+	}
   
 	info = (data) =>
   {
-		if(config.enableLog)
+		if(this.isEnabled)
 			this.logData("INF " + this.getDateString() + data, Log.Levels.INFO);
   }
   
 	warn = (data) =>
   {
-		if(config.enableLog)
+		if(this.isEnabled)
 			this.logData("WRN " + this.getDateString() + data, Log.Levels.WRN);
   }
   
 	err = (data) =>
   {
-		if(config.enableLog)
+		if(this.isEnabled)
 			this.logData("ERR " + this.getDateString() + data, Log.Levels.ERR);
   }
   
 	useful = (data) =>
   {
-		if(config.enableLog)
+		if(this.isEnabled)
 			this.logData("USF " + this.getDateString() + data, Log.Levels.USEFUL);
   }
 	
 	logData = (logMsg, level) =>
 	{
-		if(config.logConsole)
+		if(this.logConsole)
 			console.log(logMsg);
 		
 		if(level >= this.level)

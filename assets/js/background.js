@@ -8,6 +8,8 @@ try {
 
 // log.js will be imported first, so others can use logger
 let log = new Log();
+log.setEnableStatus = config.enableLog;
+log.setLogConsole = config.logConsole;
 log.setlevel = Log.Levels.INFO;
 log.info("bg: init");
 
