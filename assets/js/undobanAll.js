@@ -116,10 +116,32 @@ function startScraping()
 				console.log(left + " " +  isSuccessfull);
 				if(isSuccessfull)
 					i++;
+				
+				if(i>5)
+					break;
 			}
 			
-			console.log("undobanAll: number of authors undobanned: " + bannedAuthorListNodeList.length);
-			let responseObj = {source: "source::undobanAll", res: "res::fail", total: bannedAuthorListNodeList.length, clientName: "not implemented"};
+			for(let i = 0; i < bannedTitleListNodeList.length;)
+			{
+				let userId = bannedTitleListNodeList[i].getAttribute("data-userid");
+				let responseJson = await undobanTitle(userId);
+				let left = responseJson["count"];
+				let isSuccessfull = responseJson["result"];
+				console.log(left + " " +  isSuccessfull);
+				if(isSuccessfull)
+					i++;
+			
+				if(i>5)
+					break;
+			}
+			
+			console.log("undobanAll: number of undobanned user: " + bannedAuthorListNodeList.length +
+									"undobanAll: number of undobanned title: " + bannedTitleListNodeList.length);
+			let responseObj = {source: "source::undobanAll", 
+												 res: "res::fail", 
+												 totalUser: bannedAuthorListNodeList.length, 
+												 totalTitle: bannedTitleListNodeList.length, 
+												 clientName: "not implemented"};
 			chrome.runtime.sendMessage(null, JSON.stringify(responseObj));
 	  }
 	  else

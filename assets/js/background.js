@@ -90,10 +90,11 @@ function ContentScriptMessageListenerUndobanAll(message, sender, sendResponse) {
 	
 	let clientName = incomingObj.clientName;
   let res = incomingObj.res;
-	let total = incomingObj.total;
+	let totalUser = incomingObj.totalUser;
+	let totalTitle = incomingObj.totalTitle;
 	
-	makeNotification(total + ' kisinin engeli kaldırıldı.');
-	log.useful("Program has been finished (total:" + total + ")");
+	makeNotification("Engeli kaldırılan kullanıcı sayısı: " + totalUser + ", başlık sayısı: " + totalTitle);
+	log.useful("Program has been finished (unbanned user: " + totalUser + " title: " + totalTitle +")");
 	
 	g_ResolvePageProcess();
 }
