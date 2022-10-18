@@ -47,6 +47,8 @@
 										"assets/html/popup.html",
 										"assets/html/authorListPage.html",
 										
+										"assets/css/customPopup.css",
+										
 										"assets/js/contentScript_SelectiveBan.js",
 										"assets/js/contentScript_UndobanAll.js",
 										"assets/js/contentScript_ScrapeAuthors.js",

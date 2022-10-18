@@ -10,13 +10,26 @@
 	}
 }
 
+function isBannedAuthorListEmpty()
+{
+	let text = document.getElementsByClassName("relation-block")[1].getElementsByTagName("p")[0].innerHTML;
+	return (text === 'yok engellenmiş pek.')
+}
+
+function isBannedTitleListEmpty()
+{
+	let text = document.getElementsByClassName("relation-block")[2].getElementsByTagName("p")[0].innerHTML;
+	return (text === 'yok engellenmiş pek.')
+}
+
 function getBannedAuthorListNodeList()
 {
 	// return type: NodeList
 	try
 	{
-		return document.getElementsByClassName("relation-list")[1].querySelectorAll("li span a[data-nick]");
+		return document.getElementsByClassName("relation-block")[1].querySelectorAll("li span a[data-nick]");
 	}
+	
 	catch(e)
 	{
 		return undefined;
@@ -28,7 +41,7 @@ function getBannedTitleListNodeList()
 	// return type: NodeList
 	try
 	{
-		return document.getElementsByClassName("relation-list")[2].querySelectorAll("li span a[data-nick]");
+		return document.getElementsByClassName("relation-block")[2].querySelectorAll("li span a[data-nick]");
 	}
 	catch(e){
 		return undefined;
@@ -81,6 +94,12 @@ async function undobanTitle(userId)
 	});
 }
 
+function setPopupText(element, unbannedAuthor, unbannedTitle)
+{
+	element.innerText = "Tüm yazarların engeli kaldırılıyor." +
+											"\n\nEngeli kaldırılan" +
+											"\n yazar: " + unbannedAuthor + " başlık: " + unbannedTitle;
+}
 
 function startScraping()
 {
@@ -99,15 +118,31 @@ function startScraping()
 		
 		let bannedAuthorListNodeList = getBannedAuthorListNodeList();
 		let bannedTitleListNodeList = getBannedTitleListNodeList();
+		let isBannedAuthorListEmptyBool = isBannedAuthorListEmpty();
+		let isBannedTitleListEmptyBool = isBannedTitleListEmpty();
 		
-	  if (bannedTitleListNodeList  && bannedTitleListNodeList.length  !== 0 &&
-				bannedAuthorListNodeList && bannedAuthorListNodeList.length !== 0   ) 
+		// each list must be empty or they must be obtained
+		let cond1 = isBannedAuthorListEmptyBool || (bannedAuthorListNodeList  && bannedAuthorListNodeList.length !== 0);
+		let cond2 = isBannedTitleListEmptyBool || (bannedTitleListNodeList  && bannedTitleListNodeList.length !== 0);
+		
+	  if (cond1 && cond2) 
 	  {
 			clearInterval(scrapingTimer);
 			window.isEksiEngelReadyToScraping = true;
 			console.log("undobanAll: the timer has been cleared.");
+			console.log("undobanAll: total user: " + bannedAuthorListNodeList.length +
+																		 "title: " + bannedTitleListNodeList.length);
 			
-			for(let i = 0; i < bannedAuthorListNodeList.length;)
+			// inject html code to display popup
+			let HTMLElement_Popup = document.createElement("div"); 
+			document.body.appendChild(HTMLElement_Popup); 
+			HTMLElement_Popup.className = "customPopup";
+			HTMLElement_Popup.innerText = "Tüm yazarların engeli kaldırılıyor."
+			
+			let i = 0;
+			let j = 0;
+			
+			for(i = 0; i < bannedAuthorListNodeList.length;)
 			{
 				let userId = bannedAuthorListNodeList[i].getAttribute("data-userid");
 				let responseJson = await undobanUser(userId);
@@ -115,39 +150,45 @@ function startScraping()
 				let isSuccessfull = responseJson["result"];
 				console.log(left + " " +  isSuccessfull);
 				if(isSuccessfull)
+				{
 					i++;
-				
-				if(i>5)
-					break;
+					setPopupText(HTMLElement_Popup, i, j);
+				}
 			}
 			
-			for(let i = 0; i < bannedTitleListNodeList.length;)
+			for(j = 0; j < bannedTitleListNodeList.length;)
 			{
-				let userId = bannedTitleListNodeList[i].getAttribute("data-userid");
+				let userId = bannedTitleListNodeList[j].getAttribute("data-userid");
 				let responseJson = await undobanTitle(userId);
 				let left = responseJson["count"];
 				let isSuccessfull = responseJson["result"];
 				console.log(left + " " +  isSuccessfull);
 				if(isSuccessfull)
-					i++;
-			
-				if(i>5)
-					break;
+				{
+					j++;
+					setPopupText(HTMLElement_Popup, i, j);
+				}
 			}
-			
-			console.log("undobanAll: number of undobanned user: " + bannedAuthorListNodeList.length +
-									"undobanAll: number of undobanned title: " + bannedTitleListNodeList.length);
+						
+			console.log("undobanAll: number of undobanned user: " + i +
+									"undobanAll: number of undobanned title: " + j);
 			let responseObj = {source: "source::undobanAll", 
 												 res: "res::success", 
-												 totalUser: bannedAuthorListNodeList.length, 
-												 totalTitle: bannedTitleListNodeList.length, 
+												 totalUser: i, 
+												 totalTitle: j, 
 												 clientName: "not implemented"};
 			chrome.runtime.sendMessage(null, JSON.stringify(responseObj));
 	  }
+		else if(isBannedAuthorListEmptyBool && isBannedTitleListEmptyBool)
+		{
+			console.log("undobanAll: there is no banned author. timer stopped.");
+			clearInterval(scrapingTimer); // clear interval after TIMER_TIMEOUT_IN_SEC
+			window.isEksiEngelReadyToScraping = true;
+		}
 	  else
 	  {
 		  console.log("undobanAll: html element of author list could not be read");
-		  if(this.counter > TIMER_COUNTER_LIMIT)
+		  if(counter > TIMER_COUNTER_LIMIT)
       {
        clearInterval(scrapingTimer); // clear interval after TIMER_TIMEOUT_IN_SEC
 			 window.isEksiEngelReadyToScraping = true;

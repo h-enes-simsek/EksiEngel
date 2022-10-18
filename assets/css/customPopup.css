@@ -1,0 +1,20 @@
+.customPopup {  
+  border-radius: 5px;
+  color: white;  
+  font-size: 15px;
+  font-weight: bold;
+  position:fixed;
+  left:0;
+  right:0;
+  margin: auto;
+  top: 40%;
+  -webkit-transform: translateY(-50%);
+  -ms-transform: translateY(-50%);
+  transform: translateY(-50%);
+  width: 250px;
+  height: auto;
+  padding: 15px;  
+  background: #81C14B;
+  text-align: center;
+  box-sizing: content-box;
+}

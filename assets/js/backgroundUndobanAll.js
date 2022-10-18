@@ -30,6 +30,8 @@ async function process_UndobanAll()
 		
 		let tabId = await RedirectHandler.createNewTab("https://eksisozluk.com/takip-engellenmis");
 		
+		await asyncCSSInject(tabId, "assets/css/customPopup.css");
+		
 		syncExecuteScript(tabId, "assets/js/contentScript_UndobanAll.js");
 	});
 }

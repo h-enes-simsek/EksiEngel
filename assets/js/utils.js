@@ -119,6 +119,31 @@ async function AsyncExecuteScript(tabid, file)
 	});
 }
 
+async function asyncCSSInject(tabid, file)
+{
+	return new Promise((resolve, reject) => {
+		chrome.scripting.insertCSS(
+      {
+				target: {tabId: tabid, frameIds: [0]},
+				files: [file]
+			}, 
+			()=>
+			{
+				if(chrome.runtime.lastError) 
+				{
+					log.err("css script could not be injected, file: " + file + " err: " + chrome.runtime.lastError.message);
+					return resolve(false); 
+				} 
+				else 
+				{
+					log.info("css script has been injected, file: " + file);
+					return resolve(true); 
+				}
+			}
+		);
+	});
+}
+
 function syncExecuteScript(tabid, file)
 {
 	chrome.scripting.executeScript(
