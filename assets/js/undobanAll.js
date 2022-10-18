@@ -138,7 +138,7 @@ function startScraping()
 			console.log("undobanAll: number of undobanned user: " + bannedAuthorListNodeList.length +
 									"undobanAll: number of undobanned title: " + bannedTitleListNodeList.length);
 			let responseObj = {source: "source::undobanAll", 
-												 res: "res::fail", 
+												 res: "res::success", 
 												 totalUser: bannedAuthorListNodeList.length, 
 												 totalTitle: bannedTitleListNodeList.length, 
 												 clientName: "not implemented"};

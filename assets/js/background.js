@@ -14,7 +14,7 @@ log.setlevel = Log.Levels.INFO;
 log.info("bg: init");
 
 try {
-	importScripts("redirectHandler.js", "commHandler.js", "utils.js");
+	importScripts("redirectHandler.js", "commHandler.js", "utils.js", "backgroundUndobanAll.js");
 } catch (error) {
 	console.error(error);
 }
@@ -32,13 +32,13 @@ let g_url = "";                       // target url
 let g_isTabClosedByUser = false;      // user might close the tab before program finished
 let g_isBanUserSuccessfull = false;   // is target user banned successfully
 let g_isBanTitleSuccessfull = false;  // is target user's titles banned succesfully
-let g_ResolvePageProcess;             // function, resolve function of page process's promise
-let g_rejectPageProcess;              // function, reject function of page process's promise
+let g_resolveSelectiveBanProcess;     // function, resolve function of process_SelectiveBan's promise
+let g_rejectSelectiveBanProcess;      // function, reject function of process_SelectiveBan's promise
 let g_isFirstAuthor = true;           // is the program tries to ban the first user in list
 let g_clientName = "";                // client's author name
 let g_executeMode = "mode::ban";			// mode of the program, will ban or undoban
     
-chrome.runtime.onMessage.addListener(async function popupMessageListener(message, sender, sendResponse) {
+chrome.runtime.onMessage.addListener(async function messageListener_Popup(message, sender, sendResponse) {
   sendResponse({status: 'ok'}); // added to suppress 'message port closed before a response was received' error
 	
 	if(g_isProgramActive)
@@ -52,78 +52,27 @@ chrome.runtime.onMessage.addListener(async function popupMessageListener(message
 		if((message === 'scrapeAuthors::start' || message === 'authorListPage::ban'))
 		{
 			// list is exist in storage
-			await startProcess("mode::ban");
+			await processHandler_SelectiveBan("mode::ban");
 		}
 		else if(message === 'authorListPage::undoban')
 		{
 			// list is exist in storage
-			await startProcess("mode::undoban");
+			await processHandler_SelectiveBan("mode::undoban");
 		}
 		else if(message === 'popup::undobanAll')
 		{
-			await undobanAllProcess();
+			await processHandler_UndobanAll();
 		}
 		
 		g_isProgramActive = false; // program can be started again
 	}
 });
 
-function ContentScriptMessageListenerUndobanAll(message, sender, sendResponse) {
-  sendResponse({status: 'ok'}); // added to suppress 'message port closed before a response was received' error
-	
-	// incoming values from content script
-  let incomingObj;
-  try
-  {
-    incomingObj = JSON.parse(message);
-  }
-  catch(e)
-  {
-    log.info("ContentScriptMessageListener:: parse err: " + e);
-    return;
-  }
-	
-	if(incomingObj.source !== "source::undobanAll")
-		return;
-	
-	if(incomingObj.clientName)
-	{
-		log.useful("ContentScriptMessageListenerUndobanAll:: client name: " + incomingObj.clientName);
-	}
-	
-	let clientName = incomingObj.clientName;
-  let res = incomingObj.res;
-	let totalUser = incomingObj.totalUser;
-	let totalTitle = incomingObj.totalTitle;
-	
-	makeNotification("Engeli kaldırılan kullanıcı sayısı: " + totalUser + ", başlık sayısı: " + totalTitle);
-	log.useful("Program has been finished (unbanned user: " + totalUser + " title: " + totalTitle +")");
-	
-	g_ResolvePageProcess();
-}
-
-async function undobanAllProcess()
-{
-	return new Promise(async function(resolve, reject) {
-		g_ResolvePageProcess = resolve;
-    g_rejectPageProcess = reject;
-		
-		log.info("Program has been started for undoban all");
-		
-		// register function to call every time a content script sends a message
-    chrome.runtime.onMessage.addListener(ContentScriptMessageListenerUndobanAll);
-		
-		let tabId = await RedirectHandler.createNewTab("https://eksisozluk.com/takip-engellenmis");
-		
-		syncExecuteScript(tabId, "assets/js/undobanAll.js");
-	});
-}
-
-async function startProcess(mode="mode::ban")
+async function processHandler_SelectiveBan(mode="mode::ban")
 {
   log.info("Program has been started with mode: " + mode);
   
-  let userListArray = await getUserList(); 
+  let userListArray = await getUserList();
   log.info("number of user to ban (before cleaning): " + userListArray.length);
   cleanUserList(userListArray);
   log.useful("number of user to ban (after cleaning): " + userListArray.length);
@@ -134,14 +83,14 @@ async function startProcess(mode="mode::ban")
   }
   else{
     // register function to call every time a page is closed
-    chrome.tabs.onRemoved.addListener(PageCloseListener);
+    chrome.tabs.onRemoved.addListener(pageCloseListener);
     
     // register function to call every time the page is updated
     // Note: chrome.tabs.onUpdated doesn't work properly
     chrome.webNavigation.onDOMContentLoaded.addListener(DOMContentLoadedListener)
     
     // register function to call every time a content script sends a message
-    chrome.runtime.onMessage.addListener(ContentScriptMessageListener);
+    chrome.runtime.onMessage.addListener(contentScriptMessageListener);
     
     RedirectHandler.prepareHandler();
     g_tabId = -1; // clear variable
@@ -152,7 +101,7 @@ async function startProcess(mode="mode::ban")
     let pageResult;
     for(let i = 0; i < userListArray.length; i++) {
       
-      pageResult = await pageProcess(userListArray[i]); // navigate to next url
+      pageResult = await process_SelectiveBan(userListArray[i]); // navigate to next url
       
       if(pageResult.result === "promise::success"){
         successfullBans++;
@@ -168,14 +117,14 @@ async function startProcess(mode="mode::ban")
       }
     }
     
-    log.info("ContentScriptMessageListener removed.");
-    chrome.runtime.onMessage.removeListener(ContentScriptMessageListener);
+    log.info("contentScriptMessageListener removed.");
+    chrome.runtime.onMessage.removeListener(contentScriptMessageListener);
     
     log.info("DOMContentLoadedListener removed.");
     chrome.tabs.onUpdated.removeListener(DOMContentLoadedListener);
     
-    log.info("PageCloseListener removed.");
-    chrome.tabs.onRemoved.removeListener(PageCloseListener);
+    log.info("pageCloseListener removed.");
+    chrome.tabs.onRemoved.removeListener(pageCloseListener);
 
 		if(mode === "mode::ban")
 		{
@@ -196,7 +145,7 @@ async function startProcess(mode="mode::ban")
 }
 
 // this function will be called every time any page is closed (iframes will call as well)
-function PageCloseListener(tabid, removeInfo)
+function pageCloseListener(tabid, removeInfo)
 {
   if(g_tabId === tabid && !g_isTabClosedByUser)
   {
@@ -209,13 +158,13 @@ function PageCloseListener(tabid, removeInfo)
     g_earlyStopCommand = true;
       
     // resolve Promise after content script has executed
-    g_ResolvePageProcess({result:"promise::fail", tabID: g_tabId});
-  } 
+    g_resolveSelectiveBanProcess({result:"promise::fail", tabID: g_tabId});
+  }
 }
 
 // this function will be called every time any page is updated (when domcontent loaded)
-function DOMContentLoadedListener(details) {
-  
+function DOMContentLoadedListener(details) 
+{
   // filter other page updates by using tab id
   if(details.tabId === g_tabId && decodeURIComponentForEksi(details.url) === g_url) {
     g_counter++;
@@ -258,13 +207,13 @@ function DOMContentLoadedListener(details) {
 			}
     }
     else if(op === "op::action" && target === "target::user" && res === "res::success"){
-      // res::fail will be handled by ContentScriptMessageListener
+      // res::fail will be handled by contentScriptMessageListener
       executeOp = "op::control";
       executeTarget = "target::user";
       executeContentScript(executeOp, g_executeMode, executeTarget);
     }
     else if(op === "op::action" && target === "target::title" && res === "res::success"){
-      // res::fail will be handled by ContentScriptMessageListener
+      // res::fail will be handled by contentScriptMessageListener
       executeOp = "op::control";
       executeTarget = "target::title";
       executeContentScript(executeOp, g_executeMode, executeTarget);
@@ -276,10 +225,11 @@ function DOMContentLoadedListener(details) {
 }
 
 // this function will be called every time a content script sends a message
-function ContentScriptMessageListener(message, sender, sendResponse) {
+function contentScriptMessageListener(message, sender, sendResponse) 
+{
   sendResponse({status: 'ok'}); // added to suppress 'message port closed before a response was received' error
   
-  //log.info("ContentScriptMessageListener:: incoming msg: " + message);
+  //log.info("contentScriptMessageListener:: incoming msg: " + message);
   
   // incoming values from content script
   let incomingObj;
@@ -289,14 +239,14 @@ function ContentScriptMessageListener(message, sender, sendResponse) {
   }
   catch(e)
   {
-    log.info("ContentScriptMessageListener:: parse err: " + e);
+    log.info("contentScriptMessageListener:: parse err: " + e);
     return;
   }
 	
 	if(incomingObj.clientName)
 	{
 		g_clientName = incomingObj.clientName;
-		log.useful("ContentScriptMessageListener:: client name: " + g_clientName);
+		log.useful("contentScriptMessageListener:: client name: " + g_clientName);
 		return;
 	}
 	
@@ -340,22 +290,23 @@ function ContentScriptMessageListener(message, sender, sendResponse) {
       
     // resolve Promise after content script has executed
     if(g_isBanUserSuccessfull && g_isBanTitleSuccessfull){
-      g_ResolvePageProcess({result:"promise::success", tabID: g_tabId});
+      g_resolveSelectiveBanProcess({result:"promise::success", tabID: g_tabId});
     }
     else {
-      g_ResolvePageProcess({result:"promise::fail", tabID: g_tabId});
+      g_resolveSelectiveBanProcess({result:"promise::fail", tabID: g_tabId});
     }
     
   }
   else {
-    log.info("ContentScriptMessageListener:: unhandled msg: " + message);
+    log.info("contentScriptMessageListener:: unhandled msg: " + message);
   }  
 }
 
-async function pageProcess(userName) {
+async function process_SelectiveBan(userName) 
+{
   return new Promise(async function(resolve, reject) {
-    g_ResolvePageProcess = resolve;
-    g_rejectPageProcess = reject;
+    g_resolveSelectiveBanProcess = resolve;
+    g_rejectSelectiveBanProcess = reject;
     
 		g_url = "https://eksisozluk.com/biri/" + userName;
     log.info("page processing started for " + g_url);
