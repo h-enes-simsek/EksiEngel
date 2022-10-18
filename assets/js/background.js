@@ -187,10 +187,10 @@ function DOMContentLoadedListener(details)
 				g_isFirstAuthor = false;
 				chrome.scripting.executeScript({
 					target: {tabId: g_tabId, frameIds: [0]}, // frame 0 is the main frame, there may be other frames (ads, google analytics etc)
-					files: ["assets/js/scrapeClientName.js"]},
+					files: ["assets/js/contentScript_ScrapeClientName.js"]},
 					()=>
 					{
-						log.info("scrapeClientName.js has been executed.");
+						log.info("contentScript_ScrapeClientName.js has been executed.");
 						// execute content script to ban user
 						executeOp = "op::action";
 						executeTarget = "target::user";
@@ -359,7 +359,7 @@ async function executeContentScript(op, mode, target)
         chrome.scripting.executeScript(
           {
             target: {tabId: g_tabId, frameIds: [0]},
-            files: ["assets/js/ban.js"]
+            files: ["assets/js/contentScript_SelectiveBan.js"]
           }, 
           ()=>
           {

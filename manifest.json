@@ -28,7 +28,8 @@
   },
 	"web_accessible_resources": [
     {
-      "resources": ["assets/img/eksiengel16.png", 
+      "resources": [
+										"assets/img/eksiengel16.png", 
 										"assets/img/eksiengel32.png", 
 										"assets/img/eksiengel48.png", 
 										"assets/img/eksiengel128.png", 
@@ -46,12 +47,13 @@
 										"assets/html/popup.html",
 										"assets/html/authorListPage.html",
 										
-										"assets/js/ban.js",
-										"assets/js/undobanAll.js",
+										"assets/js/contentScript_SelectiveBan.js",
+										"assets/js/contentScript_UndobanAll.js",
+										"assets/js/contentScript_ScrapeAuthors.js",
+										"assets/js/contentScript_ScrapeClientName.js",
 										"assets/js/popup.js", 
-										"assets/js/authorListPage.js",
-										"assets/js/scrapeAuthors.js",
-										"assets/js/scrapeClientName.js"],
+										"assets/js/authorListPage.js"
+										],
       "matches": ["http://*/*", "https://*/*"]
     }
   ]

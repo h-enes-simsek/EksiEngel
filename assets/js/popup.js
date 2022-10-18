@@ -12,9 +12,9 @@ startBanFavorites.onclick = function(element) {
 				if(tab.url.includes("eksisozluk.com/entry"))
 				{
 					
-					console.log("popup.js: scrapeAuthors will be exec");
-					chrome.scripting.executeScript({ target: {tabId: tab.id}, files: ['assets/js/scrapeAuthors.js'] }, function() {
-						console.log("scrapeAuthors has been executed.");
+					console.log("popup.js: contentScript_ScrapeAuthors.js will be exec");
+					chrome.scripting.executeScript({ target: {tabId: tab.id}, files: ['assets/js/contentScript_ScrapeAuthors.js'] }, function() {
+						console.log("contentScript_ScrapeAuthors.js has been executed.");
 					});
 					
 					/*
@@ -25,7 +25,7 @@ startBanFavorites.onclick = function(element) {
 				else
 				{
 					// the extension should be used in an ekşisözlük entry page
-					console.log("popup.js: scrapeAuthors will not be executed, current url: " + tab.url);
+					console.log("popup.js: contentScript_ScrapeAuthors.js will not be executed, current url: " + tab.url);
 					alert("Bu eklenti sadece bir ekşisözlük entry sayfası açıkken kullanılabilir. Örneğin https://eksisozluk.com/entry/1");
 				}
 			}

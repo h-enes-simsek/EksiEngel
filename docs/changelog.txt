@@ -74,7 +74,7 @@ server ile haberleşme şifreli olmalı
 istatiki sonuçlar görüntülenebilmeli
 [belki]istatistiki verilere göre engel yapılabilmeli
 10000 yazarı engellediği görüldü (5000 yazar ekşi limiti) readme sayfasına eklenebilir.
-çok uzun yazarlı entrylerde liste scrap edilirken bilgisayar ya da internet yavaşsa timeout olabiliyor şu an 15 saniye limiti var 
+çok uzun yazarlı entrylerde liste scrape edilirken bilgisayar ya da internet yavaşsa timeout olabiliyor şu an 15 saniye limiti var 
 
 BİR ARA YAPILMASI PLANLANANLAR
 test yazılımı(geliştiriliyor.)

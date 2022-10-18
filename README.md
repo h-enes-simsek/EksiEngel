@@ -10,7 +10,7 @@ Ekşisözlük'te toplu olarak engelle/başlıklarını engelle işlemi yapılmas
 
 - Bir liste halinde girilen yazarlar engellenebiliyor.
 
-Kullanıcıdan engellenecek yazarlar alındıktan sonra (entry'i favlayanlar scrap ediliyor ya da manuel olarak elle bir liste giriliyor) listedeki hesaplar sırasıyla ziyaret edilerek engelleniyor. 
+Kullanıcıdan engellenecek yazarlar alındıktan sonra (entry'i favlayanlar scrape ediliyor ya da manuel olarak elle bir liste giriliyor) listedeki hesaplar sırasıyla ziyaret edilerek engelleniyor. 
 
 İşlemler yeni açılan bir tab içinde gerçekleşiyor, engelleme devam ederken başka tablarda gezinilebiliyor ve sonunda engel için açılan tab kendiliğinden kapanıyor. 
 
