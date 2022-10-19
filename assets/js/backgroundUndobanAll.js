@@ -1,38 +1,55 @@
-let g_ResolveUndobanAllProcess;
-let g_rejectUndobanAllProcess;
+let g_resolveProcess_UndobanAll;
+let g_rejectProcess_UndobanAll;
+let g_tabId_UndobanAll = -1;
 
 async function processHandler_UndobanAll()
 {
 	log.info("Program has been started for undoban all");
 	
+	g_tabId_UndobanAll = -1;
+	
 	// register function to call every time a content script sends a message
   chrome.runtime.onMessage.addListener(contentScriptMessageListener_UndobanAll);
+	
+	// register function to call every time a page is closed
+	chrome.tabs.onRemoved.addListener(pageCloseListener_UndobanAll);
 	
 	let processResult = await process_UndobanAll();
 	
 	let res = processResult.res;
-	let clientName = processResult.clientName;
-	let totalUser = processResult.totalUser;
-	let totalTitle = processResult.totalTitle;
+	
+	if(res === "res::fail")
+	{
+		log.useful("Program has been finished early (unbanned user: " + "?" + " title: " + "?" +")");
+	}
+	else
+	{
+		let clientName = processResult.clientName;
+		let totalUser = processResult.totalUser;
+		let totalTitle = processResult.totalTitle;
+	
+		makeNotification("Engeli kaldırılan kullanıcı sayısı: " + totalUser + ", başlık sayısı: " + totalTitle);
+		log.useful("Program has been finished (unbanned user: " + totalUser + " title: " + totalTitle +")");
+	}
 	
 	log.info("contentScriptMessageListener_UndobanAll removed.");
   chrome.runtime.onMessage.removeListener(contentScriptMessageListener_UndobanAll);
 	
-	makeNotification("Engeli kaldırılan kullanıcı sayısı: " + totalUser + ", başlık sayısı: " + totalTitle);
-	log.useful("Program has been finished (unbanned user: " + totalUser + " title: " + totalTitle +")");
+	log.info("pageCloseListener_UndobanAll removed.");
+	chrome.tabs.onRemoved.removeListener(pageCloseListener_UndobanAll);
 }
 
 async function process_UndobanAll()
 {
 	return new Promise(async function(resolve, reject) {
-		g_ResolveUndobanAllProcess = resolve;
-    g_rejectUndobanAllProcess = reject;
+		g_resolveProcess_UndobanAll = resolve;
+    g_rejectProcess_UndobanAll = reject;
 		
-		let tabId = await RedirectHandler.createNewTab("https://eksisozluk.com/takip-engellenmis");
+		g_tabId_UndobanAll = await RedirectHandler.createNewTab("https://eksisozluk.com/takip-engellenmis");
 		
-		await asyncCSSInject(tabId, "assets/css/customPopup.css");
+		await asyncCSSInject(g_tabId_UndobanAll, "assets/css/customPopup.css");
 		
-		syncExecuteScript(tabId, "assets/js/contentScript_UndobanAll.js");
+		syncExecuteScript(g_tabId_UndobanAll, "assets/js/contentScript_UndobanAll.js");
 	});
 }
 
@@ -63,8 +80,23 @@ function contentScriptMessageListener_UndobanAll(message, sender, sendResponse)
 		log.useful("contentScriptMessageListener_UndobanAll: client name: " + incomingObj.clientName);
 	}
 	
-	if(incomingObj.res && incomingObj.clientName && incomingObj.totalUser && incomingObj.totalTitle)
+	if(Object.hasOwn(incomingObj, 'res')       && Object.hasOwn(incomingObj, 'clientName') &&
+	   Object.hasOwn(incomingObj, 'totalUser') && Object.hasOwn(incomingObj, 'totalTitle'))
 	{
-		g_ResolveUndobanAllProcess(incomingObj);
+		log.info("g_resolveProcess_UndobanAll will be executed by contentScriptMessageListener_UndobanAll");
+		g_resolveProcess_UndobanAll(incomingObj);
 	}
+}
+
+// this function will be called every time any page is closed (iframes will call as well)
+// multiple calls will not be a problem
+function pageCloseListener_UndobanAll(tabid, removeInfo)
+{
+  if(g_tabId_UndobanAll === tabid)
+  {
+    log.info("tab " + tabid + " closed by user");
+      
+    // resolve Promise after content script has executed
+    g_resolveProcess_UndobanAll({res:"res::fail"});
+  }
 }
