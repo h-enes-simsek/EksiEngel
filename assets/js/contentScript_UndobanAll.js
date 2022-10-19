@@ -139,50 +139,12 @@ function startScraping()
 			console.log("undobanAll: total user: " + bannedAuthorListNodeList.length +
 																		 "title: " + bannedTitleListNodeList.length);
 			
-			// inject html code to display popup
-			let HTMLElement_Popup = document.createElement("div"); 
-			document.body.appendChild(HTMLElement_Popup); 
-			HTMLElement_Popup.className = "customPopup";
-			HTMLElement_Popup.innerText = "Tüm yazarların engeli kaldırılıyor."
-			
-			let i = 0;
-			let j = 0;
-			
-			for(i = 0; i < bannedAuthorListNodeList.length;)
-			{
-				let userId = bannedAuthorListNodeList[i].getAttribute("data-userid");
-				let responseJson = await undobanUser(userId);
-				let left = responseJson["count"];
-				let isSuccessfull = responseJson["result"];
-				console.log(left + " " +  isSuccessfull);
-				if(isSuccessfull)
-				{
-					i++;
-					setPopupText(HTMLElement_Popup, i, j, true);
-				}
-			}
-			
-			for(j = 0; j < bannedTitleListNodeList.length;)
-			{
-				let userId = bannedTitleListNodeList[j].getAttribute("data-userid");
-				let responseJson = await undobanTitle(userId);
-				let left = responseJson["count"];
-				let isSuccessfull = responseJson["result"];
-				console.log(left + " " +  isSuccessfull);
-				if(isSuccessfull)
-				{
-					j++;
-					setPopupText(HTMLElement_Popup, i, j, true);
-				}
-			}
-			
-			setPopupText(HTMLElement_Popup, i, j, false);			
-			console.log("undobanAll: number of undobanned user: " + i +
-									" undobanned title: " + j);
+			let scrapeRes = await scrapingProcess(bannedAuthorListNodeList, bannedTitleListNodeList);
+
 			let responseObj = {source: "source::undobanAll", 
 												 res: "res::success", 
-												 totalUser: i, 
-												 totalTitle: j, 
+												 totalUser: scrapeRes.successfulAuthor, 
+												 totalTitle: scrapeRes.successfulTitle, 
 												 clientName: "not implemented"};
 			chrome.runtime.sendMessage(null, JSON.stringify(responseObj));
 	  }
@@ -204,6 +166,55 @@ function startScraping()
 	  }
 	}, TIMER_PERIOD_IN_MSEC);
 
+}
+
+async function scrapingProcess(bannedAuthorListNodeList, bannedTitleListNodeList)
+{
+	return new Promise(async function(resolve, reject) {
+		
+		// inject html code to display popup
+		let HTMLElement_Popup = document.createElement("div"); 
+		document.body.appendChild(HTMLElement_Popup); 
+		HTMLElement_Popup.className = "customPopup";
+		HTMLElement_Popup.innerText = "Tüm yazarların engeli kaldırılıyor."
+		
+		let i = 0;
+		let j = 0;
+		
+		for(i = 0; i < bannedAuthorListNodeList.length;)
+		{
+			let userId = bannedAuthorListNodeList[i].getAttribute("data-userid");
+			let responseJson = await undobanUser(userId);
+			let left = responseJson["count"];
+			let isSuccessfull = responseJson["result"];
+			console.log(left + " " +  isSuccessfull);
+			if(isSuccessfull)
+			{
+				i++;
+				setPopupText(HTMLElement_Popup, i, j, true);
+			}
+		}
+		
+		for(j = 0; j < bannedTitleListNodeList.length;)
+		{
+			let userId = bannedTitleListNodeList[j].getAttribute("data-userid");
+			let responseJson = await undobanTitle(userId);
+			let left = responseJson["count"];
+			let isSuccessfull = responseJson["result"];
+			console.log(left + " " +  isSuccessfull);
+			if(isSuccessfull)
+			{
+				j++;
+				setPopupText(HTMLElement_Popup, i, j, true);
+			}
+		}
+		
+		setPopupText(HTMLElement_Popup, i, j, false);			
+		console.log("undobanAll: number of undobanned user: " + i +
+								" undobanned title: " + j);
+		
+		resolve({successfulAuthor: i, successfulTitle: j});		
+	});
 }
 
 
