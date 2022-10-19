@@ -19,7 +19,7 @@ function isBannedAuthorListEmpty()
 function isBannedTitleListEmpty()
 {
 	let text = document.getElementsByClassName("relation-block")[2].getElementsByTagName("p")[0].innerHTML;
-	return (text === 'yok engellenmiş pek.')
+	return (text === 'yok başlıkları engellenmiş pek.')
 }
 
 function getBannedAuthorListNodeList()
@@ -94,9 +94,15 @@ async function undobanTitle(userId)
 	});
 }
 
-function setPopupText(element, unbannedAuthor, unbannedTitle)
+function setPopupText(element, unbannedAuthor, unbannedTitle, isOngoing)
 {
-	element.innerText = "Tüm yazarların engeli kaldırılıyor." +
+	let text = "";
+	if(isOngoing)
+		text = "Tüm yazarların engeli kaldırılıyor.";
+	else
+		text = "Engel kaldırma işlemi tamamlandı.";
+	
+	element.innerText = text +
 											"\n\nEngeli kaldırılan" +
 											"\n yazar: " + unbannedAuthor + " başlık: " + unbannedTitle;
 }
@@ -152,7 +158,7 @@ function startScraping()
 				if(isSuccessfull)
 				{
 					i++;
-					setPopupText(HTMLElement_Popup, i, j);
+					setPopupText(HTMLElement_Popup, i, j, true);
 				}
 			}
 			
@@ -166,12 +172,13 @@ function startScraping()
 				if(isSuccessfull)
 				{
 					j++;
-					setPopupText(HTMLElement_Popup, i, j);
+					setPopupText(HTMLElement_Popup, i, j, true);
 				}
 			}
-						
+			
+			setPopupText(HTMLElement_Popup, i, j, false);			
 			console.log("undobanAll: number of undobanned user: " + i +
-									"undobanAll: number of undobanned title: " + j);
+									" undobanned title: " + j);
 			let responseObj = {source: "source::undobanAll", 
 												 res: "res::success", 
 												 totalUser: i, 
