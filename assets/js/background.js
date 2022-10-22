@@ -1,7 +1,7 @@
 'use strict';
 
 try {
-  importScripts("config.js", "log.js");
+  importScripts("enums.js", "config.js", "log.js");
 } catch (error) {
   console.error(error);
 }
@@ -36,7 +36,7 @@ let g_resolveSelectiveBanProcess;     // function, resolve function of process_S
 let g_rejectSelectiveBanProcess;      // function, reject function of process_SelectiveBan's promise
 let g_isFirstAuthor = true;           // is the program tries to ban the first user in list
 let g_clientName = "";                // client's author name
-let g_executeMode = "mode::ban";			// mode of the program, will ban or undoban
+let g_banMode = "mode::ban";		    	// mode of the program, will ban or undoban
     
 chrome.runtime.onMessage.addListener(async function messageListener_Popup(message, sender, sendResponse) {
   sendResponse({status: 'ok'}); // added to suppress 'message port closed before a response was received' error
@@ -49,15 +49,20 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
 	{
 		g_isProgramActive = true; // prevent multiple starts
 		
-		if((message === 'scrapeAuthors::start' || message === 'authorListPage::ban'))
+		if(message === 'scrapeAuthors::start')
 		{
 			// list is exist in storage
-			await processHandler_SelectiveBan("mode::ban");
+			await processHandler_SelectiveBan(BanSource.FAV, "mode::ban");
 		}
+    else if(message === 'authorListPage::ban')
+    {
+      // list is exist in storage
+			await processHandler_SelectiveBan(BanSource.LIST, "mode::ban");
+    }
 		else if(message === 'authorListPage::undoban')
 		{
 			// list is exist in storage
-			await processHandler_SelectiveBan("mode::undoban");
+			await processHandler_SelectiveBan(BanSource.LIST, "mode::undoban");
 		}
 		else if(message === 'popup::undobanAll')
 		{
@@ -68,7 +73,7 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
 	}
 });
 
-async function processHandler_SelectiveBan(mode="mode::ban")
+async function processHandler_SelectiveBan(banSource, mode="mode::ban")
 {
   log.info("Program has been started with mode: " + mode);
   
@@ -95,7 +100,7 @@ async function processHandler_SelectiveBan(mode="mode::ban")
     RedirectHandler.prepareHandler();
     g_tabId = -1; // clear variable
     g_isFirstAuthor = true;
-		g_executeMode = mode;
+		g_banMode = mode;
     
     let successfullBans = 0;
     let pageResult;
@@ -138,7 +143,8 @@ async function processHandler_SelectiveBan(mode="mode::ban")
 		}
     
 		if(config.sendData)
-			await commHandler.sendData(config, userListArray, g_clientName)
+      // TODO: "BAN" will be replaced with variable
+			await commHandler.sendData(config, g_clientName, banSource, "BAN", userListArray)
 		
 		await closeLastTab(pageResult.tabID);
   }  
@@ -194,7 +200,7 @@ function DOMContentLoadedListener(details)
 						// execute content script to ban user
 						executeOp = "op::action";
 						executeTarget = "target::user";
-						executeContentScript(executeOp, g_executeMode, executeTarget);
+						executeContentScript(executeOp, g_banMode, executeTarget);
 					}
 				);
 			}
@@ -203,20 +209,20 @@ function DOMContentLoadedListener(details)
 				// execute content script to ban user
 				executeOp = "op::action";
 				executeTarget = "target::user";
-				executeContentScript(executeOp, g_executeMode, executeTarget);
+				executeContentScript(executeOp, g_banMode, executeTarget);
 			}
     }
     else if(op === "op::action" && target === "target::user" && res === "res::success"){
       // res::fail will be handled by contentScriptMessageListener
       executeOp = "op::control";
       executeTarget = "target::user";
-      executeContentScript(executeOp, g_executeMode, executeTarget);
+      executeContentScript(executeOp, g_banMode, executeTarget);
     }
     else if(op === "op::action" && target === "target::title" && res === "res::success"){
       // res::fail will be handled by contentScriptMessageListener
       executeOp = "op::control";
       executeTarget = "target::title";
-      executeContentScript(executeOp, g_executeMode, executeTarget);
+      executeContentScript(executeOp, g_banMode, executeTarget);
     }
     else{
       log.info("DOMContentLoadedListener: unhandled g_latestContentScriptInfo: " + JSON.stringify(g_latestContentScriptInfo));
@@ -267,21 +273,21 @@ function contentScriptMessageListener(message, sender, sendResponse)
     // res::success will be handled by DOMContentLoadedListener
     executeOp = "op::control";
     executeTarget = "target::user";
-    executeContentScript(executeOp, g_executeMode, executeTarget);
+    executeContentScript(executeOp, g_banMode, executeTarget);
   }
   else if(op === "op::control" && target === "target::user"){
     g_isBanUserSuccessfull = res === "res::success";
     // execute content to ban title after banning user and controlling is user banned
     executeOp = "op::action";
     executeTarget = "target::title";
-    executeContentScript(executeOp, g_executeMode, executeTarget);
+    executeContentScript(executeOp, g_banMode, executeTarget);
   }
   else if(op === "op::action" && target === "target::title" && res === "res::fail"){
     // res::success will be handled by DOMContentLoadedListener
     // execute content script to check if banning the title was successfull
     executeOp = "op::control";
     executeTarget = "target::title";
-    executeContentScript(executeOp, g_executeMode, executeTarget);
+    executeContentScript(executeOp, g_banMode, executeTarget);
   }
   else if(op === "op::control" && target === "target::title"){
     //all actions have been completed.

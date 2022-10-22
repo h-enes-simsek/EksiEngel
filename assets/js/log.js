@@ -14,6 +14,11 @@ class Log
 	{
 		this.level = level;
 	}
+  
+  getLevel = () => 
+  {
+    return this.level;
+  }
 	 
 	setEnableStatus = (isEnabled) =>
 	{

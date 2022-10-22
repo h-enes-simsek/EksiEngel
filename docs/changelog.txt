@@ -65,6 +65,8 @@ kullanıcının ekşi nicki scrape edildi.
 custom bir logger mekanizması geliştirildi.
 
 SONRAKİ GÜNCELLEMEDE YAPILMASI PLANLANANLAR
+favlananlanın engelleneceği başlık, yazar ve entry scrape edilmeli, servera gönderilmeli.
+enum değerleri obje üzerinden tanımlanmalı.
 undoban all işlemi sürerken sayfada bir popup ile işlemin sürdüğü bilgilendirilebilir.
 undoban all işlemi bittiğinde sayfa otomatik kapanabilir.
 performans analizi yapılmalı
