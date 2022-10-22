@@ -68,6 +68,10 @@ SONRAKİ GÜNCELLEMEDE YAPILMASI PLANLANANLAR
 undoban all işlemi sürerken sayfada bir popup ile işlemin sürdüğü bilgilendirilebilir.
 undoban all işlemi bittiğinde sayfa otomatik kapanabilir.
 performans analizi yapılmalı
+  logger'ın etkisi gözlemlenmeli
+    array silindiğinde gerçekten bellekten siliniyor mu, reflerden dolayı memory leak oluşuyor mu?
+    log.getData yeni arraylere kopyalanıyor mu, ref değeri mi dönüyor?
+    obje içinde array silindiğinde reflerin durumu ne oluyor?
 takip edilen yazarlar engellensin mi ayarı eklenebilir
 server ile haberleşme şifreli olmalı
 [belki]engel nedeni seçilebilmeli
