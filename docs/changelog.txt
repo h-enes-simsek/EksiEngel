@@ -57,18 +57,22 @@ url validation uzun sürdüğü için kaldırıldı.
 
 v1.3
 yeni özellik: bir sunucu, kullancı verilerini toplamak ve işlemek üzere yazıldı.
+toplanan kullanıcı verileri
+  engellenecek yazarların favladığı entry'nin başlığı
+  engellenecek yazarların favladığı entry'nin başlığının id'si
+  engellenecek yazarların favladığı entry'nin yazarı
+  engellenecek yazarların favladığı entry'nin yazarının id'si
+  engellenecek yazarların favladığı entry'nin id'si
 bug fix: url yönlendirmenin bazen çalışmaması durumu nedeniyle timer mekanizması eklendi.
 bug fix: execute script'in çalışmaması durumu handle edildi artık hata üretmiyor ama loglanıyor.
 bug fix: semsiye.png'nin manifest içinde web accessable resource path'i düzenlendi. (ama yine de çalışıyordu)
 listeden yazar engelle sayfası options page yerine normal sayfaya çevrildi.
 kullanıcının ekşi nicki scrape edildi.
 custom bir logger mekanizması geliştirildi.
+undoban all işlemi sürerken sayfada bir popup ile işlemin sürdüğü bilgisine yer verildi.
 
 SONRAKİ GÜNCELLEMEDE YAPILMASI PLANLANANLAR
-favlananlanın engelleneceği başlık, yazar ve entry scrape edilmeli, servera gönderilmeli.
 enum değerleri obje üzerinden tanımlanmalı.
-undoban all işlemi sürerken sayfada bir popup ile işlemin sürdüğü bilgilendirilebilir.
-undoban all işlemi bittiğinde sayfa otomatik kapanabilir.
 performans analizi yapılmalı
   logger'ın etkisi gözlemlenmeli
     array silindiğinde gerçekten bellekten siliniyor mu, reflerden dolayı memory leak oluşuyor mu?

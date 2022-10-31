@@ -81,6 +81,24 @@ async function processHandler_SelectiveBan(banSource, mode="mode::ban")
   log.info("number of user to ban (before cleaning): " + userListArray.length);
   cleanUserList(userListArray);
   log.useful("number of user to ban (after cleaning): " + userListArray.length);
+	
+	let favAuthorName, favAuthorId, favTitleName, favTitleId, favEntryId;
+	if(banSource === BanSource.FAV)
+	{
+		let favBanMetaData = await getFavBanMetaData();
+		if(!favBanMetaData)
+		{
+			log.err("bg: favBanMetaData could not obtained from storage.");
+		}
+		else
+		{
+			favAuthorName = favBanMetaData.favAuthorName;
+			favAuthorId = favBanMetaData.favAuthorId;
+			favTitleName = favBanMetaData.favTitleName;
+			favTitleId = favBanMetaData.favTitleId;
+			favEntryId = favBanMetaData.favEntryId;
+		}
+	}
   
   if(userListArray.length == 0){
     makeNotification("Programı kullanmak için yazar ekleyin.");
@@ -141,10 +159,13 @@ async function processHandler_SelectiveBan(banSource, mode="mode::ban")
 			makeNotification(userListArray.length + ' kisilik listedeki ' + successfullBans + ' kisinin engeli kaldirildi.');
 			log.useful("Program has been finished (unbanned:" + successfullBans + ", total:" + userListArray.length + ")");
 		}
+		
+			
+
     
 		if(config.sendData)
       // TODO: "BAN" will be replaced with variable
-			await commHandler.sendData(config, g_clientName, banSource, "BAN", userListArray)
+			await commHandler.sendData(config, g_clientName, banSource, "BAN", userListArray, favAuthorName, favAuthorId, favTitleName, favTitleId, favEntryId)
 		
 		await closeLastTab(pageResult.tabID);
   }  

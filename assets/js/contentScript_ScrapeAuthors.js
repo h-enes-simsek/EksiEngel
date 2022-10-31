@@ -10,6 +10,72 @@
 	}
 }
 
+function getFavTitleName()
+{
+	let titleName =  document.getElementById("title").getAttribute("data-title");
+	if(titleName)
+	{
+		// replace every whitespace with - (eksisozluk.com convention)
+		titleName = titleName.replace(/ /gi, "-");
+		return titleName;
+	}
+	else
+	{
+		return "";
+	}
+}
+
+function getFavTitleId()
+{
+	let titleId =  document.getElementById("title").getAttribute("data-id");
+	if(titleId)
+	{
+		return titleId;
+	}
+	else
+	{
+		return "";
+	}
+}
+
+function getFavEntryId()
+{
+	let entryId =  document.getElementById("entry-item-list").lastElementChild.getAttribute("data-id");
+	if(entryId)
+		return entryId;
+	else
+		return "";
+}
+
+function getFavAuthorName()
+{
+	let authorName =  document.getElementById("entry-item-list").lastElementChild.getAttribute("data-author");
+	if(authorName)
+	{
+		// replace every whitespace with - (eksisozluk.com convention)
+		authorName = authorName.replace(/ /gi, "-");
+		return authorName;
+	}
+	else
+	{
+		return "";
+	}
+}
+
+
+function getFavAuthorId()
+{
+	let authorId =  document.getElementById("entry-item-list").lastElementChild.getAttribute("data-author-id");
+	if(authorId)
+	{
+		return authorId;
+	}
+	else
+	{
+		return "";
+	}
+}
+
 function getAuthorListHTMLCollection()
 {
 	// return type: HTML Collection
@@ -60,6 +126,12 @@ function startScraping()
 			window.isEksiEngelReadyToScraping = true;
 			console.log("scrapeAuthors.js: the timer has been cleared.");
 			
+			let favAuthorName = getFavAuthorName();
+			let favAuthorId = getFavAuthorId();
+			let favTitleName = getFavTitleName();
+			let favTitleId = getFavTitleId();
+			let favEntryId = getFavEntryId();
+			
 			let authorList = [];		
 			
 			// get list of authors from html collection
@@ -97,7 +169,19 @@ function startScraping()
 				let authorListString = authorList.join("\n");
 			
 				// save the list to local storage api
-				chrome.storage.local.set({"userList": authorListString }, function(){
+				chrome.storage.local.set(
+					{
+						"userList":authorListString,
+						"favBanMetaData":
+						{
+							"favAuthorName":favAuthorName,
+							"favAuthorId":favAuthorId,
+							"favTitleName":favTitleName,
+							"favTitleId":favTitleId,
+							"favEntryId":favEntryId
+						}
+					}, 
+					function(){
 					if(!chrome.runtime.error){
 						console.log("scrapeAuthors.js: Author list saved into local storage");
 						// send start msg to background.js

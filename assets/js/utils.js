@@ -56,6 +56,37 @@ async function isTargetTabExist(tabid)
   });
 }
 
+// get meta data for fav ban from storage api
+// output: object (if fails, returns empty string)
+async function getFavBanMetaData()
+{
+  return new Promise((resolve, reject) => {
+    chrome.storage.local.get("favBanMetaData", function(items){
+      if(!chrome.runtime.error)
+      {
+        if(items != undefined 														&& items.favBanMetaData != undefined    && 
+				   Object.keys(items.favBanMetaData).length !== 0 && "favEntryId" in items.favBanMetaData &&
+					 "favTitleName" in items.favBanMetaData 				&& "favTitleId" in items.favBanMetaData && 
+					 "favAuthorName" in items.favBanMetaData 				&& "favAuthorId" in items.favBanMetaData)
+        {
+          resolve(items.favBanMetaData);  
+        }
+        else 
+        {
+          log.err("empty object from storage api");
+          resolve("");
+        }
+      }
+      else 
+      {
+        log.err("chrome.storage.local runtime err");
+        makeNotification("chrome.storage.local runtime hatası");
+        resolve("");
+      }
+    }); 
+  });
+}
+
 // get userList from storage api
 // output: array (if fails, returns empty array)
 async function getUserList()

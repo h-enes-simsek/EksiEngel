@@ -5,7 +5,7 @@ class CommHandler
 		this.log = logger;
 	}
 	
-	sendData = async (config, clientName, banSource, banMode, authList) =>
+	sendData = async (config, clientName, banSource, banMode, authList, favAuthorName, favAuthorId, favTitleName, favTitleId, favEntryId) =>
 	{
 		let dataToServerObj = {};
 		
@@ -15,7 +15,7 @@ class CommHandler
 			if(clientName)
 				dataToServerObj.name = clientName;
 			else
-				dataToServerObj.name = config.erroneousClientName;
+				dataToServerObj.name = config.erroneousText;
 		}
 		else
 		{
@@ -28,14 +28,33 @@ class CommHandler
     // ban_mode
     dataToServerObj.banMode = banMode;
     
-    // fav_entry
-    dataToServerObj.favEntry = "Not implemented";
+    // fav_author
+		if(favAuthorName)
+			dataToServerObj.favAuthorName = favAuthorName;
+		else
+			dataToServerObj.favAuthorName = config.erroneousText;
+		
+		if(favAuthorId)
+			dataToServerObj.favAuthorId = favAuthorId;
+		else
+			dataToServerObj.favAuthorId = config.erroneousInt;
     
     // fav_title
-    dataToServerObj.favTitle = "Not implemented";
+		if(favTitleName)
+			dataToServerObj.favTitleName = favTitleName;
+		else
+			dataToServerObj.favTitleName = config.erroneousText;
+
+		if(favTitleId)
+			dataToServerObj.favTitleId = favTitleId;
+		else
+			dataToServerObj.favTitleId = config.erroneousInt;
     
-    // fav_author
-		dataToServerObj.favAuthor = "Not implemented";
+    // fav_entry
+		if(favEntryId)
+			dataToServerObj.favEntryId = favEntryId;
+		else
+			dataToServerObj.favEntryId = config.erroneousInt;
     
     // author_list
 		if(config.sendAuthorList)

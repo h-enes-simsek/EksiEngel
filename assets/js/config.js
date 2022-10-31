@@ -1,7 +1,7 @@
 const config = 
 {
 	"serverURL": 				"http://127.0.0.1:5000/upload_author_list",
-	"sendData": 				false,														/* send data to server */
+	"sendData": 				true,														/* send data to server */
 		"sendAuthorList": true,															/* send author list to server */
 		"sendClientName": true,															/* send client name to server */
 		"sendLog": 				true,															/* send log data to server */
@@ -10,5 +10,6 @@ const config =
 		"logConsole": 		true, 														/* log into console as well */
 	
 	"anonymouseClientName": "anonymouse",									/* client name if sendClientName false */
-	"erroneousClientName": "anonymouse_error",						/* client name if scraping goes wrong */
+	"erroneousText": 				"empty",											/* default text if smt goes wrong */
+	"erroneousInt": 				"0",													/* default int if smt goes wrong*/
 }
