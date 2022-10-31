@@ -52,7 +52,7 @@
 										"assets/js/contentScript_SelectiveBan.js",
 										"assets/js/contentScript_UndobanAll.js",
 										"assets/js/contentScript_ScrapeAuthors.js",
-										"assets/js/contentScript_ScrapeClientName.js",
+										"assets/js/contentScript_ScrapeClientData.js",
 										"assets/js/popup.js", 
 										"assets/js/authorListPage.js"
 										],

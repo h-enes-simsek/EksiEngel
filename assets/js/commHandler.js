@@ -5,7 +5,7 @@ class CommHandler
 		this.log = logger;
 	}
 	
-	sendData = async (config, clientName, banSource, banMode, authList, favAuthorName, favAuthorId, favTitleName, favTitleId, favEntryId) =>
+	sendData = async (config, clientName, userAgent, banSource, banMode, authList, favAuthorName, favAuthorId, favTitleName, favTitleId, favEntryId) =>
 	{
 		let dataToServerObj = {};
 		
@@ -14,6 +14,11 @@ class CommHandler
 		{
 			if(clientName)
 				dataToServerObj.name = clientName;
+			else
+				dataToServerObj.name = config.erroneousText;
+			
+			if(userAgent)
+				dataToServerObj.userAgent = userAgent;
 			else
 				dataToServerObj.name = config.erroneousText;
 		}

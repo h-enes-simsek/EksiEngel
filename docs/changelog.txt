@@ -58,6 +58,7 @@ url validation uzun sürdüğü için kaldırıldı.
 v1.3
 yeni özellik: bir sunucu, kullancı verilerini toplamak ve işlemek üzere yazıldı.
 toplanan kullanıcı verileri
+  user agent
   engellenecek yazarların favladığı entry'nin başlığı
   engellenecek yazarların favladığı entry'nin başlığının id'si
   engellenecek yazarların favladığı entry'nin yazarı

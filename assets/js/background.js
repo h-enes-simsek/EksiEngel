@@ -36,6 +36,7 @@ let g_resolveSelectiveBanProcess;     // function, resolve function of process_S
 let g_rejectSelectiveBanProcess;      // function, reject function of process_SelectiveBan's promise
 let g_isFirstAuthor = true;           // is the program tries to ban the first user in list
 let g_clientName = "";                // client's author name
+let g_clientUserAgent = "";           // client's user agent
 let g_banMode = "mode::ban";		    	// mode of the program, will ban or undoban
     
 chrome.runtime.onMessage.addListener(async function messageListener_Popup(message, sender, sendResponse) {
@@ -165,7 +166,7 @@ async function processHandler_SelectiveBan(banSource, mode="mode::ban")
     
 		if(config.sendData)
       // TODO: "BAN" will be replaced with variable
-			await commHandler.sendData(config, g_clientName, banSource, "BAN", userListArray, favAuthorName, favAuthorId, favTitleName, favTitleId, favEntryId)
+			await commHandler.sendData(config, g_clientName, g_clientUserAgent, banSource, "BAN", userListArray, favAuthorName, favAuthorId, favTitleName, favTitleId, favEntryId)
 		
 		await closeLastTab(pageResult.tabID);
   }  
@@ -214,10 +215,10 @@ function DOMContentLoadedListener(details)
 				g_isFirstAuthor = false;
 				chrome.scripting.executeScript({
 					target: {tabId: g_tabId, frameIds: [0]}, // frame 0 is the main frame, there may be other frames (ads, google analytics etc)
-					files: ["assets/js/contentScript_ScrapeClientName.js"]},
+					files: ["assets/js/contentScript_ScrapeClientData.js"]},
 					()=>
 					{
-						log.info("contentScript_ScrapeClientName.js has been executed.");
+						log.info("contentScript_ScrapeClientData.js has been executed.");
 						// execute content script to ban user
 						executeOp = "op::action";
 						executeTarget = "target::user";
@@ -270,10 +271,12 @@ function contentScriptMessageListener(message, sender, sendResponse)
     return;
   }
 	
-	if(incomingObj.clientName)
+	if(incomingObj.clientName || incomingObj.userAgent)
 	{
 		g_clientName = incomingObj.clientName;
+		g_clientUserAgent = incomingObj.userAgent;
 		log.useful("contentScriptMessageListener:: client name: " + g_clientName);
+		log.useful("contentScriptMessageListener:: user agent: " + g_clientUserAgent);
 		return;
 	}
 	
