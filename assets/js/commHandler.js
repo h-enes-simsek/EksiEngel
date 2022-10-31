@@ -59,14 +59,21 @@ class CommHandler
 			dataToServerObj.log = [];
 		}
 		
-		const response = await fetch(config.serverURL, {
-			method: 'POST',
-			headers: {
-			'Accept': 'application/json',
-			'Content-Type': 'application/json'
-			},
-			body: JSON.stringify(dataToServerObj)
-		});
-		this.log.info("commHandler: response status: " + response.status); 
+		try
+		{
+			const response = await fetch(config.serverURL, {
+				method: 'POST',
+				headers: {
+				'Accept': 'application/json',
+				'Content-Type': 'application/json'
+				},
+				body: JSON.stringify(dataToServerObj)
+			});
+			this.log.info("commHandler: response status: " + response.status); 
+		}
+		catch(err)
+		{
+			this.log.err("commHandler: err: " + err); 
+		}
 	}
 }
