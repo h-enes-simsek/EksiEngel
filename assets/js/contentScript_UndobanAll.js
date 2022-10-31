@@ -48,6 +48,15 @@ function getBannedTitleListNodeList()
 	}
 }
 
+function getClientName()
+{
+	let clientName = document.querySelector("#top-navigation li[class='not-mobile'] a").title;
+	if(clientName)
+		return clientName;
+	else
+		return "";
+}
+
 async function undoban(userId, target)
 {
 	return new Promise(async function(resolve, reject) {
@@ -137,7 +146,9 @@ function startScraping()
 			window.isEksiEngelReadyToScraping = true;
 			console.log("undobanAll: the timer has been cleared.");
 			console.log("undobanAll: total user: " + bannedAuthorListNodeList.length +
-																		 "title: " + bannedTitleListNodeList.length);
+																	 "title: " + bannedTitleListNodeList.length);
+																		 
+			let clientName = getClientName();
 			
 			let scrapeRes = await scrapingProcess(bannedAuthorListNodeList, bannedTitleListNodeList);
 
@@ -145,7 +156,7 @@ function startScraping()
 												 res: "res::success", 
 												 totalUser: scrapeRes.successfulAuthor, 
 												 totalTitle: scrapeRes.successfulTitle, 
-												 clientName: "not implemented"};
+												 clientName: clientName};
 			chrome.runtime.sendMessage(null, JSON.stringify(responseObj));
 	  }
 		else if(isBannedAuthorListEmptyBool && isBannedTitleListEmptyBool)
