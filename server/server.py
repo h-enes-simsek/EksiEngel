@@ -18,7 +18,13 @@ def handle_upload_author_list():
         content = request.json
         
         for k, v in content.items():
-            print(k, " = ", v)
+            if(isinstance(v, list)):
+                # print list
+                print(k, "(list): ")
+                for item in v:
+                    print(item)
+            else:
+                print(k, ": ", v)
         
         return make_response("", 200)
     else:
