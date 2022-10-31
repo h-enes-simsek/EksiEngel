@@ -20,7 +20,7 @@ def handle_upload_author_list():
         for k, v in content.items():
             if(isinstance(v, list)):
                 # print list
-                print(k, "(list): ")
+                print(k, "(list len: " + str(len(v)) + ")")
                 for item in v:
                     print(item)
             else:
