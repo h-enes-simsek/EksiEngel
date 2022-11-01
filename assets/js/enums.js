@@ -1,6 +1,7 @@
 const BanSource = {
-  FAV:  "FAV",
-  LIST: "LIST"
+  FAV:  			"FAV",
+  LIST: 			"LIST",
+	UNDOBANALL: "UNDOBANALL"
 };
 
 const BanMode = {

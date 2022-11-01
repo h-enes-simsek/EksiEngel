@@ -1,9 +1,7 @@
 // this script is to ban/undoban a user/user's titles
 {
-  // op        -> OpMode.ACTION   or OpMode.CONTROL
-  // mode      -> BanMode.BAN     or BanMode.UNDOBAN
-  // target    -> TargetType.USER or TargetType.TITLE
   // these enum and config parameters was previously injected by background script
+	let BanSource = window.enumEksiEngelBanSource;
 	let OpMode = window.enumEksiEngelOpMode;
 	let BanMode = window.enumEksiEngelBanMode;
 	let TargetType = window.enumEksiEngelTargetType;

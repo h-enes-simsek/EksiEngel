@@ -16,11 +16,6 @@ startBanFavorites.onclick = function(element) {
 					chrome.scripting.executeScript({ target: {tabId: tab.id}, files: ['assets/js/contentScript_ScrapeAuthors.js'] }, function() {
 						console.log("contentScript_ScrapeAuthors.js has been executed.");
 					});
-					
-					/*
-					console.log("popup: message will be sent to background script to start ban");
-					chrome.runtime.sendMessage(null, "popup::banForFavs");
-					*/
 				}
 				else
 				{

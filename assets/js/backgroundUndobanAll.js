@@ -18,7 +18,7 @@ async function processHandler_UndobanAll()
 	
 	let res = processResult.res;
 	
-	if(res === "res::fail")
+	if(res === ResultType.FAIL)
 	{
 		log.useful("Program has been finished early (unbanned user: " + "?" + " title: " + "?" +")");
 	}
@@ -49,7 +49,29 @@ async function process_UndobanAll()
 		
 		await asyncCSSInject(g_tabId_UndobanAll, "assets/css/customPopup.css");
 		
-		syncExecuteScript(g_tabId_UndobanAll, "assets/js/contentScript_UndobanAll.js");
+		// frame 0 is the main frame, there may be other frames (ads, google analytics etc)
+    chrome.scripting.executeScript(
+		{
+			target: {tabId: g_tabId_UndobanAll, frameIds: [0]}, 
+			func: (_BanSource, _OpMode, _BanMode, _TargetType, _ResultType)=>
+			{
+				// enum values
+				window.enumEksiEngelBanSource= _BanSource;
+				window.enumEksiEngelOpMode = _OpMode;
+				window.enumEksiEngelBanMode = _BanMode;
+				window.enumEksiEngelTargetType = _TargetType;
+				window.enumEksiEngelResultType = _ResultType;
+			},
+			args: [BanSource, OpMode, BanMode, TargetType, ResultType]
+		}, 
+		()=>
+		{
+			if(chrome.runtime.lastError) 
+				log.err("content script could not be executed, err: " + chrome.runtime.lastError.message);
+			else
+				syncExecuteScript(g_tabId_UndobanAll, "assets/js/contentScript_UndobanAll.js");
+		}
+		);
 	});
 }
 
@@ -69,7 +91,7 @@ function contentScriptMessageListener_UndobanAll(message, sender, sendResponse)
     return;
   }
 	
-	if(incomingObj.source !== "source::undobanAll")
+	if(incomingObj.source !== BanSource.UNDOBANALL)
 	{
 		log.err("contentScriptMessageListener_UndobanAll: wrong source: " + incomingObj.source);
 		return;
@@ -97,6 +119,6 @@ function pageCloseListener_UndobanAll(tabid, removeInfo)
     log.info("tab " + tabid + " closed by user");
       
     // resolve Promise after content script has executed
-    g_resolveProcess_UndobanAll({res:"res::fail"});
+    g_resolveProcess_UndobanAll({res: ResultType.FAIL});
   }
 }

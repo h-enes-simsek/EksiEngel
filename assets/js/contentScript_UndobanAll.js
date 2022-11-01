@@ -1,3 +1,10 @@
+// these enum and config parameters was previously injected by background script
+let BanSource = window.enumEksiEngelBanSource;
+let OpMode = window.enumEksiEngelOpMode;
+let BanMode = window.enumEksiEngelBanMode;
+let TargetType = window.enumEksiEngelTargetType;
+let ResultType = window.enumEksiEngelResultType;
+
 {
 	let readyToScraping = window.isEksiEngelReadyToScraping;
 	if(typeof readyToScraping === 'undefined' || readyToScraping === true)
@@ -15,8 +22,8 @@
 			HTMLElement_Popup.className = "customPopup";
 			HTMLElement_Popup.innerText = "Ekşi Sözlük hesabınıza giriş yapmanız gerekiyor."
 			
-			let responseObj = {source: "source::undobanAll", 
-												 res: "res::fail", 
+			let responseObj = {source: BanSource.UNDOBANALL, 
+												 res: ResultType.FAIL, 
 												 totalUser: 0, 
 												 totalTitle: 0, 
 												 clientName: ""};
@@ -90,9 +97,9 @@ async function undoban(userId, target)
 {
 	return new Promise(async function(resolve, reject) {
 		let url;
-		if(target==="target::title")
+		if(target===TargetType.TITLE)
 			url = 'https://eksisozluk.com/userrelation/removerelation/' + userId + '?r=i';
-		else if(target==="target::user")
+		else if(target===TargetType.USER)
 			url = 'https://eksisozluk.com/userrelation/removerelation/' + userId + '?r=m';
 	
 		try {
@@ -119,7 +126,7 @@ async function undoban(userId, target)
 async function undobanUser(userId)
 {
 	return new Promise(async function(resolve, reject) {
-		let responseJson = await undoban(userId, "target::user");
+		let responseJson = await undoban(userId, TargetType.USER);
 		resolve(responseJson);
 	});
 }
@@ -127,7 +134,7 @@ async function undobanUser(userId)
 async function undobanTitle(userId)
 {
 	return new Promise(async function(resolve, reject) {
-		let responseJson = await undoban(userId, "target::title");
+		let responseJson = await undoban(userId, TargetType.TITLE);
 		resolve(responseJson);
 	});
 }
@@ -181,8 +188,8 @@ function startScraping()
 			
 			let scrapeRes = await scrapingProcess(bannedAuthorListNodeList, bannedTitleListNodeList);
 
-			let responseObj = {source: "source::undobanAll", 
-												 res: "res::success", 
+			let responseObj = {source: BanSource.UNDOBANALL, 
+												 res: ResultType.SUCCESS, 
 												 totalUser: scrapeRes.successfulAuthor, 
 												 totalTitle: scrapeRes.successfulTitle, 
 												 clientName: clientName};

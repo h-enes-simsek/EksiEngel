@@ -374,9 +374,10 @@ async function executeContentScript(op, mode, target)
       {
         // firstly this code will be executed
         target: {tabId: g_tabId, frameIds: [0]}, 
-        func: (_OpMode, _BanMode, _TargetType, _ResultType, _op, _mode, _target)=>
+        func: (_BanSource, _OpMode, _BanMode, _TargetType, _ResultType, _op, _mode, _target)=>
         {
 					// enum values
+					window.enumEksiEngelBanSource= _BanSource;
 					window.enumEksiEngelOpMode = _OpMode;
 					window.enumEksiEngelBanMode = _BanMode;
 					window.enumEksiEngelTargetType = _TargetType;
@@ -387,7 +388,7 @@ async function executeContentScript(op, mode, target)
           window.configEksiEngelMode = _mode;
           window.configEksiEngelTarget = _target;
         },
-        args: [OpMode, BanMode, TargetType, ResultType, op, mode, target]
+        args: [BanSource, OpMode, BanMode, TargetType, ResultType, op, mode, target]
       }, 
       ()=>
       {
