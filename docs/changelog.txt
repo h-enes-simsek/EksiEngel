@@ -76,7 +76,7 @@ bug fix: semsiye.png'nin manifest içinde web accessable resource path'i düzenl
 listeden yazar engelle sayfası options page yerine normal sayfaya çevrildi.
 custom bir logger mekanizması geliştirildi.
 bazı hardcoded sabitler enum olarak refactor edildi.
-ekşi hesabına giriş yapılmadıysa uyarı vermesi sağlandı. (hem fav hem liste modu için)
+ekşi hesabına giriş yapılmadıysa uyarı vermesi sağlandı. (hem fav hem liste modu hem de tüm engelleri kaldır modu için)
 
 SONRAKİ GÜNCELLEMEDE YAPILMASI PLANLANANLAR
 performans analizi yapılmalı

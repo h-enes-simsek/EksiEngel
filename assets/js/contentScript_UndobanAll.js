@@ -2,7 +2,26 @@
 	let readyToScraping = window.isEksiEngelReadyToScraping;
 	if(typeof readyToScraping === 'undefined' || readyToScraping === true)
 	{
-		startScraping();
+		let clientName = getClientName();
+		if(clientName)
+		{
+			startScraping();
+		}
+		else
+		{
+			// inject html code to display popup
+			let HTMLElement_Popup = document.createElement("div"); 
+			document.body.appendChild(HTMLElement_Popup); 
+			HTMLElement_Popup.className = "customPopup";
+			HTMLElement_Popup.innerText = "Ekşi Sözlük hesabınıza giriş yapmanız gerekiyor."
+			
+			let responseObj = {source: "source::undobanAll", 
+												 res: "res::fail", 
+												 totalUser: 0, 
+												 totalTitle: 0, 
+												 clientName: ""};
+			chrome.runtime.sendMessage(null, JSON.stringify(responseObj));
+		}
 	}
 	else
 	{
@@ -50,11 +69,21 @@ function getBannedTitleListNodeList()
 
 function getClientName()
 {
-	let clientName = document.querySelector("#top-navigation li[class='not-mobile'] a").title;
-	if(clientName)
-		return clientName;
-	else
-		return "";
+	let clientName = "";
+	let selector = ".mobile-notification-icons > ul > li > a";
+	try
+	{
+		let element = document.querySelectorAll(selector)[0].title;
+		if(element && element != null && element != undefined)
+			clientName = element;
+	}
+	catch(err)
+	{
+		// may be not logged in
+		console.log(err);
+	}
+	
+	return clientName;
 }
 
 async function undoban(userId, target)
