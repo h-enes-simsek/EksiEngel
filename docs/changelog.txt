@@ -1,4 +1,4 @@
-Versiyon notları (Son kullanıcı için)
+Versiyon notları (son kullanıcı için)
 -------------------------------------------------
 v1.0 
 yayın: 06.05.2022
@@ -17,10 +17,15 @@ bug fix: nickinde whitespace olan yazarların engellenememesi sorunu çözüldü
 arayüz sadeleştirildi. 
 
 v1.3
-yayın: 
+yayın: yok
+Engelleme/engeli kaldırma işleminin daha hızlı bir yolu keşfedildiği için bu sürüm yayınlanmadı.
+yeni özellik: tüm kullanıcıların engelini kaldırma özelliği eklendi.
+yeni özellik: kullanıcının bazı verileri toplanmaya ve işlenmeye başlandı.
+              detaylı liste için privacy policy'e göz atın.
+bug fix: url yönlendirmenin bazen çalışmaması durumu düzeltildi.
 
 
-Versiyon notları ve TODO listesi (detaylı) 
+Versiyon notları (detaylı) 
 -------------------------------------------------
 v1.0  
 yayın: 06.05.2022
@@ -56,6 +61,8 @@ sayfanın yüklenmesi tab listener api ile dinlendiğinde gereksiz yere bekleniy
 url validation uzun sürdüğü için kaldırıldı.
 
 v1.3
+gönderim: yok - yayın: yok
+Engelleme/engeli kaldırma işleminin http istekleri ile daha hızlı yapılabildiği keşfedildiği için bu sürüm yayınlanmadı.
 yeni özellik: tüm kullanıcıların engelini kaldırma özelliği eklendi.
               tersine mühendislik ile buton tıklama simüle etmek yerine doğrudan http istekleri gönderildi.
               işlem sürerken sayfada bir popup ile işlemin sürdüğü ve bittiği bilgisine yer verildi.
@@ -78,6 +85,10 @@ custom bir logger mekanizması geliştirildi.
 bazı hardcoded sabitler enum olarak refactor edildi.
 ekşi hesabına giriş yapılmadıysa uyarı vermesi sağlandı. (hem fav hem liste modu hem de tüm engelleri kaldır modu için)
 
+v1.4
+yeni özellik: engelleme/engeli kaldırma işlemi artık http istekleriyle doğrudan yapılıyor.
+              her yazarın sayfasını açmaya gerek kalmadığı için işlemler hızlandı.
+
 SONRAKİ GÜNCELLEMEDE YAPILMASI PLANLANANLAR
 performans analizi yapılmalı
   logger'ın etkisi gözlemlenmeli
@@ -93,7 +104,6 @@ istatiki sonuçlar görüntülenebilmeli
 çok uzun yazarlı entrylerde liste scrape edilirken bilgisayar ya da internet yavaşsa timeout olabiliyor şu an 15 saniye limiti var.
 tüm engelleri kaldırma işlemi çok hızlı gerçekleşebiliyor. hızı saniyede max 15 engeli kaldırma işlemine düşürülmeli.
 server tarafından kullanıcıdaki config değerleri güncellenebilmeli.
-
 
 DÜŞÜK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
 takip edilen yazarlar engellensin mi ayarı eklenebilir
