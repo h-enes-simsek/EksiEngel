@@ -149,6 +149,8 @@ async function processHandler_SelectiveBan(banSource, mode="mode::ban")
     
     log.info("pageCloseListener removed.");
     chrome.tabs.onRemoved.removeListener(pageCloseListener);
+		
+		await closeLastTab(pageResult.tabID);
 
 		if(mode === "mode::ban")
 		{
@@ -160,15 +162,12 @@ async function processHandler_SelectiveBan(banSource, mode="mode::ban")
 			makeNotification(userListArray.length + ' kisilik listedeki ' + successfullBans + ' kisinin engeli kaldirildi.');
 			log.useful("Program has been finished (unbanned:" + successfullBans + ", total:" + userListArray.length + ")");
 		}
-		
-			
-
     
 		if(config.sendData)
       // TODO: "BAN" will be replaced with variable
 			await commHandler.sendData(config, g_clientName, g_clientUserAgent, banSource, "BAN", userListArray, favAuthorName, favAuthorId, favTitleName, favTitleId, favEntryId)
 		
-		await closeLastTab(pageResult.tabID);
+		
   }  
 }
 

@@ -1,10 +1,9 @@
-// backgroung.js dont have a html page so cannot alert, instead notifications can be used
 function makeNotification(message)
 {
   chrome.notifications.create({
     type: 'basic',
-    iconUrl: '../img/eksiengel16.png',
-    title: 'Notification',
+		iconUrl: '../img/eksiengel16.png',
+    title: 'Eksi Engel',
     message: message,
     priority: 1
   });
