@@ -270,8 +270,14 @@ function contentScriptMessageListener(message, sender, sendResponse)
     return;
   }
 	
-	if(incomingObj.clientName || incomingObj.userAgent)
+	if("clientName" in incomingObj || "userAgent" in incomingObj)
 	{
+		if(!incomingObj.clientName)
+		{
+			makeNotification("Ekşi Sözlük hesabınıza giriş yaptınız mı?");
+			log.warn("contentScriptMessageListener:: client_name couldn't be obtained, maybe not logged in.");
+			g_earlyStopCommand = true;
+		}
 		g_clientName = incomingObj.clientName;
 		g_clientUserAgent = incomingObj.userAgent;
 		log.useful("contentScriptMessageListener:: client name: " + g_clientName);

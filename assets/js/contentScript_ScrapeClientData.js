@@ -2,9 +2,19 @@
 	// client name
 	let clientName = "";
 	let selector = ".mobile-notification-icons > ul > li > a";
-	let element = document.querySelectorAll(selector)[0].title;
-	if(element && element != null && element != undefined)
-		clientName = element;
+	try
+	{
+		let element = document.querySelectorAll(selector)[0].title;
+		if(element && element != null && element != undefined)
+			clientName = element;
+	}
+	catch(err)
+	{
+		// may be not logged in
+		console.log(err);
+	}
+	
+	console.log(clientName);
 	
 	// user agent
 	let userAgent = window.navigator.userAgent;

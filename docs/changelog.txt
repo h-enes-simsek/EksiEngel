@@ -10,8 +10,8 @@ market sayfasındaki resimler güncellendi.
 
 v1.2
 yayın: 27.09.2022
-yeni özellik: bir entry'i favlayan yazarları engellemesi
-bug fix: adblocker gibi sayfaya müdahele eden eklentilerin neden olduğu sorunlar giderildi.
+yeni özellik: bir entry'i favlayan yazarların engellemesi
+bug fix: adblocker gibi sayfaya müdahale eden eklentilerin neden olduğu sorunlar giderildi.
 bug fix: engelleme devam ederken sayfa kapatıldığında uygulamanın çökmesi engellendi. 
 bug fix: nickinde whitespace olan yazarların engellenememesi sorunu çözüldü.
 arayüz sadeleştirildi. 
@@ -56,41 +56,47 @@ sayfanın yüklenmesi tab listener api ile dinlendiğinde gereksiz yere bekleniy
 url validation uzun sürdüğü için kaldırıldı.
 
 v1.3
-yeni özellik: bir sunucu, kullancı verilerini toplamak ve işlemek üzere yazıldı.
-toplanan kullanıcı verileri
-  user agent
-  engellenecek yazarların favladığı entry'nin başlığı
-  engellenecek yazarların favladığı entry'nin başlığının id'si
-  engellenecek yazarların favladığı entry'nin yazarı
-  engellenecek yazarların favladığı entry'nin yazarının id'si
-  engellenecek yazarların favladığı entry'nin id'si
+yeni özellik: tüm kullanıcıların engelini kaldırma özelliği eklendi.
+              tersine mühendislik ile buton tıklama simüle etmek yerine doğrudan http istekleri gönderildi.
+              işlem sürerken sayfada bir popup ile işlemin sürdüğü ve bittiği bilgisine yer verildi.
+yeni özellik: kullanıcının bazı verileri toplanmaya ve işlenmeye başlandı.
+              toplanan kullanıcı verileri:
+              * kullanıcının ekşi sözlük nicki
+              * kullanıcının user agent'ı
+              * engellenecek yazarların favladığı entry'nin başlığı
+              * engellenecek yazarların favladığı entry'nin başlığının id'si
+              * engellenecek yazarların favladığı entry'nin yazarı
+              * engellenecek yazarların favladığı entry'nin yazarının id'si
+              * engellenecek yazarların favladığı entry'nin id'si
+              * engellecek yazarların listesi
+              * engelleme işlemi sürecinde toplanan loglar
 bug fix: url yönlendirmenin bazen çalışmaması durumu nedeniyle timer mekanizması eklendi.
 bug fix: execute script'in çalışmaması durumu handle edildi artık hata üretmiyor ama loglanıyor.
 bug fix: semsiye.png'nin manifest içinde web accessable resource path'i düzenlendi. (ama yine de çalışıyordu)
 listeden yazar engelle sayfası options page yerine normal sayfaya çevrildi.
-kullanıcının ekşi nicki scrape edildi.
 custom bir logger mekanizması geliştirildi.
-undoban all işlemi sürerken sayfada bir popup ile işlemin sürdüğü bilgisine yer verildi.
+bazı hardcoded sabitler enum olarak refactor edildi.
+ekşi hesabına giriş yapılmadıysa uyarı vermesi sağlandı. (hem fav hem liste modu için)
 
 SONRAKİ GÜNCELLEMEDE YAPILMASI PLANLANANLAR
-enum değerleri obje üzerinden tanımlanmalı.
 performans analizi yapılmalı
   logger'ın etkisi gözlemlenmeli
     array silindiğinde gerçekten bellekten siliniyor mu, reflerden dolayı memory leak oluşuyor mu?
     log.getData yeni arraylere kopyalanıyor mu, ref değeri mi dönüyor?
     obje içinde array silindiğinde reflerin durumu ne oluyor?
-takip edilen yazarlar engellensin mi ayarı eklenebilir
-server ile haberleşme şifreli olmalı
+server ile haberleşme obfusticated hale getirilmeli ya da şifrelenmeli
+server ile haberleşme ssl üzerinden gerçekleşmeli
 [belki]engel nedeni seçilebilmeli
 istatiki sonuçlar görüntülenebilmeli
 [belki]istatistiki verilere göre engel yapılabilmeli
 10000 yazarı engellediği görüldü (5000 yazar ekşi limiti) readme sayfasına eklenebilir.
-çok uzun yazarlı entrylerde liste scrape edilirken bilgisayar ya da internet yavaşsa timeout olabiliyor şu an 15 saniye limiti var 
+çok uzun yazarlı entrylerde liste scrape edilirken bilgisayar ya da internet yavaşsa timeout olabiliyor şu an 15 saniye limiti var.
+tüm engelleri kaldırma işlemi çok hızlı gerçekleşebiliyor. hızı saniyede max 15 engeli kaldırma işlemine düşürülmeli.
+server tarafından kullanıcıdaki config değerleri güncellenebilmeli.
 
-BİR ARA YAPILMASI PLANLANANLAR
-test yazılımı(geliştiriliyor.)
+
+DÜŞÜK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
+takip edilen yazarlar engellensin mi ayarı eklenebilir
+test yazılımı (geliştiriliyor...)
 firefox desteği (hiçbir şey düzgün çalışmıyor, manifest v3 desteği bile tam gelmemiş)
-listeneden engelleme için ekşi hesabına girilip girilmediği kontrol edilmeli
-log mekanizması daha iyi hale getirilmeli
-engellenen yazarların engeli kaldırılabilmeli
 google analytics
