@@ -9,7 +9,7 @@ class CommHandler
 	{
 		let dataToServerObj = {};
 		
-    // name
+    // name and user_agent
 		if(config.sendClientName)
 		{
 			if(clientName)
@@ -33,7 +33,7 @@ class CommHandler
     // ban_mode
     dataToServerObj.banMode = banMode;
     
-    // fav_author
+    // fav_author_name and fav_author_id
 		if(favAuthorName)
 			dataToServerObj.favAuthorName = favAuthorName;
 		else
@@ -44,7 +44,7 @@ class CommHandler
 		else
 			dataToServerObj.favAuthorId = config.erroneousInt;
     
-    // fav_title
+    // fav_title_name and fav_title_id
 		if(favTitleName)
 			dataToServerObj.favTitleName = favTitleName;
 		else
@@ -55,7 +55,7 @@ class CommHandler
 		else
 			dataToServerObj.favTitleId = config.erroneousInt;
     
-    // fav_entry
+    // fav_entry_id
 		if(favEntryId)
 			dataToServerObj.favEntryId = favEntryId;
 		else
@@ -79,7 +79,7 @@ class CommHandler
 		}
 		else
 		{
-      dataToServerObj.logLevel = "DISABLED";
+      dataToServerObj.logLevel = config.disabledLogText;
 			dataToServerObj.log = [];
 		}
 		

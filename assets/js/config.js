@@ -11,5 +11,6 @@ const config =
 	
 	"anonymouseClientName": "anonymouse",									/* client name if sendClientName false */
 	"erroneousText": 				"empty",											/* default text if smt goes wrong */
+	"disabledLogText": 			"DISABLED",										/* log level text if log is disabled */
 	"erroneousInt": 				"0",													/* default int if smt goes wrong*/
 }

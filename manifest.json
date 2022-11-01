@@ -1,62 +1,68 @@
 {
-	"manifest_version": 3,
+  "manifest_version": 3,
   "name": "Ekşi Engel",
   "version": "1.2",
   "description": "Ekşi Sözlük'te toplu olarak engelleme/başlıklarını engelleme işlemi yapın.",
-	"icons": {
-		"16": "assets/img/eksiengel16.png",
-		"32": "assets/img/eksiengel32.png",
-		"48": "assets/img/eksiengel48.png",
-		"128": "assets/img/eksiengel128.png"
-		},
+  "icons": {
+    "16": "assets/img/eksiengel16.png",
+    "32": "assets/img/eksiengel32.png",
+    "48": "assets/img/eksiengel48.png",
+    "128": "assets/img/eksiengel128.png"
+  },
   "action": {
     "default_icon": {
       "16": "assets/img/eksiengel16.png",
       "32": "assets/img/eksiengel32.png",
       "48": "assets/img/eksiengel48.png",
       "128": "assets/img/eksiengel128.png"
-      },
+    },
     "default_title": "Ekşi Engel",
     "default_popup": "assets/html/popup.html"
   },
-  "permissions": ["tabs", "scripting", "storage", "notifications", "webNavigation"], 
+  "permissions": [
+    "tabs",
+    "scripting",
+    "storage",
+    "notifications",
+    "webNavigation"
+  ],
   "host_permissions": [
     "https://eksisozluk.com/*"
   ],
   "background": {
     "service_worker": "assets/js/background.js"
   },
-	"web_accessible_resources": [
+  "web_accessible_resources": [
     {
       "resources": [
-										"assets/img/eksiengel16.png", 
-										"assets/img/eksiengel32.png", 
-										"assets/img/eksiengel48.png", 
-										"assets/img/eksiengel128.png", 
-										"assets/img/semsiye.png",
-										"assets/img/mailicon.svg", 
-										"assets/img/linkedinicon.svg", 
-										"assets/img/questionicon.svg", 
-										"assets/img/githubicon.svg", 
-										"assets/img/pena.png",
-										"assets/img/venus.svg",
-										"assets/img/mars.svg",
-										"assets/img/blog.svg",
-										
-										"assets/html/faq.html",
-										"assets/html/popup.html",
-										"assets/html/authorListPage.html",
-										
-										"assets/css/customPopup.css",
-										
-										"assets/js/contentScript_SelectiveBan.js",
-										"assets/js/contentScript_UndobanAll.js",
-										"assets/js/contentScript_ScrapeAuthors.js",
-										"assets/js/contentScript_ScrapeClientData.js",
-										"assets/js/popup.js", 
-										"assets/js/authorListPage.js"
-										],
-      "matches": ["http://*/*", "https://*/*"]
+        "assets/img/eksiengel16.png",
+        "assets/img/eksiengel32.png",
+        "assets/img/eksiengel48.png",
+        "assets/img/eksiengel128.png",
+        "assets/img/semsiye.png",
+        "assets/img/mailicon.svg",
+        "assets/img/linkedinicon.svg",
+        "assets/img/questionicon.svg",
+        "assets/img/githubicon.svg",
+        "assets/img/pena.png",
+        "assets/img/venus.svg",
+        "assets/img/mars.svg",
+        "assets/img/blog.svg",
+        "assets/html/faq.html",
+        "assets/html/popup.html",
+        "assets/html/authorListPage.html",
+        "assets/css/customPopup.css",
+        "assets/js/contentScript_SelectiveBan.js",
+        "assets/js/contentScript_UndobanAll.js",
+        "assets/js/contentScript_ScrapeAuthors.js",
+        "assets/js/contentScript_ScrapeClientData.js",
+        "assets/js/popup.js",
+        "assets/js/authorListPage.js"
+      ],
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ]
     }
   ]
 }
