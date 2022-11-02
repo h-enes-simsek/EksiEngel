@@ -17,9 +17,9 @@ bug fix: nickinde whitespace olan yazarların engellenememesi sorunu çözüldü
 arayüz sadeleştirildi. 
 
 v1.3
-yayın: yok
-Engelleme/engeli kaldırma işleminin daha hızlı bir yolu keşfedildiği için bu sürüm yayınlanmadı.
+yayın: 
 yeni özellik: tüm kullanıcıların engelini kaldırma özelliği eklendi.
+yeni özellik: engelleme/engeli kaldırma işlemi hızlandırıldı.
 yeni özellik: kullanıcının bazı verileri toplanmaya ve işlenmeye başlandı.
               detaylı liste için privacy policy'e göz atın.
 bug fix: url yönlendirmenin bazen çalışmaması durumu düzeltildi.
@@ -61,11 +61,12 @@ sayfanın yüklenmesi tab listener api ile dinlendiğinde gereksiz yere bekleniy
 url validation uzun sürdüğü için kaldırıldı.
 
 v1.3
-gönderim: yok - yayın: yok
-Engelleme/engeli kaldırma işleminin http istekleri ile daha hızlı yapılabildiği keşfedildiği için bu sürüm yayınlanmadı.
+gönderim: - yayın: 
 yeni özellik: tüm kullanıcıların engelini kaldırma özelliği eklendi.
-              tersine mühendislik ile buton tıklama simüle etmek yerine doğrudan http istekleri gönderildi.
+              tersine mühendislik ile buton tıklamayı simüle etmek yerine doğrudan http istekleri gönderildi.
               işlem sürerken sayfada bir popup ile işlemin sürdüğü ve bittiği bilgisine yer verildi.
+yeni özellik: engelleme/engeli kaldırma sürecinde (fav ve list modu için) buton tıklamasını simüle etmek yerine http istekleri
+              gönderilerek süreç hızlandırıldı.
 yeni özellik: kullanıcının bazı verileri toplanmaya ve işlenmeye başlandı.
               toplanan kullanıcı verileri:
               * kullanıcının ekşi sözlük nicki
@@ -86,8 +87,12 @@ bazı hardcoded sabitler enum olarak refactor edildi.
 ekşi hesabına giriş yapılmadıysa uyarı vermesi sağlandı. (hem fav hem liste modu hem de tüm engelleri kaldır modu için)
 
 v1.4
-yeni özellik: engelleme/engeli kaldırma işlemi artık http istekleriyle doğrudan yapılıyor.
-              her yazarın sayfasını açmaya gerek kalmadığı için işlemler hızlandı.
+yeni özellik: tüm işlemlerin content script enjekte etmeden background'ta http istekleri gönderilerek yapılması sağlandı.
+problem:      manifest v3'te background DOM'a sahip değil. DOMParser kullanılamıyor. Olası çözümler:
+              * manifest v3 için built-in html parser desteği gelmesini beklemek.
+              * DOM based olmayan bir html parser kütüphanesi kullanmak
+              * Regex gibi çözümlerle html parse etmek
+              * Sadece DOMParser'ı kullanmak için yeni bir tab açmak, runtime message'lar ile iletişim kurmak.  
 
 SONRAKİ GÜNCELLEMEDE YAPILMASI PLANLANANLAR
 performans analizi yapılmalı

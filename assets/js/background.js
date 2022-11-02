@@ -38,6 +38,7 @@ let g_isFirstAuthor = true;           // is the program tries to ban the first u
 let g_clientName = "";                // client's author name
 let g_clientUserAgent = "";           // client's user agent
 let g_banMode = BanMode.BAN;		    	// mode of the program, will ban or undoban
+let g_banSource = BanSource.FAV;		  // band source of the program
 
 chrome.runtime.onMessage.addListener(async function messageListener_Popup(message, sender, sendResponse) {
   sendResponse({status: 'ok'}); // added to suppress 'message port closed before a response was received' error
@@ -124,6 +125,7 @@ async function processHandler_SelectiveBan(banSource, mode=BanMode.BAN)
     g_tabId = -1; // clear variable
     g_isFirstAuthor = true;
 		g_banMode = mode;
+		g_banSource = banSource;
     
     let successfullBans = 0;
     let pageResult;
@@ -201,12 +203,6 @@ function DOMContentLoadedListener(details)
     g_counter++;
     log.info("g_counter: " + g_counter + " tab id: "+ details.tabId + " frame id: " + details.frameId + " url: " + details.url);
     
-    // saved values from latest executed content script
-    let res = g_latestContentScriptInfo.res;
-    let op = g_latestContentScriptInfo.op;
-    //let mode = g_latestContentScriptInfo.mode;
-    let target = g_latestContentScriptInfo.target;
-    
     // outgoing values to content script
     let executeOp = "";
     let executeTarget = "";
@@ -225,7 +221,7 @@ function DOMContentLoadedListener(details)
 						// execute content script to ban user
 						executeOp = OpMode.ACTION;
 						executeTarget = TargetType.USER;
-						executeContentScript(executeOp, g_banMode, executeTarget);
+						executeContentScript(g_banSource, executeOp, g_banMode, executeTarget);
 					}
 				);
 			}
@@ -234,20 +230,8 @@ function DOMContentLoadedListener(details)
 				// execute content script to ban user
 				executeOp = OpMode.ACTION;
 				executeTarget = TargetType.USER;
-				executeContentScript(executeOp, g_banMode, executeTarget);
+				executeContentScript(g_banSource, executeOp, g_banMode, executeTarget);
 			}
-    }
-    else if(op === OpMode.ACTION && target === TargetType.USER && res === ResultType.SUCCESS){
-      // ResultType.FAIL will be handled by contentScriptMessageListener
-      executeOp = OpMode.CONTROL;
-      executeTarget = TargetType.USER;
-      executeContentScript(executeOp, g_banMode, executeTarget);
-    }
-    else if(op === OpMode.ACTION && target === TargetType.TITLE && res === ResultType.SUCCESS){
-      // ResultType.FAIL will be handled by contentScriptMessageListener
-      executeOp = OpMode.CONTROL;
-      executeTarget = TargetType.TITLE;
-      executeContentScript(executeOp, g_banMode, executeTarget);
     }
     else{
       log.info("DOMContentLoadedListener: unhandled g_latestContentScriptInfo: " + JSON.stringify(g_latestContentScriptInfo));
@@ -289,54 +273,31 @@ function contentScriptMessageListener(message, sender, sendResponse)
 		return;
 	}
 	
-  let res = incomingObj.res;
-  let op = incomingObj.op;
-  // let mode = incomingObj.mode;
-  let target = incomingObj.target;
-  
-  // outgoing values to content script
-  let executeOp = "";
-  let executeTarget = "";
-  
-  // update status to track (it should be filtered, because popup messages interferes)
-  if(res && op && target)
-    g_latestContentScriptInfo = JSON.parse(message); 
-  
-  if(op === OpMode.ACTION && target === TargetType.USER && res === ResultType.FAIL){
-    // ResultType.SUCCESS will be handled by DOMContentLoadedListener
-    executeOp = OpMode.CONTROL;
-    executeTarget = TargetType.USER;
-    executeContentScript(executeOp, g_banMode, executeTarget);
-  }
-  else if(op === OpMode.CONTROL && target === TargetType.USER){
-    g_isBanUserSuccessfull = res === ResultType.SUCCESS;
-    // execute content to ban title after banning user and controlling is user banned
-    executeOp = OpMode.ACTION;
-    executeTarget = TargetType.TITLE;
-    executeContentScript(executeOp, g_banMode, executeTarget);
-  }
-  else if(op === OpMode.ACTION && target === TargetType.TITLE && res === ResultType.FAIL){
-    // ResultType.SUCCESS will be handled by DOMContentLoadedListener
-    // execute content script to check if banning the title was successfull
-    executeOp = OpMode.CONTROL;
-    executeTarget = TargetType.TITLE;
-    executeContentScript(executeOp, g_banMode, executeTarget);
-  }
-  else if(op === OpMode.CONTROL && target === TargetType.TITLE){
-    //all actions have been completed.
-    
-    g_isBanTitleSuccessfull = res === ResultType.SUCCESS; 
-      
-    // resolve Promise after content script has executed
-    if(g_isBanUserSuccessfull && g_isBanTitleSuccessfull){
-      g_resolveSelectiveBanProcess({result: ResultType.SUCCESS, tabID: g_tabId});
-    }
-    else {
-      g_resolveSelectiveBanProcess({result: ResultType.FAIL, tabID: g_tabId});
-    }
-    
-  }
-  else {
+	if("banSource" in incomingObj)
+	{
+		if(incomingObj.banSource === BanSource.FAV || incomingObj.banSource === BanSource.LIST)
+			;
+		else
+		{
+			log.info("contentScriptMessageListener:: unhandled msg: " + message);
+			return;
+		}	
+	}
+	
+	if("resultType" in incomingObj && "banMode" in incomingObj)
+	{
+		let resultType = incomingObj.resultType;
+		let banMode = incomingObj.banMode; // no need
+		
+		if(resultType === ResultType.SUCCESS){
+			g_resolveSelectiveBanProcess({result: ResultType.SUCCESS, tabID: g_tabId});
+		}
+		else {
+			g_resolveSelectiveBanProcess({result: ResultType.FAIL, tabID: g_tabId});
+		}
+	}
+  else 
+	{
     log.info("contentScriptMessageListener:: unhandled msg: " + message);
   }  
 }
@@ -360,10 +321,10 @@ async function process_SelectiveBan(userName)
   });
 }
 
-async function executeContentScript(op, mode, target)
+async function executeContentScript(source, op, mode, target)
 {
   return new Promise(async (resolve, reject) => {
-    let configText = op + " " + mode + " " + target;
+    let configText = source + " " + op + " " + mode + " " + target;
     log.info("content script will be exed " + configText);
     
     let isTabExist = await isTargetTabExist(g_tabId);
@@ -378,7 +339,7 @@ async function executeContentScript(op, mode, target)
       {
         // firstly this code will be executed
         target: {tabId: g_tabId, frameIds: [0]}, 
-        func: (_BanSource, _OpMode, _BanMode, _TargetType, _ResultType, _op, _mode, _target)=>
+        func: (_BanSource, _OpMode, _BanMode, _TargetType, _ResultType, _source, _op, _mode, _target)=>
         {
 					// enum values
 					window.enumEksiEngelBanSource= _BanSource;
@@ -388,11 +349,12 @@ async function executeContentScript(op, mode, target)
 					window.enumEksiEngelResultType = _ResultType;
 					
 					// configured values in enums
+					window.configEksiEngelBanSource = _source;
           window.configEksiEngelOp = _op;
           window.configEksiEngelMode = _mode;
           window.configEksiEngelTarget = _target;
         },
-        args: [BanSource, OpMode, BanMode, TargetType, ResultType, op, mode, target]
+        args: [BanSource, OpMode, BanMode, TargetType, ResultType, source, op, mode, target]
       }, 
       ()=>
       {
