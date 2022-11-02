@@ -42,30 +42,34 @@ let g_banMode = BanMode.BAN;		    	// mode of the program, will ban or undoban
 chrome.runtime.onMessage.addListener(async function messageListener_Popup(message, sender, sendResponse) {
   sendResponse({status: 'ok'}); // added to suppress 'message port closed before a response was received' error
 	
+	const obj = filterMessage(message, "banSource", "banMode");
+	if(obj.resultType !== ResultType.SUCCESS)
+		return;
+	
 	if(g_isProgramActive)
 	{
-		log.info("bg: another start attempt from " + message);
+		log.info("bg: another start attempt from " + obj.banSource);
 	}
 	else 
 	{
 		g_isProgramActive = true; // prevent multiple starts
 		
-		if(message === 'scrapeAuthors::start')
+		if(obj.banSource === BanSource.FAV && obj.banMode === BanMode.BAN)
 		{
 			// list is exist in storage
 			await processHandler_SelectiveBan(BanSource.FAV, BanMode.BAN);
 		}
-    else if(message === 'authorListPage::ban')
+    else if(obj.banSource === BanSource.LIST && obj.banMode === BanMode.BAN)
     {
       // list is exist in storage
 			await processHandler_SelectiveBan(BanSource.LIST, BanMode.BAN);
     }
-		else if(message === 'authorListPage::undoban')
+		else if(obj.banSource === BanSource.LIST && obj.banMode === BanMode.UNDOBAN)
 		{
 			// list is exist in storage
 			await processHandler_SelectiveBan(BanSource.LIST, BanMode.UNDOBAN);
 		}
-		else if(message === 'popup::undobanAll')
+		else if(obj.banSource === BanSource.UNDOBANALL && obj.banMode === BanMode.UNDOBAN)
 		{
 			await processHandler_UndobanAll();
 		}

@@ -194,3 +194,35 @@ function syncExecuteScript(tabid, file)
 		}
 	);
 }
+
+function filterMessage(message, ...keys)
+{
+	// message: object
+	// ..keys: string(s), keys of object
+	// return: object of message + object.resultType
+	
+	// is message object
+	if(typeof message !== 'object' ||
+     Array.isArray(message) ||
+     message === null)
+	{
+		// not object
+		return {"resultType":"FAIL"};
+	}
+  
+	// has message got required keys
+	for(const key of keys)
+	{
+		if(key in message)
+		{
+			;
+		}
+		else
+		{
+			return {"resultType":"FAIL"};
+		}
+	}
+	
+	message.resultType = "SUCCESS";
+	return message;
+}

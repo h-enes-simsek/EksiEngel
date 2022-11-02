@@ -185,7 +185,7 @@ function startScraping()
 					if(!chrome.runtime.error){
 						console.log("scrapeAuthors.js: Author list saved into local storage");
 						// send start msg to background.js
-						chrome.runtime.sendMessage(null, "scrapeAuthors::start");
+						chrome.runtime.sendMessage(null, {"banSource":"FAV", "banMode":"BAN"});
 					}else{
 						console.log("scrapeAuthors.js: chrome.storage.local.set runtime error");
 						alert("chrome.storage.local.set runtime error");

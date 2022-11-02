@@ -14,13 +14,13 @@ function saveAuthorListToStorage()
 // send message to background.js to start banning process
 document.getElementById("startBan").addEventListener("click", function(){
 	saveAuthorListToStorage();
-	chrome.runtime.sendMessage(null, "authorListPage::ban");
+	chrome.runtime.sendMessage(null, {"banSource":"LIST", "banMode":"BAN"});
 });
 
 // send message to background.js to start banning process
 document.getElementById("startUndoban").addEventListener("click", function(){
 	saveAuthorListToStorage();
-	chrome.runtime.sendMessage(null, "authorListPage::undoban");
+	chrome.runtime.sendMessage(null, {"banSource":"LIST", "banMode":"UNDOBAN"});
 });
 
 // if local storage save is successfull, show a message to the user
