@@ -17,13 +17,18 @@ class Log
   
   getLevel = () => 
   {
-    return this.level;
+    return Object.keys(Log.Levels)[this.level];
   }
 	 
 	setEnableStatus = (isEnabled) =>
 	{
 		this.isEnabled = isEnabled;
 	}
+  
+  getEnableStatus = () => 
+  {
+    return this.isEnabled;
+  }
 	
 	setLogConsole = (logConsole) =>
 	{
@@ -94,10 +99,11 @@ class Log
 	
   static Levels = 
   {
-    INFO:   0,
-    WARN:   1,
-    ERR:    2,
-    USEFUL: 3,
+    DISABLED: 0,
+    INFO:     1,
+    WARN:     2,
+    ERR:      3,
+    USEFUL:   4
   }
 	
 }

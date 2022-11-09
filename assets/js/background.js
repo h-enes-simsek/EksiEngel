@@ -8,8 +8,8 @@ try {
 
 // log.js will be imported first, so others can use logger
 let log = new Log();
-log.setEnableStatus = config.enableLog;
-log.setLogConsole = config.logConsole;
+log.setEnableStatus(config.enableLog);
+log.setLogConsole(config.logConsole);
 log.setlevel = Log.Levels.INFO;
 log.info("bg: init");
 
@@ -88,6 +88,7 @@ async function processHandler_SelectiveBan(banSource, mode=BanMode.BAN)
   cleanUserList(userListArray);
   log.useful("number of user to ban (after cleaning): " + userListArray.length);
 	
+  let objToSendServer = {};
 	let favAuthorName, favAuthorId, favTitleName, favTitleId, favEntryId;
 	if(banSource === BanSource.FAV)
 	{
@@ -98,11 +99,11 @@ async function processHandler_SelectiveBan(banSource, mode=BanMode.BAN)
 		}
 		else
 		{
-			favAuthorName = favBanMetaData.favAuthorName;
-			favAuthorId = favBanMetaData.favAuthorId;
-			favTitleName = favBanMetaData.favTitleName;
-			favTitleId = favBanMetaData.favTitleId;
-			favEntryId = favBanMetaData.favEntryId;
+      objToSendServer.fav_author_name = favBanMetaData.favAuthorName;
+			objToSendServer.fav_author_id = favBanMetaData.favAuthorId;
+			objToSendServer.fav_title_name = favBanMetaData.favTitleName;
+			objToSendServer.fav_title_id = favBanMetaData.favTitleId;
+			objToSendServer.fav_entry_id = favBanMetaData.favEntryId;
 		}
 	}
   
@@ -127,6 +128,7 @@ async function processHandler_SelectiveBan(banSource, mode=BanMode.BAN)
 		g_banMode = mode;
 		g_banSource = banSource;
     
+    let totalAction = 0;
     let successfullBans = 0;
     let pageResult;
     for(let i = 0; i < userListArray.length; i++) {
@@ -140,9 +142,10 @@ async function processHandler_SelectiveBan(banSource, mode=BanMode.BAN)
         log.info("page result: fail (" + userListArray[i] +")");
       }
       
+      totalAction++;
+      
       // early stop mechanism
       if(g_earlyStopCommand) {
-        g_earlyStopCommand = false; // clear to reuse this variable
         break;
       }
     }
@@ -169,11 +172,28 @@ async function processHandler_SelectiveBan(banSource, mode=BanMode.BAN)
 			log.useful("Program has been finished (unbanned:" + successfullBans + ", total:" + userListArray.length + ")");
 		}
     
+    
 		if(config.sendData)
-      // TODO: "BAN" will be replaced with variable
-			await commHandler.sendData(config, g_clientName, g_clientUserAgent, banSource, "BAN", userListArray, favAuthorName, favAuthorId, favTitleName, favTitleId, favEntryId)
-		
-		
+    {
+		  objToSendServer.client_name = g_clientName;
+		  objToSendServer.user_agent = g_clientUserAgent;
+		  objToSendServer.ban_source = banSource;
+		  objToSendServer.ban_mode = mode;
+		  objToSendServer.author_name_list = userListArray;
+		  objToSendServer.author_id_list = [];
+      objToSendServer.author_list_size = userListArray.length;
+      objToSendServer.total_action = totalAction;
+      objToSendServer.successful_action = successfullBans;
+      objToSendServer.is_early_stopped = g_earlyStopCommand ? 1 : 0;
+      
+      await commHandler.sendData(config, objToSendServer)
+    }
+    
+    // reset logger not to save duplicated values
+    log.resetData();
+    
+    // clear to reuse this variable
+    g_earlyStopCommand = false; 
   }  
 }
 
