@@ -12,7 +12,7 @@ async function start(){
   // these enum and config parameters was previously injected by background script			
   let banMode = window.configEksiEngelMode;
 	let banSource = window.configEksiEngelBanSource;
-  let responseObj = {banSource: banSource, banMode: banMode, resultType: ResultType.UNKNOWN};
+  let responseObj = {banSource: banSource, banMode: banMode, userId: 0, resultType: ResultType.UNKNOWN};
 
   // get user id by scraping
 	let userId = getUserId();
@@ -29,6 +29,7 @@ async function start(){
 		{
 			responseObj.resultType = ResultType.FAIL;
 		}
+    responseObj.userId = userId;
 	}
 	else
 	{

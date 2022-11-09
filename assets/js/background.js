@@ -84,6 +84,7 @@ async function processHandler_SelectiveBan(banSource, mode=BanMode.BAN)
   log.info("Program has been started with mode: " + mode);
   
   let userListArray = await getUserList();
+  let userListArrayId = [];
   log.info("number of user to ban (before cleaning): " + userListArray.length);
   cleanUserList(userListArray);
   log.useful("number of user to ban (after cleaning): " + userListArray.length);
@@ -135,19 +136,20 @@ async function processHandler_SelectiveBan(banSource, mode=BanMode.BAN)
       
       pageResult = await process_SelectiveBan(userListArray[i]); // navigate to next url
       
+      // early stop mechanism
+      if(g_earlyStopCommand) 
+      {
+        break;
+      }
+
       if(pageResult.result === ResultType.SUCCESS){
         successfullBans++;
         log.info("page result: success (" + userListArray[i] +")");
       } else {
         log.info("page result: fail (" + userListArray[i] +")");
       }
-      
+      userListArrayId[i] = pageResult.userId;
       totalAction++;
-      
-      // early stop mechanism
-      if(g_earlyStopCommand) {
-        break;
-      }
     }
     
     log.info("contentScriptMessageListener removed.");
@@ -180,7 +182,7 @@ async function processHandler_SelectiveBan(banSource, mode=BanMode.BAN)
 		  objToSendServer.ban_source = banSource;
 		  objToSendServer.ban_mode = mode;
 		  objToSendServer.author_name_list = userListArray;
-		  objToSendServer.author_id_list = [];
+		  objToSendServer.author_id_list = userListArrayId;
       objToSendServer.author_list_size = userListArray.length;
       objToSendServer.total_action = totalAction;
       objToSendServer.successful_action = successfullBans;
@@ -211,7 +213,7 @@ function pageCloseListener(tabid, removeInfo)
     g_earlyStopCommand = true;
       
     // resolve Promise after content script has executed
-    g_resolveSelectiveBanProcess({result:ResultType.FAIL, tabID: g_tabId});
+    g_resolveSelectiveBanProcess({result:ResultType.FAIL, tabID: g_tabId, userId: 0});
   }
 }
 
@@ -304,16 +306,16 @@ function contentScriptMessageListener(message, sender, sendResponse)
 		}	
 	}
 	
-	if("resultType" in incomingObj && "banMode" in incomingObj)
+	if("resultType" in incomingObj && "banMode" in incomingObj && "userId" in incomingObj)
 	{
 		let resultType = incomingObj.resultType;
 		let banMode = incomingObj.banMode; // no need
 		
 		if(resultType === ResultType.SUCCESS){
-			g_resolveSelectiveBanProcess({result: ResultType.SUCCESS, tabID: g_tabId});
+			g_resolveSelectiveBanProcess({result: ResultType.SUCCESS, tabID: g_tabId, userId: incomingObj.userId});
 		}
 		else {
-			g_resolveSelectiveBanProcess({result: ResultType.FAIL, tabID: g_tabId});
+			g_resolveSelectiveBanProcess({result: ResultType.FAIL, tabID: g_tabId, userId: incomingObj.userId});
 		}
 	}
   else 
