@@ -144,7 +144,7 @@ async function processHandler_SelectiveBan(banSource, mode=BanMode.BAN)
 
       if(pageResult.result === ResultType.SUCCESS){
         successfullBans++;
-        log.info("page result: success (" + userListArray[i] +")");
+        log.resetData(); // reset logger because its too big
       } else {
         log.info("page result: fail (" + userListArray[i] +")");
       }
