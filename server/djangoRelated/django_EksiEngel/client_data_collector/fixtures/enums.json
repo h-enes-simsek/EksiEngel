@@ -1,0 +1,74 @@
+[
+  {
+    "model": "client_data_collector.BanSource",
+    "pk": 1,
+    "fields": {
+      "ban_source": "FAV"
+    }
+  },
+  {
+    "model": "client_data_collector.BanSource",
+    "pk": 2,
+    "fields": {
+      "ban_source": "LIST"
+    }
+  },
+	{
+    "model": "client_data_collector.BanSource",
+    "pk": 3,
+    "fields": {
+      "ban_source": "UNDOBANALL"
+    }
+  },
+	
+	{
+    "model": "client_data_collector.BanMode",
+    "pk": 1,
+    "fields": {
+      "ban_mode": "BAN"
+    }
+  },
+  {
+    "model": "client_data_collector.BanMode",
+    "pk": 2,
+    "fields": {
+      "ban_mode": "UNDOBAN"
+    }
+  },
+
+  {
+    "model": "client_data_collector.LogLevel",
+    "pk": 1,
+    "fields": {
+      "log_level": "DISABLED"
+    }
+  },
+  {
+    "model": "client_data_collector.LogLevel",
+    "pk": 2,
+    "fields": {
+      "log_level": "INFO"
+    }
+  },
+	{
+    "model": "client_data_collector.LogLevel",
+    "pk": 3,
+    "fields": {
+      "log_level": "WARN"
+    }
+  },
+	{
+    "model": "client_data_collector.LogLevel",
+    "pk": 4,
+    "fields": {
+      "log_level": "ERR"
+    }
+  },
+  {
+    "model": "client_data_collector.LogLevel",
+    "pk": 5,
+    "fields": {
+      "log_level": "USEFUL"
+    }
+  }
+]

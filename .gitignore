@@ -1,6 +1,12 @@
 #no need to track zip file of codes
-*/code/*
+**/code
 *.zip
 
-*/__pycache__/*
 *.db
+*.env
+
+# virtual env
+*/VENV_Django_4_1_EksiEngel
+
+# py cache
+**/__pycache__
