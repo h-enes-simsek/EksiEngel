@@ -42,6 +42,7 @@ DEVELOPMENT_MODE
 
 # database ops
 python manage.py makemigrations <app_name>
+python3 manage.py migrate
 python3 manage.py migrate <app_name>
 
 # load initial hardcoded values to database if any
@@ -109,6 +110,8 @@ sudo systemctl enable gunicorn.socket
 sudo systemctl status gunicorn.socket # should be active
 file /run/gunicorn.sock # output: /run/gunicorn.sock: socket
 sudo journalctl -u gunicorn.socket # if fails, how to see logs
+
+sudo systemctl stop gunicorn.socket # to stop if necessary (because it is automatically trigger gunicorn)
 
 # if /etc/systemd/system/gunicorn.service changes, run these to restart
 sudo systemctl daemon-reload

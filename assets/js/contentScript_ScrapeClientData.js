@@ -6,7 +6,10 @@
 	{
 		let element = document.querySelectorAll(selector)[0].title;
 		if(element && element != null && element != undefined)
+    {
 			clientName = element;
+      clientName = clientName.replace(/ /gi, "-"); /* whitespace to - char */
+    }
 	}
 	catch(err)
 	{
