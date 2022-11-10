@@ -1,6 +1,6 @@
 const config = 
 {
-	"serverURL": 				"http://127.0.0.1:8000/client_data_collector/upload",
+	"serverURL": 				"https://eksiengel.hesimsek.com/client_data_collector/upload",
 	"sendData": 				true,														  /* send data to server */
 		"sendClientName": true,															/* send client name to server */
 		"sendLog": 				true,															/* send log data to server */

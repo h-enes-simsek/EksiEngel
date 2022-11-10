@@ -10,8 +10,12 @@ $FormValid = @{
     fav_title_name = "test başlık"
     fav_author_id = 666666
     fav_author_name = "bad author"
-    author_name_list = "list list"
-    author_id_list = "123 456"
+    author_name_list = "['a','b']"
+    author_id_list = "['1', '0']"
+    author_list_size = 2
+    total_action = 1
+    successful_action = 1
+    is_early_stopped = 0
     log_level = "ERR"
     log = "['INF deneme','ERR hata']"
 }
@@ -26,10 +30,14 @@ $FormNullEntry = @{
     fav_title_name = "test başlık"
     fav_author_id = 666666
     fav_author_name = "bad author"
-    author_name_list = "list list"
-    author_id_list = "123 456"
+    author_name_list = "['a','b']"
+    author_id_list = "['1', '0']"
+    author_list_size = 2
+    total_action = 1
+    successful_action = 1
+    is_early_stopped = 0
     log_level = "ERR"
-    log = "INF deneme"
+    log = "['INF deneme','ERR hata']"
 }
 
 $FormMissingEntry = @{
@@ -41,26 +49,34 @@ $FormMissingEntry = @{
     fav_title_name = "test başlık"
     fav_author_id = 666666
     fav_author_name = "bad author"
-    author_name_list = "list list"
-    author_id_list = "123 456"
+    author_name_list = "['a','b']"
+    author_id_list = "['1', '0']"
+    author_list_size = 2
+    total_action = 1
+    successful_action = 1
+    is_early_stopped = 0
     log_level = "ERR"
-    log = "INF deneme"
+    log = "['INF deneme','ERR hata']"
 }
 
 $FormWrongEnum = @{
-    user_agent = "Mozilla"
+    user_agent = "Mozilla 5.0"
     client_name = "test wrong enum ban mode"
     ban_source = "FAV"
-    ban_mode = "WRONGENUM"
+    ban_mode = "WRONGBAN"
     fav_entry_id = 123456
     fav_title_id = 555555
     fav_title_name = "test başlık"
     fav_author_id = 666666
     fav_author_name = "bad author"
-    author_name_list = "list list"
-    author_id_list = "123 456"
+    author_name_list = "['a','b']"
+    author_id_list = "['1', '0']"
+    author_list_size = 2
+    total_action = 1
+    successful_action = 1
+    is_early_stopped = 0
     log_level = "ERR"
-    log = "INF deneme"
+    log = "['INF deneme','ERR hata']"
 }
 
 $FormWrongType = @{
@@ -73,42 +89,58 @@ $FormWrongType = @{
     fav_title_name = "test başlık"
     fav_author_id = 666666
     fav_author_name = "bad author"
-    author_name_list = "list list"
-    author_id_list = "123 456"
+    author_name_list = "['a','b']"
+    author_id_list = "['1', '0']"
+    author_list_size = 2
+    total_action = 1
+    successful_action = 1
+    is_early_stopped = 0
     log_level = "ERR"
-    log = "INF deneme"
+    log = "['INF deneme','ERR hata']"
 }
 
 $FormWrongType2 = @{
-    user_agent = "Mozilla"
     client_name = "test wrong type2 fav_entry_id"
+    fav_entry_id = "9000009"
+    
+    user_agent = "Mozilla 5.0"
     ban_source = "FAV"
     ban_mode = "BAN"
-    fav_entry_id = "9000009"
     fav_title_id = 555555
     fav_title_name = "test başlık"
     fav_author_id = 666666
     fav_author_name = "bad author"
-    author_name_list = "list list"
-    author_id_list = "123 456"
+    author_name_list = "['a','b']"
+    author_id_list = "['1', '0']"
+    author_list_size = 2
+    total_action = 1
+    successful_action = 1
+    is_early_stopped = 0
     log_level = "ERR"
-    log = "INF deneme"
+    log = "['INF deneme','ERR hata']"
+
 }
 
 $FormWrongType3 = @{
-    user_agent = "Mozilla"
     client_name = "test wrong type3 fav_entry_id"
+    fav_entry_id = "900asd0009"
+    
+    user_agent = "Mozilla 5.0"
     ban_source = "FAV"
     ban_mode = "BAN"
-    fav_entry_id = "900asd0009"
     fav_title_id = 555555
     fav_title_name = "test başlık"
     fav_author_id = 666666
     fav_author_name = "bad author"
-    author_name_list = "list list"
-    author_id_list = "123 456"
+    author_name_list = "['a','b']"
+    author_id_list = "['1', '0']"
+    author_list_size = 2
+    total_action = 1
+    successful_action = 1
+    is_early_stopped = 0
     log_level = "ERR"
-    log = "INF deneme"
+    log = "['INF deneme','ERR hata']"
+
 }
 $ResultValid = Invoke-RestMethod -Uri $Uri -Method Post -Form $FormValid
 Write-Output "ResultValid $ResultValid"
