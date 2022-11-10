@@ -2,11 +2,13 @@
 **/code
 *.zip
 
+# django related files
+**/static
 *.db
 *.env
 
 # virtual env
-*/VENV_Django_4_1_EksiEngel
+**/VENV_Django_4_1_EksiEngel
 
 # py cache
 **/__pycache__

@@ -13,6 +13,7 @@ def index(request):
 @csrf_exempt
 def upload(request):
     if request.method == 'POST':
+        data = None
         if(request.POST):
             # form data
             data = request.POST
@@ -22,6 +23,8 @@ def upload(request):
                 data = json.loads(request.body) 
             except:
                 return HttpResponse('An Error Occured', status=400)
+        else:
+            return HttpResponse('Empty Request', status=400)
         try:
             # create a row in ClientData table
             ClientData.objects.create(
@@ -46,6 +49,6 @@ def upload(request):
             )
             return HttpResponse('OK', status=200)
         except Exception as e:
-            return HttpResponse('An Error Occured', status=400)
+            return HttpResponse(e, status=400)
     else:
         return HttpResponse('Method Not Allowed', status=405)
