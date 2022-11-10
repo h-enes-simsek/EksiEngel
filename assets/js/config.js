@@ -6,7 +6,7 @@ const config =
 		"sendLog": 				true,															/* send log data to server */
 	
 	"enableLog": 				true,														  /* enable/disable logger */
-		"logConsole": 		true, 														/* log into console as well */
+		"logConsole": 		false, 														/* log into console as well */
 	
 	"anonymouseClientName": "anonymouse",									/* client name if sendClientName false */
 	"erroneousText": 				"",											      /* default text if smt goes wrong */
