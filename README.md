@@ -4,23 +4,31 @@
 Ekşisözlük'te toplu olarak engelle/başlıklarını engelle işlemi yapılmasına yardımcı olan Google Chrome eklentisi.
 
 <h3>Nasıl Çalışıyor?</h3>
-İki şekilde:
+Üç şekilde:
 
 - Bir entry'i favorileyen herkes engellenebiliyor.
 
-- Bir liste halinde girilen yazarlar engellenebiliyor.
+- Bir liste halinde girilen yazarlar engellenebiliyor/engeli kaldırılabiliyor.
 
-Kullanıcıdan engellenecek yazarlar alındıktan sonra (entry'i favlayanlar scrape ediliyor ya da manuel olarak elle bir liste giriliyor) listedeki hesaplar sırasıyla ziyaret edilerek engelleniyor. 
+- Engellenen tüm yazarların engeli kaldırılabiliyor.
+
+Kullanıcıdan engellenecek/engeli kaldırılacak yazarlar alındıktan sonra listedeki hesaplar sırasıyla ziyaret edilerek engel/engeli kaldırma işlemi gerçekleştiriliyor. 
 
 İşlemler yeni açılan bir tab içinde gerçekleşiyor, engelleme devam ederken başka tablarda gezinilebiliyor ve sonunda engel için açılan tab kendiliğinden kapanıyor. 
 
 Ayrıca kullanıcıya kaç yazarın başarıyla engellendiği de bir uyarı ile aktarılıyor.
 
-<h3>Neden Böyle Bir Uygulama Geliştirdin?</h3>
+<h3>Neden Böyle Bir Uygulama Geliştirildi?</h3>
 
-Uzun zamandır bazı yazarların liste yapıp paylaştığını görüyordum. Bu işi kolayca eklenti ile yapabiliriz diye düşündüm.
+Uzun zamandır bazı yazarların liste yapıp paylaştığını görüyordum. Bu işi kolayca bir eklenti ile yapabiliriz diye düşündüm.
 
-Şunu da eklemekte fayda var ki Ekşi Engel'i gönüllü olarak geliştirdim bundan dolayı herhangi bir reklam içermiyor, bilgilerinizi toplamıyor ya da başka ticari bir amacı bulunmuyor.
+Şunu da eklemekte fayda var ki Ekşi Engel'i gönüllü olarak geliştirdim bundan dolayı herhangi bir reklam içermiyor ya da başka ticari bir amacı bulunmuyor.
+
+<h3>Kişisel Verilerimiz?</h3>
+
+v1.3'ten itibaren ayarlar menüsünden izin verildiği müddetçe Ekşi Sözlük kullanıcı adı ve engellenen kullanıcıların listesi Ekşi Engel sunucularına gönderiliyor. 
+
+Bu verilerin daha sonra en çok engellenen yazarların bilgisini elde etmek ve bu yazarları da eklenti üzerinden engellemek maksadı ile kullanılması planlanıyor.
 
 <h3>Linkler ve Görseller</h3>
 

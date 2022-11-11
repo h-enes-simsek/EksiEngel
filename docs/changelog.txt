@@ -20,8 +20,9 @@ v1.3
 yayın: 
 yeni özellik: tüm kullanıcıların engelini kaldırma özelliği eklendi.
 yeni özellik: engelleme/engeli kaldırma işlemi hızlandırıldı.
-yeni özellik: kullanıcının bazı verileri toplanmaya ve işlenmeye başlandı.
-              detaylı liste için privacy policy'e göz atın.
+yeni özellik: kullanıcının ekşi sözlük kullanıcı ismi ve engellediği yazarların isimleri toplanmaya ve işlenmeye başlandı.
+              ayarlar menüsünden verilerin toplanması engellenebiliyor.
+              detaylı liste için versiyon notlarına göz atın.
 bug fix: url yönlendirmenin bazen çalışmaması durumu düzeltildi.
 
 
@@ -87,6 +88,7 @@ custom bir logger mekanizması geliştirildi.
 bazı hardcoded sabitler enum olarak refactor edildi.
 ekşi hesabına giriş yapılmadıysa uyarı vermesi sağlandı. (hem fav hem liste modu hem de tüm engelleri kaldır modu için)
 server ile haberleşmenin ssl ile gerçekleşmesi sağlandı.
+ayar sayfası eklendi. sayfadan verilerin servera gönderilme durumu seçilebiliyor.
 
 v1.4
 yeni özellik: tüm işlemlerin content script enjekte etmeden background'ta http istekleri gönderilerek yapılması sağlandı.
@@ -97,7 +99,6 @@ problem:      manifest v3'te background DOM'a sahip değil. DOMParser kullanıla
               * Sadece DOMParser'ı kullanmak için yeni bir tab açmak, runtime message'lar ile iletişim kurmak.  
 
 SONRAKİ GÜNCELLEMEDE YAPILMASI PLANLANANLAR
-ayar sayfası olmalı
 performans analizi yapılmalı
   logger'ın etkisi gözlemlenmeli
     array silindiğinde gerçekten bellekten siliniyor mu, reflerden dolayı memory leak oluşuyor mu?
