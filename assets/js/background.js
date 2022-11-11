@@ -11,20 +11,7 @@ try {
   console.error(error);
 }
 
-(async function initBackground()
-{
-  config = await getConfig();
-  await saveConfig(config);
-  log = new Log();
-  log.setEnableStatus(config.enableLog);
-  log.setLogConsole(config.logConsole);
-  log.setlevel = Log.Levels.INFO;
-  log.info("bg: init.");
-  redirectHandler = new RedirectHandler();
-  commHandler = new CommHandler(log);
-})();
-
-let g_isProgramActive = false;        // to prevent multiple starts from gui
+let g_isProgramActive = false;         // to prevent multiple starts from gui
 let g_earlyStopCommand = false;       // early stop command might be recevied from gui to stop program execution
 let g_tabId = -1;                     // tab id of the new tab (will be assigned by browser)
 
@@ -42,9 +29,23 @@ let g_clientUserAgent = "";           // client's user agent
 let g_banMode = BanMode.BAN;		    	// mode of the program, will ban or undoban
 let g_banSource = BanSource.FAV;		  // band source of the program
 
+async function initBackground()
+{
+  config = await getConfig();
+  await saveConfig(config);
+  log = new Log(config);
+  redirectHandler = new RedirectHandler();
+  commHandler = new CommHandler(log);
+  
+  log.setlevel = Log.Levels.INFO;
+  log.info("bg: init.");
+}
+
+initBackground();
+
 chrome.runtime.onMessage.addListener(async function messageListener_Popup(message, sender, sendResponse) {
   sendResponse({status: 'ok'}); // added to suppress 'message port closed before a response was received' error
-	
+  
 	const obj = filterMessage(message, "banSource", "banMode");
 	if(obj.resultType !== ResultType.SUCCESS)
 		return;
@@ -57,6 +58,8 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
 	{
 		g_isProgramActive = true; // prevent multiple starts
 		
+    await initBackground();
+    
 		if(obj.banSource === BanSource.FAV || obj.banSource === BanSource.LIST)
 		{
 			// list is exist in storage

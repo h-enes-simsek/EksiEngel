@@ -2,12 +2,12 @@
 
 class Log
 {
-  constructor()
+  constructor(config)
   {
-    this.g_LoggedData = [];					/* logged data */
-		this.level = Log.Levels.INFO;		/* minimum log level that will be logged */
-		this.isEnabled = true;					/* on-off logger */
-		this.logConsole = true;					/* log to console as well */
+    this.g_LoggedData = [];					      /* logged data */
+		this.level = Log.Levels.INFO;		      /* minimum log level that will be logged */
+		this.isEnabled = config.enableLog;		/* on-off logger */
+		this.logConsole = config.logConsole;	/* log to console as well */
   }
 	
 	setLevel = (level) =>
