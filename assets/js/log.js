@@ -38,13 +38,13 @@ class Log
 	info = (data) =>
   {
 		if(this.isEnabled)
-			this.logData("INF " + this.getDateString() + data, Log.Levels.INFO);
+			this.logData("INFO " + this.getDateString() + data, Log.Levels.INFO);
   }
   
 	warn = (data) =>
   {
 		if(this.isEnabled)
-			this.logData("WRN " + this.getDateString() + data, Log.Levels.WRN);
+			this.logData("WARN " + this.getDateString() + data, Log.Levels.WARN);
   }
   
 	err = (data) =>
