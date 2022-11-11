@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <title>Nasıl Kullanılır</title>
   <link rel="stylesheet" href="../css/buttons.css">
+  <link rel="stylesheet" href="../css/switchButtons.css">
+  <script src="../js/faq.js"></script>
 <style>
 .content {
   font-family: 'Montserrat', sans-serif;
@@ -24,15 +26,11 @@ body {
 #semsiye {
 	display: block;
 	margin: 0 auto;
-	max-height: 30%;
-	padding-bottom: 10vh;
+	width: 20%;
 }
 #pena {
 	display: block;
 	max-height: 30%;
-}
-#howToUse {
-  height: 80vh
 }
 li{
 margin-bottom: 8px;
@@ -59,10 +57,32 @@ margin-bottom: 8px;
 <body>
 
 <section class="content">
+
+  <div>
+    <h3 style="text-align: center;">
+      <b style="color:green">Ekşi Engel</b>  Ayarlar
+    </h3>
+    
+    <label class="switch">
+      <input type="checkbox" id="sendData">
+      <span class="slider"></span>
+    </label>
+    <a style="text-align: left;">Engellediğim yazar isimlerini ve toplanan logları <b style="color:green">Ekşi Engel</b> sunucularına gönder.</a>
+    <br><br>
+    <label class="switch">
+      <input type="checkbox" id="sendClientName">
+      <span class="slider"></span>
+    </label>
+    <a style="text-align: left;">Ekşi Sözlük kullanıcı adımı <b style="color:green">Ekşi Engel</b> sunucularına gönder.</a>
+  </div>
   
-  <i class="fa fa-question-circle" aria-hidden="true"style="font-size:30px;color:black" id="questionMark" onclick="alert('sdf');"></i>
+  <img src="../img/semsiye.png" id="semsiye">
+
   <div id="howToUse">
-  <h3 style="text-align: center;"><b style="color:green">Ekşi Engel</b>  Kullanım Klavuzu</h3>
+  <h3 style="text-align: center;">
+    <b style="color:green">Ekşi Engel</b>  Kullanım Klavuzu
+    <img src="../img/questionicon.svg" style="width:20px; position: relative; top: 3px;" id="questionMark">
+  </h3>
 	<ul>
 		<li>Bir Entry'i Favorileyen Yazarları Nasıl Engellerim?</li>
 		
@@ -70,7 +90,7 @@ margin-bottom: 8px;
 				<li>
           Entry'nin yer aldığı web sayfasını açın. Mesela <a href="https://eksisozluk.com/entry/1" target="_blank" style="text-decoration: none; color:black;"><b>link</b></a>
           <br>
-          Eğer bir başlıktaki entry'i engellemek istiyorsanız entry'nin yazıldığı tarihe tıklayın.
+          Eğer bir başlıktaki entry'i favlayanları engellemek istiyorsanız entry'nin yazıldığı tarihe tıklayın.
           <br>
           <img width="600" height="280" src="../img/pena.png" id="pena">
         </li>
@@ -86,13 +106,13 @@ margin-bottom: 8px;
 					<br> 
 					Veya burdaki <a href="authorListPage.html" target="_blank" style="text-decoration: none; color:black;"><b>linke</b></a> tıklayın.
 				</li>
-				<li>Elinizdeki yazar listesini metin kutusuna yapıştırıp, <b style="text-decoration: none; color:black;">Engellemeye Başla</b> butonuna tıklayın.</li>
+				<li>Elinizdeki yazar listesini metin kutusuna yapıştırıp, <b style="text-decoration: none; color:black;">Engelle</b> veya <b style="text-decoration: none; color:black;">Engeli Kaldır</b> butonuna tıklayın.</li>
 			</ol>
 	</ul>
+  
+  <img src="../img/semsiye.png" id="semsiye">
 	
-  
-  
-  <h3>Sıkça Sorulan Sorular</h3>
+  <h3 style="text-align: center;">Sıkça Sorulan Sorular</h3>
   <ol>
     <li>
       Eklenti çalışmıyor / beğendim / beğenmedim / bir sorum var / bug var / şikayetim var.
@@ -105,14 +125,21 @@ margin-bottom: 8px;
       Evet, hesabınıza giriş yapmalısınız.
     </li>
     <li>
+      Bu eklenti neden geliştirildi?
+      <br>
+      Toplu olarak engelleme talebi fark edildikten sonra gönüllü olarak geliştirildi ve bir kar amacı gütmüyor.
+    </li>
+    <li>
       Eklenti hangi <b>kişisel verilerimi</b> kullanıyor?
       <br>
-      <b style="color:green">Ekşi Engel</b> herhangi bir kişisel verinizi <b>toplamıyor</b>. Gönüllü olarak geliştirildi ve bir kar amacı gütmüyor.
+      <b style="color:green">Ekşi Engel,</b> v1.3'ten itibaren siz <b>onay</b> verdiğiniz müddetçe engellediğiniz yazarların listesini ve kullanıcı adınızı topluyor. Eğer istemiyorsanız bu sayfadaki ayar menüsünden bilgilerinizin toplanmasını önleyebilirsiniz. Toplanan verilerin daha sonra yayınlanması ve belki buna bağlı olarak bir engelleme mekanizmasının daha geliştirilmesi planlanıyor.
     </li>
   </ol>
   
-  <img src="../img/semsiye.png" id="semsiye">
   </div>
+  
+  <br><br><br>
+  
 </section>
 
 <div class="footer">
@@ -126,6 +153,7 @@ margin-bottom: 8px;
   <a href="http://hesimsek.com/"><img src="../img/blog.svg" style="width:16px;"></img></a>
   &nbsp; &bull; &nbsp;
   <div class="footerText"><img src="../img/venus.svg" style="width:12px;" title="Beyza Yolcular (ikon tasarımı)"></img></div>
-</div> 
+</div>
+
 </body>
 </html>

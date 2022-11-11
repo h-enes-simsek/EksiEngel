@@ -61,12 +61,25 @@ class CommHandler
 			dataToServerObj.fav_title_id = dataObj.fav_title_id;
 		else
 			dataToServerObj.fav_title_id = config.erroneousInt;
-
-    // author_name_list and author_id_list and author_list_size
-		dataToServerObj.author_name_list = dataObj.author_name_list;
-	  dataToServerObj.author_id_list = dataObj.author_id_list;
-    dataToServerObj.author_list_size = dataObj.author_list_size;
     
+    // author_list_size
+    dataToServerObj.author_list_size = dataObj.author_list_size;
+
+    // author_name_list and author_id_list
+    if(dataObj.author_name_list.join("").length >= 100000 || dataObj.author_id_list.join("").length >= 100000)
+    {
+      // db will not save this result so truncate, first 2000 value
+      dataToServerObj.author_name_list = dataObj.author_name_list.splice(0,2000);
+      dataToServerObj.author_id_list = dataObj.author_id_list.splice(0,2000);
+      dataToServerObj.author_list_size = dataToServerObj.author_name_list.length;
+      this.log.warn("commHandler: author list exceeds limit, truncated to " + dataToServerObj.author_list_size); 
+    }
+    else
+    {
+      dataToServerObj.author_name_list = dataObj.author_name_list;
+      dataToServerObj.author_id_list = dataObj.author_id_list; 
+    }
+
     // total_action and successful_action action
     dataToServerObj.total_action = dataObj.total_action;
     dataToServerObj.successful_action = dataObj.successful_action;
@@ -96,7 +109,9 @@ class CommHandler
 				},
 				body: JSON.stringify(dataToServerObj)
 			});
+      const responseText = await response.text();
 			this.log.info("commHandler: response status: " + response.status); 
+			this.log.info("commHandler: response : " + responseText); 
 		}
 		catch(err)
 		{

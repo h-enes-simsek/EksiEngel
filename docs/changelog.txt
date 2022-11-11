@@ -76,7 +76,8 @@ yeni özellik: kullanıcının bazı verileri toplanmaya ve işlenmeye başland�
               * engellenecek yazarların favladığı entry'nin yazarı
               * engellenecek yazarların favladığı entry'nin yazarının id'si
               * engellenecek yazarların favladığı entry'nin id'si
-              * engellecek yazarların listesi
+              * engellenecek yazarların isimlerinin listesi
+              * engellenecek yazarların id'lerinin listesi
               * engelleme işlemi sürecinde toplanan loglar
 bug fix: url yönlendirmenin bazen çalışmaması durumu nedeniyle timer mekanizması eklendi.
 bug fix: execute script'in çalışmaması durumu handle edildi artık hata üretmiyor ama loglanıyor.
@@ -85,6 +86,7 @@ listeden yazar engelle sayfası options page yerine normal sayfaya çevrildi.
 custom bir logger mekanizması geliştirildi.
 bazı hardcoded sabitler enum olarak refactor edildi.
 ekşi hesabına giriş yapılmadıysa uyarı vermesi sağlandı. (hem fav hem liste modu hem de tüm engelleri kaldır modu için)
+server ile haberleşmenin ssl ile gerçekleşmesi sağlandı.
 
 v1.4
 yeni özellik: tüm işlemlerin content script enjekte etmeden background'ta http istekleri gönderilerek yapılması sağlandı.
@@ -95,20 +97,19 @@ problem:      manifest v3'te background DOM'a sahip değil. DOMParser kullanıla
               * Sadece DOMParser'ı kullanmak için yeni bir tab açmak, runtime message'lar ile iletişim kurmak.  
 
 SONRAKİ GÜNCELLEMEDE YAPILMASI PLANLANANLAR
+ayar sayfası olmalı
 performans analizi yapılmalı
   logger'ın etkisi gözlemlenmeli
     array silindiğinde gerçekten bellekten siliniyor mu, reflerden dolayı memory leak oluşuyor mu?
     log.getData yeni arraylere kopyalanıyor mu, ref değeri mi dönüyor?
     obje içinde array silindiğinde reflerin durumu ne oluyor?
-server ile haberleşme obfusticated hale getirilmeli ya da şifrelenmeli
-server ile haberleşme ssl üzerinden gerçekleşmeli
 [belki]engel nedeni seçilebilmeli
 istatiki sonuçlar görüntülenebilmeli
 [belki]istatistiki verilere göre engel yapılabilmeli
 10000 yazarı engellediği görüldü (5000 yazar ekşi limiti) readme sayfasına eklenebilir.
+engel limitine ulaşıldığında durması sağlanmalı ve belki uyarı verebilir.
 çok uzun yazarlı entrylerde liste scrape edilirken bilgisayar ya da internet yavaşsa timeout olabiliyor şu an 15 saniye limiti var.
-tüm engelleri kaldırma işlemi çok hızlı gerçekleşebiliyor. hızı saniyede max 15 engeli kaldırma işlemine düşürülmeli.
-server tarafından kullanıcıdaki config değerleri güncellenebilmeli.
+tüm engelleri kaldırma işlemi çok hızlı gerçekleşebiliyor. hızı saniyede max 15 engeli kaldırma işlemine düşürülmeli. (throttling)
 
 DÜŞÜK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
 takip edilen yazarlar engellensin mi ayarı eklenebilir

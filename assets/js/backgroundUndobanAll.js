@@ -20,7 +20,7 @@ async function processHandler_UndobanAll()
 	
 	if(res === ResultType.FAIL)
 	{
-		log.useful("Program has been finished early (unbanned user: " + "?" + " title: " + "?" +")");
+		log.info("Program has been finished early (unbanned user: " + "?" + " title: " + "?" +")");
 	}
 	else
 	{
@@ -29,7 +29,7 @@ async function processHandler_UndobanAll()
 		let totalTitle = processResult.totalTitle;
 	
 		makeNotification("Engeli kaldırılan kullanıcı sayısı: " + totalUser + ", başlık sayısı: " + totalTitle);
-		log.useful("Program has been finished (unbanned user: " + totalUser + " title: " + totalTitle +")");
+		log.info("Program has been finished (unbanned user: " + totalUser + " title: " + totalTitle +")");
 	}
 	
 	log.info("contentScriptMessageListener_UndobanAll removed.");
@@ -99,7 +99,7 @@ function contentScriptMessageListener_UndobanAll(message, sender, sendResponse)
 	
 	if(incomingObj.clientName)
 	{
-		log.useful("contentScriptMessageListener_UndobanAll: client name: " + incomingObj.clientName);
+		log.info("contentScriptMessageListener_UndobanAll: client name: " + incomingObj.clientName);
 	}
 	
 	if(Object.hasOwn(incomingObj, 'res')       && Object.hasOwn(incomingObj, 'clientName') &&

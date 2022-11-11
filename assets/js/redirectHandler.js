@@ -1,5 +1,4 @@
 'use strict';
-log.info("redirectHandler: init");
 
 let CONFIG_REDIRECT_CONTROL_PERIOD_IN_SEC = 5;
 

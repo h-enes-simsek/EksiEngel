@@ -63,12 +63,5 @@
     "fields": {
       "log_level": "ERR"
     }
-  },
-  {
-    "model": "client_data_collector.LogLevel",
-    "pk": 5,
-    "fields": {
-      "log_level": "USEFUL"
-    }
   }
 ]

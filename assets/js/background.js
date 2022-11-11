@@ -1,26 +1,28 @@
 'use strict';
 
+let config;
+let log;
+let redirectHandler;
+let commHandler;
+
 try {
-  importScripts("enums.js", "config.js", "log.js");
+  importScripts("enums.js", "log.js", "config.js", "redirectHandler.js", "commHandler.js", "utils.js", "backgroundUndobanAll.js");
 } catch (error) {
   console.error(error);
 }
 
-// log.js will be imported first, so others can use logger
-let log = new Log();
-log.setEnableStatus(config.enableLog);
-log.setLogConsole(config.logConsole);
-log.setlevel = Log.Levels.INFO;
-log.info("bg: init");
-
-try {
-	importScripts("redirectHandler.js", "commHandler.js", "utils.js", "backgroundUndobanAll.js");
-} catch (error) {
-	console.error(error);
-}
-
-let redirectHandler = new RedirectHandler();
-let commHandler = new CommHandler(log);
+(async function initBackground()
+{
+  config = await getConfig();
+  await saveConfig(config);
+  log = new Log();
+  log.setEnableStatus(config.enableLog);
+  log.setLogConsole(config.logConsole);
+  log.setlevel = Log.Levels.INFO;
+  log.info("bg: init.");
+  redirectHandler = new RedirectHandler();
+  commHandler = new CommHandler(log);
+})();
 
 let g_isProgramActive = false;        // to prevent multiple starts from gui
 let g_earlyStopCommand = false;       // early stop command might be recevied from gui to stop program execution
@@ -55,22 +57,12 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
 	{
 		g_isProgramActive = true; // prevent multiple starts
 		
-		if(obj.banSource === BanSource.FAV && obj.banMode === BanMode.BAN)
+		if(obj.banSource === BanSource.FAV || obj.banSource === BanSource.LIST)
 		{
 			// list is exist in storage
-			await processHandler_SelectiveBan(BanSource.FAV, BanMode.BAN);
+			await processHandler_SelectiveBan(obj.banSource, obj.banMode);
 		}
-    else if(obj.banSource === BanSource.LIST && obj.banMode === BanMode.BAN)
-    {
-      // list is exist in storage
-			await processHandler_SelectiveBan(BanSource.LIST, BanMode.BAN);
-    }
-		else if(obj.banSource === BanSource.LIST && obj.banMode === BanMode.UNDOBAN)
-		{
-			// list is exist in storage
-			await processHandler_SelectiveBan(BanSource.LIST, BanMode.UNDOBAN);
-		}
-		else if(obj.banSource === BanSource.UNDOBANALL && obj.banMode === BanMode.UNDOBAN)
+		else if(obj.banSource === BanSource.UNDOBANALL)
 		{
 			await processHandler_UndobanAll();
 		}
@@ -87,7 +79,7 @@ async function processHandler_SelectiveBan(banSource, mode=BanMode.BAN)
   let userListArrayId = [];
   log.info("number of user to ban (before cleaning): " + userListArray.length);
   cleanUserList(userListArray);
-  log.useful("number of user to ban (after cleaning): " + userListArray.length);
+  log.info("number of user to ban (after cleaning): " + userListArray.length);
 	
   let objToSendServer = {};
 	let favAuthorName, favAuthorId, favTitleName, favTitleId, favEntryId;
@@ -166,12 +158,12 @@ async function processHandler_SelectiveBan(banSource, mode=BanMode.BAN)
 		if(mode === BanMode.BAN)
 		{
 			makeNotification(userListArray.length + ' kisilik listedeki ' + successfullBans + ' kisi engellendi.');
-			log.useful("Program has been finished (banned:" + successfullBans + ", total:" + userListArray.length + ")");
+			log.info("Program has been finished (banned:" + successfullBans + ", total:" + userListArray.length + ")");
 		}
 		else if(mode === BanMode.UNDOBAN)
 		{
 			makeNotification(userListArray.length + ' kisilik listedeki ' + successfullBans + ' kisinin engeli kaldirildi.');
-			log.useful("Program has been finished (unbanned:" + successfullBans + ", total:" + userListArray.length + ")");
+			log.info("Program has been finished (unbanned:" + successfullBans + ", total:" + userListArray.length + ")");
 		}
     
     
@@ -290,8 +282,8 @@ function contentScriptMessageListener(message, sender, sendResponse)
 		}
 		g_clientName = incomingObj.clientName;
 		g_clientUserAgent = incomingObj.userAgent;
-		log.useful("contentScriptMessageListener:: client name: " + g_clientName);
-		log.useful("contentScriptMessageListener:: user agent: " + g_clientUserAgent);
+		log.info("contentScriptMessageListener:: client name: " + g_clientName);
+		log.info("contentScriptMessageListener:: user agent: " + g_clientUserAgent);
 		return;
 	}
 	

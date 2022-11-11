@@ -52,12 +52,6 @@ class Log
 		if(this.isEnabled)
 			this.logData("ERR " + this.getDateString() + data, Log.Levels.ERR);
   }
-  
-	useful = (data) =>
-  {
-		if(this.isEnabled)
-			this.logData("USF " + this.getDateString() + data, Log.Levels.USEFUL);
-  }
 	
 	logData = (logMsg, level) =>
 	{
@@ -102,8 +96,7 @@ class Log
     DISABLED: 0,
     INFO:     1,
     WARN:     2,
-    ERR:      3,
-    USEFUL:   4
+    ERR:      3
   }
 	
 }
