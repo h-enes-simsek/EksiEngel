@@ -20,7 +20,7 @@ startBanFavorites.onclick = function(element) {
 				{
 					// the extension should be used in an ekşisözlük entry page
 					console.log("popup.js: wrong url, current url: " + tab.url);
-					alert("Favorileyenleri engellemek istediğin ekşisözlük entry'sini açın.\nÖrneğin: https://eksisozluk.com/entry/1");
+					alert("Favorileyenleri engellemek istediğiniz ekşisözlük entry'sini açın.\nÖrneğin: https://eksisozluk.com/entry/1");
 				}
 			}
 		}

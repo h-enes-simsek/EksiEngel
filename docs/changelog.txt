@@ -99,6 +99,7 @@ problem:      manifest v3'te background DOM'a sahip değil. DOMParser kullanıla
               * Sadece DOMParser'ı kullanmak için yeni bir tab açmak, runtime message'lar ile iletişim kurmak.  
 
 SONRAKİ GÜNCELLEMEDE YAPILMASI PLANLANANLAR
+max yazar limiti durumu handle edilmeli
 performans analizi yapılmalı
   logger'ın etkisi gözlemlenmeli
     array silindiğinde gerçekten bellekten siliniyor mu, reflerden dolayı memory leak oluşuyor mu?
