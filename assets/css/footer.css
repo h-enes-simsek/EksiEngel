@@ -1,0 +1,17 @@
+.footer {
+  position: fixed;
+  left: 25vw;
+  bottom: 0;
+  width: 50vw;
+  text-align: center;
+}
+.footer > hr {
+  width: 50vw;
+  border: 1px solid black;
+  background-color: black;
+}
+.footerText {
+  display: inline;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 15px;
+}

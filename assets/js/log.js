@@ -1,13 +1,14 @@
-// custom logger
+import {config} from './config.js';
 
+// custom logger
 class Log
 {
-  constructor(config)
+  constructor()
   {
     this.g_LoggedData = [];					      /* logged data */
 		this.level = Log.Levels.INFO;		      /* minimum log level that will be logged */
-		this.isEnabled = config.enableLog;		/* on-off logger */
-		this.logConsole = config.logConsole;	/* log to console as well */
+		this._isEnabled = config.enableLog;	  /* on-off logger */
+		this._logConsole = config.logConsole;  /* log to console as well */
   }
 	
 	setLevel = (level) =>
@@ -17,23 +18,29 @@ class Log
   
   getLevel = () => 
   {
+    // string key of the enum, not the integer value
     return Object.keys(Log.Levels)[this.level];
   }
 	 
-	setEnableStatus = (isEnabled) =>
+	set isEnabled(isEnabled)
 	{
-		this.isEnabled = isEnabled;
+		this._isEnabled = isEnabled;
 	}
   
-  getEnableStatus = () => 
+  get isEnabled()
   {
-    return this.isEnabled;
+    return this._isEnabled;
   }
 	
-	setLogConsole = (logConsole) =>
+	set logConsole(logConsole)
 	{
-		this.logConsole = logConsole;
+		this._logConsole = logConsole;
 	}
+  
+  get logConsole()
+  {
+    return this._logConsole;
+  }
   
 	info = (data) =>
   {
@@ -55,7 +62,7 @@ class Log
 	
 	logData = (logMsg, level) =>
 	{
-		if(this.logConsole)
+		if(this._logConsole)
 			console.log(logMsg);
 		
 		if(level >= this.level)
@@ -100,3 +107,5 @@ class Log
   }
 	
 }
+
+export let log = new Log();

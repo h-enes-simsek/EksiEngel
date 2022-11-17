@@ -1,11 +1,9 @@
-class CommHandler 
+import {log} from './log.js';
+import {config} from './config.js';
+
+export class CommHandler 
 {
-	constructor(logger)
-	{
-		this.log = logger;
-	}
-	
-	sendData = async (config, dataObj) =>
+	sendData = async (dataObj) =>
 	{
 		let dataToServerObj = {};
 		
@@ -72,7 +70,7 @@ class CommHandler
       dataToServerObj.author_name_list = dataObj.author_name_list.splice(0,2000);
       dataToServerObj.author_id_list = dataObj.author_id_list.splice(0,2000);
       dataToServerObj.author_list_size = dataToServerObj.author_name_list.length;
-      this.log.warn("commHandler: author list exceeds limit, truncated to " + dataToServerObj.author_list_size); 
+      log.warn("commHandler: author list exceeds limit, truncated to " + dataToServerObj.author_list_size); 
     }
     else
     {
@@ -88,10 +86,10 @@ class CommHandler
     dataToServerObj.is_early_stopped = dataObj.is_early_stopped;
     
     // log_level and log
-		if(config.sendLog && this.log.getEnableStatus())
+		if(config.sendLog && log.isEnabled)
 		{
-			dataToServerObj.log_level = this.log.getLevel();
-			dataToServerObj.log = this.log.getData();
+			dataToServerObj.log_level = log.getLevel();
+			dataToServerObj.log = log.getData();
 		}
 		else
 		{
@@ -110,12 +108,12 @@ class CommHandler
 				body: JSON.stringify(dataToServerObj)
 			});
       const responseText = await response.text();
-			this.log.info("commHandler: response status: " + response.status); 
-			this.log.info("commHandler: response : " + responseText); 
+			log.info("commHandler: response status: " + response.status); 
+			log.info("commHandler: response : " + responseText); 
 		}
 		catch(err)
 		{
-			this.log.err("commHandler: err: " + err); 
+			log.err("commHandler: err: " + err); 
 		}
 	}
 }

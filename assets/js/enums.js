@@ -1,26 +1,20 @@
-const BanSource = {
-  FAV:  			"FAV",
-  LIST: 			"LIST",
-	UNDOBANALL: "UNDOBANALL"
+export const BanSource = {
+  FAV:  			"FAV",          /* Ban all authors that favorited a specific entry */
+  LIST: 			"LIST",         /* Ban authors in the list that will be filled by user */
+	UNDOBANALL: "UNDOBANALL"    /* Undoban all banned authors */
 };
 
-const BanMode = {
+export const BanMode = {
   BAN:     "BAN",
   UNDOBAN: "UNDOBAN"
 };
 
-const OpMode = {
-  ACTION:  "ACTION",
-  CONTROL: "CONTROL"
-};
-
-const TargetType = {
+export const TargetType = {
   USER:  "USER",
   TITLE: "TITLE"
 };
 
-const ResultType = {
+export const ResultType = {
   SUCCESS:  "SUCCESS",
-  FAIL: "FAIL",
-	UNKNOWN: "UNKNOWN"
+  FAIL: "FAIL"
 };

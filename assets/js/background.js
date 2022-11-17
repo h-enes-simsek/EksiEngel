@@ -1,53 +1,26 @@
 'use strict';
 
-let config;
-let log;
-let redirectHandler;
-let commHandler;
+import * as enums from './enums.js';
+import * as utils from './utils.js';
+import {config, getConfig, saveConfig} from './config.js';
+import {log} from './log.js';
+import {CommHandler} from './commHandler.js';
+import {RelationHandler} from './relationHandler.js';
+import {ScrapingHandler} from './scrapingHandler.js';
 
-try {
-  importScripts("enums.js", "log.js", "config.js", "redirectHandler.js", "commHandler.js", "utils.js", "backgroundUndobanAll.js");
-} catch (error) {
-  console.error(error);
-}
+let relationHandler = new RelationHandler();
+let scrapingHandler = new ScrapingHandler();
+let commHandler = new CommHandler();
 
-let g_isProgramActive = false;         // to prevent multiple starts from gui
-let g_earlyStopCommand = false;       // early stop command might be recevied from gui to stop program execution
-let g_tabId = -1;                     // tab id of the new tab (will be assigned by browser)
-
-let g_counter = 0;                    // number of times the page is loaded (for every author's page)
-let g_latestContentScriptInfo = "";   // JSON Obj, info about latest executed content script
-let g_url = "";                       // target url
-let g_isTabClosedByUser = false;      // user might close the tab before program finished
-let g_isBanUserSuccessfull = false;   // is target user banned successfully
-let g_isBanTitleSuccessfull = false;  // is target user's titles banned succesfully
-let g_resolveSelectiveBanProcess;     // function, resolve function of process_SelectiveBan's promise
-let g_rejectSelectiveBanProcess;      // function, reject function of process_SelectiveBan's promise
-let g_isFirstAuthor = true;           // is the program tries to ban the first user in list
-let g_clientName = "";                // client's author name
-let g_clientUserAgent = "";           // client's user agent
-let g_banMode = BanMode.BAN;		    	// mode of the program, will ban or undoban
-let g_banSource = BanSource.FAV;		  // band source of the program
-
-async function initBackground()
-{
-  config = await getConfig();
-  await saveConfig(config);
-  log = new Log(config);
-  redirectHandler = new RedirectHandler();
-  commHandler = new CommHandler(log);
-  
-  log.setlevel = Log.Levels.INFO;
-  log.info("bg: init.");
-}
-
-initBackground();
+log.info("bg: init.");
+let g_isProgramActive = false; // to prevent multiple starts from gui
+let g_earlyStop = false;       // to stop the process early 
 
 chrome.runtime.onMessage.addListener(async function messageListener_Popup(message, sender, sendResponse) {
   sendResponse({status: 'ok'}); // added to suppress 'message port closed before a response was received' error
-  
-	const obj = filterMessage(message, "banSource", "banMode");
-	if(obj.resultType !== ResultType.SUCCESS)
+	
+	const obj = utils.filterMessage(message, "banSource", "banMode");
+	if(obj.resultType === enums.ResultType.FAIL)
 		return;
 	
 	if(g_isProgramActive)
@@ -57,351 +30,206 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
 	else 
 	{
 		g_isProgramActive = true; // prevent multiple starts
-		
-    await initBackground();
-    
-		if(obj.banSource === BanSource.FAV || obj.banSource === BanSource.LIST)
-		{
-			// list is exist in storage
-			await processHandler_SelectiveBan(obj.banSource, obj.banMode);
-		}
-		else if(obj.banSource === BanSource.UNDOBANALL)
-		{
-			await processHandler_UndobanAll();
-		}
-		
+    await processHandler(obj.banSource, obj.banMode, obj.entryUrl);
 		g_isProgramActive = false; // program can be started again
 	}
 });
 
-async function processHandler_SelectiveBan(banSource, mode=BanMode.BAN)
+async function processHandler(banSource, banMode, entryUrl)
 {
-  log.info("Program has been started with mode: " + mode);
+  log.info("Program has been started with banSource: " + banSource + ", banMode: " + banMode);
+  chrome.tabs.create({ url: chrome.runtime.getURL("assets/html/notification.html") });
   
-  let userListArray = await getUserList();
-  let userListArrayId = [];
-  log.info("number of user to ban (before cleaning): " + userListArray.length);
-  cleanUserList(userListArray);
-  log.info("number of user to ban (after cleaning): " + userListArray.length);
-	
-  let objToSendServer = {};
-	let favAuthorName, favAuthorId, favTitleName, favTitleId, favEntryId;
-	if(banSource === BanSource.FAV)
-	{
-		let favBanMetaData = await getFavBanMetaData();
-		if(!favBanMetaData)
-		{
-			log.err("bg: favBanMetaData could not obtained from storage.");
-		}
-		else
-		{
-      objToSendServer.fav_author_name = favBanMetaData.favAuthorName;
-			objToSendServer.fav_author_id = favBanMetaData.favAuthorId;
-			objToSendServer.fav_title_name = favBanMetaData.favTitleName;
-			objToSendServer.fav_title_id = favBanMetaData.favTitleId;
-			objToSendServer.fav_entry_id = favBanMetaData.favEntryId;
-		}
-	}
+  let authorNameList = [];
+  let authorIdList = [];
+  let entryMetaData = {};
   
-  if(userListArray.length == 0){
-    makeNotification("Programı kullanmak için yazar ekleyin.");
-    log.err("Program has been finished (getUserList function failed)");
-  }
-  else{
-    // register function to call every time a page is closed
-    chrome.tabs.onRemoved.addListener(pageCloseListener);
-    
-    // register function to call every time the page is updated
-    // Note: chrome.tabs.onUpdated doesn't work properly
-    chrome.webNavigation.onDOMContentLoaded.addListener(DOMContentLoadedListener)
-    
-    // register function to call every time a content script sends a message
-    chrome.runtime.onMessage.addListener(contentScriptMessageListener);
-    
-    RedirectHandler.prepareHandler();
-    g_tabId = -1; // clear variable
-    g_isFirstAuthor = true;
-		g_banMode = mode;
-		g_banSource = banSource;
-    
-    let totalAction = 0;
-    let successfullBans = 0;
-    let pageResult;
-    for(let i = 0; i < userListArray.length; i++) {
-      
-      pageResult = await process_SelectiveBan(userListArray[i]); // navigate to next url
-      
-      // early stop mechanism
-      if(g_earlyStopCommand) 
-      {
-        break;
-      }
+  relationHandler.reset(); // reset the counters to reuse
+  g_earlyStop = false;
 
-      if(pageResult.result === ResultType.SUCCESS){
-        successfullBans++;
-        log.resetData(); // reset logger because its too big
-      } else {
-        log.info("page result: fail (" + userListArray[i] +")");
-      }
-      userListArrayId[i] = pageResult.userId;
-      totalAction++;
-    }
-    
-    log.info("contentScriptMessageListener removed.");
-    chrome.runtime.onMessage.removeListener(contentScriptMessageListener);
-    
-    log.info("DOMContentLoadedListener removed.");
-    chrome.tabs.onUpdated.removeListener(DOMContentLoadedListener);
-    
-    log.info("pageCloseListener removed.");
-    chrome.tabs.onRemoved.removeListener(pageCloseListener);
-		
-		await closeLastTab(pageResult.tabID);
-
-		if(mode === BanMode.BAN)
-		{
-			makeNotification(userListArray.length + ' kisilik listedeki ' + successfullBans + ' kisi engellendi.');
-			log.info("Program has been finished (banned:" + successfullBans + ", total:" + userListArray.length + ")");
-		}
-		else if(mode === BanMode.UNDOBAN)
-		{
-			makeNotification(userListArray.length + ' kisilik listedeki ' + successfullBans + ' kisinin engeli kaldirildi.');
-			log.info("Program has been finished (unbanned:" + successfullBans + ", total:" + userListArray.length + ")");
-		}
-    
-    
-		if(config.sendData)
-    {
-		  objToSendServer.client_name = g_clientName;
-		  objToSendServer.user_agent = g_clientUserAgent;
-		  objToSendServer.ban_source = banSource;
-		  objToSendServer.ban_mode = mode;
-		  objToSendServer.author_name_list = userListArray;
-		  objToSendServer.author_id_list = userListArrayId;
-      objToSendServer.author_list_size = userListArray.length;
-      objToSendServer.total_action = totalAction;
-      objToSendServer.successful_action = successfullBans;
-      objToSendServer.is_early_stopped = g_earlyStopCommand ? 1 : 0;
-      
-      await commHandler.sendData(config, objToSendServer)
-    }
-    
-    // reset logger not to save duplicated values
-    log.resetData();
-    
-    // clear to reuse this variable
-    g_earlyStopCommand = false; 
-  }  
-}
-
-// this function will be called every time any page is closed (iframes will call as well)
-function pageCloseListener(tabid, removeInfo)
-{
-  if(g_tabId === tabid && !g_isTabClosedByUser)
+  let userAgent = await scrapingHandler.scrapeUserAgent();
+  let clientName = await scrapingHandler.scrapeClientName(); 
+  if(!clientName)
   {
-    // this is required because chrome.tabs.onRemoved fired multiple times
-    // each by main page and iframes
-    g_isTabClosedByUser = true;
-    
-    log.info("tab " + tabid + " closed by user");
-    log.info("automatically early stop command was generated to stop the process.")
-    g_earlyStopCommand = true;
-      
-    // resolve Promise after content script has executed
-    g_resolveSelectiveBanProcess({result:ResultType.FAIL, tabID: g_tabId, userId: 0});
-  }
-}
-
-// this function will be called every time any page is updated (when domcontent loaded)
-function DOMContentLoadedListener(details) 
-{
-  // filter other page updates by using tab id
-  if(details.tabId === g_tabId && decodeURIComponentForEksi(details.url) === g_url) {
-    g_counter++;
-    log.info("g_counter: " + g_counter + " tab id: "+ details.tabId + " frame id: " + details.frameId + " url: " + details.url);
-    
-    // outgoing values to content script
-    let executeOp = "";
-    let executeTarget = "";
-    
-    if(g_counter === 1){
-      RedirectHandler.stopRedirectTimer();
-			if(g_isFirstAuthor)
-			{
-				g_isFirstAuthor = false;
-				chrome.scripting.executeScript({
-					target: {tabId: g_tabId, frameIds: [0]}, // frame 0 is the main frame, there may be other frames (ads, google analytics etc)
-					files: ["assets/js/contentScript_ScrapeClientData.js"]},
-					()=>
-					{
-						log.info("contentScript_ScrapeClientData.js has been executed.");
-						// execute content script to ban user
-						executeOp = OpMode.ACTION;
-						executeTarget = TargetType.USER;
-						executeContentScript(g_banSource, executeOp, g_banMode, executeTarget);
-					}
-				);
-			}
-			else
-			{
-				// execute content script to ban user
-				executeOp = OpMode.ACTION;
-				executeTarget = TargetType.USER;
-				executeContentScript(g_banSource, executeOp, g_banMode, executeTarget);
-			}
-    }
-    else{
-      log.info("DOMContentLoadedListener: unhandled g_latestContentScriptInfo: " + JSON.stringify(g_latestContentScriptInfo));
-    }
-  }
-}
-
-// this function will be called every time a content script sends a message
-function contentScriptMessageListener(message, sender, sendResponse) 
-{
-  sendResponse({status: 'ok'}); // added to suppress 'message port closed before a response was received' error
-  
-  //log.info("contentScriptMessageListener:: incoming msg: " + message);
-  
-  // incoming values from content script
-  let incomingObj;
-  try
-  {
-    incomingObj = JSON.parse(message);
-  }
-  catch(e)
-  {
-    log.info("contentScriptMessageListener:: parse err: " + e);
+    log.err("Program has been finished (error_Login)");
+    chrome.runtime.sendMessage(null, {"notification":{"status":"error_Login"}}, function(response) {
+      let lastError = chrome.runtime.lastError;
+    });
+    log.err("Program has been finished (error_Login)");
     return;
   }
-	
-	if("clientName" in incomingObj || "userAgent" in incomingObj)
-	{
-		if(!incomingObj.clientName)
-		{
-			makeNotification("Ekşi Sözlük hesabınıza giriş yaptınız mı?");
-			log.warn("contentScriptMessageListener:: client_name couldn't be obtained, maybe not logged in.");
-			g_earlyStopCommand = true;
-		}
-		g_clientName = incomingObj.clientName;
-		g_clientUserAgent = incomingObj.userAgent;
-		log.info("contentScriptMessageListener:: client name: " + g_clientName);
-		log.info("contentScriptMessageListener:: user agent: " + g_clientUserAgent);
-		return;
-	}
-	
-	if("banSource" in incomingObj)
-	{
-		if(incomingObj.banSource === BanSource.FAV || incomingObj.banSource === BanSource.LIST)
-			;
-		else
-		{
-			log.info("contentScriptMessageListener:: unhandled msg: " + message);
-			return;
-		}	
-	}
-	
-	if("resultType" in incomingObj && "banMode" in incomingObj && "userId" in incomingObj)
-	{
-		let resultType = incomingObj.resultType;
-		let banMode = incomingObj.banMode; // no need
-		
-		if(resultType === ResultType.SUCCESS){
-			g_resolveSelectiveBanProcess({result: ResultType.SUCCESS, tabID: g_tabId, userId: incomingObj.userId});
-		}
-		else {
-			g_resolveSelectiveBanProcess({result: ResultType.FAIL, tabID: g_tabId, userId: incomingObj.userId});
-		}
-	}
-  else 
-	{
-    log.info("contentScriptMessageListener:: unhandled msg: " + message);
-  }  
-}
-
-async function process_SelectiveBan(userName) 
-{
-  return new Promise(async function(resolve, reject) {
-    g_resolveSelectiveBanProcess = resolve;
-    g_rejectSelectiveBanProcess = reject;
     
-		g_url = "https://eksisozluk.com/biri/" + userName;
-    log.info("page processing started for " + g_url);
+  if(banSource === enums.BanSource.LIST)
+  {
+    authorNameList = await utils.getUserList(); // names will be loaded from storage
+    utils.cleanUserList(authorNameList);
     
-    g_counter = 0; // reset
-    g_latestContentScriptInfo = ""; // reset
-    g_isBanUserSuccessfull = false;
-    g_isBanTitleSuccessfull = false;
-    g_isTabClosedByUser = false;
-    
-    g_tabId = await RedirectHandler.handleTabOperations(g_url);
-  });
-}
-
-async function executeContentScript(source, op, mode, target)
-{
-  return new Promise(async (resolve, reject) => {
-    let configText = source + " " + op + " " + mode + " " + target;
-    log.info("content script will be exed " + configText);
-    
-    let isTabExist = await isTargetTabExist(g_tabId);
-    if(!isTabExist)
+    // stop if there is no user
+    log.info("number of user to ban " + authorNameList.length);
+    if(authorNameList.length === 0)
     {
-      log.err("content script could not be executed. target tab is not exist. tab: " + g_tabId + " content: " + configText);
-      return resolve(false);
+      chrome.runtime.sendMessage(null, {"notification":{"status":"error_NoAccount"}}, function(response) {
+        let lastError = chrome.runtime.lastError;
+      });
+      log.err("Program has been finished (error_NoAccount)");
+      return;
     }
     
-    // frame 0 is the main frame, there may be other frames (ads, google analytics etc)
-    chrome.scripting.executeScript(
-      {
-        // firstly this code will be executed
-        target: {tabId: g_tabId, frameIds: [0]}, 
-        func: (_BanSource, _OpMode, _BanMode, _TargetType, _ResultType, _source, _op, _mode, _target)=>
+    for (let i = 0; i < authorNameList.length; i++)
+    {
+      if(g_earlyStop)
+        break;
+      let authorId = await scrapingHandler.scrapeAuthorIdFromAuthorProfilePage(authorNameList[i]);
+      authorIdList.push(authorId);
+      
+      let res = await relationHandler.performAction(banMode, authorId);
+
+      // send message to notification page
+      chrome.runtime.sendMessage(null, {"notification":{status:"ongoing", successfulAction:res.successfulAction, performedAction:res.performedAction, plannedAction:authorNameList.length}}, function(response) {
+        let lastError = chrome.runtime.lastError;
+        if (lastError) 
         {
-					// enum values
-					window.enumEksiEngelBanSource= _BanSource;
-					window.enumEksiEngelOpMode = _OpMode;
-					window.enumEksiEngelBanMode = _BanMode;
-					window.enumEksiEngelTargetType = _TargetType;
-					window.enumEksiEngelResultType = _ResultType;
-					
-					// configured values in enums
-					window.configEksiEngelBanSource = _source;
-          window.configEksiEngelOp = _op;
-          window.configEksiEngelMode = _mode;
-          window.configEksiEngelTarget = _target;
-        },
-        args: [BanSource, OpMode, BanMode, TargetType, ResultType, source, op, mode, target]
-      }, 
-      ()=>
-      {
-        if(chrome.runtime.lastError) 
-        {
-          log.err("content script could not be executed(part1), content: " + configText + " err: " + chrome.runtime.lastError.message);
-          return resolve(false); // parent function will continue executing
+          // 'Could not establish connection. Receiving end does not exist.'
+          console.info("relationHandler: notification page is probably closed, early stop will be generated automatically.");
+          g_earlyStop = true;
+          return;
         }
-        
-        // secondly this file will be executed
-        chrome.scripting.executeScript(
-          {
-            target: {tabId: g_tabId, frameIds: [0]},
-            files: ["assets/js/contentScript_SelectiveBan.js"]
-          }, 
-          ()=>
-          {
-            if(chrome.runtime.lastError) 
-            {
-              log.err("content script could not be executed(part2), content: " + configText + " err: " + chrome.runtime.lastError.message);
-              return resolve(false); // parent functions will continue executing
-            } 
-            else 
-            {
-              log.info("content script has been executed, content: " + configText);
-              return resolve(true); // parent functions will continue executing
-            }
-          }
-        );
-      }
-    );
+      });
+    }
+    
+  }
+  else if(banSource === enums.BanSource.FAV)
+  {
+    entryMetaData = await scrapingHandler.scrapeMetaDataFromEntryPage(entryUrl);
+    authorNameList = await scrapingHandler.scrapeAuthorNamesFromFavs(entryUrl); // names will be scraped
+    
+    // stop if there is no user
+    log.info("number of user to ban " + authorNameList.length);
+    if(authorNameList.length === 0)
+    {
+      chrome.runtime.sendMessage(null, {"notification":{"status":"error_NoAccount"}}, function(response) {
+        let lastError = chrome.runtime.lastError;
+      });
+      log.err("Program has been finished (error_NoAccount)");
+      return;
+    }
+    
+    for (let i = 0; i < authorNameList.length; i++)
+    {
+      if(g_earlyStop)
+        break;
+      let authorId = await scrapingHandler.scrapeAuthorIdFromAuthorProfilePage(authorNameList[i]);
+      let res = await relationHandler.performAction(banMode, authorId);
+      authorIdList.push(authorId);
+      
+      // send message to notification page
+      chrome.runtime.sendMessage(null, {"notification":{status:"ongoing", successfulAction:res.successfulAction, performedAction:res.performedAction, plannedAction:authorNameList.length}}, function(response) {
+        let lastError = chrome.runtime.lastError;
+        if (lastError) 
+        {
+          // 'Could not establish connection. Receiving end does not exist.'
+          console.info("relationHandler: notification page is probably closed, early stop will be generated automatically.");
+          g_earlyStop = true;
+          return;
+        }
+      });
+    }
+  }
+  else if(banSource === enums.BanSource.UNDOBANALL)
+  {
+    let authorListObj = await scrapingHandler.scrapeAuthorNamesFromBannedAuthorPage(); // names and ids will be scraped
+    authorNameList = authorListObj.authorNameList;
+    authorIdList = authorListObj.authorIdList;
+    
+    // stop if there is no user
+    log.info("number of user to ban " + authorNameList.length);
+    if(authorNameList.length === 0)
+    {
+      chrome.runtime.sendMessage(null, {"notification":{"status":"error_NoAccount"}}, function(response) {
+        let lastError = chrome.runtime.lastError;
+      });
+      log.err("Program has been finished (error_NoAccount)");
+      return;
+    }
+    
+    for (let i = 0; i < authorIdList.length; i++)
+    {
+      if(g_earlyStop)
+        break;
+      
+      let res = await relationHandler.performAction(banMode, authorIdList[i]);
+      
+      // send message to notification page
+      chrome.runtime.sendMessage(null, {"notification":{status:"ongoing", successfulAction:res.successfulAction, performedAction:res.performedAction, plannedAction:authorIdList.length}}, function(response) {
+        let lastError = chrome.runtime.lastError;
+        if (lastError) 
+        {
+          // 'Could not establish connection. Receiving end does not exist.'
+          console.info("relationHandler: notification page is probably closed, early stop will be generated automatically.");
+          g_earlyStop = true;
+          return;
+        }
+      });
+    }
+  }
+  
+  let successfulAction = relationHandler.successfulAction;
+  let performedAction = relationHandler.performedAction;
+  
+  let dataToSend = {
+    client_name:      clientName,
+    user_agent:       userAgent,
+    ban_source:       banSource,
+    ban_mode:         banMode,
+    fav_entry_id:     entryMetaData.entryId,
+    fav_author_name:  entryMetaData.authorName,
+    fav_author_id:    entryMetaData.authorId,
+    fav_title_name:   entryMetaData.titleName,
+    fav_title_id:     entryMetaData.titleId,
+    author_list_size: authorNameList.length,
+    author_name_list: authorNameList,
+    author_id_list:   authorIdList,
+    total_action:     performedAction,
+    successful_action:successfulAction,
+    is_early_stopped: g_earlyStop
+  };
+
+  if(config.sendData)
+    await commHandler.sendData(dataToSend);
+  
+  log.info("Program has been finished (successfull:" + successfulAction + ", performed:" + performedAction + ", planned:" + authorNameList.length + ")");
+  // send message to notification page
+  chrome.runtime.sendMessage(null, {"notification":{status:"finished", successfulAction:successfulAction, performedAction:performedAction, plannedAction:authorNameList.length}}, function(response) {
+    let lastError = chrome.runtime.lastError;
   });
 }
+
+// this listener fired every time when the extension installed or updated.
+chrome.runtime.onInstalled.addListener(async (details) => 
+{
+  log.info("bg: program installed or updated.");
+  
+  // if config is not exist in storage, save the default config to storage
+  let c = await getConfig();
+  if(c)
+  {
+    log.info("bg: there is a config in local storage: " + JSON.stringify(c));
+  }
+  else
+  {
+    log.info("bg: default config saved into storage.");
+    saveConfig(config);
+  }
+});
+
+// listen notification to detect early stop
+chrome.runtime.onMessage.addListener(async function messageListener_Notifications(message, sender, sendResponse) {
+  sendResponse({status: 'ok'}); // added to suppress 'message port closed before a response was received' error
+	
+	const obj = utils.filterMessage(message, "earlyStop");
+	if(obj.resultType === enums.ResultType.FAIL || !g_isProgramActive)
+		return;
+
+  log.info("bg: early stop received.");
+  g_earlyStop = true;
+});

@@ -1,7 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Ekşi Engel",
-  "version": "1.3",
+	"author": "Hasan Enes Şimşek",
+  "version": "2.0",
   "description": "Ekşi Sözlük'te toplu olarak engelleme/başlıklarını engelleme işlemi yapın.",
   "icons": {
     "16": "assets/img/eksiengel16.png",
@@ -21,16 +22,14 @@
   },
   "permissions": [
     "tabs",
-    "scripting",
-    "storage",
-    "notifications",
-    "webNavigation"
+    "storage"
   ],
   "host_permissions": [
     "https://eksisozluk.com/*"
   ],
   "background": {
-    "service_worker": "assets/js/background.js"
+    "service_worker": "assets/js/background.js",
+		"type": "module"
   },
   "web_accessible_resources": [
     {
@@ -52,14 +51,18 @@
         "assets/html/popup.html",
         "assets/html/authorListPage.html",
         "assets/css/customPopup.css",
-        "assets/css/switchButtons.css",
+				"assets/css/switchButtons.css",
         "assets/css/buttons.css",
-        "assets/js/contentScript_SelectiveBan.js",
-        "assets/js/contentScript_UndobanAll.js",
-        "assets/js/contentScript_ScrapeAuthors.js",
-        "assets/js/contentScript_ScrapeClientData.js",
+        "assets/js/commHandler.js",
+        "assets/js/relationHandler.js",
+        "assets/js/scrapingHandler.js",
+        "assets/js/config.js",
+        "assets/js/enums.js",
+        "assets/js/log.js",
+        "assets/js/utils.js",
+        "assets/js/jsdom.js",
+				"assets/js/faq.js",
         "assets/js/popup.js",
-        "assets/js/faq.js",
         "assets/js/authorListPage.js"
       ],
       "matches": [

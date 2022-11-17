@@ -11,10 +11,8 @@ startBanFavorites.onclick = function(element) {
 			{
 				if(tab.url.includes("eksisozluk.com/entry"))
 				{
-					console.log("popup.js: contentScript_ScrapeAuthors.js will be exec");
-					chrome.scripting.executeScript({ target: {tabId: tab.id}, files: ['assets/js/contentScript_ScrapeAuthors.js'] }, function() {
-						console.log("contentScript_ScrapeAuthors.js has been executed.");
-					});
+          // send message to background page
+          chrome.runtime.sendMessage(null, {"banSource":"FAV", "banMode":"BAN", "entryUrl": tab.url});
 				}
 				else
 				{
