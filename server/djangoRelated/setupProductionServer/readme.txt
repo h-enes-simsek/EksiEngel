@@ -112,6 +112,7 @@ file /run/gunicorn.sock # output: /run/gunicorn.sock: socket
 sudo journalctl -u gunicorn.socket # if fails, how to see logs
 
 sudo systemctl stop gunicorn.socket # to stop if necessary (because it is automatically trigger gunicorn)
+# restarting gunicorn.socket causes django server to be restart
 
 # if /etc/systemd/system/gunicorn.service changes, run these to restart
 sudo systemctl daemon-reload

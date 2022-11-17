@@ -2,7 +2,7 @@
 
 import * as enums from './enums.js';
 import * as utils from './utils.js';
-import {config, getConfig, saveConfig} from './config.js';
+import {config, getConfig, saveConfig, handleConfig} from './config.js';
 import {log} from './log.js';
 import {CommHandler} from './commHandler.js';
 import {RelationHandler} from './relationHandler.js';
@@ -44,6 +44,7 @@ async function processHandler(banSource, banMode, entryUrl)
   let authorIdList = [];
   let entryMetaData = {};
   
+  await handleConfig(); // load config
   relationHandler.reset(); // reset the counters to reuse
   g_earlyStop = false;
 
@@ -202,6 +203,8 @@ async function processHandler(banSource, banMode, entryUrl)
   chrome.runtime.sendMessage(null, {"notification":{status:"finished", successfulAction:successfulAction, performedAction:performedAction, plannedAction:authorNameList.length}}, function(response) {
     let lastError = chrome.runtime.lastError;
   });
+  
+  log.resetData();
 }
 
 // this listener fired every time when the extension installed or updated.
@@ -209,17 +212,7 @@ chrome.runtime.onInstalled.addListener(async (details) =>
 {
   log.info("bg: program installed or updated.");
   
-  // if config is not exist in storage, save the default config to storage
-  let c = await getConfig();
-  if(c)
-  {
-    log.info("bg: there is a config in local storage: " + JSON.stringify(c));
-  }
-  else
-  {
-    log.info("bg: default config saved into storage.");
-    saveConfig(config);
-  }
+  await handleConfig();
 });
 
 // listen notification to detect early stop

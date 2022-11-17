@@ -52,6 +52,20 @@ export async function saveConfig(config)
   });
 }
 
+// load config from storage, if not exist save default config storage
+export async function handleConfig()
+{
+  let c = await getConfig();
+  if(c)
+  {
+    config = c;
+  }
+  else
+  {
+    saveConfig(config);
+  }
+}
+
 // listen to update config from settings
 chrome.runtime.onMessage.addListener(async function messageListener_Faq(message, sender, sendResponse) {
   sendResponse({status: 'ok'}); // added to suppress 'message port closed before a response was received' error
@@ -59,8 +73,7 @@ chrome.runtime.onMessage.addListener(async function messageListener_Faq(message,
 	const obj = utils.filterMessage(message, "config");
 	if(obj.resultType === enums.ResultType.FAIL)
 		return;
-
-  let c = await getConfig();
-  if(c)
-    config = c;
+  
+  // config in storage updated by settings, load it.
+  await handleConfig();
 });

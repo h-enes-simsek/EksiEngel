@@ -53,6 +53,7 @@
         "assets/css/customPopup.css",
 				"assets/css/switchButtons.css",
         "assets/css/buttons.css",
+        "assets/css/footer.css",
         "assets/js/commHandler.js",
         "assets/js/relationHandler.js",
         "assets/js/scrapingHandler.js",
