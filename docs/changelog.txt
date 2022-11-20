@@ -26,7 +26,7 @@ yeni özellik: kullanıcının ekşi sözlük kullanıcı ismi ve engellediği y
 bug fix: url yönlendirmenin bazen çalışmaması durumu düzeltildi.
 
 v2.0
-yayın: 
+yayın: 19.11.2022
 yeni özellik: engelleme/engeli kaldırma işlemi hızlandırıldı. 
               tüm işlemler artık arka planda gerçekleşiyor.
 
@@ -48,6 +48,7 @@ tüm sitedelerde değil sadece ekşide çalışması (injected js'nin) sağland�
 popup vs ayar sayfası tasarımı yapıldı.
 ikon tasarımı yapıldı.
 kayıtları getir sayfasında undefined check yapıldı. 
+takip edilen yazarlar engellemiyor. [v2.0 ile kaldırıldı.]
 
 v1.1
 yayın: 09.05.2022
@@ -95,11 +96,14 @@ server ile haberleşmenin ssl ile gerçekleşmesi sağlandı.
 ayar sayfası eklendi. sayfadan verilerin servera gönderilme durumu seçilebiliyor.
 
 v2.0
+gönderim: 17.11.2022 - yayın 19.11.2022
 yeni özellik: tüm işlemlerin content script enjekte etmeden background'ta http istekleri gönderilerek yapılması sağlandı.
 notification api yerine bir sayfada sonuçlar kullanıcıya iletildi.
 bug fix: listeden alınan yazarlar isimlerinin önü ve arkasındaki whitespace'ler silindi.
+takip edilen yazarlar engelleniyor.
 
-SONRAKİ GÜNCELLEMEDE YAPILMASI PLANLANANLAR
+YÜKSEK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
+takip edilen yazarlar engellenemesin ayarı
 max yazar limiti durumu handle edilmeli
 performans analizi yapılmalı
   logger'ın etkisi gözlemlenmeli
@@ -114,7 +118,5 @@ engel limitine ulaşıldığında durması sağlanmalı ve belki uyarı verebili
 tüm engelleri kaldırma işlemi çok hızlı gerçekleşebiliyor. hızı saniyede max 15 engeli kaldırma işlemine düşürülmeli. (throttling)
 
 DÜŞÜK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
-takip edilen yazarlar engellensin mi ayarı eklenebilir
 test yazılımı (geliştiriliyor...)
 firefox desteği (hiçbir şey düzgün çalışmıyor, manifest v3 desteği bile tam gelmemiş)
-google analytics
