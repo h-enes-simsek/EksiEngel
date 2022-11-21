@@ -6,26 +6,44 @@ document.addEventListener('DOMContentLoaded', async function () {
     return;
   
   // load the current configuration to switch buttons
-  document.getElementById("sendData").checked = config.sendData;
-  document.getElementById("sendClientName").checked = config.sendClientName;
+	if(!config.sendData)
+	{
+		document.getElementById("threeStateNone").checked = true;
+		document.getElementById("threeStateSwitchText").innerHTML = "Hiçbir veriniz <b style='color:green'>Ekşi Engel</b> sunucularına gönderilmiyor.";
+	}
+	else if(!config.sendClientName)
+	{
+		document.getElementById("threeStateOnlyList").checked = true;
+		document.getElementById("threeStateSwitchText").innerHTML = "Engel listeniz <b style='color:green'>Ekşi Engel</b> sunucularına gönderiliyor. (Kullanıcı adınız gönderilmiyor.)";
+	}
+	else
+	{
+		document.getElementById("threeStateBoth").checked = true;
+		document.getElementById("threeStateSwitchText").innerHTML = "Ekşi Sözlük kullanıcı adınız ve engel listeniz <b style='color:green'>Ekşi Engel</b> sunucularına gönderiliyor.";
+	}
   
-  // sendData switch button onlick
-  document.getElementById("sendData").addEventListener("click", function(element) {
-    config.sendData = document.getElementById("sendData").checked;
-    config.sendClientName = config.sendData;
-    document.getElementById("sendClientName").checked = config.sendClientName;
-    
-    console.log("sendData:" + config.sendData + " sendClientName:" + config.sendClientName);
-    saveConfig(config);
-  });
-
-  // sendClientName switch button onlick
-  document.getElementById("sendClientName").addEventListener("click", function(element) {
-    config.sendClientName = document.getElementById("sendClientName").checked;
-    console.log("sendData:" + config.sendData + " sendClientName:" + config.sendClientName);
-    saveConfig(config);
-  });
+  // add onclick function to three state radio buttons
+  document.getElementById("threeStateNone").addEventListener("click", function(element) {
+		threeStateSwitchOnClick(config);
+		document.getElementById("threeStateSwitchText").innerHTML = "Hiçbir veriniz <b style='color:green'>Ekşi Engel</b> sunucularına gönderilmiyor.";
+	});
+	document.getElementById("threeStateOnlyList").addEventListener("click", function(element) {
+		threeStateSwitchOnClick(config);
+		document.getElementById("threeStateSwitchText").innerHTML = "Engel listeniz <b style='color:green'>Ekşi Engel</b> sunucularına gönderiliyor. (Kullanıcı adınız gönderilmiyor.)";
+	});
+	document.getElementById("threeStateBoth").addEventListener("click", function(element) {
+		threeStateSwitchOnClick(config);
+		document.getElementById("threeStateSwitchText").innerHTML = "Ekşi Sözlük kullanıcı adınız ve engel listeniz <b style='color:green'>Ekşi Engel</b> sunucularına gönderiliyor.";
+	});
 });
+
+function threeStateSwitchOnClick(config)
+{
+	config.sendData = !document.getElementById("threeStateNone").checked;
+	config.sendClientName = document.getElementById("threeStateBoth").checked;
+	console.log("sendData:" + config.sendData + " sendClientName:" + config.sendClientName);
+	saveConfig(config);
+}
 
 async function getConfig()
 {

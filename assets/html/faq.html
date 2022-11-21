@@ -59,21 +59,26 @@ margin-bottom: 8px;
 <section class="content">
 
   <div>
+	
     <h3 style="text-align: center;">
       Ayarlar
     </h3>
-    
-    <label class="switch">
-      <input type="checkbox" id="sendData">
-      <span class="slider"></span>
-    </label>
-    <a style="text-align: left;">Engellediğim yazar isimlerini ve toplanan logları <b style="color:green">Ekşi Engel</b> sunucularına gönder.</a>
-    <br><br>
-    <label class="switch">
-      <input type="checkbox" id="sendClientName">
-      <span class="slider"></span>
-    </label>
-    <a style="text-align: left;">Ekşi Sözlük kullanıcı adımı <b style="color:green">Ekşi Engel</b> sunucularına gönder.</a>
+		
+		<div id="threeStateSwitch" class="switch-toggle switch-3 switch-candy" style="display:inline-flex;width:200px">
+			<input id="threeStateNone" value="threeStateNone" name="state-d" type="radio" checked="">
+			<label for="threeStateNone">-</label>
+
+			<input id="threeStateOnlyList" value="threeStateOnlyList" name="state-d" type="radio" checked="">
+			<label for="threeStateOnlyList">Liste</label>
+
+			<input id="threeStateBoth" value="threeStateBoth" name="state-d" type="radio" checked="checked">
+			<label for="threeStateBoth">Hepsi</label>
+
+			<a></a>
+		</div>
+		
+		&nbsp;&nbsp;<a style="text-align: right;" id="threeStateSwitchText">Config dosyası okunamadı.</a>
+	
   </div>
   
   <img src="../img/semsiye.png" id="semsiye">
