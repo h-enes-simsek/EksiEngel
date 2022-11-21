@@ -1,19 +1,25 @@
 import * as enums from './enums.js';
 
 // clean collected user list by erasing empty inputs 
-// whitespaces should be - according to ekşisözlük name rules
+// whitespaces will be converted into - according to ekşisözlük name rules
 export function cleanUserList(arr)
 {
   for(let i = arr.length - 1; i >= 0; i--) 
   {
+		// if first char is '@', remove the char
+		if(arr[i][0] === "@")
+			arr[i] = arr[i].substring(1);
+		
     // remove whitespaces from both end
     arr[i] = arr[i].trim();
     
     // if empty, delete it
-    if(arr[i] == ''){
+    if(arr[i] == '')
+		{
       arr.splice(i, 1); // remove ith element
     }
-    else{
+    else
+		{			
       // replace every whitespace with -
       arr[i] = arr[i].replace(/ /gi, "-");
     }

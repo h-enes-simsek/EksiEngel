@@ -30,6 +30,10 @@ yayın: 19.11.2022
 yeni özellik: engelleme/engeli kaldırma işlemi hızlandırıldı. 
               tüm işlemler artık arka planda gerçekleşiyor.
 
+v2.1
+yayın: 
+listeden alınan yazar isimlerinin başında '@' karakteri varsa silindi.
+
 Versiyon notları (detaylı) 
 -------------------------------------------------
 v1.0  
@@ -101,6 +105,11 @@ yeni özellik: tüm işlemlerin content script enjekte etmeden background'ta htt
 notification api yerine bir sayfada sonuçlar kullanıcıya iletildi.
 bug fix: listeden alınan yazarlar isimlerinin önü ve arkasındaki whitespace'ler silindi.
 takip edilen yazarlar engelleniyor.
+
+v2.1
+gönderim: - yayın:
+veri gönderme ayarında iki adet 2-state switch yerine bir adet 3-state switch kullanıldı.
+liste modunde yazar isimlerinin başında '@' karakteri varsa silindi.
 
 YÜKSEK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
 takip edilen yazarlar engellenemesin ayarı
