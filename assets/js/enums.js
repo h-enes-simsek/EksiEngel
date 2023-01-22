@@ -18,3 +18,9 @@ export const ResultType = {
   SUCCESS:  "SUCCESS",
   FAIL: "FAIL"
 };
+
+export const ResultTypeHttpReq = {
+  SUCCESS:  "SUCCESS",
+  FAIL: "FAIL",
+  TOO_MANY_REQ: "TOO_MANY_REQ",
+};

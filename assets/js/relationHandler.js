@@ -18,6 +18,16 @@ export class RelationHandler
     let urlTitle = this.#prepareHTTPRequest(banMode, enums.TargetType.TITLE, id);
     let resTitle = await this.#performHTTPRequest(banMode, enums.TargetType.TITLE, id, urlTitle);
     
+    // the solution about too many requests
+    // TODO: fix this temporary ugly solution
+    if(resUser == enums.ResultTypeHttpReq.TOO_MANY_REQ || resTitle == enums.ResultTypeHttpReq.TOO_MANY_REQ)
+    {
+      
+      await new Promise(r => setTimeout(r, 65*1000)); // wait 1 minute (+5 sec to ensure)
+      await this.performAction(banMode, id); // redo the same request
+      return {successfulAction: this.successfulAction, performedAction: this.performedAction};
+    }
+    
     this.performedAction++;
     if(resUser && resTitle)
       this.successfulAction++;
@@ -59,8 +69,8 @@ export class RelationHandler
   #performHTTPRequest = async (banMode, targetType, id, url) =>
 	{
     if(id <= 0)
-      return false;
-		let res = false;
+      return enums.ResultTypeHttpReq.FAIL;
+		let res = enums.ResultTypeHttpReq.FAIL;
     try 
     {
       let response = await fetch(url, {
@@ -71,22 +81,28 @@ export class RelationHandler
           },
         body: "id=" + id
       });
+      if(!response.ok)
+      {
+        log.err("Relation Handler: http response: " + response.status);
+        return enums.ResultTypeHttpReq.TOO_MANY_REQ;
+      }
       const responseText = await response.text();
       const responseJson = JSON.parse(responseText);
       
       // for enums.BanMode.BAN result is number. Probably 0 is success, 2 is already banned
       if(banMode === enums.BanMode.BAN && typeof responseJson === "number" && (responseJson === 0 || responseJson === 2))
-        res = true; 
+        res = enums.ResultTypeHttpReq.SUCCESS; 
       // for enums.BanMode.UNDOBAN result is object and it has 'result' key.
       else if(banMode === enums.BanMode.UNDOBAN && typeof responseJson === "object" && responseJson.result === true)
-        res = true; 
+        res = enums.ResultTypeHttpReq.SUCCESS; 
       else
-        res = false;
+        res = enums.ResultTypeHttpReq.FAIL;
       // log.info("Relation Handler: banMode: " + banMode + ", targetType: " + targetType + ", id: " + id + ", response text: " + responseText);
     }
     catch(err)
     {
       log.err(err);
+      res = enums.ResultTypeHttpReq.FAIL; 
     }
     return res;
 	}
