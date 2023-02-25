@@ -26,6 +26,12 @@ chrome.runtime.onMessage.addListener(async function messageListener_Background(m
     document.getElementById("statusText").innerHTML = "İşlem tamamlandı.";
   else if(obj.notification.status === "ongoing")
     document.getElementById("statusText").innerHTML = "İşlem devam ediyor.";
+  else if(obj.notification.status === "cooldown")
+  {
+    document.getElementById("statusText").innerHTML = "İşlem devam ediyor (dakikada 6 engel limiti bekleniyor).";
+    document.getElementById("remainingTimeInSec").innerHTML = obj.notification.remainingTimeInSec + " saniye";
+    return;
+  }
   
   // update values
   document.getElementById("successfulAction").innerHTML = obj.notification.successfulAction;

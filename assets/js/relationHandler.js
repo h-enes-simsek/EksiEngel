@@ -22,8 +22,32 @@ export class RelationHandler
     // TODO: fix this temporary ugly solution
     if(resUser == enums.ResultTypeHttpReq.TOO_MANY_REQ || resTitle == enums.ResultTypeHttpReq.TOO_MANY_REQ)
     {
+      // while waiting cooldown, send periodic notifications to user 
+      // this also provides that chrome doesn't kill the extension for being idle
+      await new Promise(async resolve => 
+      {
+        // wait 1 minute (+2 sec to ensure)
+        for(let i = 1; i <= 62; i++)
+        {
+          // wait 1 sec
+          await new Promise(resolve2 => { setTimeout(resolve2, 1000); }); 
+            
+          // send message to notification page
+          chrome.runtime.sendMessage(null, {"notification":{status:"cooldown", remainingTimeInSec:62-i}}, function(response) {
+            let lastError = chrome.runtime.lastError;
+            if (lastError) 
+            {
+              // 'Could not establish connection. Receiving end does not exist.'
+              console.info("relationHandler: notification page is probably closed, early stop will be generated automatically.");
+              g_earlyStop = true;
+              return;
+            }
+          });
+        }
+          
+        resolve();        
+      }); 
       
-      await new Promise(r => setTimeout(r, 65*1000)); // wait 1 minute (+5 sec to ensure)
       await this.performAction(banMode, id); // redo the same request
       return {successfulAction: this.successfulAction, performedAction: this.performedAction};
     }

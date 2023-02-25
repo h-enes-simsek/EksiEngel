@@ -110,16 +110,18 @@ v2.1
 gönderim: - yayın:
 veri gönderme ayarında iki adet 2-state switch yerine bir adet 3-state switch kullanıldı.
 3-state switch, sunucuya veri gönderme ayarı, için bir uyarı eklenerek kullanıcı anonim göndermeye teşvik edildi.
+notification sayfasına cooldown sayacı eklendi.
 liste modunde yazar isimlerinin başında '@' karakteri varsa silindi.
 
+
 YÜKSEK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
+[acil]notification kısmında bekleme esnasında bilgi verilebilir. (ayrıca tahmini bitiş süresi hesaplanabilir.)
 [acil]tüm engeli kaldırma algoritması ekşisözlüğün güncellemesi nedeniyle çalışmıyor.
 [acil]sessize al özelliği entegre edilmeli.
 [acil]sessize al özelliği ayarlardan kapatılabilir bir opsiyon olarak sunulabilir.
 [acil]seri engelleme ekşisözlük tarafından yasaklandı. (benim loglarıma göre 8/1/2023-20/1/2023 arasında) 
       bu durumda zamanlayıcı kurularak engellenme algoritması güncellenmeli(throatling).
-[acil]early stop yeni durumda geç devreye giriyor.
-[acil]notification kısmında bekleme esnasında bilgi verilebilir. (ayrıca tahmini bitiş süresi hesaplanabilir.)
+[acil]early stop'ın devreye girmesi cooldown tamamlandıktan sonra oluyor. 
 [acil]çoklu engel istekleri queue'da toplanıp art arda işlenebilir.
 takip edilen yazarlar engellenemesin ayarı
 max yazar limiti durumu handle edilmeli
