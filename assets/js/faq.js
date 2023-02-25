@@ -24,23 +24,37 @@ document.addEventListener('DOMContentLoaded', async function () {
   
   // add onclick function to three state radio buttons
   document.getElementById("threeStateNone").addEventListener("click", function(element) {
-		threeStateSwitchOnClick(config);
 		document.getElementById("threeStateSwitchText").innerHTML = "Hiçbir veriniz <b style='color:green'>Ekşi Engel</b> sunucularına gönderilmiyor.";
-	});
+    threeStateSwitchOnClick(config);
+  });
 	document.getElementById("threeStateOnlyList").addEventListener("click", function(element) {
-		threeStateSwitchOnClick(config);
-		document.getElementById("threeStateSwitchText").innerHTML = "Engel listeniz <b style='color:green'>Ekşi Engel</b> sunucularına gönderiliyor. (Kullanıcı adınız gönderilmiyor.)";
-	});
+		document.getElementById("threeStateSwitchText").innerHTML = "Log verileri <b style='color:green'>Ekşi Engel</b> sunucularına gönderiliyor. (Kullanıcı adınız gönderilmiyor.)";
+    threeStateSwitchOnClick(config);
+  });
 	document.getElementById("threeStateBoth").addEventListener("click", function(element) {
-		threeStateSwitchOnClick(config);
-		document.getElementById("threeStateSwitchText").innerHTML = "Ekşi Sözlük kullanıcı adınız ve engel listeniz <b style='color:green'>Ekşi Engel</b> sunucularına gönderiliyor.";
-	});
+		document.getElementById("threeStateSwitchText").innerHTML = "Ekşi Sözlük kullanıcı adınız ve log verileri <b style='color:green'>Ekşi Engel</b> sunucularına gönderiliyor.";
+    threeStateSwitchOnClick(config);
+  });
 });
 
 function threeStateSwitchOnClick(config)
 {
 	config.sendData = !document.getElementById("threeStateNone").checked;
 	config.sendClientName = document.getElementById("threeStateBoth").checked;
+  
+  // kindly ask the user to send at least anonymous data to the server
+  if(!config.sendData)
+  {
+    res = confirm("Ekşi Engeli sorunsuzca geliştirmeye devam ettirmek için log verilerine ihtiyacımız var.\n" + 
+                  "Verileri anonim olarak olarak göndermek ister misiniz?");
+    if(res)
+    {
+      // user changed his/her idea
+      document.getElementById("threeStateOnlyList").click();
+      return;
+    }
+  }
+    
 	console.log("sendData:" + config.sendData + " sendClientName:" + config.sendClientName);
 	saveConfig(config);
 }

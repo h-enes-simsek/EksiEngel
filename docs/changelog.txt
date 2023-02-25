@@ -109,6 +109,7 @@ takip edilen yazarlar engelleniyor.
 v2.1
 gönderim: - yayın:
 veri gönderme ayarında iki adet 2-state switch yerine bir adet 3-state switch kullanıldı.
+3-state switch, sunucuya veri gönderme ayarı, için bir uyarı eklenerek kullanıcı anonim göndermeye teşvik edildi.
 liste modunde yazar isimlerinin başında '@' karakteri varsa silindi.
 
 YÜKSEK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
