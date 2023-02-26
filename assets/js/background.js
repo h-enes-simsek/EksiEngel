@@ -15,6 +15,7 @@ let scrapingHandler = new ScrapingHandler();
 let commHandler = new CommHandler();
 
 log.info("bg: init.");
+let g_notificationTabId = 0;
 
 chrome.runtime.onMessage.addListener(async function messageListener_Popup(message, sender, sendResponse) {
   sendResponse({status: 'ok'}); // added to suppress 'message port closed before a response was received' error
@@ -32,8 +33,19 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
 async function processHandler(banSource, banMode, entryUrl)
 {
   log.info("Process has been started with banSource: " + banSource + ", banMode: " + banMode);
-  chrome.tabs.create({ url: chrome.runtime.getURL("assets/html/notification.html") });
   
+  // create a notification page if not exist
+  try
+  {
+    let tab2 = await chrome.tabs.get(g_notificationTabId);
+  }
+  catch(e)
+  {
+    // not exist, so create one
+    let tab = await chrome.tabs.create({ url: chrome.runtime.getURL("assets/html/notification.html") });
+    g_notificationTabId = tab.id;
+  }
+
   let authorNameList = [];
   let authorIdList = [];
   let entryMetaData = {};

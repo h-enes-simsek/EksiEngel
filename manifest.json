@@ -64,7 +64,9 @@
         "assets/js/jsdom.js",
 				"assets/js/faq.js",
         "assets/js/popup.js",
-        "assets/js/authorListPage.js"
+        "assets/js/authorListPage.js",
+				"assets/js/queue.js",
+				"assets/js/programController.js"
       ],
       "matches": [
         "http://*/*",
