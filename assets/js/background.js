@@ -7,15 +7,14 @@ import {log} from './log.js';
 import {CommHandler} from './commHandler.js';
 import {RelationHandler} from './relationHandler.js';
 import {ScrapingHandler} from './scrapingHandler.js';
+import {autoQueue} from './queue.js';
+import {programController} from './programController.js';
 
 let relationHandler = new RelationHandler();
 let scrapingHandler = new ScrapingHandler();
 let commHandler = new CommHandler();
 
-let autoQueue = new utils.AutoQueue();
-
 log.info("bg: init.");
-let g_earlyStop = false;       // to stop the process early 
 
 chrome.runtime.onMessage.addListener(async function messageListener_Popup(message, sender, sendResponse) {
   sendResponse({status: 'ok'}); // added to suppress 'message port closed before a response was received' error
@@ -41,7 +40,6 @@ async function processHandler(banSource, banMode, entryUrl)
   
   await handleConfig(); // load config
   relationHandler.reset(); // reset the counters to reuse
-  g_earlyStop = false;
 
   let userAgent = await scrapingHandler.scrapeUserAgent();
   let clientName = await scrapingHandler.scrapeClientName(); 
@@ -73,7 +71,7 @@ async function processHandler(banSource, banMode, entryUrl)
     
     for (let i = 0; i < authorNameList.length; i++)
     {
-      if(g_earlyStop)
+      if(programController.earlyStop)
         break;
       let authorId = await scrapingHandler.scrapeAuthorIdFromAuthorProfilePage(authorNameList[i]);
       authorIdList.push(authorId);
@@ -86,8 +84,8 @@ async function processHandler(banSource, banMode, entryUrl)
         if (lastError) 
         {
           // 'Could not establish connection. Receiving end does not exist.'
-          console.info("relationHandler: notification page is probably closed, early stop will be generated automatically.");
-          g_earlyStop = true;
+          console.info("relationHandler: (ongoing) notification page is probably closed, early stop will be generated automatically.");
+          programController.earlyStop = true;
           return;
         }
       });
@@ -112,7 +110,7 @@ async function processHandler(banSource, banMode, entryUrl)
     
     for (let i = 0; i < authorNameList.length; i++)
     {
-      if(g_earlyStop)
+      if(programController.earlyStop)
         break;
       let authorId = await scrapingHandler.scrapeAuthorIdFromAuthorProfilePage(authorNameList[i]);
       let res = await relationHandler.performAction(banMode, authorId);
@@ -124,8 +122,8 @@ async function processHandler(banSource, banMode, entryUrl)
         if (lastError) 
         {
           // 'Could not establish connection. Receiving end does not exist.'
-          console.info("relationHandler: notification page is probably closed, early stop will be generated automatically.");
-          g_earlyStop = true;
+          console.info("relationHandler: (ongoing) notification page is probably closed, early stop will be generated automatically.");
+          programController.earlyStop = true;
           return;
         }
       });
@@ -150,7 +148,7 @@ async function processHandler(banSource, banMode, entryUrl)
     
     for (let i = 0; i < authorIdList.length; i++)
     {
-      if(g_earlyStop)
+      if(programController.earlyStop)
         break;
       
       let res = await relationHandler.performAction(banMode, authorIdList[i]);
@@ -161,8 +159,8 @@ async function processHandler(banSource, banMode, entryUrl)
         if (lastError) 
         {
           // 'Could not establish connection. Receiving end does not exist.'
-          console.info("relationHandler: notification page is probably closed, early stop will be generated automatically.");
-          g_earlyStop = true;
+          console.info("relationHandler: (ongoing) notification page is probably closed, early stop will be generated automatically.");
+          programController.earlyStop = true;
           return;
         }
       });
@@ -187,7 +185,7 @@ async function processHandler(banSource, banMode, entryUrl)
     author_id_list:   authorIdList,
     total_action:     performedAction,
     successful_action:successfulAction,
-    is_early_stopped: g_earlyStop
+    is_early_stopped: programController.earlyStop
   };
 
   if(config.sendData)
@@ -199,6 +197,7 @@ async function processHandler(banSource, banMode, entryUrl)
     let lastError = chrome.runtime.lastError;
   });
   
+  programController.earlyStop = false; // reset to reuse
   log.resetData();
 }
 
@@ -208,22 +207,4 @@ chrome.runtime.onInstalled.addListener(async (details) =>
   log.info("bg: program installed or updated.");
   
   await handleConfig();
-});
-
-// listen notification to detect early stop
-chrome.runtime.onMessage.addListener(async function messageListener_Notifications(message, sender, sendResponse) {
-  sendResponse({status: 'ok'}); // added to suppress 'message port closed before a response was received' error
-	
-	const obj = utils.filterMessage(message, "earlyStop");
-	if(obj.resultType === enums.ResultType.FAIL)
-    return;
-  else if(!autoQueue.isRunning)
-  {
-    log.info("bg: early stop has just been recevied, yet program is not active.");
-    return;
-  }
-		
-
-  log.info("bg: early stop received, number of waiting processes in the queue: " + autoQueue.size);
-  g_earlyStop = true;
 });

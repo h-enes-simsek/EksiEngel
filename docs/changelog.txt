@@ -116,15 +116,11 @@ veri gönderme ayarında iki adet 2-state switch yerine bir adet 3-state switch 
 3-state switch, sunucuya veri gönderme ayarı, için bir uyarı eklenerek kullanıcı anonim göndermeye teşvik edildi.
 liste modunde yazar isimlerinin başında '@' karakteri varsa silindi.
 
-
 YÜKSEK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
 [acil]notification kısmında bekleme esnasında queue hakkında bilgi verilebilir. (ayrıca tahmini bitiş süresi hesaplanabilir.)
 [acil]tüm engeli kaldırma algoritması ekşisözlüğün güncellemesi nedeniyle çalışmıyor.
 [acil]sessize al özelliği entegre edilmeli.
 [acil]sessize al özelliği ayarlardan kapatılabilir bir opsiyon olarak sunulabilir.
-[acil]seri engelleme ekşisözlük tarafından yasaklandı. (benim loglarıma göre 8/1/2023-20/1/2023 arasında) 
-      bu durumda zamanlayıcı kurularak engellenme algoritması güncellenmeli(throatling).
-[acil]early stop'ın devreye girmesi cooldown tamamlandıktan sonra oluyor. 
 takip edilen yazarlar engellenemesin ayarı
 max yazar limiti durumu handle edilmeli
 performans analizi yapılmalı
@@ -140,5 +136,7 @@ engel limitine ulaşıldığında durması sağlanmalı ve belki uyarı verebili
 tüm engelleri kaldırma işlemi çok hızlı gerçekleşebiliyor. hızı saniyede max 15 engeli kaldırma işlemine düşürülmeli. (throttling)
 
 DÜŞÜK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
+sayfa kapatıldığında iki kere earlyStop sinyali üretiliyor. Buga neden olmuyor. Muhtemelen notification sayfasına bilgi gönderme 
+işlemi asenkron olmadığı için buna neden oluyor.
 test yazılımı (geliştiriliyor...)
 firefox desteği (hiçbir şey düzgün çalışmıyor, manifest v3 desteği bile tam gelmemiş)

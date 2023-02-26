@@ -1,6 +1,7 @@
 import {log} from './log.js';
 import * as enums from './enums.js';
 import * as utils from './utils.js'
+import {programController} from './programController.js';
 
 // a class to manage relations (ban/undoban users/users' titles)
 export class RelationHandler
@@ -29,24 +30,30 @@ export class RelationHandler
         // wait 1 minute (+2 sec to ensure)
         for(let i = 1; i <= 62; i++)
         {
-          // wait 1 sec
-          await new Promise(resolve2 => { setTimeout(resolve2, 1000); }); 
-            
+          if(programController.earlyStop)
+            break;
+          
           // send message to notification page
           chrome.runtime.sendMessage(null, {"notification":{status:"cooldown", remainingTimeInSec:62-i}}, function(response) {
             let lastError = chrome.runtime.lastError;
             if (lastError) 
             {
               // 'Could not establish connection. Receiving end does not exist.'
-              console.info("relationHandler: notification page is probably closed, early stop will be generated automatically.");
-              g_earlyStop = true;
+              console.info("relationHandler: (cooldown) notification page is probably closed, early stop will be generated automatically.");
+              programController.earlyStop = true;
               return;
             }
           });
+          
+          // wait 1 sec
+          await new Promise(resolve2 => { setTimeout(resolve2, 1000); }); 
         }
           
         resolve();        
       }); 
+      
+      if(programController.earlyStop)
+        return {successfulAction: this.successfulAction, performedAction: this.performedAction};
       
       await this.performAction(banMode, id); // redo the same request
       return {successfulAction: this.successfulAction, performedAction: this.performedAction};
