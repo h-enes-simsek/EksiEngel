@@ -12,8 +12,9 @@ let relationHandler = new RelationHandler();
 let scrapingHandler = new ScrapingHandler();
 let commHandler = new CommHandler();
 
+let autoQueue = new utils.AutoQueue();
+
 log.info("bg: init.");
-let g_isProgramActive = false; // to prevent multiple starts from gui
 let g_earlyStop = false;       // to stop the process early 
 
 chrome.runtime.onMessage.addListener(async function messageListener_Popup(message, sender, sendResponse) {
@@ -23,21 +24,15 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
 	if(obj.resultType === enums.ResultType.FAIL)
 		return;
 	
-	if(g_isProgramActive)
-	{
-		log.info("bg: another start attempt from " + obj.banSource);
-	}
-	else 
-	{
-		g_isProgramActive = true; // prevent multiple starts
-    await processHandler(obj.banSource, obj.banMode, obj.entryUrl);
-		g_isProgramActive = false; // program can be started again
-	}
+  log.info("A new process added to the queue, banSource: " + obj.banSource + ", banMode: " + obj.banMode);
+  let wrapperProcessHandler = processHandler.bind(null, obj.banSource, obj.banMode, obj.entryUrl);
+  autoQueue.enqueue(wrapperProcessHandler);
+  log.info("Number of waiting processes in the queue: " + autoQueue.size);
 });
 
 async function processHandler(banSource, banMode, entryUrl)
 {
-  log.info("Program has been started with banSource: " + banSource + ", banMode: " + banMode);
+  log.info("Process has been started with banSource: " + banSource + ", banMode: " + banMode);
   chrome.tabs.create({ url: chrome.runtime.getURL("assets/html/notification.html") });
   
   let authorNameList = [];
@@ -220,9 +215,15 @@ chrome.runtime.onMessage.addListener(async function messageListener_Notification
   sendResponse({status: 'ok'}); // added to suppress 'message port closed before a response was received' error
 	
 	const obj = utils.filterMessage(message, "earlyStop");
-	if(obj.resultType === enums.ResultType.FAIL || !g_isProgramActive)
-		return;
+	if(obj.resultType === enums.ResultType.FAIL)
+    return;
+  else if(!autoQueue.isRunning)
+  {
+    log.info("bg: early stop has just been recevied, yet program is not active.");
+    return;
+  }
+		
 
-  log.info("bg: early stop received.");
+  log.info("bg: early stop received, number of waiting processes in the queue: " + autoQueue.size);
   g_earlyStop = true;
 });

@@ -108,21 +108,23 @@ takip edilen yazarlar engelleniyor.
 
 v2.1
 gönderim: - yayın:
+ekşi sözlük tarafından engelleme hızı limiti getirildiği için  (benim loglarıma göre 8/1/2023-20/1/2023 arasında) 
+işlemlere cooldown süresi eklendi. (mevcut işlem hızı limiti: 6 engel/dakika, 10 engeli kaldır/dakika)
+notification sayfasına cooldown sayacı eklendi.
+istekler bir queue'da toplanıp art arda işlendi.
 veri gönderme ayarında iki adet 2-state switch yerine bir adet 3-state switch kullanıldı.
 3-state switch, sunucuya veri gönderme ayarı, için bir uyarı eklenerek kullanıcı anonim göndermeye teşvik edildi.
-notification sayfasına cooldown sayacı eklendi.
 liste modunde yazar isimlerinin başında '@' karakteri varsa silindi.
 
 
 YÜKSEK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
-[acil]notification kısmında bekleme esnasında bilgi verilebilir. (ayrıca tahmini bitiş süresi hesaplanabilir.)
+[acil]notification kısmında bekleme esnasında queue hakkında bilgi verilebilir. (ayrıca tahmini bitiş süresi hesaplanabilir.)
 [acil]tüm engeli kaldırma algoritması ekşisözlüğün güncellemesi nedeniyle çalışmıyor.
 [acil]sessize al özelliği entegre edilmeli.
 [acil]sessize al özelliği ayarlardan kapatılabilir bir opsiyon olarak sunulabilir.
 [acil]seri engelleme ekşisözlük tarafından yasaklandı. (benim loglarıma göre 8/1/2023-20/1/2023 arasında) 
       bu durumda zamanlayıcı kurularak engellenme algoritması güncellenmeli(throatling).
 [acil]early stop'ın devreye girmesi cooldown tamamlandıktan sonra oluyor. 
-[acil]çoklu engel istekleri queue'da toplanıp art arda işlenebilir.
 takip edilen yazarlar engellenemesin ayarı
 max yazar limiti durumu handle edilmeli
 performans analizi yapılmalı
