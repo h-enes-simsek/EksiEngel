@@ -24,10 +24,20 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
 	if(obj.resultType === enums.ResultType.FAIL)
 		return;
 	
-  log.info("A new process added to the queue, banSource: " + obj.banSource + ", banMode: " + obj.banMode);
+  log.info("bg: a new process added to the queue, banSource: " + obj.banSource + ", banMode: " + obj.banMode);
   let wrapperProcessHandler = processHandler.bind(null, obj.banSource, obj.banMode, obj.entryUrl);
+  wrapperProcessHandler.banSource = obj.banSource;
+  wrapperProcessHandler.banMode = obj.banMode;
   autoQueue.enqueue(wrapperProcessHandler);
-  log.info("Number of waiting processes in the queue: " + autoQueue.size);
+  log.info("bg: number of waiting processes in the queue: " + autoQueue.size);
+  
+  log.info("bg: (update_Planned in popopListener) notification page's queue will be updated.");
+  chrome.runtime.sendMessage(null, {"notification":{"status":"update_Planned", "plannedProcesses":autoQueue.itemAttributes}}, function(response) {
+    let lastError = chrome.runtime.lastError;
+    // for the first operation, it should be failed here because there is no notification page yet.
+    if(lastError)
+      log.err("bg: (update_Planned in popopListener) could not establish a connection with notification page");
+  });
 });
 
 async function processHandler(banSource, banMode, entryUrl)
@@ -45,6 +55,25 @@ async function processHandler(banSource, banMode, entryUrl)
     let tab = await chrome.tabs.create({ url: chrome.runtime.getURL("assets/html/notification.html") });
     g_notificationTabId = tab.id;
   }
+  
+  // TODO fix: lastError is generated, probably notification page is not ready here.
+  /*
+  // fetch takes too much time if it fails and results error_Login.  during operation user should be informed that program is running 
+  chrome.runtime.sendMessage(null, {"notification":{status:"ongoing", successfulAction:0, performedAction:0, plannedAction:0}}, function(response) {
+    let lastError = chrome.runtime.lastError;
+    if(lastError)
+      log.err("bg: (initial ongoing) could not establish a connection with notification page");
+  });
+  */
+  
+  // TODO fix: if page is new, lastError is generated, probably notification page is not ready here.
+  // update planned processes table in notification page
+  log.info("bg: (update_Planned in processHandler) notification page's queue will be updated.");
+  chrome.runtime.sendMessage(null, {"notification":{"status":"update_Planned", "plannedProcesses":autoQueue.itemAttributes}}, function(response) {
+    let lastError = chrome.runtime.lastError;
+    if(lastError)
+      log.err("bg: (update_Planned in processHandler) could not establish a connection with notification page");
+  });
 
   let authorNameList = [];
   let authorIdList = [];
@@ -58,7 +87,7 @@ async function processHandler(banSource, banMode, entryUrl)
   if(!clientName)
   {
     log.err("Program has been finished (error_Login)");
-    chrome.runtime.sendMessage(null, {"notification":{"status":"error_Login"}}, function(response) {
+    chrome.runtime.sendMessage(null, {"notification":{"status":"error_Login", "completedProcess":{"banSource":banSource, "banMode":banMode}}}, function(response) {
       let lastError = chrome.runtime.lastError;
     });
     return;
@@ -73,7 +102,7 @@ async function processHandler(banSource, banMode, entryUrl)
     log.info("number of user to ban " + authorNameList.length);
     if(authorNameList.length === 0)
     {
-      chrome.runtime.sendMessage(null, {"notification":{"status":"error_NoAccount"}}, function(response) {
+      chrome.runtime.sendMessage(null, {"notification":{"status":"error_NoAccount", "completedProcess":{"banSource":banSource, "banMode":banMode}}}, function(response) {
         let lastError = chrome.runtime.lastError;
       });
       log.err("Program has been finished (error_NoAccount)");
@@ -151,7 +180,7 @@ async function processHandler(banSource, banMode, entryUrl)
     log.info("number of user to ban " + authorNameList.length);
     if(authorNameList.length === 0)
     {
-      chrome.runtime.sendMessage(null, {"notification":{"status":"error_NoAccount"}}, function(response) {
+      chrome.runtime.sendMessage(null, {"notification":{"status":"error_NoAccount", "completedProcess":{"banSource":banSource, "banMode":banMode}}}, function(response) {
         let lastError = chrome.runtime.lastError;
       });
       log.err("Program has been finished (error_NoAccount)");
@@ -227,7 +256,7 @@ async function processHandler(banSource, banMode, entryUrl)
     log.info("number of user to ban " + authorNameList.length);
     if(authorNameList.length === 0)
     {
-      chrome.runtime.sendMessage(null, {"notification":{"status":"error_NoAccount"}}, function(response) {
+      chrome.runtime.sendMessage(null, {"notification":{"status":"error_NoAccount", "completedProcess":{"banSource":banSource, "banMode":banMode}}}, function(response) {
         let lastError = chrome.runtime.lastError;
       });
       log.err("Program has been finished (error_NoAccount)");
@@ -319,7 +348,7 @@ async function processHandler(banSource, banMode, entryUrl)
   
   log.info("Program has been finished (successfull:" + successfulAction + ", performed:" + performedAction + ", planned:" + authorNameList.length + ")");
   // send message to notification page
-  chrome.runtime.sendMessage(null, {"notification":{status:"finished", successfulAction:successfulAction, performedAction:performedAction, plannedAction:authorNameList.length}}, function(response) {
+  chrome.runtime.sendMessage(null, {"notification":{status:"finished", successfulAction:successfulAction, performedAction:performedAction, plannedAction:authorNameList.length, "completedProcess":{"banSource":banSource, "banMode":banMode}}}, function(response) {
     let lastError = chrome.runtime.lastError;
   });
   

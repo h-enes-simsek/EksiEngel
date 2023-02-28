@@ -3,12 +3,16 @@
 <head>
 
   <style>
-  .container{margin:160px}
+  .containerCurrentProgress{margin-left:160px; margin-right:160px; margin-top:100px}
+  .containerTables{margin-left:160px; margin-right:160px;}
   .bar{padding:0.01em}
   .bar-container{color:#000!important;background-color:#f1f1f1!important}
   .green{color:#fff!important;background-color:#4CAF50!important}
   .grid-container{display: inline-grid;grid-template-columns: auto auto;padding: 10px;}
   .grid-item {text-align: left; font-family: 'Montserrat', sans-serif; margin: 2px; font-size: 1.3em;}
+  table {border: 1px solid; font-family: 'Montserrat', sans-serif; border-collapse: collapse;}
+  thead {background-color: #1f1f1f; color: white;}
+  th, td {border: 1px solid black; padding: 8px;}
   </style>
 
   <meta charset="UTF-8">
@@ -19,7 +23,7 @@
 </head>
 <body> 
 
-<div class="container">
+<div class="containerCurrentProgress">
   
   <div class="bar-container">
     <div id="bar" class="bar green" style="height:24px;width:0%"></div>
@@ -34,7 +38,48 @@
     <div class="grid-item">Gerçekleşen işlem:</div><div class="grid-item"><a id="performedAction">0</a></div>
     <div class="grid-item">Planlanan işlem:</div>  <div class="grid-item"><a id="plannedAction">0</a></div>
     <input type="button" id="earlyStop" value="Erken Durdur" class="btn btn-dark" style="margin-top:15px;">
+    <br>
+    
   </div>
+    
+</div>
+
+<div class="containerTables">
+
+  <div style="margin-top:30px; float:left;">
+  <table id="plannedProcesses">
+  <caption>Sıradakiler</caption>
+  <thead>
+    <tr>
+      <td>Saat</td>
+      <td>Kaynak</td>
+      <td>Mod</td>
+    </tr>
+  </thead>
+  <tbody>
+  </tbody>
+  </table>
+  </div>
+
+  <div style="margin-top:30px; margin-left:20px; float:left;">
+  <table id="completedProcesses">
+  <caption>Tamamlananlar</caption>
+  <thead>
+    <tr>
+      <td>Saat</td>
+      <td>Kaynak</td>
+      <td>Mod</td>
+      <td>Başarılı</td>
+      <td>Gerçekleşen</td>
+      <td>Planlanan</td>
+      <td>Hata</td>
+    </tr>
+  </thead>
+  <tbody>
+  </tbody>
+  </table>
+  </div>
+     
 </div>
 
 <div class="footer">

@@ -112,12 +112,13 @@ ekşi sözlük tarafından engelleme hızı limiti getirildiği için  (benim lo
 işlemlere cooldown süresi eklendi. (mevcut işlem hızı limiti: 6 engel/dakika, 10 engeli kaldır/dakika)
 notification sayfasına cooldown sayacı eklendi.
 istekler bir queue'da toplanıp art arda işlendi.
+notification kısmında bekleme esnasında queue hakkında bilgi verilebilir.
 veri gönderme ayarında iki adet 2-state switch yerine bir adet 3-state switch kullanıldı.
 3-state switch, sunucuya veri gönderme ayarı, için bir uyarı eklenerek kullanıcı anonim göndermeye teşvik edildi.
 liste modunde yazar isimlerinin başında '@' karakteri varsa silindi.
 
 YÜKSEK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
-[acil]notification kısmında bekleme esnasında queue hakkında bilgi verilebilir. (ayrıca tahmini bitiş süresi hesaplanabilir.)
+[acil]notification kısmında bekleme esnasında queue hakkında bilgi verilebilir. (ayrıca tahmini bitiş süresi)
 [acil]tüm engeli kaldırma algoritması ekşisözlüğün güncellemesi nedeniyle çalışmıyor.
 [acil]sessize al özelliği entegre edilmeli.
 [acil]sessize al özelliği ayarlardan kapatılabilir bir opsiyon olarak sunulabilir.

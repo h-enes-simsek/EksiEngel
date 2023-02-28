@@ -16,6 +16,21 @@ class AutoQueue extends Queue
     this._pendingPromise = false;
   }
   
+  get item() { return this._items; }
+  
+  get itemAttributes() 
+  { 
+    let attrs = [];
+    for(let i = 0; i < this._items.length; i++)
+    {
+      let obj = {};
+      obj.banSource = this._items[i].action.banSource;
+      obj.banMode =  this._items[i].action.banMode;
+      attrs.push(obj);   
+    }
+    return attrs;
+  }
+  
   get isRunning() { return this._pendingPromise; }
   
   clear()
