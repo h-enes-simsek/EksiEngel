@@ -60,7 +60,7 @@ export class RelationHandler
     }
     
     this.performedAction++;
-    if(resUser && resTitle)
+    if(resUser == enums.ResultTypeHttpReq.SUCCESS && resTitle == enums.ResultTypeHttpReq.SUCCESS)
       this.successfulAction++;
    
     return {successfulAction: this.successfulAction, performedAction: this.performedAction};

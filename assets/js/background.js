@@ -61,7 +61,6 @@ async function processHandler(banSource, banMode, entryUrl)
     chrome.runtime.sendMessage(null, {"notification":{"status":"error_Login"}}, function(response) {
       let lastError = chrome.runtime.lastError;
     });
-    log.err("Program has been finished (error_Login)");
     return;
   }
     
