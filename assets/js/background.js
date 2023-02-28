@@ -84,10 +84,49 @@ async function processHandler(banSource, banMode, entryUrl)
     {
       if(programController.earlyStop)
         break;
+      
       let authorId = await scrapingHandler.scrapeAuthorIdFromAuthorProfilePage(authorNameList[i]);
       authorIdList.push(authorId);
       
       let res = await relationHandler.performAction(banMode, authorId);
+      
+      if(res.resultType == enums.ResultType.FAIL)
+      {
+        // performAction failed because to too many request
+
+        // while waiting cooldown, send periodic notifications to user 
+        // this also provides that chrome doesn't kill the extension for being idle
+        await new Promise(async resolve => 
+        {
+          // wait 1 minute (+2 sec to ensure)
+          let waitTimeInSec = 62;
+          for(let i = 1; i <= waitTimeInSec; i++)
+          {
+            if(programController.earlyStop)
+              break;
+            
+            // send message to notification page
+            chrome.runtime.sendMessage(null, {"notification":{status:"cooldown", remainingTimeInSec:waitTimeInSec-i}}, function(response) {
+              let lastError = chrome.runtime.lastError;
+              if (lastError) 
+              {
+                // 'Could not establish connection. Receiving end does not exist.'
+                console.info("relationHandler: (cooldown) notification page is probably closed, early stop will be generated automatically.");
+                programController.earlyStop = true;
+                return;
+              }
+            });
+            
+            // wait 1 sec
+            await new Promise(resolve2 => { setTimeout(resolve2, 1000); }); 
+          }
+            
+          resolve();        
+        }); 
+        
+        if(!programController.earlyStop)
+          res = await relationHandler.performAction(banMode, authorId);
+      }
 
       // send message to notification page
       chrome.runtime.sendMessage(null, {"notification":{status:"ongoing", successfulAction:res.successfulAction, performedAction:res.performedAction, plannedAction:authorNameList.length}}, function(response) {
@@ -127,6 +166,44 @@ async function processHandler(banSource, banMode, entryUrl)
       let res = await relationHandler.performAction(banMode, authorId);
       authorIdList.push(authorId);
       
+      if(res.resultType == enums.ResultType.FAIL)
+      {
+        // performAction failed because to too many request
+
+        // while waiting cooldown, send periodic notifications to user 
+        // this also provides that chrome doesn't kill the extension for being idle
+        await new Promise(async resolve => 
+        {
+          // wait 1 minute (+2 sec to ensure)
+          let waitTimeInSec = 62;
+          for(let i = 1; i <= waitTimeInSec; i++)
+          {
+            if(programController.earlyStop)
+              break;
+            
+            // send message to notification page
+            chrome.runtime.sendMessage(null, {"notification":{status:"cooldown", remainingTimeInSec:waitTimeInSec-i}}, function(response) {
+              let lastError = chrome.runtime.lastError;
+              if (lastError) 
+              {
+                // 'Could not establish connection. Receiving end does not exist.'
+                console.info("relationHandler: (cooldown) notification page is probably closed, early stop will be generated automatically.");
+                programController.earlyStop = true;
+                return;
+              }
+            });
+            
+            // wait 1 sec
+            await new Promise(resolve2 => { setTimeout(resolve2, 1000); }); 
+          }
+            
+          resolve();        
+        }); 
+        
+        if(!programController.earlyStop)
+          res = await relationHandler.performAction(banMode, authorId);
+      }
+      
       // send message to notification page
       chrome.runtime.sendMessage(null, {"notification":{status:"ongoing", successfulAction:res.successfulAction, performedAction:res.performedAction, plannedAction:authorNameList.length}}, function(response) {
         let lastError = chrome.runtime.lastError;
@@ -163,6 +240,44 @@ async function processHandler(banSource, banMode, entryUrl)
         break;
       
       let res = await relationHandler.performAction(banMode, authorIdList[i]);
+      
+      if(res.resultType == enums.ResultType.FAIL)
+      {
+        // performAction failed because to too many request
+
+        // while waiting cooldown, send periodic notifications to user 
+        // this also provides that chrome doesn't kill the extension for being idle
+        await new Promise(async resolve => 
+        {
+          // wait 1 minute (+2 sec to ensure)
+          let waitTimeInSec = 62;
+          for(let i = 1; i <= waitTimeInSec; i++)
+          {
+            if(programController.earlyStop)
+              break;
+            
+            // send message to notification page
+            chrome.runtime.sendMessage(null, {"notification":{status:"cooldown", remainingTimeInSec:waitTimeInSec-i}}, function(response) {
+              let lastError = chrome.runtime.lastError;
+              if (lastError) 
+              {
+                // 'Could not establish connection. Receiving end does not exist.'
+                console.info("relationHandler: (cooldown) notification page is probably closed, early stop will be generated automatically.");
+                programController.earlyStop = true;
+                return;
+              }
+            });
+            
+            // wait 1 sec
+            await new Promise(resolve2 => { setTimeout(resolve2, 1000); }); 
+          }
+            
+          resolve();        
+        }); 
+        
+        if(!programController.earlyStop)
+          res = await relationHandler.performAction(banMode, authorId);
+      }
       
       // send message to notification page
       chrome.runtime.sendMessage(null, {"notification":{status:"ongoing", successfulAction:res.successfulAction, performedAction:res.performedAction, plannedAction:authorIdList.length}}, function(response) {

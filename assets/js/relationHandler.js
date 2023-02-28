@@ -19,51 +19,20 @@ export class RelationHandler
     let urlTitle = this.#prepareHTTPRequest(banMode, enums.TargetType.TITLE, id);
     let resTitle = await this.#performHTTPRequest(banMode, enums.TargetType.TITLE, id, urlTitle);
     
-    // the solution about too many requests
-    // TODO: fix this temporary ugly solution
+    let resultType;
     if(resUser == enums.ResultTypeHttpReq.TOO_MANY_REQ || resTitle == enums.ResultTypeHttpReq.TOO_MANY_REQ)
     {
-      // while waiting cooldown, send periodic notifications to user 
-      // this also provides that chrome doesn't kill the extension for being idle
-      await new Promise(async resolve => 
-      {
-        // wait 1 minute (+2 sec to ensure)
-        for(let i = 1; i <= 62; i++)
-        {
-          if(programController.earlyStop)
-            break;
-          
-          // send message to notification page
-          chrome.runtime.sendMessage(null, {"notification":{status:"cooldown", remainingTimeInSec:62-i}}, function(response) {
-            let lastError = chrome.runtime.lastError;
-            if (lastError) 
-            {
-              // 'Could not establish connection. Receiving end does not exist.'
-              console.info("relationHandler: (cooldown) notification page is probably closed, early stop will be generated automatically.");
-              programController.earlyStop = true;
-              return;
-            }
-          });
-          
-          // wait 1 sec
-          await new Promise(resolve2 => { setTimeout(resolve2, 1000); }); 
-        }
-          
-        resolve();        
-      }); 
-      
-      if(programController.earlyStop)
-        return {successfulAction: this.successfulAction, performedAction: this.performedAction};
-      
-      await this.performAction(banMode, id); // redo the same request
-      return {successfulAction: this.successfulAction, performedAction: this.performedAction};
+      resultType = enums.ResultType.FAIL;
+      return {resultType: resultType, successfulAction: this.successfulAction, performedAction: this.performedAction};
     }
+    else
+      resultType = enums.ResultType.SUCCESS;
     
     this.performedAction++;
     if(resUser == enums.ResultTypeHttpReq.SUCCESS && resTitle == enums.ResultTypeHttpReq.SUCCESS)
       this.successfulAction++;
    
-    return {successfulAction: this.successfulAction, performedAction: this.performedAction};
+    return {resultType: resultType, successfulAction: this.successfulAction, performedAction: this.performedAction};
   }
   
   // reset the internal variables to reuse
