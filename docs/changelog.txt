@@ -112,7 +112,7 @@ bug fix: listeden alınan yazarlar isimlerinin önü ve arkasındaki whitespace'
 takip edilen yazarlar engelleniyor.
 
 v2.1
-gönderim: - yayın:
+gönderim: 01.03.2023 - yayın:
 yeni özellik: ekşi sözlük tarafından engelleme hızı limiti getirildiği için  (benim loglarıma göre 8/1/2023-20/1/2023 arasında) 
               işlemlere cooldown süresi eklendi. (mevcut işlem hızı limiti: 6 engel/dakika, 10 engeli kaldır/dakika)
 yeni özellik: istekler bir queue'da toplanıp art arda işlendi.
