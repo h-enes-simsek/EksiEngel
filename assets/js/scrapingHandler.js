@@ -1,6 +1,7 @@
 import {log} from './log.js';
 import * as enums from './enums.js';
 import {JSDOM} from './jsdom.js';
+import {config} from './config.js';
 
 export class ScrapingHandler
 {
@@ -287,26 +288,34 @@ export class ScrapingHandler
         bannedTitleIdList.push(...partialIdList);
       }
       
-      // for user list whose has been muted
-      isLast = false;
-      index = 0;
-      while(!isLast)
+      if(config.enableMute)
       {
-        index++;
-        let partialListObj = await this.#scrapeAuthorNamesFromBannedAuthorPagePartially(enums.TargetType.MUTE, index);
-        let partialNameList = partialListObj.authorNameList;
-        let partialIdList = partialListObj.authorIdList;
-        isLast = partialListObj.isLast;
-        
-        bannedMuteNameList.push(...partialNameList);
-        bannedMuteIdList.push(...partialIdList);
+        // for user list whose has been muted
+        isLast = false;
+        index = 0;
+        while(!isLast)
+        {
+          index++;
+          let partialListObj = await this.#scrapeAuthorNamesFromBannedAuthorPagePartially(enums.TargetType.MUTE, index);
+          let partialNameList = partialListObj.authorNameList;
+          let partialIdList = partialListObj.authorIdList;
+          isLast = partialListObj.isLast;
+          
+          bannedMuteNameList.push(...partialNameList);
+          bannedMuteIdList.push(...partialIdList);
+        }
       }
+
       
       // Merges all arrays (remove duplicate)
-      let authorIdList_ = this.#arrayUnique(bannedAuthIdList.concat(bannedTitleIdList));
-      let authorIdList = this.#arrayUnique(authorIdList_.concat(bannedMuteIdList));
-      let authorNameList_ = this.#arrayUnique(bannedAuthNameList.concat(bannedTitleNameList));
-      let authorNameList = this.#arrayUnique(authorNameList_.concat(bannedMuteNameList));
+      let authorIdList = this.#arrayUnique(bannedAuthIdList.concat(bannedTitleIdList));
+      let authorNameList = this.#arrayUnique(bannedAuthNameList.concat(bannedTitleNameList));
+      
+      if(config.enableMute)
+      {
+        let authorIdList = this.#arrayUnique(authorIdList.concat(bannedMuteIdList));
+        let authorNameList = this.#arrayUnique(authorNameList.concat(bannedMuteNameList));
+      }
 
       /*
       console.log(bannedAuthNameList);

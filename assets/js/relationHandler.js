@@ -2,6 +2,7 @@ import {log} from './log.js';
 import * as enums from './enums.js';
 import * as utils from './utils.js'
 import {programController} from './programController.js';
+import {config} from './config.js';
 
 // a class to manage relations (ban/undoban users/users' titles)
 export class RelationHandler
@@ -11,9 +12,12 @@ export class RelationHandler
   
   performAction =  async (banMode, id) =>
   {
-    // enums.TargetType.MUTE
-    let urlMute = this.#prepareHTTPRequest(banMode, enums.TargetType.MUTE, id);
-    let resMute = await this.#performHTTPRequest(banMode, enums.TargetType.MUTE, id, urlMute);
+    if(config.enableMute)
+    {
+      // enums.TargetType.MUTE
+      let urlMute = this.#prepareHTTPRequest(banMode, enums.TargetType.MUTE, id);
+      let resMute = await this.#performHTTPRequest(banMode, enums.TargetType.MUTE, id, urlMute);
+    }
     
     // enums.TargetType.TITLE
     let urlTitle = this.#prepareHTTPRequest(banMode, enums.TargetType.TITLE, id);
@@ -23,11 +27,8 @@ export class RelationHandler
     let urlUser = this.#prepareHTTPRequest(banMode, enums.TargetType.USER, id);
     let resUser = await this.#performHTTPRequest(banMode, enums.TargetType.USER, id, urlUser);
     
-
-    
-    if(resUser == enums.ResultTypeHttpReq.TOO_MANY_REQ  || 
-       resTitle == enums.ResultTypeHttpReq.TOO_MANY_REQ || 
-       resMute == enums.ResultTypeHttpReq.TOO_MANY_REQ )
+    // ignore MUTE result because it seems not stable
+    if(resUser == enums.ResultTypeHttpReq.TOO_MANY_REQ || resTitle == enums.ResultTypeHttpReq.TOO_MANY_REQ)
     {
       // too many request has been made, ignore the previous action and return false
       return {resultType: enums.ResultType.FAIL, successfulAction: this.successfulAction, performedAction: this.performedAction};
@@ -35,7 +36,6 @@ export class RelationHandler
     else
     {
       this.performedAction++;
-      // ignore MUTE result because it seems not stable
       if(resUser == enums.ResultTypeHttpReq.SUCCESS && resTitle == enums.ResultTypeHttpReq.SUCCESS)
         this.successfulAction++;
      
@@ -94,8 +94,8 @@ export class RelationHandler
         }
         else
         {
-          // MUTE API is not stable. Sometimes returns 500 for example if user is already banned or muted.
-          // solution: dont redo the operation, just ignore the mute case.
+          // If status is not 429, yet still erroneous, then something should have gone wrong.
+          // dont re-try the operation, assume it was failed.
           const responseText = await response.text();
           log.err("Relation Handler: url: " + url + " response: " + responseText);
           return enums.ResultTypeHttpReq.FAIL; 

@@ -14,6 +14,8 @@ export let config =
 	"anonymouseClientName": "anonymouse",									/* client name if sendClientName false */
 	"erroneousText": 				"",											      /* default text if smt goes wrong */
 	"erroneousInt": 				"0",													/* default int if smt goes wrong */
+  
+  "enableMute":       false,                            /* enable/disable TargetType.MUTE operations */
 };
 
 export async function getConfig()
