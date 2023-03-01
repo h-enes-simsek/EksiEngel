@@ -31,7 +31,7 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
   autoQueue.enqueue(wrapperProcessHandler);
   log.info("bg: number of waiting processes in the queue: " + autoQueue.size);
   
-  log.info("bg: (update_Planned in popopListener) notification page's queue will be updated.");
+  log.info("bg: (update_Planned in messageListener_Popup) notification page's queue will be updated.");
   chrome.runtime.sendMessage(null, {"notification":{"status":"update_Planned", "plannedProcesses":autoQueue.itemAttributes}}, function(response) {
     let lastError = chrome.runtime.lastError;
     // for the first operation, it should be failed here because there is no notification page yet.
@@ -345,6 +345,17 @@ async function processHandler(banSource, banMode, entryUrl)
 
   if(config.sendData)
     await commHandler.sendData(dataToSend);
+  
+  // if early stop was generated, erase planned processes in notification page
+  if(programController.earlyStop)
+  {
+    log.info("bg: (update_Planned just before finished) notification page's queue will be updated.");
+    chrome.runtime.sendMessage(null, {"notification":{"status":"update_Planned", "plannedProcesses":""}}, function(response) {
+      let lastError = chrome.runtime.lastError;
+      if(lastError)
+        log.err("bg: (update_Planned just before finished) could not establish a connection with notification page");
+    });
+  }
   
   log.info("Program has been finished (successfull:" + successfulAction + ", performed:" + performedAction + ", planned:" + authorNameList.length + ")");
   // send message to notification page

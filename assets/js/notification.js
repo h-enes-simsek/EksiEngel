@@ -72,7 +72,7 @@ chrome.runtime.onMessage.addListener(async function messageListener_Background(m
       cell2.innerHTML = obj.notification.plannedProcesses[i].banSource;
       cell3.innerHTML = obj.notification.plannedProcesses[i].banMode;
     }
-    
+    return;
   }
   else if(obj.notification.status === "finished")
   {
