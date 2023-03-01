@@ -12,7 +12,11 @@ startBanFavorites.onclick = function(element) {
 				if(tab.url.includes("eksisozluk.com/entry"))
 				{
           // send message to background page
-          chrome.runtime.sendMessage(null, {"banSource":"FAV", "banMode":"BAN", "entryUrl": tab.url});
+          chrome.runtime.sendMessage(null, {"banSource":"FAV", "banMode":"BAN", "entryUrl": tab.url}, function (){
+            // automatically close the popup.html if operation is successful
+            window.close();
+          });
+          
 				}
 				else
 				{
