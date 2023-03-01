@@ -32,7 +32,12 @@ yeni özellik: engelleme/engeli kaldırma işlemi hızlandırıldı.
 
 v2.1
 yayın: 
-listeden alınan yazar isimlerinin başında '@' karakteri varsa silindi.
+yeni özellik: ekşi sözlük tarafından engelleme hızına limit getirildiği için işlemlere cooldown süresi eklendi. 
+              (mevcut işlem hızı limiti: 6 engel/dakika, 10 engeli kaldır/dakika)
+yeni özellik: engel hızı limitinden dolayı işlemler uzun sürdüğü için işlem kuyruğu özelliği geliştirildi.
+              bir engel işlemi sürerken yeni bir işlem yapmak isterseniz kuyruğa alınıyor ve zamanı gelince işleniyor.
+engel işlemi sürerken yeni açılan bir sekmede bahsi geçen cooldown ve işlem kuyruğunu görebilirsiniz.
+bug fix: tüm engelleri kaldırma özelliği ekşisözlük.com güncellemesi nedeniyle bozulmuştu, düzeltildi.
 
 Versiyon notları (detaylı) 
 -------------------------------------------------
@@ -108,25 +113,22 @@ takip edilen yazarlar engelleniyor.
 
 v2.1
 gönderim: - yayın:
-ekşi sözlük tarafından engelleme hızı limiti getirildiği için  (benim loglarıma göre 8/1/2023-20/1/2023 arasında) 
-işlemlere cooldown süresi eklendi. (mevcut işlem hızı limiti: 6 engel/dakika, 10 engeli kaldır/dakika)
-notification sayfasına cooldown sayacı eklendi.
-istekler bir queue'da toplanıp art arda işlendi.
-notification kısmında bekleme esnasında queue hakkında bilgi verilebilir.
+yeni özellik: ekşi sözlük tarafından engelleme hızı limiti getirildiği için  (benim loglarıma göre 8/1/2023-20/1/2023 arasında) 
+              işlemlere cooldown süresi eklendi. (mevcut işlem hızı limiti: 6 engel/dakika, 10 engeli kaldır/dakika)
+yeni özellik: istekler bir queue'da toplanıp art arda işlendi.
+notification kısmında bekleme esnasında queue ve cooldown hakkında bilgi veriliyor.
+sessize alma özelliği entegre edildi ancak ekşi API'si stable olmalıdığı için config üzerinden default kapalı halde tutuluyor.
 veri gönderme ayarında iki adet 2-state switch yerine bir adet 3-state switch kullanıldı.
 3-state switch, sunucuya veri gönderme ayarı, için bir uyarı eklenerek kullanıcı anonim göndermeye teşvik edildi.
 liste modunde yazar isimlerinin başında '@' karakteri varsa silindi.
+bug fix: tüm engelleri kaldırma özelliği ekşi güncellemesi nedeniyle bozulmuştu, düzeltildi.
+güncellendi sayfası eklendi.
 API limitleri(01.03.23):
-  BAN     user, title: 6/dk
-  UNDOBAN user, title: 10/dk
+  BAN     user, title: 6/dk   mute: ?(stabil değil)
+  UNDOBAN user, title: 10/dk  mute: ?(stabil değil)
 
 YÜKSEK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
-[acil]notification kısmında bekleme esnasında queue hakkında bilgi verilebilir. (ayrıca tahmini bitiş süresi)
-[acil]tüm engeli kaldırma algoritması ekşisözlüğün güncellemesi nedeniyle çalışmıyor.
-[acil]sessize al özelliği entegre edilmeli.
-[acil]sessize al özelliği ayarlardan kapatılabilir bir opsiyon olarak sunulabilir.
-undobanall için user, title ve mute listeleri mergeleniyor. süreç bir şekilde kısaltılmalı.
-takip edilen yazarlar engellenemesin ayarı
+notification kısmında tahmini bitiş süresi
 max yazar limiti durumu handle edilmeli
 performans analizi yapılmalı
   logger'ın etkisi gözlemlenmeli
@@ -138,9 +140,13 @@ istatiki sonuçlar görüntülenebilmeli
 [belki]istatistiki verilere göre engel yapılabilmeli
 10000 yazarı engellediği görüldü (5000 yazar ekşi limiti) readme sayfasına eklenebilir.
 engel limitine ulaşıldığında durması sağlanmalı ve belki uyarı verebilir.
-tüm engelleri kaldırma işlemi çok hızlı gerçekleşebiliyor. hızı saniyede max 15 engeli kaldırma işlemine düşürülmeli. (throttling)
 
 DÜŞÜK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
+takip edilen yazarlar engellenemesin ayarı
+çaylaklar engellensin ayarı (FAV için gerekiyor. LIST ve UNDOBANALL için zaten çalışıyor)
+sessize alma özelliğinin davranışları incelenmeli ve kullanıma açılmalı.
+  undobanall için user, title ve mute listeleri mergeleniyor. süreç bir şekilde kısaltılmalı.
+FAV BAN butonuna basıldığında eğer notification sayfası açıkça otomatik focus olarak kullanıcıya butonun işe yaradığı bilgisi verilerilebilir.
 sayfa kapatıldığında iki kere earlyStop sinyali üretiliyor. Buga neden olmuyor. Muhtemelen notification sayfasına bilgi gönderme 
 işlemi asenkron olmadığı için buna neden oluyor.
 test yazılımı (geliştiriliyor...)

@@ -359,7 +359,17 @@ async function processHandler(banSource, banMode, entryUrl)
 // this listener fired every time when the extension installed or updated.
 chrome.runtime.onInstalled.addListener(async (details) => 
 {
-  log.info("bg: program installed or updated.");
   
-  await handleConfig();
+  if (details.reason === chrome.runtime.OnInstalledReason.INSTALL || 
+      details.reason === chrome.runtime.OnInstalledReason.UPDATE) 
+  {
+    // first install or extension is updated
+    log.info("bg: program installed or updated.");
+    
+    // handle config of the extension
+    await handleConfig();
+    
+    // open welcome page
+    let tab = await chrome.tabs.create({ url: chrome.runtime.getURL("assets/html/welcome.html") });
+  }
 });
