@@ -11,7 +11,8 @@ export const BanMode = {
 
 export const TargetType = {
   USER:  "USER",
-  TITLE: "TITLE"
+  TITLE: "TITLE",
+  MUTE: "MUTE"
 };
 
 export const ResultType = {

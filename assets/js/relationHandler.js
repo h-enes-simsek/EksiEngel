@@ -19,20 +19,19 @@ export class RelationHandler
     let urlTitle = this.#prepareHTTPRequest(banMode, enums.TargetType.TITLE, id);
     let resTitle = await this.#performHTTPRequest(banMode, enums.TargetType.TITLE, id, urlTitle);
     
-    let resultType;
     if(resUser == enums.ResultTypeHttpReq.TOO_MANY_REQ || resTitle == enums.ResultTypeHttpReq.TOO_MANY_REQ)
     {
-      resultType = enums.ResultType.FAIL;
-      return {resultType: resultType, successfulAction: this.successfulAction, performedAction: this.performedAction};
+      // too many request has been made, ignore the previous action and return false
+      return {resultType: enums.ResultType.FAIL, successfulAction: this.successfulAction, performedAction: this.performedAction};
     }
     else
-      resultType = enums.ResultType.SUCCESS;
-    
-    this.performedAction++;
-    if(resUser == enums.ResultTypeHttpReq.SUCCESS && resTitle == enums.ResultTypeHttpReq.SUCCESS)
-      this.successfulAction++;
-   
-    return {resultType: resultType, successfulAction: this.successfulAction, performedAction: this.performedAction};
+    {
+      this.performedAction++;
+      if(resUser == enums.ResultTypeHttpReq.SUCCESS && resTitle == enums.ResultTypeHttpReq.SUCCESS)
+        this.successfulAction++;
+     
+      return {resultType: enums.ResultType.SUCCESS, successfulAction: this.successfulAction, performedAction: this.performedAction};
+    }
   }
   
   // reset the internal variables to reuse

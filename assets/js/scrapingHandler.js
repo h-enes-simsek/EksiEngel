@@ -187,17 +187,29 @@ export class ScrapingHandler
 
   }
 
-  scrapeAuthorNamesFromBannedAuthorPage = async () =>
+  #scrapeAuthorNamesFromBannedAuthorPagePartially = async (targetType, index) =>
   {
-    // no args
-    // return: {authorIdList: string[], authorNameList: string[]}
-    // note: banned authors and banned titles are merged into one list
-    // return(err): {authorIdList: [], authorNameList: []}
+    // index: integer(1...n) Scraping must be done with multiple requests, index indicates the number of the page to scrape
+    // targetType: enums.TargetType
+    // return: {authorIdList: string[], authorNameList: string[], isLast: bool}
+    // note: isLast indicates that this is the last page
+    // return(err): {authorIdList: [], authorNameList: [], isLast: true}
+
+    let targetTypeTextInURL = "";
+    if(targetType == enums.TargetType.USER)
+      targetTypeTextInURL = "m";
+    else if(targetType == enums.TargetType.TITLE)
+      targetTypeTextInURL = "i";
+    else if(targetType == enums.TargetType.MUTE)
+      targetTypeTextInURL = "u";
     
-    let responseText = "";
+    let responseJson = "";
     try
     {
-      let targetUrl = "https://eksisozluk.com/takip-engellenmis";
+      // note: real url is like .../relation-list?relationType=m&pageIndex=1&_=123456789
+      // but i couldn't figure out what and where is the query parameter '_'
+      // without this query parameter it works anyway at least for now.
+      let targetUrl = `https://eksisozluk.com/relation-list?relationType=${targetTypeTextInURL}&pageIndex=${index}`;
       let response = await fetch(targetUrl, {
         method: 'GET',
           headers: {
@@ -205,65 +217,107 @@ export class ScrapingHandler
             'x-requested-with': 'XMLHttpRequest'
           }
       });
-      responseText = await response.text();
+      responseJson = await response.json();
+      let isLast = responseJson.Relations.IsLast;
+      
+      let authorNameList = [];
+      let authorIdList = [];
+      let authorNumber = responseJson.Relations.Items.length;
+      for(let i = 0; i < authorNumber; i++)
+      {
+        let authName = responseJson.Relations.Items[i].Nick.Value;
+        // replace every whitespace with - (eksisozluk.com convention)
+        authorNameList[i] = authName.replace(/ /gi, "-");
+        authorIdList[i] = String(responseJson.Relations.Items[i].Id);
+      }
+      
+      return {authorIdList: authorIdList, authorNameList: authorNameList, isLast: isLast};
     }
     catch(err)
     {
-      log.err("scrapingHandler: scrapeAuthorNamesFromBannedAuthorPage: " + err);
-      return {authorIdList: [], authorNameList: []};
+      log.err("scrapingHandler: scrapeAuthorNamesFromBannedAuthorPagePartially: " + err);
+      return {authorIdList: [], authorNameList: [], isLast: true};
     }
+    
+  }
+  
+  scrapeAuthorNamesFromBannedAuthorPage = async () =>
+  {
+    // no args
+    // return: {authorIdList: string[], authorNameList: string[]}
+    // note: user, title and mute lists are merged into one list
+    // return(err): {authorIdList: [], authorNameList: []}
     
     try
     {
-      // parse string response as html document
-      let dom = new JSDOM(responseText);
-      let bannedAuthNodeList_ = dom.window.document.querySelectorAll(".relation-block")[1].querySelectorAll("li span a");
-      let bannedTitleNodeList_ = dom.window.document.querySelectorAll(".relation-block")[2].querySelectorAll("li span a");
-      let bannedAuthNodeList = [];
-      let bannedTitleNodeList = [];
-      
-      // jsdom doesn't support nth-child(2), so odd numbered matches will be selected manualy.
-      for (var i = 1; i < bannedAuthNodeList_.length; i += 2) 
-      {
-        bannedAuthNodeList_[i] && bannedAuthNodeList.push(bannedAuthNodeList_[i]);
-      }
-      
-      for (var i = 1; i < bannedTitleNodeList_.length; i += 2) 
-      {
-        bannedTitleNodeList_[i] && bannedTitleNodeList.push(bannedTitleNodeList_[i]);
-      }
-      
       let bannedAuthIdList = [];
       let bannedAuthNameList = [];
       let bannedTitleIdList = [];
       let bannedTitleNameList = [];
+      let bannedMuteIdList = [];
+      let bannedMuteNameList = [];
       
-      for(let i = 0; i < bannedAuthNodeList.length; i++)
+      // for user list banned
+      let isLast = false;
+      let index = 0;
+      while(!isLast)
       {
-        let authId = bannedAuthNodeList[i].getAttribute("data-userid");
-        let authName = bannedAuthNodeList[i].getAttribute("data-nick");
-        // replace every whitespace with - (eksisozluk.com convention)
-        authName = authName.replace(/ /gi, "-");
-        bannedAuthIdList.push(authId);
-        bannedAuthNameList.push(authName);
+        index++;
+        let partialListObj = await this.#scrapeAuthorNamesFromBannedAuthorPagePartially(enums.TargetType.USER, index);
+        let partialNameList = partialListObj.authorNameList;
+        let partialIdList = partialListObj.authorIdList;
+        isLast = partialListObj.isLast;
+        
+        bannedAuthNameList.push(...partialNameList);
+        bannedAuthIdList.push(...partialIdList);
       }
       
-      for(let i = 0; i < bannedTitleNodeList.length; i++)
+      // for user list whose titles were banned
+      isLast = false;
+      index = 0;
+      while(!isLast)
       {
-        let titleId = bannedTitleNodeList[i].getAttribute("data-userid");
-        let titleName = bannedTitleNodeList[i].getAttribute("data-nick");
-        // replace every whitespace with - (eksisozluk.com convention)
-        titleName = titleName.replace(/ /gi, "-");
-        bannedTitleIdList.push(titleId);
-        bannedTitleNameList.push(titleName);
+        index++;
+        let partialListObj = await this.#scrapeAuthorNamesFromBannedAuthorPagePartially(enums.TargetType.TITLE, index);
+        let partialNameList = partialListObj.authorNameList;
+        let partialIdList = partialListObj.authorIdList;
+        isLast = partialListObj.isLast;
+        
+        bannedTitleNameList.push(...partialNameList);
+        bannedTitleIdList.push(...partialIdList);
       }
       
-      // Merges both arrays (remove duplicate)
-      var authorIdList = this.#arrayUnique(bannedAuthIdList.concat(bannedTitleIdList));
-      var authorNameList = this.#arrayUnique(bannedAuthNameList.concat(bannedTitleNameList));
+      // for user list whose has been muted
+      isLast = false;
+      index = 0;
+      while(!isLast)
+      {
+        index++;
+        let partialListObj = await this.#scrapeAuthorNamesFromBannedAuthorPagePartially(enums.TargetType.MUTE, index);
+        let partialNameList = partialListObj.authorNameList;
+        let partialIdList = partialListObj.authorIdList;
+        isLast = partialListObj.isLast;
+        
+        bannedMuteNameList.push(...partialNameList);
+        bannedMuteIdList.push(...partialIdList);
+      }
       
-      // console.log(authorIdList);
-      // console.log(authorNameList);
+      // Merges all arrays (remove duplicate)
+      let authorIdList_ = this.#arrayUnique(bannedAuthIdList.concat(bannedTitleIdList));
+      let authorIdList = this.#arrayUnique(authorIdList_.concat(bannedMuteIdList));
+      let authorNameList_ = this.#arrayUnique(bannedAuthNameList.concat(bannedTitleNameList));
+      let authorNameList = this.#arrayUnique(authorNameList_.concat(bannedMuteNameList));
+
+      console.log(bannedAuthNameList);
+      console.log(bannedTitleNameList);    
+      console.log(bannedMuteNameList);
+      
+      console.log(bannedAuthIdList);
+      console.log(bannedTitleIdList);
+      console.log(bannedMuteIdList);
+      
+      console.log(authorIdList);
+      console.log(authorNameList);
       
       return {authorIdList: authorIdList, authorNameList: authorNameList};
     }
@@ -272,7 +326,6 @@ export class ScrapingHandler
       log.err("scrapingHandler: scrapeAuthorNamesFromBannedAuthorPage: " + err);
       return {authorIdList: [], authorNameList: []};
     }
-
   }
 
   scrapeAuthorIdFromAuthorProfilePage = async (authorName) =>
