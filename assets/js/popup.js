@@ -35,7 +35,10 @@ startUndobanAll.onclick = function(element) {
 };
 
 openauthorListPage.onclick = function(element) {
-  chrome.tabs.create({ url: chrome.runtime.getURL("assets/html/authorListPage.html") });
+  chrome.tabs.create({ url: chrome.runtime.getURL("assets/html/authorListPage.html") }, function (){
+  // automatically close the popup.html if operation is successful
+    window.close();
+  });
 };
 
 openFaq.onclick = function(element) {

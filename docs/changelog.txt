@@ -122,6 +122,7 @@ veri gönderme ayarında iki adet 2-state switch yerine bir adet 3-state switch 
 3-state switch, sunucuya veri gönderme ayarı, için bir uyarı eklenerek kullanıcı anonim göndermeye teşvik edildi.
 liste modunde yazar isimlerinin başında '@' karakteri varsa silindi.
 bug fix: tüm engelleri kaldırma özelliği ekşi güncellemesi nedeniyle bozulmuştu, düzeltildi.
+butona tıklandığında popup.html'in otomatik kapanması sağlandı.
 güncellendi sayfası eklendi.
 API limitleri(01.03.23):
   BAN     user, title: 6/dk   mute: ?(stabil değil)
@@ -142,6 +143,7 @@ istatiki sonuçlar görüntülenebilmeli
 engel limitine ulaşıldığında durması sağlanmalı ve belki uyarı verebilir.
 
 DÜŞÜK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
+footer content overlaps olmasın ama yine de hep en aşağıda kalsın.
 takip edilen yazarlar engellenemesin ayarı
 çaylaklar engellensin ayarı (FAV için gerekiyor. LIST ve UNDOBANALL için zaten çalışıyor)
 sessize alma özelliğinin davranışları incelenmeli ve kullanıma açılmalı.
