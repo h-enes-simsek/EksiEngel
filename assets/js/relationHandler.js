@@ -11,15 +11,23 @@ export class RelationHandler
   
   performAction =  async (banMode, id) =>
   {
-    // enums.TargetType.USER
-    let urlUser = this.#prepareHTTPRequest(banMode, enums.TargetType.USER, id);
-    let resUser = await this.#performHTTPRequest(banMode, enums.TargetType.USER, id, urlUser);
+    // enums.TargetType.MUTE
+    let urlMute = this.#prepareHTTPRequest(banMode, enums.TargetType.MUTE, id);
+    let resMute = await this.#performHTTPRequest(banMode, enums.TargetType.MUTE, id, urlMute);
     
     // enums.TargetType.TITLE
     let urlTitle = this.#prepareHTTPRequest(banMode, enums.TargetType.TITLE, id);
     let resTitle = await this.#performHTTPRequest(banMode, enums.TargetType.TITLE, id, urlTitle);
     
-    if(resUser == enums.ResultTypeHttpReq.TOO_MANY_REQ || resTitle == enums.ResultTypeHttpReq.TOO_MANY_REQ)
+    // enums.TargetType.USER
+    let urlUser = this.#prepareHTTPRequest(banMode, enums.TargetType.USER, id);
+    let resUser = await this.#performHTTPRequest(banMode, enums.TargetType.USER, id, urlUser);
+    
+
+    
+    if(resUser == enums.ResultTypeHttpReq.TOO_MANY_REQ  || 
+       resTitle == enums.ResultTypeHttpReq.TOO_MANY_REQ || 
+       resMute == enums.ResultTypeHttpReq.TOO_MANY_REQ )
     {
       // too many request has been made, ignore the previous action and return false
       return {resultType: enums.ResultType.FAIL, successfulAction: this.successfulAction, performedAction: this.performedAction};
@@ -27,6 +35,7 @@ export class RelationHandler
     else
     {
       this.performedAction++;
+      // ignore MUTE result because it seems not stable
       if(resUser == enums.ResultTypeHttpReq.SUCCESS && resTitle == enums.ResultTypeHttpReq.SUCCESS)
         this.successfulAction++;
      
@@ -43,25 +52,21 @@ export class RelationHandler
   
 	#prepareHTTPRequest = (banMode, targetType, id) =>
 	{
-		let url = "";
-	
-    if(targetType === enums.TargetType.USER && banMode === enums.BanMode.BAN)
-    {
-      url = 'https://eksisozluk.com/userrelation/addrelation/' + id + '?r=m';
-    }
-    else if(targetType === enums.TargetType.USER && banMode === enums.BanMode.UNDOBAN)
-    {
-      url = 'https://eksisozluk.com/userrelation/removerelation/' + id + '?r=m';
-    }
-    else if(targetType === enums.TargetType.TITLE && banMode === enums.BanMode.BAN)
-    {
-      url = 'https://eksisozluk.com/userrelation/addrelation/' + id + '?r=i';
-    }
-    else if(targetType === enums.TargetType.TITLE && banMode === enums.BanMode.UNDOBAN)
-    {
-      url = 'https://eksisozluk.com/userrelation/removerelation/' + id + '?r=i';
-    }
+    let banModeText = "";
+    if(banMode === enums.BanMode.BAN)
+      banModeText = "addrelation";
+    else if(banMode === enums.BanMode.UNDOBAN)
+      banModeText = "removerelation";
     
+    let targetTypeText = "";
+    if(targetType === enums.TargetType.USER)
+      targetTypeText = "m";
+    else if(targetType === enums.TargetType.TITLE)
+      targetTypeText = "i";
+    else if(targetType == enums.TargetType.MUTE)
+      targetTypeText = "u";
+    
+    let url = `https://eksisozluk.com/userrelation/${banModeText}/${id}?r=${targetTypeText}`;
     return url;
 	}
   
@@ -83,7 +88,20 @@ export class RelationHandler
       if(!response.ok)
       {
         log.err("Relation Handler: http response: " + response.status);
-        return enums.ResultTypeHttpReq.TOO_MANY_REQ;
+        if(response.status == 429)
+        {
+          return enums.ResultTypeHttpReq.TOO_MANY_REQ;
+        }
+        else
+        {
+          // MUTE API is not stable. Sometimes returns 500 for example if user is already banned or muted.
+          // solution: dont redo the operation, just ignore the mute case.
+          const responseText = await response.text();
+          log.err("Relation Handler: url: " + url + " response: " + responseText);
+          return enums.ResultTypeHttpReq.FAIL; 
+        }
+          
+        
       }
       const responseText = await response.text();
       const responseJson = JSON.parse(responseText);

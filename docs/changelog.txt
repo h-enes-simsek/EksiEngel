@@ -116,12 +116,15 @@ notification kısmında bekleme esnasında queue hakkında bilgi verilebilir.
 veri gönderme ayarında iki adet 2-state switch yerine bir adet 3-state switch kullanıldı.
 3-state switch, sunucuya veri gönderme ayarı, için bir uyarı eklenerek kullanıcı anonim göndermeye teşvik edildi.
 liste modunde yazar isimlerinin başında '@' karakteri varsa silindi.
+engel limitleri(01.03.23):
+  user, title, mute: 6/dk
 
 YÜKSEK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
 [acil]notification kısmında bekleme esnasında queue hakkında bilgi verilebilir. (ayrıca tahmini bitiş süresi)
 [acil]tüm engeli kaldırma algoritması ekşisözlüğün güncellemesi nedeniyle çalışmıyor.
 [acil]sessize al özelliği entegre edilmeli.
 [acil]sessize al özelliği ayarlardan kapatılabilir bir opsiyon olarak sunulabilir.
+undobanall için user, title ve mute listeleri mergeleniyor. süreç bir şekilde kısaltılmalı.
 takip edilen yazarlar engellenemesin ayarı
 max yazar limiti durumu handle edilmeli
 performans analizi yapılmalı

@@ -308,6 +308,7 @@ export class ScrapingHandler
       let authorNameList_ = this.#arrayUnique(bannedAuthNameList.concat(bannedTitleNameList));
       let authorNameList = this.#arrayUnique(authorNameList_.concat(bannedMuteNameList));
 
+      /*
       console.log(bannedAuthNameList);
       console.log(bannedTitleNameList);    
       console.log(bannedMuteNameList);
@@ -318,6 +319,7 @@ export class ScrapingHandler
       
       console.log(authorIdList);
       console.log(authorNameList);
+      */
       
       return {authorIdList: authorIdList, authorNameList: authorNameList};
     }

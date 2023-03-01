@@ -305,7 +305,7 @@ async function processHandler(banSource, banMode, entryUrl)
         }); 
         
         if(!programController.earlyStop)
-          res = await relationHandler.performAction(banMode, authorId);
+          res = await relationHandler.performAction(banMode, authorIdList[i]);
       }
       
       // send message to notification page
