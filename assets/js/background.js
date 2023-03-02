@@ -377,6 +377,9 @@ chrome.runtime.onInstalled.addListener(async (details) =>
     // first install or extension is updated
     log.info("bg: program installed or updated.");
     
+    // erase local storage, because config file could have been changed in the new version.
+    await chrome.storage.local.clear();
+    
     // handle config of the extension
     await handleConfig();
     
