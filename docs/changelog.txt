@@ -138,17 +138,11 @@ bug fix: yükleme ve güncellemeden sonra local storage temizlendi.
 
 YÜKSEK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
 notification kısmında tahmini bitiş süresi
-max yazar limiti durumu handle edilmeli
 performans analizi yapılmalı
   logger'ın etkisi gözlemlenmeli
     array silindiğinde gerçekten bellekten siliniyor mu, reflerden dolayı memory leak oluşuyor mu?
     log.getData yeni arraylere kopyalanıyor mu, ref değeri mi dönüyor?
     obje içinde array silindiğinde reflerin durumu ne oluyor?
-[belki]engel nedeni seçilebilmeli
-istatiki sonuçlar görüntülenebilmeli
-[belki]istatistiki verilere göre engel yapılabilmeli
-10000 yazarı engellediği görüldü (5000 yazar ekşi limiti) readme sayfasına eklenebilir.
-engel limitine ulaşıldığında durması sağlanmalı ve belki uyarı verebilir.
 
 DÜŞÜK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
 footer content overlaps olmasın ama yine de hep en aşağıda kalsın.
@@ -158,5 +152,8 @@ sessize alma özelliğinin davranışları incelenmeli ve kullanıma açılmalı
 FAV BAN butonuna basıldığında eğer notification sayfası açıkça otomatik focus olarak kullanıcıya butonun işe yaradığı bilgisi verilerilebilir.
 sayfa kapatıldığında iki kere earlyStop sinyali üretiliyor. Buga neden olmuyor. Muhtemelen notification sayfasına bilgi gönderme 
 işlemi asenkron olmadığı için buna neden oluyor.
-test yazılımı (geliştiriliyor...)
-firefox desteği (hiçbir şey düzgün çalışmıyor, manifest v3 desteği bile tam gelmemiş)
+[gerekliliği tartışılır] test yazılımı (geliştiriliyor...)
+[çok zor] firefox desteği (hiçbir şey düzgün çalışmıyor, manifest v3 desteği bile tam gelmemiş)
+[zor] engel limitine ulaşıldığında durması sağlanmalı ve belki uyarı verebilir.
+[belki] istatiki sonuçlar görüntülenebilmeli
+[belki] istatistiki verilere göre engel yapılabilmeli
