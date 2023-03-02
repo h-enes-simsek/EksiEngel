@@ -119,18 +119,19 @@ export class ScrapingHandler
     }
   }
   
-  scrapeAuthorNamesFromFavs = async (entryUrl) =>
+  // this method will access config object, so it is not arrow function
+  async scrapeAuthorNamesFromFavs(entryUrl)
   {
     // entryUrl: string, entry url. example: https://eksisozluk.com/entry/1
     // return: string[], only author names
     // return(error): [] 
     
+    let authorList = [];
     let responseText = "";
     try
     {
       let entryId = entryUrl.match(/\d/g).join("");
       let targetUrl = "https://eksisozluk.com/entry/favorileyenler?entryId=" + entryId;
-      // targetUrl = "https://eksisozluk.com/entry/caylakfavorites?entryId=" + entryId;
       let response = await fetch(targetUrl, {
         method: 'GET',
           headers: {
@@ -151,7 +152,6 @@ export class ScrapingHandler
       // parse string response as html document
       let dom = new JSDOM(responseText);
       let authListNodeList = dom.window.document.querySelectorAll("a");
-      let authorList = [];
 
       for(let i = 0; i < authListNodeList.length; i++) 
       {
@@ -170,21 +170,74 @@ export class ScrapingHandler
       
       if(authorList.length > 0)
       {
-        // 'çaylak' authors are not wanted (in the future it can be considered)		
-        // if there is fav from "çaylak" users, last value of list indicates it
+        // if there is a fav from "çaylak" users, last value of list indicates it
         if(authorList[authorList.length-1].includes("çaylak"))
           authorList.pop()
-      }
+      } 
       
-      // log.info(JSON.stringify(authorList));
-      
-      return authorList;
+      //log.info(JSON.stringify(authorList));
     }
     catch(err)
     {
       log.err("scrapingHandler: scrapeAuthorNamesFromFavs: " + err);
       return [];
     }
+
+    if(config.enableNoobBan)
+    {
+      let responseTextNoob = "";
+      try
+      {
+        let entryId = entryUrl.match(/\d/g).join("");
+        let targetUrl = "https://eksisozluk.com/entry/caylakfavorites?entryId=" + entryId;
+        let response = await fetch(targetUrl, {
+          method: 'GET',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+              'x-requested-with': 'XMLHttpRequest'
+            }
+        });
+        responseTextNoob = await response.text();
+      }
+      catch(err)
+      {
+        log.err("scrapingHandler: scrapeAuthorNamesFromFavs: " + err);
+        return [];
+      }
+      
+      try
+      {
+        // parse string response as html document
+        let dom = new JSDOM(responseTextNoob);
+        let authListNodeList = dom.window.document.querySelectorAll("a");
+
+        for(let i = 0; i < authListNodeList.length; i++) 
+        {
+          let val = authListNodeList[i].innerHTML;
+          if (val) 
+          { 
+            // delete '@' char from nicknames
+            // "@example_user" --> "example_user"
+            val = val.substr(1);
+            
+            // replace every whitespace with - (eksisozluk.com convention)
+            val = val.replace(/ /gi, "-");
+            authorList.push(val); 
+          }
+        }
+        
+        //log.info(JSON.stringify(authorList));
+        
+      }
+      catch(err)
+      {
+        log.err("scrapingHandler: (noob) scrapeAuthorNamesFromFavs: " + err);
+        return [];
+      }
+      
+    }
+    
+    return authorList;
 
   }
 
@@ -242,7 +295,8 @@ export class ScrapingHandler
     
   }
   
-  scrapeAuthorNamesFromBannedAuthorPage = async () =>
+  // this method will access config object, so it is not arrow function
+  async scrapeAuthorNamesFromBannedAuthorPage()
   {
     // no args
     // return: {authorIdList: string[], authorNameList: string[]}

@@ -10,12 +10,13 @@ export let config =
 	
 	"enableLog": 				true,														  /* enable/disable logger */
 		"logConsole": 		true, 														/* log into console as well */
+    
+  "enableNoobBan":    false,                            /* enable/disable noob author scraping for FAV */
+  "enableMute":       false,                            /* enable/disable TargetType.MUTE operations */
 	
 	"anonymouseClientName": "anonymouse",									/* client name if sendClientName false */
 	"erroneousText": 				"",											      /* default text if smt goes wrong */
-	"erroneousInt": 				"0",													/* default int if smt goes wrong */
-  
-  "enableMute":       false,                            /* enable/disable TargetType.MUTE operations */
+	"erroneousInt": 				"0", 													/* default int if smt goes wrong */
 };
 
 export async function getConfig()
