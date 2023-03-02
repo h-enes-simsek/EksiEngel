@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', async function () {
   // load the current configuration from storage
   let config = await getConfig();
   console.log("sendData:" + config.sendData + " sendClientName:" + config.sendClientName);
+  console.log("enableNoobBan:" + config.enableNoobBan);
   if(!config)
     return;
   
@@ -22,6 +23,18 @@ document.addEventListener('DOMContentLoaded', async function () {
 		document.getElementById("threeStateSwitchText").innerHTML = "Ekşi Sözlük kullanıcı adınız ve engel listeniz <b style='color:green'>Ekşi Engel</b> sunucularına gönderiliyor.";
 	}
   
+  // load the current configuration to switch buttons
+  if(config.enableNoobBan)
+  {
+    document.getElementById("noobBanEnabled").checked = true;
+    //document.getElementById("noobBanSwitchText").innerHTML = "";
+  }
+  else
+  {
+    document.getElementById("noobBanDisabled").checked = true;
+    //document.getElementById("noobBanSwitchText").innerHTML = "";
+  }
+  
   // add onclick function to three state radio buttons
   document.getElementById("threeStateNone").addEventListener("click", function(element) {
 		document.getElementById("threeStateSwitchText").innerHTML = "Hiçbir veriniz <b style='color:green'>Ekşi Engel</b> sunucularına gönderilmiyor.";
@@ -34,6 +47,16 @@ document.addEventListener('DOMContentLoaded', async function () {
 	document.getElementById("threeStateBoth").addEventListener("click", function(element) {
 		document.getElementById("threeStateSwitchText").innerHTML = "Ekşi Sözlük kullanıcı adınız ve log verileri <b style='color:green'>Ekşi Engel</b> sunucularına gönderiliyor.";
     threeStateSwitchOnClick(config);
+  });
+  
+  // add onclick function to three state radio buttons
+  document.getElementById("noobBanEnabled").addEventListener("click", function(element) {
+		//document.getElementById("noobBanSwitchText").innerHTML = "";
+    noobBanSwitchOnClick(config);
+  });
+  document.getElementById("noobBanDisabled").addEventListener("click", function(element) {
+		//document.getElementById("noobBanSwitchText").innerHTML = "";
+    noobBanSwitchOnClick(config);
   });
 });
 
@@ -56,6 +79,13 @@ function threeStateSwitchOnClick(config)
   }
     
 	console.log("sendData:" + config.sendData + " sendClientName:" + config.sendClientName);
+	saveConfig(config);
+}
+
+function noobBanSwitchOnClick(config)
+{
+	config.enableNoobBan = document.getElementById("noobBanEnabled").checked;
+	console.log("enableNoobBan:" + config.enableNoobBan);
 	saveConfig(config);
 }
 
