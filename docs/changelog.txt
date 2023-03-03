@@ -137,6 +137,7 @@ yeni özellik: çaylakları da engelleme ayarı eklendi. (sadece FAV için. LIST
 bug fix: yükleme ve güncellemeden sonra local storage temizlendi.
 
 YÜKSEK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
+bir yazarın takipçilerini engelleme özelliği
 notification kısmında tahmini bitiş süresi
 performans analizi yapılmalı
   logger'ın etkisi gözlemlenmeli
