@@ -5,6 +5,7 @@
   <title>Nasıl Kullanılır</title>
   <link rel="stylesheet" href="../css/buttons.css">
   <link rel="stylesheet" href="../css/switchButtons.css">
+  <link rel="stylesheet" href="../css/tooltip.css">
   <script src="../js/faq.js"></script>
 <style>
 .content {
@@ -25,7 +26,7 @@ body {
 }
 .grid-container {
   display: grid;
-  grid-template-columns: auto auto;
+  grid-template-columns: 240px auto;
   padding: 10px;
 }
 .grid-item {
@@ -84,11 +85,10 @@ margin-bottom: 8px;
         <a></a>
       </div>
     </div>
-    <a class="grid-item" style="text-align: left;" id="noobBanSwitchText">
-      Çaylak yazarları da engelle. 
-      <br>
-      (Bu ayar sadece favori engeli için geçerlidir. Tüm engeller kaldırılırken ya da listeden işlem yapılırken yazarın çaylak olup olmadığına bakılmaz.)
-    </a>
+    <a class="grid-item tooltip bottom" tip="Bu ayar sadece favori engeli için geçerlidir.
+    Tüm engeller kaldırılırken ya da listeden işlem 
+    yapılırken yazarın çaylak olup olmadığına bakılmaz." 
+    style="text-align: left;" id="noobBanSwitchText">Çaylak yazarları da engelle.</a>
     
     <div class="grid-item"> 
       <div id="threeStateSwitch" class="switch-toggle switch-3 switch-candy" style="display:inline-flex;width:200px;">
