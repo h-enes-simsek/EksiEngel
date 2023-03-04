@@ -146,6 +146,7 @@ performans analizi yapılmalı
     obje içinde array silindiğinde reflerin durumu ne oluyor?
 
 DÜŞÜK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
+başlığa yazan herkesi engelle
 footer content overlaps olmasın ama yine de hep en aşağıda kalsın.
 takip edilen yazarlar engellenemesin ayarı
 sessize alma özelliğinin davranışları incelenmeli ve kullanıma açılmalı.

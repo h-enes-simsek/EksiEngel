@@ -23,6 +23,14 @@
 body {
   font-size: 100%;
 }
+.grid-container {
+  display: grid;
+  grid-template-columns: auto auto;
+  padding: 10px;
+}
+.grid-item {
+  padding: 10px;
+}
 #semsiye {
 	display: block;
 	margin: 0 auto;
@@ -58,46 +66,45 @@ margin-bottom: 8px;
 
 <section class="content">
 
-  <div>
-	
-    <h3 style="text-align: center;">
-      Ayarlar
-    </h3>
+  <h3 style="text-align: center;">
+    Ayarlar
+  </h3>
+  
+  
+  <div class="grid-container">
+
+    <div class="grid-item">
+      <div id="noobBanSwitch" class="switch-toggle switch-3 switch-candy" style="display:inline-flex;width:132px;">
+        <input id="noobBanDisabled" value="noobBanDisabled" name="state-d-noob" type="radio" checked="">
+        <label for="noobBanDisabled">Kapalı</label>
+
+        <input id="noobBanEnabled" value="noobBanEnabled" name="state-d-noob" type="radio" checked="">
+        <label for="noobBanEnabled">Açık</label>
+
+        <a></a>
+      </div>
+    </div>
+    <a class="grid-item" style="text-align: left;" id="noobBanSwitchText">
+      Çaylak yazarları da engelle. 
+      <br>
+      (Bu ayar sadece favori engeli için geçerlidir. Tüm engeller kaldırılırken ya da listeden işlem yapılırken yazarın çaylak olup olmadığına bakılmaz.)
+    </a>
     
-    <div>
-    <div id="noobBanSwitch" class="switch-toggle switch-3 switch-candy" style="display:inline-flex;width:132px;">
-      <input id="noobBanDisabled" value="noobBanDisabled" name="state-d-noob" type="radio" checked="">
-      <label for="noobBanDisabled">Kapalı</label>
+    <div class="grid-item"> 
+      <div id="threeStateSwitch" class="switch-toggle switch-3 switch-candy" style="display:inline-flex;width:200px;">
+        <input id="threeStateNone" value="threeStateNone" name="state-d" type="radio" checked="">
+        <label for="threeStateNone">-</label>
 
-      <input id="noobBanEnabled" value="noobBanEnabled" name="state-d-noob" type="radio" checked="">
-      <label for="noobBanEnabled">Açık</label>
+        <input id="threeStateOnlyList" value="threeStateOnlyList" name="state-d" type="radio" checked="">
+        <label for="threeStateOnlyList">Gizli</label>
 
-      <a></a>
+        <input id="threeStateBoth" value="threeStateBoth" name="state-d" type="radio" checked="checked">
+        <label for="threeStateBoth">Açık</label>
+
+        <a></a>
+      </div>
     </div>
-    
-    &nbsp;&nbsp;<a style="text-align: right;" id="noobBanSwitchText">
-                  Çaylak yazarları da engelle. 
-                  (Bu ayar sadece favori engeli için geçerlidir. Tüm engeller kaldırılırken ya da listeden işlem yapılırken yazarın çaylak olup olmadığına bakılmaz.)
-                </a>
-    </div>
-		
-    <div>
-		<div id="threeStateSwitch" class="switch-toggle switch-3 switch-candy" style="display:inline-flex;width:200px;margin-top: 10px;">
-			<input id="threeStateNone" value="threeStateNone" name="state-d" type="radio" checked="">
-			<label for="threeStateNone">-</label>
-
-			<input id="threeStateOnlyList" value="threeStateOnlyList" name="state-d" type="radio" checked="">
-			<label for="threeStateOnlyList">Gizli</label>
-
-			<input id="threeStateBoth" value="threeStateBoth" name="state-d" type="radio" checked="checked">
-			<label for="threeStateBoth">Açık</label>
-
-			<a></a>
-		</div>
-		
-		&nbsp;&nbsp;<a style="text-align: right;" id="threeStateSwitchText">Config dosyası okunamadı.</a>
-    </div>
-
+    <a class="grid-item" style="text-align: left;" id="threeStateSwitchText">Config dosyası okunamadı.</a>
 	
   </div>
   
