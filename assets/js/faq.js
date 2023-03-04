@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', async function () {
   let config = await getConfig();
   console.log("sendData:" + config.sendData + " sendClientName:" + config.sendClientName);
   console.log("enableNoobBan:" + config.enableNoobBan);
+  console.log("enableMute:" + config.enableMute);
   if(!config)
     return;
   
@@ -35,6 +36,16 @@ document.addEventListener('DOMContentLoaded', async function () {
     //document.getElementById("noobBanSwitchText").innerHTML = "";
   }
   
+  // load the current configuration to switch buttons
+  if(config.enableMute)
+  {
+    document.getElementById("muteEnabled").checked = true;
+  }
+  else
+  {
+    document.getElementById("muteDisabled").checked = true;
+  }
+  
   // add onclick function to three state radio buttons
   document.getElementById("threeStateNone").addEventListener("click", function(element) {
 		document.getElementById("threeStateSwitchText").innerHTML = "Hiçbir veriniz <b style='color:green'>Ekşi Engel</b> sunucularına gönderilmiyor.";
@@ -49,7 +60,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     threeStateSwitchOnClick(config);
   });
   
-  // add onclick function to three state radio buttons
+  // add onclick function to two state radio buttons
   document.getElementById("noobBanEnabled").addEventListener("click", function(element) {
 		//document.getElementById("noobBanSwitchText").innerHTML = "";
     noobBanSwitchOnClick(config);
@@ -57,6 +68,14 @@ document.addEventListener('DOMContentLoaded', async function () {
   document.getElementById("noobBanDisabled").addEventListener("click", function(element) {
 		//document.getElementById("noobBanSwitchText").innerHTML = "";
     noobBanSwitchOnClick(config);
+  });
+  
+  // add onclick function to two state radio buttons
+  document.getElementById("muteEnabled").addEventListener("click", function(element) {
+    muteSwitchOnClick(config);
+  });
+  document.getElementById("muteDisabled").addEventListener("click", function(element) {
+    muteSwitchOnClick(config);
   });
 });
 
@@ -79,6 +98,13 @@ function threeStateSwitchOnClick(config)
   }
     
 	console.log("sendData:" + config.sendData + " sendClientName:" + config.sendClientName);
+	saveConfig(config);
+}
+
+function muteSwitchOnClick(config)
+{
+	config.enableMute = document.getElementById("muteEnabled").checked;
+	console.log("enableMute:" + config.enableMute);
 	saveConfig(config);
 }
 

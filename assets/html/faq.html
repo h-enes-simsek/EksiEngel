@@ -73,6 +73,25 @@ margin-bottom: 8px;
   
   
   <div class="grid-container">
+  
+    <div class="grid-item">
+      <div id="muteSwitch" class="switch-toggle switch-3 switch-candy" style="display:inline-flex;width:132px;">
+        <input id="muteDisabled" value="muteDisabled" name="state-d-mute" type="radio" checked="">
+        <label for="muteDisabled">Engel</label>
+
+        <input id="muteEnabled" value="muteEnabled" name="state-d-mute" type="radio" checked="">
+        <label for="muteEnabled">Sessiz</label>
+
+        <a></a>
+      </div>
+    </div>
+    <a class="grid-item tooltip bottom" tip="Engelle veya sessize al işlemleri birbirinin alternatifi olduğu için 
+    aynı anda gerçekleşemez. Her iki durumda da yazarların entry'sini görmezsiniz. 
+    Engellenen yazar sizin entrylerinizi göremez ve size mesaj atamaz.
+    Sessize alınan görebilir ve mesaj atabilir dolayısıyla sessize alındığını fark edemez.
+    Başlıklarını engelle işlemi bu iki seçenekten bağımsız çalışır,
+    Ekşi Engel her iki durumda da başlıkları engelliyor." 
+    style="text-align: left;" id="noobBanSwitchText">Engelle veya sessize al.</a>
 
     <div class="grid-item">
       <div id="noobBanSwitch" class="switch-toggle switch-3 switch-candy" style="display:inline-flex;width:132px;">

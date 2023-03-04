@@ -10,27 +10,29 @@ export class RelationHandler
   successfulAction;
   performedAction;
   
-  performAction =  async (banMode, id) =>
+  async performAction(banMode, id)
   {
+    let resUser;
     if(config.enableMute)
     {
       // enums.TargetType.MUTE
-      let urlMute = this.#prepareHTTPRequest(banMode, enums.TargetType.MUTE, id);
-      let resMute = await this.#performHTTPRequest(banMode, enums.TargetType.MUTE, id, urlMute);
+      let urlUser = this.#prepareHTTPRequest(banMode, enums.TargetType.MUTE, id);
+      resUser = await this.#performHTTPRequest(banMode, enums.TargetType.MUTE, id, urlUser);
+    }
+    else
+    {
+      // enums.TargetType.USER
+      let urlUser = this.#prepareHTTPRequest(banMode, enums.TargetType.USER, id);
+      resUser = await this.#performHTTPRequest(banMode, enums.TargetType.USER, id, urlUser);
     }
     
     // enums.TargetType.TITLE
     let urlTitle = this.#prepareHTTPRequest(banMode, enums.TargetType.TITLE, id);
     let resTitle = await this.#performHTTPRequest(banMode, enums.TargetType.TITLE, id, urlTitle);
     
-    // enums.TargetType.USER
-    let urlUser = this.#prepareHTTPRequest(banMode, enums.TargetType.USER, id);
-    let resUser = await this.#performHTTPRequest(banMode, enums.TargetType.USER, id, urlUser);
-    
-    // ignore MUTE result because it seems not stable
     if(resUser == enums.ResultTypeHttpReq.TOO_MANY_REQ || resTitle == enums.ResultTypeHttpReq.TOO_MANY_REQ)
     {
-      // too many request has been made, ignore the previous action and return false
+      // too many request has been made, don't count this action and return false
       return {resultType: enums.ResultType.FAIL, successfulAction: this.successfulAction, performedAction: this.performedAction};
     }
     else
@@ -90,6 +92,8 @@ export class RelationHandler
         log.err("Relation Handler: http response: " + response.status);
         if(response.status == 429)
         {
+          //const responseText = await response.text();
+          //log.err("Relation Handler: url: " + url + " response: " + responseText);
           return enums.ResultTypeHttpReq.TOO_MANY_REQ;
         }
         else
