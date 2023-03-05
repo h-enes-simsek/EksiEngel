@@ -133,10 +133,12 @@ API limitleri(01.03.23):
 
 v2.2
 gönderim: - yayın: 
+yeni özellik: ban/mute ayarı eklendi.
 yeni özellik: çaylakları da engelleme ayarı eklendi. (sadece FAV için. LIST ve UNDOBANALL için zaten çaylaklar ayırt edilmiyor.)
 bug fix: yükleme ve güncellemeden sonra local storage temizlendi.
 
 YÜKSEK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
+undobanall için user, title ve mute listeleri mergeleniyor(olmamalı) ve ban/mute ayarına göre işlem yapılıyor(bug). 
 bir yazarın takipçilerini engelleme özelliği
 notification kısmında tahmini bitiş süresi
 performans analizi yapılmalı
@@ -149,8 +151,6 @@ DÜŞÜK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
 başlığa yazan herkesi engelle
 footer content overlaps olmasın ama yine de hep en aşağıda kalsın.
 takip edilen yazarlar engellenemesin ayarı
-sessize alma özelliğinin davranışları incelenmeli ve kullanıma açılmalı.
-  undobanall için user, title ve mute listeleri mergeleniyor. süreç bir şekilde kısaltılmalı.
 FAV BAN butonuna basıldığında eğer notification sayfası açıkça otomatik focus olarak kullanıcıya butonun işe yaradığı bilgisi verilerilebilir.
 sayfa kapatıldığında iki kere earlyStop sinyali üretiliyor. Buga neden olmuyor. Muhtemelen notification sayfasına bilgi gönderme 
 işlemi asenkron olmadığı için buna neden oluyor.

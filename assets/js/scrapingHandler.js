@@ -367,8 +367,8 @@ export class ScrapingHandler
       
       if(config.enableMute)
       {
-        let authorIdList = this.#arrayUnique(authorIdList.concat(bannedMuteIdList));
-        let authorNameList = this.#arrayUnique(authorNameList.concat(bannedMuteNameList));
+        authorIdList = this.#arrayUnique(authorIdList.concat(bannedMuteIdList));
+        authorNameList = this.#arrayUnique(authorNameList.concat(bannedMuteNameList));
       }
 
       /*
