@@ -24,9 +24,14 @@
 body {
   font-size: 100%;
 }
-.grid-container {
+.grid-container.two-column {
   display: grid;
   grid-template-columns: 240px auto;
+  padding: 10px;
+}
+.grid-container.three-column {
+  display: grid;
+  grid-template-columns: auto auto auto;
   padding: 10px;
 }
 .grid-item {
@@ -72,7 +77,7 @@ margin-bottom: 8px;
   </h3>
   
   
-  <div class="grid-container">
+  <div class="grid-container two-column">
   
     <div class="grid-item">
       <div id="muteSwitch" class="switch-toggle switch-3 switch-candy" style="display:inline-flex;width:132px;">
@@ -187,6 +192,35 @@ margin-bottom: 8px;
     </li>
   </ol>
   
+  </div>
+  
+  
+  <h3 style="text-align: center;">
+    <b style="color:green">Ekşi Engel</b> Detaylı İşlem Tablosu
+  </h3>
+  <div class="grid-container three-column" style="border: 1px solid black">
+  
+    <div class="grid-item"></div>
+    <div class="grid-item">Engelle</div>
+    <div class="grid-item">Engeli Kaldır</div>
+    
+    <div class="grid-item">Favori</div>
+    <div class="grid-item">Başlıkları engelle +
+Ayarlara göre (Engelle veya Sessize al)</div>
+    <div class="grid-item">-</div>
+    
+    <div class="grid-item">Liste</div>
+    <div class="grid-item">Başlıkları engelle +
+Ayarlara göre (Engelle veya Sessize al)</div>
+    <div class="grid-item">Başlıkları engelle + 
+Engelle + 
+Sessize al</div>
+    
+    <div class="grid-item">Tüm engelleri kaldır</div>
+    <div class="grid-item">-</div>
+    <div class="grid-item">Başlıkları engelle + Engelle + Sessize al</div>
+    
+    
   </div>
   
   <br><br><br>
