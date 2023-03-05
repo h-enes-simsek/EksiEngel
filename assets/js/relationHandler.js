@@ -2,7 +2,6 @@ import {log} from './log.js';
 import * as enums from './enums.js';
 import * as utils from './utils.js'
 import {programController} from './programController.js';
-import {config} from './config.js';
 
 // a class to manage relations (ban/undoban users/users' titles)
 export class RelationHandler
@@ -10,27 +9,31 @@ export class RelationHandler
   successfulAction;
   performedAction;
   
-  async performAction(banMode, id)
+  async performAction(banMode, id, isTargetUser, isTargetTitle, isTargetMute)
   {
-    let resUser;
-    if(config.enableMute)
-    {
-      // enums.TargetType.MUTE
-      let urlUser = this.#prepareHTTPRequest(banMode, enums.TargetType.MUTE, id);
-      resUser = await this.#performHTTPRequest(banMode, enums.TargetType.MUTE, id, urlUser);
-    }
-    else
+    let resUser, resTitle, resMute;
+    if(isTargetUser)
     {
       // enums.TargetType.USER
       let urlUser = this.#prepareHTTPRequest(banMode, enums.TargetType.USER, id);
       resUser = await this.#performHTTPRequest(banMode, enums.TargetType.USER, id, urlUser);
     }
+    if(isTargetTitle)
+    {
+      // enums.TargetType.TITLE
+      let urlTitle = this.#prepareHTTPRequest(banMode, enums.TargetType.TITLE, id);
+      resTitle = await this.#performHTTPRequest(banMode, enums.TargetType.TITLE, id, urlTitle);
+    }
+    if(isTargetMute)
+    {
+      // enums.TargetType.MUTE
+      let urlMute = this.#prepareHTTPRequest(banMode, enums.TargetType.MUTE, id);
+      resMute = await this.#performHTTPRequest(banMode, enums.TargetType.MUTE, id, urlMute);
+    }
     
-    // enums.TargetType.TITLE
-    let urlTitle = this.#prepareHTTPRequest(banMode, enums.TargetType.TITLE, id);
-    let resTitle = await this.#performHTTPRequest(banMode, enums.TargetType.TITLE, id, urlTitle);
-    
-    if(resUser == enums.ResultTypeHttpReq.TOO_MANY_REQ || resTitle == enums.ResultTypeHttpReq.TOO_MANY_REQ)
+    if((isTargetUser  && resUser == enums.ResultTypeHttpReq.TOO_MANY_REQ)  || 
+       (isTargetTitle && resTitle == enums.ResultTypeHttpReq.TOO_MANY_REQ) ||
+       (isTargetMute  && resMute == enums.ResultTypeHttpReq.TOO_MANY_REQ)  )
     {
       // too many request has been made, don't count this action and return false
       return {resultType: enums.ResultType.FAIL, successfulAction: this.successfulAction, performedAction: this.performedAction};
@@ -38,7 +41,9 @@ export class RelationHandler
     else
     {
       this.performedAction++;
-      if(resUser == enums.ResultTypeHttpReq.SUCCESS && resTitle == enums.ResultTypeHttpReq.SUCCESS)
+      if((!isTargetUser  || resUser == enums.ResultTypeHttpReq.SUCCESS)  && 
+         (!isTargetTitle || resTitle == enums.ResultTypeHttpReq.SUCCESS) &&
+         (!isTargetMute  || resMute == enums.ResultTypeHttpReq.SUCCESS)  )
         this.successfulAction++;
      
       return {resultType: enums.ResultType.SUCCESS, successfulAction: this.successfulAction, performedAction: this.performedAction};

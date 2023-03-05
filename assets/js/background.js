@@ -109,6 +109,8 @@ async function processHandler(banSource, banMode, entryUrl)
       return;
     }
     
+    const enableMute = config.enableMute;
+    
     for (let i = 0; i < authorNameList.length; i++)
     {
       if(programController.earlyStop)
@@ -117,7 +119,11 @@ async function processHandler(banSource, banMode, entryUrl)
       let authorId = await scrapingHandler.scrapeAuthorIdFromAuthorProfilePage(authorNameList[i]);
       authorIdList.push(authorId);
       
-      let res = await relationHandler.performAction(banMode, authorId);
+      let res;
+      if(banMode == enums.BanMode.BAN)
+        res = await relationHandler.performAction(banMode, authorId, !enableMute, true, enableMute);
+      else
+        res = await relationHandler.performAction(banMode, authorId, true, true, true);
       
       if(res.resultType == enums.ResultType.FAIL)
       {
@@ -154,7 +160,12 @@ async function processHandler(banSource, banMode, entryUrl)
         }); 
         
         if(!programController.earlyStop)
-          res = await relationHandler.performAction(banMode, authorId);
+        {
+          if(banMode == enums.BanMode.BAN)
+            res = await relationHandler.performAction(banMode, authorId, !enableMute, true, enableMute);
+          else
+            res = await relationHandler.performAction(banMode, authorId, true, true, true);
+        }
       }
 
       // send message to notification page
@@ -187,12 +198,14 @@ async function processHandler(banSource, banMode, entryUrl)
       return;
     }
     
+    const enableMute = config.enableMute;
+    
     for (let i = 0; i < authorNameList.length; i++)
     {
       if(programController.earlyStop)
         break;
       let authorId = await scrapingHandler.scrapeAuthorIdFromAuthorProfilePage(authorNameList[i]);
-      let res = await relationHandler.performAction(banMode, authorId);
+      let res = await relationHandler.performAction(banMode, authorId, !enableMute, true, enableMute);
       authorIdList.push(authorId);
       
       if(res.resultType == enums.ResultType.FAIL)
@@ -230,7 +243,7 @@ async function processHandler(banSource, banMode, entryUrl)
         }); 
         
         if(!programController.earlyStop)
-          res = await relationHandler.performAction(banMode, authorId);
+          res = await relationHandler.performAction(banMode, authorId, !enableMute, true, enableMute);
       }
       
       // send message to notification page
@@ -248,13 +261,13 @@ async function processHandler(banSource, banMode, entryUrl)
   }
   else if(banSource === enums.BanSource.UNDOBANALL)
   {
-    let authorListObj = await scrapingHandler.scrapeAuthorNamesFromBannedAuthorPage(); // names and ids will be scraped
-    authorNameList = authorListObj.authorNameList;
-    authorIdList = authorListObj.authorIdList;
+    let scrapedRelations = await scrapingHandler.scrapeAuthorNamesFromBannedAuthorPage(); // names and ids will be scraped
+    authorNameList = Array.from(scrapedRelations, ([name, value]) => name);
+    authorIdList = Array.from(scrapedRelations, ([name, value]) => value.authorId);
     
     // stop if there is no user
-    log.info("number of user to ban " + authorNameList.length);
-    if(authorNameList.length === 0)
+    log.info("number of user to ban " + scrapedRelations.size);
+    if(scrapedRelations.size === 0)
     {
       chrome.runtime.sendMessage(null, {"notification":{"status":"error_NoAccount", "completedProcess":{"banSource":banSource, "banMode":banMode}}}, function(response) {
         let lastError = chrome.runtime.lastError;
@@ -263,12 +276,12 @@ async function processHandler(banSource, banMode, entryUrl)
       return;
     }
     
-    for (let i = 0; i < authorIdList.length; i++)
+    for (const [name, value] of scrapedRelations)
     {
       if(programController.earlyStop)
         break;
       
-      let res = await relationHandler.performAction(banMode, authorIdList[i]);
+      let res = await relationHandler.performAction(banMode, value.authorId, value.isBannedUser, value.isBannedTitle, value.isBannedMute);
       
       if(res.resultType == enums.ResultType.FAIL)
       {
@@ -280,13 +293,13 @@ async function processHandler(banSource, banMode, entryUrl)
         {
           // wait 1 minute (+2 sec to ensure)
           let waitTimeInSec = 62;
-          for(let i = 1; i <= waitTimeInSec; i++)
+          for(let j = 1; j <= waitTimeInSec; j++)
           {
             if(programController.earlyStop)
               break;
             
             // send message to notification page
-            chrome.runtime.sendMessage(null, {"notification":{status:"cooldown", remainingTimeInSec:waitTimeInSec-i}}, function(response) {
+            chrome.runtime.sendMessage(null, {"notification":{status:"cooldown", remainingTimeInSec:waitTimeInSec-j}}, function(response) {
               let lastError = chrome.runtime.lastError;
               if (lastError) 
               {
@@ -305,7 +318,7 @@ async function processHandler(banSource, banMode, entryUrl)
         }); 
         
         if(!programController.earlyStop)
-          res = await relationHandler.performAction(banMode, authorIdList[i]);
+          res = await relationHandler.performAction(banMode, banMode, value.authorId, value.isBannedUser, value.isBannedTitle, value.isBannedMute);
       }
       
       // send message to notification page

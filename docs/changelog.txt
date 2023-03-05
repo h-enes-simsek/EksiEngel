@@ -135,10 +135,12 @@ v2.2
 gönderim: - yayın: 
 yeni özellik: ban/mute ayarı eklendi.
 yeni özellik: çaylakları da engelleme ayarı eklendi. (sadece FAV için. LIST ve UNDOBANALL için zaten çaylaklar ayırt edilmiyor.)
+yeni özellik: engel kaldırılırken sadece gerekli işlemler (engel/başlık engelle/sessize al) yapılarak süreç hızlandırıldı.
 bug fix: yükleme ve güncellemeden sonra local storage temizlendi.
 
 YÜKSEK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
-undobanall için user, title ve mute listeleri mergeleniyor(olmamalı) ve ban/mute ayarına göre işlem yapılıyor(bug). 
+entry ayarlarına favlayan herkesi engelle butonu ekle.
+engel sürerken cooldown esnasında bir şekilde manuel engellemeler de kuyruğa eklenebilmeli.
 bir yazarın takipçilerini engelleme özelliği
 notification kısmında tahmini bitiş süresi
 performans analizi yapılmalı

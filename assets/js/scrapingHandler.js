@@ -3,6 +3,14 @@ import * as enums from './enums.js';
 import {JSDOM} from './jsdom.js';
 import {config} from './config.js';
 
+function Relation(authorName, authorId, isBannedUser, isBannedTitle, isBannedMute) {
+  this.authorId = authorId;
+  this.authorName = authorName;
+  this.isBannedUser = isBannedUser;
+  this.isBannedTitle = isBannedTitle;
+  this.isBannedMute = isBannedMute;
+}
+
 export class ScrapingHandler
 {
   scrapeUserAgent = () =>
@@ -53,22 +61,7 @@ export class ScrapingHandler
     }
     
   }
-  
-  #arrayUnique = (arr) =>
-  {
-    // arr: array, an array that might hold duplicated values 
-    // return: array, unique elements of the input array
-    // O(n^2)
-    let a = arr.concat();
-    for(let i=0; i<a.length; ++i) {
-      for(let j=i+1; j<a.length; ++j) {
-        if(a[i] === a[j])
-          a.splice(j--, 1);
-      }
-    }
-    return a;
-  }
-  
+
   scrapeMetaDataFromEntryPage = async (entryUrl) =>
   {
     // entryUrl: string, entry url. example: https://eksisozluk.com/entry/1
@@ -295,13 +288,13 @@ export class ScrapingHandler
     
   }
   
-  // this method will access config object, so it is not arrow function
   async scrapeAuthorNamesFromBannedAuthorPage()
   {
     // no args
-    // return: {authorIdList: string[], authorNameList: string[]}
-    // note: user, title and mute lists are merged into one list
-    // return(err): {authorIdList: [], authorNameList: []}
+    // return: Map(authorName, RelationObject)
+    // return(err): empty Map()
+    
+    let scrapedRelations = new Map();
     
     try
     {
@@ -327,6 +320,13 @@ export class ScrapingHandler
         bannedAuthIdList.push(...partialIdList);
       }
       
+      // TODO: simplify this solution by refactoring
+      for (let index = 0; index < bannedAuthIdList.length; ++index) {
+        const id = bannedAuthIdList[index];
+        const name = bannedAuthNameList[index];
+        scrapedRelations.set(name, new Relation(name, id, true, false, false));        
+      }
+      
       // for user list whose titles were banned
       isLast = false;
       index = 0;
@@ -342,34 +342,43 @@ export class ScrapingHandler
         bannedTitleIdList.push(...partialIdList);
       }
       
-      if(config.enableMute)
-      {
-        // for user list whose has been muted
-        isLast = false;
-        index = 0;
-        while(!isLast)
-        {
-          index++;
-          let partialListObj = await this.#scrapeAuthorNamesFromBannedAuthorPagePartially(enums.TargetType.MUTE, index);
-          let partialNameList = partialListObj.authorNameList;
-          let partialIdList = partialListObj.authorIdList;
-          isLast = partialListObj.isLast;
-          
-          bannedMuteNameList.push(...partialNameList);
-          bannedMuteIdList.push(...partialIdList);
-        }
+      // TODO: simplify this solution by refactoring
+      for (let index = 0; index < bannedTitleIdList.length; ++index) {
+        const id = bannedTitleIdList[index];
+        const name = bannedTitleNameList[index];
+        if(scrapedRelations.has(name))
+          scrapedRelations.get(name).isBannedTitle = true;
+        else
+          scrapedRelations.set(name, new Relation(name, id, false, true, false));        
       }
+      
 
-      
-      // Merges all arrays (remove duplicate)
-      let authorIdList = this.#arrayUnique(bannedAuthIdList.concat(bannedTitleIdList));
-      let authorNameList = this.#arrayUnique(bannedAuthNameList.concat(bannedTitleNameList));
-      
-      if(config.enableMute)
+      // for user list whose has been muted
+      isLast = false;
+      index = 0;
+      while(!isLast)
       {
-        authorIdList = this.#arrayUnique(authorIdList.concat(bannedMuteIdList));
-        authorNameList = this.#arrayUnique(authorNameList.concat(bannedMuteNameList));
+        index++;
+        let partialListObj = await this.#scrapeAuthorNamesFromBannedAuthorPagePartially(enums.TargetType.MUTE, index);
+        let partialNameList = partialListObj.authorNameList;
+        let partialIdList = partialListObj.authorIdList;
+        isLast = partialListObj.isLast;
+        
+        bannedMuteNameList.push(...partialNameList);
+        bannedMuteIdList.push(...partialIdList);
       }
+      
+      // TODO: simplify this solution by refactoring
+      for (let index = 0; index < bannedMuteIdList.length; ++index) {
+        const id = bannedMuteIdList[index];
+        const name = bannedMuteNameList[index];
+        if(scrapedRelations.has(name))
+          scrapedRelations.get(name).isBannedMute = true;
+        else
+          scrapedRelations.set(name, new Relation(name, id, false, false, true));        
+      }
+      
+      // console.log(scrapedRelations);
 
       /*
       console.log(bannedAuthNameList);
@@ -384,12 +393,12 @@ export class ScrapingHandler
       console.log(authorNameList);
       */
       
-      return {authorIdList: authorIdList, authorNameList: authorNameList};
+      return scrapedRelations;
     }
     catch(err)
     {
       log.err("scrapingHandler: scrapeAuthorNamesFromBannedAuthorPage: " + err);
-      return {authorIdList: [], authorNameList: []};
+      return scrapedRelations;
     }
   }
 
