@@ -1,6 +1,8 @@
 export const BanSource = {
+  SINGLE:     "SINGLE",       /* Ban/Undoban a author */
   FAV:  			"FAV",          /* Ban all authors that favorited a specific entry */
-  LIST: 			"LIST",         /* Ban authors in the list that will be filled by user */
+  FOLLOW:     "FOLLOW",       /* Ban all authors that followed a specific author */
+  LIST: 			"LIST",         /* Ban/Undoban authors in the list that will be filled by user */
 	UNDOBANALL: "UNDOBANALL"    /* Undoban all banned authors */
 };
 

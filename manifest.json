@@ -24,6 +24,12 @@
     "tabs",
     "storage"
   ],
+	"content_scripts": [
+   {
+     "matches": ["https://eksisozluk.com/*"],
+     "js": ["assets/js/script.js"]
+   }
+	],
   "host_permissions": [
     "https://eksisozluk.com/*"
   ],
@@ -68,7 +74,8 @@
         "assets/js/popup.js",
         "assets/js/authorListPage.js",
 				"assets/js/queue.js",
-				"assets/js/programController.js"
+				"assets/js/programController.js",
+				"assets/js/script.js"
       ],
       "matches": [
         "http://*/*",
