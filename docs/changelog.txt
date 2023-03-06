@@ -135,7 +135,7 @@ v2.2
 gönderim: - yayın: 
 yeni özellik: ban/mute ayarı eklendi.
 yeni özellik: çaylakları da engelleme ayarı eklendi. (sadece FAV için. LIST ve UNDOBANALL için zaten çaylaklar ayırt edilmiyor.)
-yeni özellik: engel kaldırılırken sadece gerekli işlemler (engel/başlık engelle/sessize al) yapılarak süreç hızlandırıldı.
+yeni özellik: undobanall için sadece gerekli işlemler (engel/başlık engelle/sessize al) yapılarak süreç hızlandırıldı.
 bug fix: yükleme ve güncellemeden sonra local storage temizlendi.
 
 YÜKSEK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
