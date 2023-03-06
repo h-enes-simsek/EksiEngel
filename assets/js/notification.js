@@ -90,7 +90,7 @@ chrome.runtime.onMessage.addListener(async function messageListener_Background(m
     document.getElementById("statusText").innerHTML = "İşlem devam ediyor.";
   else if(obj.notification.status === "cooldown")
   {
-    document.getElementById("statusText").innerHTML = "İşlem devam ediyor (dakikada 6 engel limiti bekleniyor).";
+    document.getElementById("statusText").innerHTML = "İşlem devam ediyor. (dakikada 6 engel limiti bekleniyor) <a target='_blank' href='https://eksisozluk.com/eksi-sozlukun-yazar-engellemeye-sinir-getirmesi--7547420' style='color:red;'>Bu ne demek?</a>";
     document.getElementById("remainingTimeInSec").innerHTML = obj.notification.remainingTimeInSec + " saniye";
     return;
   }
