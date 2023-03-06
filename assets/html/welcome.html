@@ -53,7 +53,7 @@ tr > td:first-child {
       versiyon:
     </td>
     <td>
-      2.1
+      2.2
     </td>
   </tr>
   <tr>
@@ -61,8 +61,7 @@ tr > td:first-child {
       major özellik: 
     </td>
     <td>
-      ekşi sözlük tarafından engelleme hızına limit getirildiği için işlemlere cooldown süresi eklendi. 
-      (mevcut işlem hızı limiti: 6 engel/dakika, 10 engeli kaldır/dakika)
+      Ekşi Sözlük'ün yeni engel mekanizması "sessize alma" entegre edildi. Engelle veya sessize al tercihi ayar menüsünden artık seçilebiliyor. (Varsayılan olarak engel seçili)
     </td>
   </tr>
   <tr>
@@ -70,8 +69,7 @@ tr > td:first-child {
       major özellik: 
     </td>
     <td>
-        engel hızı limitinden dolayı işlemler uzun sürdüğü için işlem kuyruğu özelliği geliştirildi.
-        bir engel işlemi sürerken yeni bir işlem yapmak isterseniz kuyruğa alınıyor ve zamanı gelince işleniyor.
+      Çaylakları engellemek artık mümkün. Ayarlardan açıp kapatabilirsiniz. (Varsayılan olarak kapalı)
     </td>
   </tr>
   <tr>
@@ -79,7 +77,7 @@ tr > td:first-child {
       minör özellik:
     </td>
     <td>
-      engel işlemi sürerken yeni açılan bir sekmede bahsi geçen cooldown ve işlem kuyruğunu görebilirsiniz.
+      Tüm yazarların engelini kaldırma işlemi optimize edilerek süreç hızlandırıldı.
     </td>
   </tr>
   <tr>
@@ -87,7 +85,7 @@ tr > td:first-child {
       bug fix: 
     </td>
     <td>
-      tüm engelleri kaldırma özelliği ekşisözlük.com güncellemesi nedeniyle bozulmuştu, düzeltildi.
+      Yükleme ve güncellemeden sonra geriye dönük uyumluluk sağlanamadığı için eklentinin ayarlarının sıfırlanması sağlandı.
     </td>
   </tr>
   </table>
