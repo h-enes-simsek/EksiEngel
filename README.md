@@ -1,42 +1,44 @@
 <div float="left">
 <h2><img src="assets/img/eksiengel48.png" width="48" height="48"> Ekşi Engel</h2>
 </div>
-Ekşisözlük'te toplu olarak engelle/başlıklarını engelle işlemi yapılmasına yardımcı olan Google Chrome eklentisi.
+Google Chrome extension that allows mass blocking of authors for the social media platform Ekşi Sözlük.
 
-<h3>Nasıl Çalışıyor?</h3>
-Üç şekilde:
+<h3>Briefly Features</h3>
 
-- Bir entry'i favorileyen herkes engellenebiliyor.
+- It can block everyone who favorited a specific post.
 
-- Bir liste halinde girilen yazarlar engellenebiliyor/engeli kaldırılabiliyor.
+- It can block/unblock authors entered as a list.
 
-- Engellenen tüm yazarların engeli kaldırılabiliyor.
+- It can unblock all blocked authors.
 
-Kullanıcıdan engellenecek/engeli kaldırılacak yazarlar alındıktan sonra listedeki hesaplar sırasıyla ziyaret edilerek engel/engeli kaldırma işlemi gerçekleştiriliyor. 
+Ekşi Sözlük has three different block types: the ban on an author, the ban on all pages that were created by an author, and the mute on an author. Ekşi Engel supports all types of blocks.
 
-İşlemler yeni açılan bir tab içinde gerçekleşiyor, engelleme devam ederken başka tablarda gezinilebiliyor ve sonunda engel için açılan tab kendiliğinden kapanıyor. 
+After the authors to be blocked/unblocked are received from the user, the blocking/unblocking process is performed respectively for the accounts in the list.
 
-Ayrıca kullanıcıya kaç yazarın başarıyla engellendiği de bir uyarı ile aktarılıyor.
+Operations take place in a newly opened tab, while the user can navigate freely in other tabs. Finally, the newly opened tab closes by itself when the process is finished.
 
-<h3>Neden Böyle Bir Uygulama Geliştirildi?</h3>
+In addition, the user is informed about how many authors have been successfully blocked.
 
-Uzun zamandır bazı yazarların liste yapıp paylaştığını görüyordum. Bu işi kolayca bir eklenti ile yapabiliriz diye düşündüm.
+<h3>My Motivation</h3>
 
-Şunu da eklemekte fayda var ki Ekşi Engel'i gönüllü olarak geliştirdim bundan dolayı herhangi bir reklam içermiyor ya da başka ticari bir amacı bulunmuyor.
+I've been seeing some users make and share block lists for a long time. I thought we could easily do this with an extension.
 
-<h3>Kişisel Verilerimiz?</h3>
+It should be added that I developed Ekşi Engel voluntarily, so it does not contain any advertisements or has any other commercial purpose.
 
-v1.3'ten itibaren ayarlar menüsünden izin verildiği müddetçe Ekşi Sözlük kullanıcı adı ve engellenen kullanıcıların listesi Ekşi Engel sunucularına gönderiliyor. 
+<h3>Server?</h3>
 
-Bu verilerin daha sonra en çok engellenen yazarların bilgisini elde etmek ve bu yazarları da eklenti üzerinden engellemek maksadı ile kullanılması planlanıyor.
+As long as it is allowed in the settings menu, log data and list of blocked users are sent to Ekşi Engel servers.
 
-<h3>Linkler ve Görseller</h3>
+This data is planned to be used later to obtain the information of the most blocked authors and to block these authors via the extension.
 
-Ekşi Engel chrome webstore [linki](https://chrome.google.com/webstore/detail/ek%C5%9Fi-engel/cpfbfacaggnedffhdgdgmhkobijckkha)
+<h3>Links and Images</h3>
 
-Versiyon notları [linki](https://h-enes-simsek.github.io/EksiEngel/versionnotes.html)  
+Ekşi Engel in Chrome Webstore: [link](https://chrome.google.com/webstore/detail/ek%C5%9Fi-engel/cpfbfacaggnedffhdgdgmhkobijckkha)
+
+Version notes: [link](https://h-enes-simsek.github.io/EksiEngel/versionnotes.html)  
 
 <div float="left">
 <img src="publish/ss/popup.png" width="480" height="300">
 <img src="publish/ss/authorListPage.png" width="480" height="300">
+<img src="publish/ss/notification.png" width="480" height="300">
 </div>
