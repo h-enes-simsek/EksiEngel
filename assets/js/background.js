@@ -19,8 +19,6 @@ let g_notificationTabId = 0;
 
 chrome.runtime.onMessage.addListener(async function messageListener_Popup(message, sender, sendResponse) {
   sendResponse({status: 'ok'}); // added to suppress 'message port closed before a response was received' error
-  
-  console.log(message); // DEBUG
 	
 	const obj = utils.filterMessage(message, "banSource", "banMode");
 	if(obj.resultType === enums.ResultType.FAIL)
@@ -322,6 +320,85 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
         }
       });
     }
+  }
+  else if(banSource === enums.BanSource.FOLLOW)
+  {
+    let scrapedRelations = await scrapingHandler.scrapeFollowingAuthors(singleAuthorName);
+    authorNameList = Array.from(scrapedRelations, ([name, value]) => name);
+    authorIdList = Array.from(scrapedRelations, ([name, value]) => value.authorId);
+    
+    // stop if there is no user
+    log.info("number of user to ban " + scrapedRelations.size);
+    if(scrapedRelations.size === 0)
+    {
+      chrome.runtime.sendMessage(null, {"notification":{"status":"error_NoAccount", "completedProcess":{"banSource":banSource, "banMode":banMode}}}, function(response) {
+        let lastError = chrome.runtime.lastError;
+      });
+      log.err("Program has been finished (error_NoAccount)");
+      return;
+    }
+    
+    const enableMute = config.enableMute;
+    
+    for (const [name, value] of scrapedRelations)
+    {
+      if(programController.earlyStop)
+        break;
+      
+      let res = await relationHandler.performAction(banMode, value.authorId, !enableMute, true, enableMute);
+      
+      if(res.resultType == enums.ResultType.FAIL)
+      {
+        // performAction failed because to too many request
+
+        // while waiting cooldown, send periodic notifications to user 
+        // this also provides that chrome doesn't kill the extension for being idle
+        await new Promise(async resolve => 
+        {
+          // wait 1 minute (+2 sec to ensure)
+          let waitTimeInSec = 62;
+          for(let j = 1; j <= waitTimeInSec; j++)
+          {
+            if(programController.earlyStop)
+              break;
+            
+            // send message to notification page
+            chrome.runtime.sendMessage(null, {"notification":{status:"cooldown", remainingTimeInSec:waitTimeInSec-j}}, function(response) {
+              let lastError = chrome.runtime.lastError;
+              if (lastError) 
+              {
+                // 'Could not establish connection. Receiving end does not exist.'
+                console.info("relationHandler: (cooldown) notification page is probably closed, early stop will be generated automatically.");
+                programController.earlyStop = true;
+                return;
+              }
+            });
+            
+            // wait 1 sec
+            await new Promise(resolve2 => { setTimeout(resolve2, 1000); }); 
+          }
+            
+          resolve();        
+        }); 
+        
+        if(!programController.earlyStop)
+          res = await relationHandler.performAction(banMode, value.authorId, !enableMute, true, enableMute);
+      }
+      
+      // send message to notification page
+      chrome.runtime.sendMessage(null, {"notification":{status:"ongoing", successfulAction:res.successfulAction, performedAction:res.performedAction, plannedAction:authorIdList.length}}, function(response) {
+        let lastError = chrome.runtime.lastError;
+        if (lastError) 
+        {
+          // 'Could not establish connection. Receiving end does not exist.'
+          console.info("relationHandler: (ongoing) notification page is probably closed, early stop will be generated automatically.");
+          programController.earlyStop = true;
+          return;
+        }
+      });
+    }
+
+    
   }
   else if(banSource === enums.BanSource.UNDOBANALL)
   {
