@@ -19,13 +19,15 @@ let g_notificationTabId = 0;
 
 chrome.runtime.onMessage.addListener(async function messageListener_Popup(message, sender, sendResponse) {
   sendResponse({status: 'ok'}); // added to suppress 'message port closed before a response was received' error
+  
+  console.log(message); // DEBUG
 	
 	const obj = utils.filterMessage(message, "banSource", "banMode");
 	if(obj.resultType === enums.ResultType.FAIL)
 		return;
 	
   log.info("bg: a new process added to the queue, banSource: " + obj.banSource + ", banMode: " + obj.banMode);
-  let wrapperProcessHandler = processHandler.bind(null, obj.banSource, obj.banMode, obj.entryUrl);
+  let wrapperProcessHandler = processHandler.bind(null, obj.banSource, obj.banMode, obj.entryUrl, obj.authorName, obj.authorId);
   wrapperProcessHandler.banSource = obj.banSource;
   wrapperProcessHandler.banMode = obj.banMode;
   autoQueue.enqueue(wrapperProcessHandler);
@@ -40,9 +42,14 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
   });
 });
 
-async function processHandler(banSource, banMode, entryUrl)
+async function processHandler(banSource, banMode, entryUrl, singleAuthorName, singleAuthorId)
 {
-  log.info("Process has been started with banSource: " + banSource + ", banMode: " + banMode);
+  log.info("Process has been started with " + 
+           "banSource: "    + banSource + 
+           ", banMode: "    + banMode + 
+           ", entryUrl: "   + entryUrl + 
+           ", singleAuthorName: " + singleAuthorName + 
+           ", singleAuthorId: "   + singleAuthorId);
   
   // create a notification page if not exist
   try
@@ -92,8 +99,65 @@ async function processHandler(banSource, banMode, entryUrl)
     });
     return;
   }
+  
+  if(banSource === enums.BanSource.SINGLE)
+  {
+    const enableMute = config.enableMute;
+    let res = await relationHandler.performAction(banMode, singleAuthorId, !enableMute, true, enableMute);
+    authorIdList.push(singleAuthorId);
+    authorNameList.push(singleAuthorName);
     
-  if(banSource === enums.BanSource.LIST)
+    if(res.resultType == enums.ResultType.FAIL)
+    {
+      // performAction failed because to too many request
+
+      // while waiting cooldown, send periodic notifications to user 
+      // this also provides that chrome doesn't kill the extension for being idle
+      await new Promise(async resolve => 
+      {
+        // wait 1 minute (+2 sec to ensure)
+        let waitTimeInSec = 62;
+        for(let i = 1; i <= waitTimeInSec; i++)
+        {
+          if(programController.earlyStop)
+            break;
+          
+          // send message to notification page
+          chrome.runtime.sendMessage(null, {"notification":{status:"cooldown", remainingTimeInSec:waitTimeInSec-i}}, function(response) {
+            let lastError = chrome.runtime.lastError;
+            if (lastError) 
+            {
+              // 'Could not establish connection. Receiving end does not exist.'
+              console.info("relationHandler: (cooldown) notification page is probably closed, early stop will be generated automatically.");
+              programController.earlyStop = true;
+              return;
+            }
+          });
+          
+          // wait 1 sec
+          await new Promise(resolve2 => { setTimeout(resolve2, 1000); }); 
+        }
+          
+        resolve();        
+      }); 
+      
+      if(!programController.earlyStop)
+        res = await relationHandler.performAction(banMode, singleAuthorId, !enableMute, true, enableMute);
+    }
+    
+    // send message to notification page
+    chrome.runtime.sendMessage(null, {"notification":{status:"ongoing", successfulAction:res.successfulAction, performedAction:res.performedAction, plannedAction:authorNameList.length}}, function(response) {
+      let lastError = chrome.runtime.lastError;
+      if (lastError) 
+      {
+        // 'Could not establish connection. Receiving end does not exist.'
+        console.info("relationHandler: (ongoing) notification page is probably closed, early stop will be generated automatically.");
+        programController.earlyStop = true;
+        return;
+      }
+    });
+  }
+  else if(banSource === enums.BanSource.LIST)
   {
     authorNameList = await utils.getUserList(); // names will be loaded from storage
     utils.cleanUserList(authorNameList);

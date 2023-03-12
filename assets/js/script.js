@@ -1,17 +1,23 @@
 let EksiEngel_sendMessage = (banSource, banMode, entryUrl, authorName, authorId) =>
 {
-  chrome.runtime.sendMessage(null, {"contentScriptMessage":{banSource:banSource, 
-                                                            banMode:banMode,
-                                                            entryUrl:entryUrl,
-                                                            authorName:authorName,
-                                                            authorId:authorId
-                                                            }}, function(response) {
-    let lastError = chrome.runtime.lastError;
-    if(lastError)
-      console.log("could not establish a connection with a page");
-    else
-      console.log("established a connection with a page");
-  });
+  chrome.runtime.sendMessage(
+    null, 
+    {
+      banSource:banSource, 
+      banMode:banMode,
+      entryUrl:entryUrl,
+      authorName:authorName,
+      authorId:authorId
+    }, 
+    function(response) 
+    {
+      let lastError = chrome.runtime.lastError;
+      if(lastError)
+        console.log("could not establish a connection with a page");
+      else
+        console.log("established a connection with a page");
+    }
+  );
 }
 
 // select all dropdown menus for each entry in the page
@@ -30,6 +36,9 @@ for (let i = 0; i < entryMenus.length; i++)
   let authorId = entryMeta.getAttribute("data-author-id");
   let entryId = entryMeta.getAttribute("data-id");
   let entryUrl = `https://eksisozluk.com/entry/${entryId}`;
+  
+  // replace every whitespace with - (ekşi naming convention)
+  authorName = authorName.replace(/ /gi, "-");
   
   // remove old user ban button
   let oldButtonBanUser = entryMenu.childNodes[3];

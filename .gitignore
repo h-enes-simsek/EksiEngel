@@ -12,3 +12,6 @@
 
 # py cache
 **/__pycache__
+
+# test folder (no need for now)
+/test

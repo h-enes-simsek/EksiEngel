@@ -40,7 +40,7 @@ engel işlemi sürerken yeni açılan bir sekmede bahsi geçen cooldown ve işle
 bug fix: tüm engelleri kaldırma özelliği ekşisözlük.com güncellemesi nedeniyle bozulmuştu, düzeltildi.
 
 v2.2
-yayın: 
+yayın: 06.03.2023
 yeni özellik: engelle veya sessize al tercihi ayar menüsüne eklendi.
 yeni özellik: çaylakları da engelleme tercihi ayar menüsüne eklendi.
 yeni özellik: tüm yazarların engelini kaldırma işlemi optimize edilerek süreç hızlandırıldı.
@@ -136,7 +136,7 @@ API limitleri(01.03.23):
   UNDOBAN user, title: 10/dk  mute: ?(stabil değil)
 
 v2.2
-gönderim: 06.03.2023 yayın: 
+gönderim: 06.03.2023 yayın: 06.03.2023
 yeni özellik: ban/mute ayarı eklendi.
 yeni özellik: çaylakları da engelleme ayarı eklendi. (sadece FAV için. LIST ve UNDOBANALL için zaten çaylaklar ayırt edilmiyor.)
 yeni özellik: undobanall için sadece gerekli işlemler (engel/başlık engelle/sessize al) yapılarak süreç hızlandırıldı.
