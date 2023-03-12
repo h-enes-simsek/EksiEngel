@@ -20,29 +20,39 @@ let EksiEngel_sendMessage = (banSource, banMode, entryUrl, authorName, authorId)
   );
 }
 
-function waitForElm(selector) {
-    return new Promise(resolve => {
-        if (document.querySelectorAll(selector).length) {
-            return resolve(document.querySelectorAll(selector));
-        }
+function waitForElm(selector) 
+{
+  return new Promise(resolve => 
+  {
+    if (document.querySelectorAll(selector).length) 
+    {
+      console.log("observation stopped immediately for: " + selector);
+      return resolve(document.querySelectorAll(selector));
+    }
 
-        console.log("observation started");
-        
-        const observer = new MutationObserver(mutations => {
-            if (document.querySelectorAll(selector).length) {
-                resolve(document.querySelectorAll(selector));
-                observer.disconnect();
-            }
-        });
-
-        observer.observe(document.body, {
-            childList: true,
-            subtree: true
-        });
+    console.log("observation started for: " + selector);
+    
+    const observer = new MutationObserver(mutations => 
+    {
+      if (document.querySelectorAll(selector).length) 
+      {
+        console.log("observation stopped for: " + selector);
+        resolve(document.querySelectorAll(selector));
+        observer.disconnect();
+      }
     });
+
+    observer.observe(
+      document.body, 
+      {
+        childList: true,
+        subtree: true
+      }
+    );
+  });
 }
 
-(async function main () {
+(async function handleEntryMenus () {
     
 // select all dropdown menus for each entry in the page
 let entryMenus = await waitForElm(".other.dropdown > :last-child");
@@ -88,4 +98,84 @@ for (let i = 0; i < entryMenus.length; i++)
   newButtonBanFollow.addEventListener("click", function(){ EksiEngel_sendMessage("FOLLOW", "BAN", entryUrl, authorName, authorId) });
 }
 
+})();
+
+// BUG (not so important): this function doesnt care selection ban/title ban/mute. It assumes single ban.
+(async function handleRelationButtons () {
+
+let buttonsRelation = await waitForElm(".relation-link");
+
+let authorName = document.querySelector("[data-nick]").getAttribute("data-nick");
+let authorId = String(document.getElementById("who").value); // String is in case
+
+for (let i = 0; i < buttonsRelation.length; i++) 
+{
+  let buttonRelation = buttonsRelation[i];
+  let nameOfTheButton = buttonRelation.getAttribute("data-add-caption");
+  let idOfTheButton = buttonRelation.id;
+  let isBanned = buttonRelation.getAttribute("data-added");
+  
+  // inject new buttons instead of old ones ('span' tag is for css reasons)
+  if(nameOfTheButton == "engelle")
+  {
+    if(idOfTheButton == "button-blocked-link")
+    {
+      // big red button (dropdown menu is enough, so skip modifying it)
+      buttonRelation.remove();
+    }
+    else
+    {
+      
+      let newButton = document.createElement("a"); 
+      if(isBanned == "true")
+      {
+        newButton.innerHTML = "<span>engellemeyi bırak</span>";
+        newButton.addEventListener("click", function(){ EksiEngel_sendMessage("SINGLE", "UNDOBAN", null, authorName, authorId) });
+      }
+      else
+      {
+        newButton.innerHTML = "<span>engelle</span>";
+        newButton.addEventListener("click", function(){ EksiEngel_sendMessage("SINGLE", "BAN", null, authorName, authorId) });
+      }
+      buttonRelation.replaceWith(newButton);
+      
+    }
+  
+  }
+  else if(nameOfTheButton == "başlıklarını engelle")
+  {
+    let newButton = document.createElement("a"); 
+    if(isBanned == "true")
+    {
+      newButton.innerHTML = "<span>başlıkları engellemeyi kaldır</span>";
+      newButton.addEventListener("click", function(){ EksiEngel_sendMessage("SINGLE", "UNDOBAN", null, authorName, authorId) });
+    }
+    else
+    {
+      newButton.innerHTML = "<span>başlıklarını engelle</span>";
+      newButton.addEventListener("click", function(){ EksiEngel_sendMessage("SINGLE", "BAN", null, authorName, authorId) });
+    }
+    buttonRelation.replaceWith(newButton);
+    
+  }
+  else if(nameOfTheButton == "sessize al")
+  {
+    let newButton = document.createElement("a"); 
+    if(isBanned == "true")
+    {
+      newButton.innerHTML = "<span>sessizden çıkar</span>";
+      newButton.addEventListener("click", function(){ EksiEngel_sendMessage("SINGLE", "UNDOBAN", null, authorName, authorId) }); 
+    }
+      
+    else
+    {
+      newButton.innerHTML = "<span>sessize al</span>";
+      newButton.addEventListener("click", function(){ EksiEngel_sendMessage("SINGLE", "BAN", null, authorName, authorId) });
+    }
+      
+    buttonRelation.replaceWith(newButton);
+  }
+   
+}
+  
 })();
