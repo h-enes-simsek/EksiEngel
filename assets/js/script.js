@@ -20,11 +20,35 @@ let EksiEngel_sendMessage = (banSource, banMode, entryUrl, authorName, authorId)
   );
 }
 
+function waitForElm(selector) {
+    return new Promise(resolve => {
+        if (document.querySelectorAll(selector).length) {
+            return resolve(document.querySelectorAll(selector));
+        }
+
+        console.log("observation started");
+        
+        const observer = new MutationObserver(mutations => {
+            if (document.querySelectorAll(selector).length) {
+                resolve(document.querySelectorAll(selector));
+                observer.disconnect();
+            }
+        });
+
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+    });
+}
+
+(async function main () {
+    
 // select all dropdown menus for each entry in the page
-let entryMenus = document.querySelectorAll(".other.dropdown > :last-child");
+let entryMenus = await waitForElm(".other.dropdown > :last-child");
 
 // select all meta tags for each entry in the page
-let entryMetas = document.querySelectorAll("[data-author-id]");
+let entryMetas = await waitForElm("[data-author-id]");
 
 for (let i = 0; i < entryMenus.length; i++) 
 {
@@ -63,3 +87,5 @@ for (let i = 0; i < entryMenus.length; i++)
   newButtonBanFav.addEventListener("click", function(){ EksiEngel_sendMessage("FAV", "BAN", entryUrl, authorName, authorId) });
   newButtonBanFollow.addEventListener("click", function(){ EksiEngel_sendMessage("FOLLOW", "BAN", entryUrl, authorName, authorId) });
 }
+
+})();
