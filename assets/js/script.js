@@ -77,12 +77,20 @@ for (let i = 0; i < entryMenus.length; i++)
   // replace every whitespace with - (ekşi naming convention)
   authorName = authorName.replace(/ /gi, "-");
   
+  // 'sorunsal' and 'sorunsallar' pages are different than entry pages (their menus dont have 'modlog' option)
+  let page = window.location.pathname.split('/')[1];
+  let numberChildNode;
+  if(page == "sorunsallar" || page == "sorunsal")
+    numberChildNode = 2;
+  else
+    numberChildNode = 3;
+  
   // get old user ban button
   let oldButtonBanUser;
   
   try 
   {
-    oldButtonBanUser = entryMenu.childNodes[3];
+    oldButtonBanUser = entryMenu.childNodes[numberChildNode];
     if(!oldButtonBanUser)
       break;
     let oldButtonBanUserText = oldButtonBanUser.firstChild.innerHTML;
@@ -122,6 +130,11 @@ console.log("handleEntryMenus: done");
 })();
 
 (async function handleRelationButtons () {
+  
+// TODO: handleRelationButtons should be implemented in these pages as well
+let page = window.location.pathname.split('/')[1];
+if(page == "takip" || page == "takipci" )
+  return;
 
 let buttonsRelation = await waitForElm(".relation-link");
 

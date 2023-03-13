@@ -172,4 +172,4 @@ işlemi asenkron olmadığı için buna neden oluyor.
 [belki] istatistiki verilere göre engel yapılabilmeli
 [gerekli mi]test yazılımı (geliştirme süreci yarım kaldı)
 [gerekli mi]yazar sayfasındayken scroll ile yeni entryler açıldığında yeni açılan entrylerin content script tarafından menuleri güncellenmiyor.
-[gerekli mi]yazar sayfasında üst menüden yapılan işlemler SINGLE ban/undoban olarak işleniyor. örneğin sadece title ban olmalı mı
+[gerekli mi]menus in 'sorunsal' and 'sorunsallar' pages unnecessarily have 'fav ban' option (doesn't lead a bug or error log) 
