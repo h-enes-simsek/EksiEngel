@@ -74,10 +74,26 @@ for (let i = 0; i < entryMenus.length; i++)
   // replace every whitespace with - (ekşi naming convention)
   authorName = authorName.replace(/ /gi, "-");
   
-  // remove old user ban button
-  let oldButtonBanUser = entryMenu.childNodes[3];
-  entryMenu.removeChild(oldButtonBanUser); 
+  // get old user ban button
+  let oldButtonBanUser;
   
+  try 
+  {
+    oldButtonBanUser = entryMenu.childNodes[3];
+    if(!oldButtonBanUser)
+      break;
+    let oldButtonBanUserText = oldButtonBanUser.firstChild.innerHTML;
+    if(oldButtonBanUserText != 'engelle')
+      break;
+  }
+  catch(e) 
+  {
+    break;
+  }
+
+  // remove old user ban button
+  entryMenu.removeChild(oldButtonBanUser); 
+
   // create new buttons ('a' tag is for css reasons)
   let newButtonBanUser = document.createElement("li"); 
   newButtonBanUser.innerHTML = "<a>yazarı engelle</a>";
@@ -98,9 +114,10 @@ for (let i = 0; i < entryMenus.length; i++)
   newButtonBanFollow.addEventListener("click", function(){ EksiEngel_sendMessage("FOLLOW", "BAN", entryUrl, authorName, authorId) });
 }
 
+console.log("handleEntryMenus: done");
+
 })();
 
-// BUG (not so important): this function doesnt care selection ban/title ban/mute. It assumes single ban.
 (async function handleRelationButtons () {
 
 let buttonsRelation = await waitForElm(".relation-link");
@@ -178,4 +195,6 @@ for (let i = 0; i < buttonsRelation.length; i++)
    
 }
   
+console.log("handleRelationButtons: done"); 
+ 
 })();
