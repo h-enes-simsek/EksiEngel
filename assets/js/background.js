@@ -25,7 +25,7 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
 		return;
 	
   log.info("bg: a new process added to the queue, banSource: " + obj.banSource + ", banMode: " + obj.banMode);
-  let wrapperProcessHandler = processHandler.bind(null, obj.banSource, obj.banMode, obj.entryUrl, obj.authorName, obj.authorId);
+  let wrapperProcessHandler = processHandler.bind(null, obj.banSource, obj.banMode, obj.entryUrl, obj.authorName, obj.authorId, obj.isTargetUser, obj.isTargetTitle, obj.isTargetMute);
   wrapperProcessHandler.banSource = obj.banSource;
   wrapperProcessHandler.banMode = obj.banMode;
   autoQueue.enqueue(wrapperProcessHandler);
@@ -40,7 +40,7 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
   });
 });
 
-async function processHandler(banSource, banMode, entryUrl, singleAuthorName, singleAuthorId)
+async function processHandler(banSource, banMode, entryUrl, singleAuthorName, singleAuthorId, isTargetUser, isTargetTitle, isTargetMute)
 {
   log.info("Process has been started with " + 
            "banSource: "    + banSource + 
@@ -100,8 +100,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
   
   if(banSource === enums.BanSource.SINGLE)
   {
-    const enableMute = config.enableMute;
-    let res = await relationHandler.performAction(banMode, singleAuthorId, !enableMute, true, enableMute);
+    let res = await relationHandler.performAction(banMode, singleAuthorId, isTargetUser, isTargetTitle, isTargetMute);
     authorIdList.push(singleAuthorId);
     authorNameList.push(singleAuthorName);
     
@@ -140,7 +139,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
       }); 
       
       if(!programController.earlyStop)
-        res = await relationHandler.performAction(banMode, singleAuthorId, !enableMute, true, enableMute);
+        res = await relationHandler.performAction(banMode, singleAuthorId, isTargetUser, isTargetTitle, isTargetMute);
     }
     
     // send message to notification page

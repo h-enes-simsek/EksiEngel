@@ -1,4 +1,4 @@
-let EksiEngel_sendMessage = (banSource, banMode, entryUrl, authorName, authorId) =>
+let EksiEngel_sendMessage = (banSource, banMode, entryUrl, authorName, authorId, isTargetUser, isTargetTitle, isTargetMute) =>
 {
   chrome.runtime.sendMessage(
     null, 
@@ -7,7 +7,10 @@ let EksiEngel_sendMessage = (banSource, banMode, entryUrl, authorName, authorId)
       banMode:banMode,
       entryUrl:entryUrl,
       authorName:authorName,
-      authorId:authorId
+      authorId:authorId,
+      isTargetUser:isTargetUser, 
+      isTargetTitle:isTargetTitle, 
+      isTargetMute:isTargetMute
     }, 
     function(response) 
     {
@@ -109,7 +112,7 @@ for (let i = 0; i < entryMenus.length; i++)
   entryMenu.appendChild(newButtonBanFollow);
   
   // add listeners to appended buttons
-  newButtonBanUser.addEventListener("click", function(){ EksiEngel_sendMessage("SINGLE", "BAN", entryUrl, authorName, authorId) });
+  newButtonBanUser.addEventListener("click", function(){ EksiEngel_sendMessage("SINGLE", "BAN", entryUrl, authorName, authorId, true, false, false) });
   newButtonBanFav.addEventListener("click", function(){ EksiEngel_sendMessage("FAV", "BAN", entryUrl, authorName, authorId) });
   newButtonBanFollow.addEventListener("click", function(){ EksiEngel_sendMessage("FOLLOW", "BAN", entryUrl, authorName, authorId) });
 }
@@ -147,12 +150,12 @@ for (let i = 0; i < buttonsRelation.length; i++)
       if(isBanned == "true")
       {
         newButton.innerHTML = "<span>engellemeyi bırak</span>";
-        newButton.addEventListener("click", function(){ EksiEngel_sendMessage("SINGLE", "UNDOBAN", null, authorName, authorId) });
+        newButton.addEventListener("click", function(){ EksiEngel_sendMessage("SINGLE", "UNDOBAN", null, authorName, authorId, true, false, false) });
       }
       else
       {
         newButton.innerHTML = "<span>engelle</span>";
-        newButton.addEventListener("click", function(){ EksiEngel_sendMessage("SINGLE", "BAN", null, authorName, authorId) });
+        newButton.addEventListener("click", function(){ EksiEngel_sendMessage("SINGLE", "BAN", null, authorName, authorId, true, false, false) });
       }
       buttonRelation.replaceWith(newButton);
       
@@ -165,12 +168,12 @@ for (let i = 0; i < buttonsRelation.length; i++)
     if(isBanned == "true")
     {
       newButton.innerHTML = "<span>başlıkları engellemeyi kaldır</span>";
-      newButton.addEventListener("click", function(){ EksiEngel_sendMessage("SINGLE", "UNDOBAN", null, authorName, authorId) });
+      newButton.addEventListener("click", function(){ EksiEngel_sendMessage("SINGLE", "UNDOBAN", null, authorName, authorId, false, true, false) });
     }
     else
     {
       newButton.innerHTML = "<span>başlıklarını engelle</span>";
-      newButton.addEventListener("click", function(){ EksiEngel_sendMessage("SINGLE", "BAN", null, authorName, authorId) });
+      newButton.addEventListener("click", function(){ EksiEngel_sendMessage("SINGLE", "BAN", null, authorName, authorId, false, true, false) });
     }
     buttonRelation.replaceWith(newButton);
     
@@ -181,13 +184,13 @@ for (let i = 0; i < buttonsRelation.length; i++)
     if(isBanned == "true")
     {
       newButton.innerHTML = "<span>sessizden çıkar</span>";
-      newButton.addEventListener("click", function(){ EksiEngel_sendMessage("SINGLE", "UNDOBAN", null, authorName, authorId) }); 
+      newButton.addEventListener("click", function(){ EksiEngel_sendMessage("SINGLE", "UNDOBAN", null, authorName, authorId, false, false, true) }); 
     }
       
     else
     {
       newButton.innerHTML = "<span>sessize al</span>";
-      newButton.addEventListener("click", function(){ EksiEngel_sendMessage("SINGLE", "BAN", null, authorName, authorId) });
+      newButton.addEventListener("click", function(){ EksiEngel_sendMessage("SINGLE", "BAN", null, authorName, authorId, false, false, true) });
     }
       
     buttonRelation.replaceWith(newButton);
