@@ -167,9 +167,11 @@ FAV BAN butonuna basıldığında eğer notification sayfası açıkça otomatik
 sayfa kapatıldığında iki kere earlyStop sinyali üretiliyor. Buga neden olmuyor. Muhtemelen notification sayfasına bilgi gönderme 
 işlemi asenkron olmadığı için buna neden oluyor.
 [çok zor] firefox desteği (hiçbir şey düzgün çalışmıyor, manifest v3 desteği bile tam gelmemiş)
+[çok zor] google analytics (extension için kullanmak sorun, mv3 daha ayrı sorun, ga4 ayrı sorun)
 [zor] engel limitine ulaşıldığında durması sağlanmalı ve belki uyarı verebilir.
 [belki] istatiki sonuçlar görüntülenebilmeli
 [belki] istatistiki verilere göre engel yapılabilmeli
 [gerekli mi]test yazılımı (geliştirme süreci yarım kaldı)
 [gerekli mi]yazar sayfasındayken scroll ile yeni entryler açıldığında yeni açılan entrylerin content script tarafından menuleri güncellenmiyor.
-[gerekli mi]menus in 'sorunsal' and 'sorunsallar' pages unnecessarily have 'fav ban' option (doesn't lead a bug or error log) 
+[is necessary]menus in 'sorunsal' and 'sorunsallar' pages unnecessarily have 'fav ban' option (doesn't lead a bug or error log) 
+[is necessary]buttons are not bypassed in 'takip' and 'takipci' pages.

@@ -42,7 +42,7 @@ body {
 	margin: 0 auto;
 	width: 20%;
 }
-#pena {
+#entryMenu, #authorMenu {
 	display: block;
 	max-height: 30%;
 }
@@ -153,34 +153,40 @@ margin-bottom: 8px;
     <img src="../img/questionicon.svg" style="width:20px; position: relative; top: 3px;" id="questionMark">
   </h3>
 	<ul>
-		<li>Bir Entry'i Favorileyen Yazarları Nasıl Engellerim?</li>
+		<li>Ekşi Sözlük Arayüzü Üzerinden Kullanımı</li>
 		
 			<ol>
-				<li>
-          Entry'nin yer aldığı web sayfasını açın. Mesela <a href="https://eksisozluk.com/entry/1" target="_blank" style="text-decoration: none; color:black;"><b>link</b></a>
+          Entrylerin ayar menüsü güncellendi.
+          <img width="550" height="348" src="../img/entryMenu.png" id="entryMenu">
           <br>
-          Eğer bir başlıktaki entry'i favlayanları engellemek istiyorsanız entry'nin yazıldığı tarihe tıklayın.
-          <br>
-          <img width="600" height="280" src="../img/pena.png" id="pena">
-        </li>
-				<li>Eklenti simgesine <img src="../img/eksiengel16.png"> tıklayın, ardından <b style="text-decoration: none; color:black;">Bu Entry'i Favlayanları Engelle</b> butonuna tıklayın.</li>
+          Yazarların sayfasındaki menü güncellendi.
+          <img width="550" height="396" src="../img/authorMenu.png" id="authorMenu">
 			</ol>
 		
 		<br>
-		<li>Gireceğim Listedeki Yazarları Nasıl Engellerim?</li>
+		<li>Eklenti Menüsünden Kullanımı</li>
 		
 			<ol>
-				<li>
-					Eklenti simgesine <img src="../img/eksiengel16.png"> tıklayın, ardından <b style="text-decoration: none; color:black;">Listedeki Yazarları Engelle</b> butonuna tıklayın.
-					<br> 
-					Veya burdaki <a href="authorListPage.html" target="_blank" style="text-decoration: none; color:black;"><b>linke</b></a> tıklayın.
-				</li>
-				<li>Elinizdeki yazar listesini metin kutusuna yapıştırıp, <b style="text-decoration: none; color:black;">Engelle</b> veya <b style="text-decoration: none; color:black;">Engeli Kaldır</b> butonuna tıklayın.</li>
-			</ol>
+          <li>
+            Eklenti simgesine <img src="../img/eksiengel16.png"> tıklayarak eklenti menüsünü açın.
+            <br>
+            <b style="text-decoration: none; color:black;">Gireceğim Listedeki Yazarları Engelle / Engelini Kaldır</b> butonuna tıklayın. 
+            <br>
+            Elinizdeki yazar listesini metin kutusuna yapıştırıp, <b style="text-decoration: none; color:black;">Engelle</b> veya <b style="text-decoration: none; color:black;">Engeli Kaldır</b> butonuna tıklayın.
+          </li>
+          <li>
+            Eklenti simgesine <img src="../img/eksiengel16.png"> tıklayarak eklenti menüsünü açın.
+            <br>
+            <b style="text-decoration: none; color:black;">Tüm Engellerimi Kaldır</b> butonuna tıklayın.  
+          </li>
+      </ol>
 	</ul>
+  
+  </div>
   
   <img src="../img/semsiye.png" id="semsiye">
 	
+  <div style="display:none">
   <h3 style="text-align: center;">Sıkça Sorulan Sorular</h3>
   <ol>
     <li>
@@ -212,7 +218,7 @@ margin-bottom: 8px;
   
   </div>
   
-  
+  <div style="display:none">
   <h3 style="text-align: center;">
     <b style="color:green">Ekşi Engel</b> Detaylı İşlem Tablosu
   </h3>
@@ -233,8 +239,7 @@ margin-bottom: 8px;
     <div class="grid-item">Tüm engelleri kaldır</div>
     <div class="grid-item">-</div>
     <div class="grid-item">Sadece gerekli işlemleri yap (Başlıkları engelle + Engelle + Sessize al)</div>
-    
-    
+  </div>
   </div>
   
   <br><br><br>
