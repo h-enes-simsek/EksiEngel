@@ -46,6 +46,13 @@ yeni özellik: çaylakları da engelleme tercihi ayar menüsüne eklendi.
 yeni özellik: tüm yazarların engelini kaldırma işlemi optimize edilerek süreç hızlandırıldı.
 bug fix: yükleme ve güncellemeden sonra geriye dönük uyumluluk sağlanamadığı için eklentinin ayarlarının sıfırlanması sağlandı.
 
+v2.3
+yayın: 
+yeni özellik: bir yazarı takip eden herkesi engelleme butonu eklendi.
+yeni özellik: eklenti menüsündeki bazı butonlar ekşi sözlük arayüzüne taşındı. 
+bug fix: bir başka engel işlemi devam ederken cooldown sürecinde ekşi sözlük arayüzündeki butonlar çalışmıyordu (engel limitinden dolayı).
+         alternatif ekşi engel butonlarının, ekşi sözlük yazar sayfasındaki menüye eklenmesiyle bu işlemler de kuyruğa alınarak problem çözüldü.
+
 Versiyon notları (detaylı) 
 -------------------------------------------------
 v1.0  
@@ -162,7 +169,6 @@ takipçilerini engelle için takip ettiklerimi/beni takip edenleri engelleme aya
 başlığa yazan herkesi engelle
 footer content overlaps olmasın ama yine de hep en aşağıda kalsın.
 takip edilen yazarlar engellenemesin ayarı
-FAV BAN butonuna basıldığında eğer notification sayfası açıkça otomatik focus olarak kullanıcıya butonun işe yaradığı bilgisi verilerilebilir.
 sayfa kapatıldığında iki kere earlyStop sinyali üretiliyor. Buga neden olmuyor. Muhtemelen notification sayfasına bilgi gönderme 
 işlemi asenkron olmadığı için buna neden oluyor.
 [çok zor] firefox desteği (hiçbir şey düzgün çalışmıyor, manifest v3 desteği bile tam gelmemiş)
