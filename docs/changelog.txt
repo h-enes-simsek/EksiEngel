@@ -145,9 +145,8 @@ bug fix: yükleme ve güncellemeden sonra local storage temizlendi.
 v2.3
 gönderim: yayın:
 yeni özellik: takipçilerini engelle
-yeni özellik: ekşi sözlük butonları bypass edildi (başlıktaki entryler, profil entryleri) TODO: sorunsallar
-              böylece engel sürerken cooldown esnasında manuel engellemeler de kuyruğa ekleniyor.
-TODO: bypass edilen butonlar için bildirim.
+yeni özellik: eklenti menüsündeki bazı butonlar ekşi sözlük arayüzüne taşındı. TODO: sorunsallar
+              böylece başka bir engel işlemi sürerken cooldown esnasında ekşi arayüzü kullanılabiliyor.
 
 YÜKSEK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
 notification kısmında tahmini bitiş süresi
