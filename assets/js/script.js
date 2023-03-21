@@ -1,3 +1,5 @@
+let eksiEngelIconURL = chrome.runtime.getURL('assets/img/eksiengel16.png');
+
 let EksiEngel_sendMessage = (banSource, banMode, entryUrl, authorName, authorId, isTargetUser, isTargetTitle, isTargetMute) =>
 {
   chrome.runtime.sendMessage(
@@ -76,42 +78,14 @@ for (let i = 0; i < entryMenus.length; i++)
   
   // replace every whitespace with - (ekşi naming convention)
   authorName = authorName.replace(/ /gi, "-");
-  
-  // 'sorunsal' and 'sorunsallar' pages are different than entry pages (their menus dont have 'modlog' option)
-  let page = window.location.pathname.split('/')[1];
-  let numberChildNode;
-  if(page == "sorunsallar" || page == "sorunsal")
-    numberChildNode = 2;
-  else
-    numberChildNode = 3;
-  
-  // get old user ban button
-  let oldButtonBanUser;
-  
-  try 
-  {
-    oldButtonBanUser = entryMenu.childNodes[numberChildNode];
-    if(!oldButtonBanUser)
-      break;
-    let oldButtonBanUserText = oldButtonBanUser.firstChild.innerHTML;
-    if(oldButtonBanUserText != 'engelle')
-      break;
-  }
-  catch(e) 
-  {
-    break;
-  }
-
-  // remove old user ban button
-  entryMenu.removeChild(oldButtonBanUser); 
 
   // create new buttons ('a' tag is for css reasons)
   let newButtonBanUser = document.createElement("li"); 
-  newButtonBanUser.innerHTML = "<a>yazarı engelle</a>";
+  newButtonBanUser.innerHTML = `<a><img src=${eksiEngelIconURL}> yazarı engelle</a>`;
   let newButtonBanFav = document.createElement("li"); 
-  newButtonBanFav.innerHTML = "<a>favlayanları engelle</a>";
+  newButtonBanFav.innerHTML = `<a><img src=${eksiEngelIconURL}> favlayanları engelle</a>`;
   let newButtonBanFollow = document.createElement("li"); 
-  newButtonBanFollow.innerHTML = "<a>takipçilerini engelle</a>";
+  newButtonBanFollow.innerHTML = `<a><img src=${eksiEngelIconURL}> takipçilerini engelle</a>`;
   
   // append new buttons
   entryMenu.style.minWidth = "max-content"; // allocate enough space for long texts
@@ -136,6 +110,16 @@ let page = window.location.pathname.split('/')[1];
 if(page == "takip" || page == "takipci" )
   return;
 
+// css fix
+try
+{
+  document.querySelectorAll(".profile-buttons .dropdown-menu")[1].style.width = '210px';
+}
+catch(e)
+{
+  // dont do anything
+}
+
 let buttonsRelation = await waitForElm(".relation-link");
 
 let authorName = document.querySelector("[data-nick]").getAttribute("data-nick");
@@ -153,60 +137,60 @@ for (let i = 0; i < buttonsRelation.length; i++)
   {
     if(idOfTheButton == "button-blocked-link")
     {
-      // big red button (dropdown menu is enough, so skip modifying it)
+      // remove big red button (dropdown menu is enough)
       buttonRelation.remove();
     }
     else
     {
       
-      let newButton = document.createElement("a"); 
+      let newButton = document.createElement("li"); 
       if(isBanned == "true")
       {
-        newButton.innerHTML = "<span>engellemeyi bırak</span>";
+        newButton.innerHTML = `<a><span><img src=${eksiEngelIconURL}> engellemeyi bırak</span></a>`;
         newButton.addEventListener("click", function(){ EksiEngel_sendMessage("SINGLE", "UNDOBAN", null, authorName, authorId, true, false, false) });
       }
       else
       {
-        newButton.innerHTML = "<span>engelle</span>";
+        newButton.innerHTML = `<a><span><img src=${eksiEngelIconURL}> engelle</span></a>`;
         newButton.addEventListener("click", function(){ EksiEngel_sendMessage("SINGLE", "BAN", null, authorName, authorId, true, false, false) });
       }
-      buttonRelation.replaceWith(newButton);
+      buttonRelation.parentNode.parentNode.append(newButton);
       
     }
   
   }
   else if(nameOfTheButton == "başlıklarını engelle")
   {
-    let newButton = document.createElement("a"); 
+    let newButton = document.createElement("li"); 
     if(isBanned == "true")
     {
-      newButton.innerHTML = "<span>başlıkları engellemeyi kaldır</span>";
+      newButton.innerHTML = `<a><span><img src=${eksiEngelIconURL}> başlıkları engellemeyi kaldır</span></a>`;
       newButton.addEventListener("click", function(){ EksiEngel_sendMessage("SINGLE", "UNDOBAN", null, authorName, authorId, false, true, false) });
     }
     else
     {
-      newButton.innerHTML = "<span>başlıklarını engelle</span>";
+      newButton.innerHTML = `<a><span><img src=${eksiEngelIconURL}> başlıklarını engelle</span></a>`;
       newButton.addEventListener("click", function(){ EksiEngel_sendMessage("SINGLE", "BAN", null, authorName, authorId, false, true, false) });
     }
-    buttonRelation.replaceWith(newButton);
+    buttonRelation.parentNode.parentNode.append(newButton);
     
   }
   else if(nameOfTheButton == "sessize al")
   {
-    let newButton = document.createElement("a"); 
+    let newButton = document.createElement("li"); 
     if(isBanned == "true")
     {
-      newButton.innerHTML = "<span>sessizden çıkar</span>";
+      newButton.innerHTML = `<a><span><img src=${eksiEngelIconURL}> sessizden çıkar</span></a>`;
       newButton.addEventListener("click", function(){ EksiEngel_sendMessage("SINGLE", "UNDOBAN", null, authorName, authorId, false, false, true) }); 
     }
       
     else
     {
-      newButton.innerHTML = "<span>sessize al</span>";
+      newButton.innerHTML = `<a><span><img src=${eksiEngelIconURL}> sessize al</span></a>`;
       newButton.addEventListener("click", function(){ EksiEngel_sendMessage("SINGLE", "BAN", null, authorName, authorId, false, false, true) });
     }
       
-    buttonRelation.replaceWith(newButton);
+    buttonRelation.parentNode.parentNode.append(newButton);
   }
    
 }
