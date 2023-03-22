@@ -3,8 +3,8 @@ import * as utils from './utils.js';
 
 export let config = 
 {
-	"serverURL": 				  "http://eksiengel.hesimsek.com/client_data_collector/upload",
-	"serverAnalyticsURL": "http://eksiengel.hesimsek.com/client_data_collector/analytics",
+	"serverURL": 				  "https://eksiengel.hesimsek.com/client_data_collector/upload",
+	"serverAnalyticsURL": "https://eksiengel.hesimsek.com/client_data_collector/analytics",
 	"sendData": 				  true,														  /* send data to server */
 		"sendClientName":   true,															/* send client name to server */
 		"sendLog": 				  true,															/* send log data to server */

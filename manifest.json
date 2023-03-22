@@ -31,7 +31,8 @@
    }
 	],
   "host_permissions": [
-    "https://eksisozluk.com/*"
+    "https://eksisozluk.com/*", 
+		"https://eksiengel.hesimsek.com/*"
   ],
   "background": {
     "service_worker": "assets/js/background.js",
