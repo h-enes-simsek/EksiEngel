@@ -93,6 +93,7 @@ function threeStateSwitchOnClick(config)
 	config.sendClientName = document.getElementById("threeStateBoth").checked;
   
   // kindly ask the user to send at least anonymous data to the server
+  let res;
   if(!config.sendData)
   {
     res = confirm("Ekşi Engeli sorunsuzca geliştirmeye devam ettirmek için log verilerine ihtiyacımız var.\n" + 

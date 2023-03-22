@@ -29,10 +29,12 @@ export const ResultTypeHttpReq = {
 };
 
 export const ClickType = {
-  EXTENSION_ICON:  "EXTENSION_ICON",
-  EXTENSION_MENU_BAN_LIST: "EXTENSION_MENU_BAN_LIST",
-  EXTENSION_MENU_UNDOBANALL: "EXTENSION_MENU_UNDOBANALL",
-  EXTENSION_MENU_FAQ: "EXTENSION_MENU_FAQ",
-  FAQ_LINK_ENTRY_LIMIT: "FAQ_LINK_ENTRY_LIMIT",
-  WELCOME_LINK_ENTRY_LIMIT: "WELCOME_LINK_ENTRY_LIMIT",
-};
+  EXTENSION_ICON:  "EXTENSION_ICON",                          /* user has pressed extension icon */
+  EXTENSION_MENU_BAN_LIST: "EXTENSION_MENU_BAN_LIST",         /* user has pressed list ban button in extension menu */
+  EXTENSION_MENU_UNDOBANALL: "EXTENSION_MENU_UNDOBANALL",     /* user has pressed undobanall button in extension menu */
+  EXTENSION_MENU_FAQ: "EXTENSION_MENU_FAQ",                   /* user has pressed faq button in extension menu */
+  FAQ_LINK_ENTRY_LIMIT: "FAQ_LINK_ENTRY_LIMIT",               /* user has pressed the link about entry limit in faq.html */
+  WELCOME_LINK_ENTRY_LIMIT: "WELCOME_LINK_ENTRY_LIMIT",       /* user has pressed the link about entry limit in welcome.html */
+  INSTALL_OR_UPDATE: "INSTALL_OR_UPDATE",                     /* user has installed or updated the extension */
+  WELCOME_PAGE: "WELCOME_PAGE"                                /* user has seen the welcome.html  */
+};         

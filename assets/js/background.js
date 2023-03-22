@@ -536,6 +536,9 @@ chrome.runtime.onInstalled.addListener(async (details) =>
     // handle config of the extension
     await handleConfig();
     
+    // analytics
+    await commHandler.sendAnalyticsData({click_type:enums.ClickType.INSTALL_OR_UPDATE});
+    
     // open welcome page
     let tab = await chrome.tabs.create({ url: chrome.runtime.getURL("assets/html/welcome.html") });
   }

@@ -50,6 +50,7 @@ v2.3
 yayın: 
 yeni özellik: bir yazarı takip eden herkesi engelleme butonu eklendi.
 yeni özellik: eklenti menüsündeki bazı butonlar ekşi sözlük arayüzüne taşındı. 
+yeni özellik: bazı analitik verileri toplanmaya başlandı.
 bug fix: bir başka engel işlemi devam ederken cooldown sürecinde ekşi sözlük arayüzündeki butonlar çalışmıyordu (engel limitinden dolayı).
          alternatif ekşi engel butonlarının, ekşi sözlük yazar sayfasındaki menüye eklenmesiyle bu işlemler de kuyruğa alınarak problem çözüldü.
 
@@ -154,9 +155,19 @@ gönderim: yayın:
 yeni özellik: takipçilerini engelle
 yeni özellik: eklenti menüsündeki bazı butonlar ekşi sözlük arayüzüne taşındı. TODO: sorunsallar
               böylece başka bir engel işlemi sürerken cooldown esnasında ekşi arayüzü kullanılabiliyor.
-TODO: unique identifier(storage ile belki), bazı butonlara ve yükleme sonrasında bildirim gitsin.
+yeni özellik: aşağıdaki analitik veriler toplanmaya başlandı:
+              EXTENSION_ICON
+              EXTENSION_MENU_BAN_LIST
+              EXTENSION_MENU_UNDOBANALL
+              EXTENSION_MENU_FAQE
+              FAQ_LINK_ENTRY_LIMIT
+              WELCOME_LINK_ENTRY_LIMIT
+              INSTALL_OR_UPDATE
+              WELCOME_PAGE
+
 
 YÜKSEK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
+unique identifier ile, bazı butonlara ve yükleme sonrasında bildirim gitsin.
 notification kısmında tahmini bitiş süresi
 performans analizi yapılmalı
   map.clear memory leak?

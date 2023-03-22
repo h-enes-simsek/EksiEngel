@@ -120,5 +120,19 @@
     "fields": {
       "click_type": "WELCOME_LINK_ENTRY_LIMIT"
     }
+  },
+	{
+    "model": "client_data_collector.ClickType",
+    "pk": 7,
+    "fields": {
+      "click_type": "INSTALL_OR_UPDATE"
+    }
+  },
+	{
+    "model": "client_data_collector.ClickType",
+    "pk": 8,
+    "fields": {
+      "click_type": "WELCOME_PAGE"
+    }
   }
 ]
