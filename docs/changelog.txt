@@ -154,6 +154,7 @@ gönderim: yayın:
 yeni özellik: takipçilerini engelle
 yeni özellik: eklenti menüsündeki bazı butonlar ekşi sözlük arayüzüne taşındı. TODO: sorunsallar
               böylece başka bir engel işlemi sürerken cooldown esnasında ekşi arayüzü kullanılabiliyor.
+TODO: unique identifier(storage ile belki), bazı butonlara ve yükleme sonrasında bildirim gitsin.
 
 YÜKSEK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
 notification kısmında tahmini bitiş süresi

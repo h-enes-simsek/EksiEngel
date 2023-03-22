@@ -3,19 +3,33 @@
     "model": "client_data_collector.BanSource",
     "pk": 1,
     "fields": {
-      "ban_source": "FAV"
+      "ban_source": "SINGLE"
     }
   },
   {
     "model": "client_data_collector.BanSource",
     "pk": 2,
     "fields": {
-      "ban_source": "LIST"
+      "ban_source": "FAV"
     }
   },
 	{
     "model": "client_data_collector.BanSource",
     "pk": 3,
+    "fields": {
+      "ban_source": "FOLLOW"
+    }
+  },
+  {
+    "model": "client_data_collector.BanSource",
+    "pk": 4,
+    "fields": {
+      "ban_source": "LIST"
+    }
+  },
+	{
+    "model": "client_data_collector.BanSource",
+    "pk": 5,
     "fields": {
       "ban_source": "UNDOBANALL"
     }
@@ -62,6 +76,49 @@
     "pk": 4,
     "fields": {
       "log_level": "ERR"
+    }
+  },
+	
+  {
+    "model": "client_data_collector.ClickType",
+    "pk": 1,
+    "fields": {
+      "click_type": "EXTENSION_ICON"
+    }
+  },
+	{
+    "model": "client_data_collector.ClickType",
+    "pk": 2,
+    "fields": {
+      "click_type": "EXTENSION_MENU_BAN_LIST"
+    }
+  },
+	{
+    "model": "client_data_collector.ClickType",
+    "pk": 3,
+    "fields": {
+      "click_type": "EXTENSION_MENU_UNDOBANALL"
+    }
+  },
+	{
+    "model": "client_data_collector.ClickType",
+    "pk": 4,
+    "fields": {
+      "click_type": "EXTENSION_MENU_FAQ"
+    }
+  },
+	{
+    "model": "client_data_collector.ClickType",
+    "pk": 5,
+    "fields": {
+      "click_type": "FAQ_LINK_ENTRY_LIMIT"
+    }
+  },
+	{
+    "model": "client_data_collector.ClickType",
+    "pk": 6,
+    "fields": {
+      "click_type": "WELCOME_LINK_ENTRY_LIMIT"
     }
   }
 ]

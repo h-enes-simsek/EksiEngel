@@ -14,6 +14,11 @@ class LogLevel(models.Model):
     log_level = models.CharField(max_length=10, blank=False)
     def __str__(self):
         return self.log_level
+        
+class ClickType(models.Model):
+    click_type = models.CharField(max_length=100, blank=False)
+    def __str__(self):
+        return self.click_type
 
 class ClientData(models.Model):
     date = models.DateTimeField(blank=False)
@@ -36,3 +41,12 @@ class ClientData(models.Model):
     log = models.CharField(max_length=1000000, blank=False)
     def __str__(self):
         return str(self.date) + " " + self.client_name
+        
+class ClientAnalytic(models.Model):
+    date = models.DateTimeField(blank=False)
+    user_agent = models.CharField(max_length=1024, blank=False)
+    client_name = models.CharField(max_length=96)
+    client_uid = models.BigIntegerField() 
+    click_type = models.ForeignKey(ClickType, on_delete=models.PROTECT)
+    def __str__(self):
+        return str(self.date) + " " + str(self.client_name) + " " + str(self.click_type)

@@ -6,6 +6,7 @@ from django.utils import timezone
 import json
 
 from .models import ClientData,BanSource,BanMode,LogLevel
+from .models import ClientAnalytic,ClickType
 
 def index(request):
     return HttpResponse("Hello, world. I'm client data collector.")
@@ -46,6 +47,36 @@ def upload(request):
                 is_early_stopped = data.get("is_early_stopped"),
                 log_level = LogLevel.objects.get(log_level = data.get("log_level")),
                 log = data.get("log")
+            )
+            return HttpResponse('OK', status=200)
+        except Exception as e:
+            return HttpResponse(e, status=400)
+    else:
+        return HttpResponse('Method Not Allowed', status=405)
+        
+@csrf_exempt
+def analytics(request):
+    if request.method == 'POST':
+        data = None
+        if(request.POST):
+            # form data
+            data = request.POST
+        elif(request.body):
+            # raw json data
+            try:
+                data = json.loads(request.body) 
+            except:
+                return HttpResponse('An Error Occured', status=400)
+        else:
+            return HttpResponse('Empty Request', status=400)
+        try:
+            # create a row in ClientData table
+            ClientAnalytic.objects.create(
+                date = timezone.now(),
+                user_agent = data.get("user_agent"),
+                client_name = data.get("client_name"),
+                client_uid = data.get("client_uid"),
+                click_type = ClickType.objects.get(click_type = data.get("click_type")),
             )
             return HttpResponse('OK', status=200)
         except Exception as e:
