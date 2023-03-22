@@ -1,4 +1,12 @@
+import * as enums from './enums.js';
+import {commHandler} from './commHandler.js';
+
 document.addEventListener('DOMContentLoaded', async function () {
+  // analytics
+  linkAboutLimit.onclick = function(element) {
+    commHandler.sendAnalyticsData({click_type:enums.ClickType.FAQ_LINK_ENTRY_LIMIT});
+  };
+  
   // load the current configuration from storage
   let config = await getConfig();
   console.log("sendData:" + config.sendData + " sendClientName:" + config.sendClientName);

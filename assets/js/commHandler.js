@@ -1,7 +1,8 @@
 import {log} from './log.js';
 import {config} from './config.js';
+import * as enums from './enums.js';
 
-export class CommHandler 
+class CommHandler 
 {
 	sendData = async (dataObj) =>
 	{
@@ -116,4 +117,43 @@ export class CommHandler
 			log.err("commHandler: err: " + err); 
 		}
 	}
+
+  sendAnalyticsData = async (dataObj) =>
+  {
+    let dataToServerObj = {};
+    
+    // client_name
+	  dataToServerObj.client_name = config.anonymouseClientName;
+    
+    // user_agent
+    dataToServerObj.user_agent = "TODO fix";
+    
+    // client uid
+    dataToServerObj.client_uid = 123456;
+    
+    // click type
+    dataToServerObj.click_type = dataObj.click_type;
+  
+    try
+    {
+      const response = await fetch(config.serverAnalyticsURL, {
+        method: 'POST',
+        headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(dataToServerObj)
+      });
+      const responseText = await response.text();
+      log.info("commHandler: response status: " + response.status); 
+      log.info("commHandler: response : " + responseText); 
+    }
+    catch(err)
+    {
+      log.err("commHandler: err: " + err); 
+    }
+  
+  }
 }
+
+export let commHandler = new CommHandler();
