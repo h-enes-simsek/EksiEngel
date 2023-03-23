@@ -5,27 +5,29 @@ Google Chrome extension that allows mass blocking of authors for the social medi
 
 <h3>Briefly Features</h3>
 
-- It can block everyone who favorited a specific post.
+Ekşi Engel can perform the following actions.
 
-- It can block/unblock authors entered as a list.
+- To block everyone who favorited a specific post
 
-- It can unblock all blocked authors.
+- To block everyone who follows a specific author
 
-Ekşi Sözlük has three different block types: the ban on an author, the ban on all pages that were created by an author, and the mute on an author. Ekşi Engel supports all types of blocks.
+- To block/unblock authors entered as a list
+
+- To unblock all blocked authors
+
+Ekşi Sözlük has three different block types, and Ekşi Engel supports them all. 
+
+- The ban on an author
+
+- The ban on all pages that were created by an author
+ 
+- The mute on an author
 
 After the authors to be blocked/unblocked are received from the user, the blocking/unblocking process is performed respectively for the accounts in the list.
 
-Operations take place in a newly opened tab, while the user can navigate freely in other tabs. Finally, the newly opened tab closes by itself when the process is finished.
+Operations take place in a newly opened tab, while the user can navigate freely in other tabs. In addition, the user is informed about the ongoing process and how many authors have been successfully blocked.
 
-In addition, the user is informed about how many authors have been successfully blocked.
-
-<h3>My Motivation</h3>
-
-I've been seeing some users make and share block lists for a long time. I thought we could easily do this with an extension.
-
-It should be added that I developed Ekşi Engel voluntarily, so it does not contain any advertisements or has any other commercial purpose.
-
-<h3>Server?</h3>
+<h3>Server Part</h3>
 
 As long as it is allowed in the settings menu, log data and list of blocked users are sent to Ekşi Engel servers.
 
@@ -38,6 +40,9 @@ Ekşi Engel in Chrome Webstore: [link](https://chrome.google.com/webstore/detail
 Version notes: [link](https://h-enes-simsek.github.io/EksiEngel/versionnotes.html)  
 
 <div float="left">
+<img src="publish/ss/entryMenu.png" width="480" height="300">
+<br>
+<img src="publish/ss/authorMenu.png" width="480" height="300">
 <img src="publish/ss/popup.png" width="480" height="300">
 <img src="publish/ss/authorListPage.png" width="480" height="300">
 <img src="publish/ss/notification.png" width="480" height="300">
