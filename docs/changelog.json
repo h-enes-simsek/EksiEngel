@@ -1,0 +1,83 @@
+[
+  {
+    "name": "",
+    "notes": [
+      "[New] Block all authors that follow a specific author (source:FOLLOW, types:USER/TITLE/MUTE)",
+			"[New] Some analytical data began to be collected, see the relevant docs in extension webpage",
+			"[Improved] Some buttons in the extension menu have been moved to the Ekşi Sözlük menus.",
+			"[Fixed] While another blocking was in progress, the buttons on the Ekşi Sözlük interface were not working during the cooldown process (due to the block/unblock limit). With the addition of alternative Ekşi Sözlük buttons to the menu on the sour Ekşi Sözlük author page, these operations were also queued and the problem was solved. github issue: #1"
+    ],
+    "pub_date": "2023-03-23",
+    "version": "2.3.0"
+  },
+  {
+    "name": "",
+    "notes": [
+      "[New] Support a new block type 'mute on an author', added a preference button to select it over user block",
+			"[New] Added preference to block newbies (TR: çaylak) as well.",
+			"[Improved] Speed up the process of unblocking all authors by optimizing the operations that took plake",
+			"[Fixed] Settings were reset because backward compatibility could not be achieved after installation and update"
+    ],
+    "pub_date": "2023-03-06",
+    "version": "2.2.0"
+  },
+  {
+    "name": "",
+    "notes": [
+			"[New] After Ekşi Sözlük had limited the block/unblock speed, a cooldown mechanism was added. (Current limit: 6 block/min, 10 unblock/min)",
+			"[New] A process queue was used because operations took a long time due to block/unblock speed limit. If you want to make a new operation while a blocking process is in progress, your request is queued and processed when the time comes. While the blocking process is in progress, you can see the mentioned cooldown and process queue in a newly opened tab.",
+			"[Fixed] The feature of unblocking all blocked authors was broken due to the Ekşi Sözlük update, it has been fixed."
+		],
+    "pub_date": "2023-03-02",
+    "version": "2.1.0"
+  },
+  {
+    "name": "",
+    "notes": [
+      "[New] Take all actions in background with HTTP requests instead of simulating user activities",
+			"[New] Notify the user about the process in a new tab",
+      "[Improved] Speed up the process"
+    ],
+    "pub_date": "2022-11-19",
+    "version": "2.0.0"
+  },
+  {
+    "name": "",
+    "notes": [
+      "[New] Unblock all blocked authors (source:UNDOBANALL, types:USER/TITLE)",
+      "[New] Collect the user nickname, the author list retrieved from the user and logs (It can be turned on and off in settings) See the relevant docs in extension webpage",
+      "[Improved] Speed up the process",
+      "[Fixed] Fixed the url redirect mechanism that sometimes doesn't work."
+		],
+    "pub_date": "2022-11-14",
+    "version": "1.3.0"
+  },
+  {
+    "name": "",
+    "notes": [
+      "[New] Block authors who favorited an specific entry (source:FAV, types:USER/TITLE)",
+			"[Improved] Simplified user interface",
+      "[Fixed] Handled other extensions that interfere with the page such as adblocker",
+      "[Fixed] Solved the crash when the page is closed during the progress",
+      "[Fixed] Support the Ekşi Sözlük nicknames that include a white-space"
+    ],
+    "pub_date": "2022-09-27",
+    "version": "1.2.0"
+  },
+  {
+    "name": "",
+    "notes": [
+      "[Fixed] Removed the background-color of the images in Chrome Web Store"
+    ],
+    "pub_date": "2022-05-09",
+    "version": "1.1.0"
+  },
+  {
+    "name": "",
+    "notes": [
+      "[New] Block the authors in the list retrieved from the user (source:LIST, types:USER/TITLE)"
+    ],
+    "pub_date": "2022-05-06",
+    "version": "1.0.0"
+  }
+]

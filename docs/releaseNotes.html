@@ -1,0 +1,131 @@
+<html>
+
+<!-- Stolen from https://desktop.github.com/release-notes/ -->
+
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" type="text/css" href="./assets/normalize.css">
+<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+</head>
+
+<body>
+
+<h2 style="text-align: center;margin-top:10px;">Ekşi Engel Version Notes</h2>
+
+<div id="release-notes"></div>
+
+
+<script>
+
+$(function() {
+
+  var el = $('#release-notes');
+  el.html('<h2>Loading…</h2>')
+
+  var success = function(data) {
+    buildReleases(data);
+  }
+
+  var error = function(data, status, error) {
+    el.html('<h2>An error occurred while fetching release notes.</h2>');
+    console.log(error);
+  }
+
+  var changelogUrl = 'changelog.json'
+
+  $.ajax({
+    crossDomain: true,
+    url: changelogUrl,
+    success: success,
+    error: error
+  })
+
+});
+
+function buildReleases(data) {
+  var releases = $.map(data, createRelease);
+
+  $("#release-notes").empty().append(releases);
+}
+
+function createRelease(r) {
+  var changes = r.notes.filter(isRegularNote)
+
+  var header = $("<header class='timeline-decorator d-flex flex-items-center mb-3' />")
+    .append($("<span class='version-badge d-inline-block bg-purple p-1 rounded-1 mr-2 text-bold' />")
+      .text(r.version))
+    .append($("<h2 class='f3-light css-truncate css-truncate-target' />")
+      .text(r.pub_date ? moment(r.pub_date).format('MMMM Do YYYY') : ""));
+
+  var changelog = $("<ul class='list-style-none change-log' />")
+    .append($.map(changes, createChange));
+
+  return $("<section class='release-note position-relative container-new py-6 px-3 text-left' />")
+    .append(header).append(changelog);
+}
+
+function isRegularNote(changeText) {
+  return !/^\s*\[\]\s/i.test(changeText)
+}
+
+function createChange(changeText) {
+  if (changeText != '') {
+    var trimmed = $.trim(changeText);
+    var typeMatches = trimmed.match(/^\[(new|fixed|improved|removed|added|pretext)\]\s((.|\n)*)/i);
+    if (typeMatches) {
+      var changeType = typeMatches[1];
+      var changeDescription = typeMatches[2];
+
+      var changePieces = changeDescription.split(/(#\d+)/i);
+
+      var elClassnames = "d-flex flex-items-start mb-2";
+
+      var el = $("<li />")
+        .addClass(elClassnames);
+
+      if(changeType !== 'Pretext'){
+        el.append($("<div class='change-badge' />")
+        .addClass("change-badge-" + changeType.toLowerCase())
+        .text(changeType));
+      }
+
+      var changeDescriptionContainer = $("<div class='change-description' />");
+
+      if(changeType !== 'Pretext'){
+        for (var i = 0; i < changePieces.length; i++) {
+          var piece = changePieces[i];
+          var issuePieces = piece.match(/#(\d+)/i);
+
+          if (issuePieces) {
+            var link = $("<a>").attr("href", 'https://github.com/h-enes-simsek/EksiEngel/issues/' + issuePieces[1]).text(piece);
+            changeDescriptionContainer = changeDescriptionContainer.append(link);
+          } else {
+            changeDescriptionContainer = changeDescriptionContainer.append(document.createTextNode(piece));
+          }
+        }
+      } else {
+        changeDescriptionContainer.addClass('pretext')
+        changeDescriptionContainer.append(marked.parse(changeDescription, {
+          // https://marked.js.org/using_advanced  If true, use approved GitHub
+          // Flavored Markdown (GFM) specification.
+          gfm: true,
+          // https://marked.js.org/using_advanced, If true, add <br> on a single
+          // line break (copies GitHub behavior on comments, but not on rendered
+          // markdown files). Requires gfm be true.
+          breaks: true,
+        }))
+      }
+      el = el.append(changeDescriptionContainer);
+
+      return el;
+    }
+
+    return $("<li />").addClass(elClassnames).text(changeText);
+  }
+}
+</script>
+
+</body>
+
+</html>

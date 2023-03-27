@@ -47,7 +47,7 @@ yeni özellik: tüm yazarların engelini kaldırma işlemi optimize edilerek sü
 bug fix: yükleme ve güncellemeden sonra geriye dönük uyumluluk sağlanamadığı için eklentinin ayarlarının sıfırlanması sağlandı.
 
 v2.3
-yayın: 
+yayın: 23.03.2023
 yeni özellik: bir yazarı takip eden herkesi engelleme butonu eklendi.
 yeni özellik: eklenti menüsündeki bazı butonlar ekşi sözlük arayüzüne taşındı. 
 yeni özellik: bazı analitik verileri toplanmaya başlandı.
@@ -151,7 +151,7 @@ yeni özellik: undobanall için sadece gerekli işlemler (engel/başlık engelle
 bug fix: yükleme ve güncellemeden sonra local storage temizlendi.
 
 v2.3
-gönderim: yayın:
+gönderim: 23.03.2023 yayın: 23.03.2023
 yeni özellik: takipçilerini engelle
 yeni özellik: eklenti menüsündeki bazı butonlar ekşi sözlük arayüzüne taşındı. TODO: sorunsallar
               böylece başka bir engel işlemi sürerken cooldown esnasında ekşi arayüzü kullanılabiliyor.
