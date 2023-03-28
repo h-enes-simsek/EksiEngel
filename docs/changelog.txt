@@ -54,6 +54,10 @@ yeni özellik: bazı analitik verileri toplanmaya başlandı.
 bug fix: bir başka engel işlemi devam ederken cooldown sürecinde ekşi sözlük arayüzündeki butonlar çalışmıyordu (engel limitinden dolayı).
          alternatif ekşi engel butonlarının, ekşi sözlük yazar sayfasındaki menüye eklenmesiyle bu işlemler de kuyruğa alınarak problem çözüldü.
 
+v2.4
+yayın: 
+bug fix: Support the users that have 'move' permission authorized by Ekşi Sözlük. github issue: #3
+
 Versiyon notları (detaylı) 
 -------------------------------------------------
 v1.0  
@@ -165,6 +169,9 @@ yeni özellik: aşağıdaki analitik veriler toplanmaya başlandı:
               INSTALL_OR_UPDATE
               WELCOME_PAGE
 
+v2.4
+gönderim: 28.03.2023 yayın: 
+bug fix: Support the users that have 'move' permission authorized by Ekşi Sözlük. github issue: #3
 
 YÜKSEK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
 unique identifier ile, bazı butonlara ve yükleme sonrasında bildirim gitsin.

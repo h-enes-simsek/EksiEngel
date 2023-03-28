@@ -2,6 +2,14 @@
   {
     "name": "",
     "notes": [
+			"[Fixed] Support the users that have 'move' permission authorized by Ekşi Sözlük. github issue: #3"
+    ],
+    "pub_date": "2000-01-01",
+    "version": "2.4.0"
+  },
+  {
+    "name": "",
+    "notes": [
       "[New] Block all authors that follow a specific author (source:FOLLOW, types:USER/TITLE/MUTE)",
 			"[New] Some analytical data began to be collected, see the relevant docs in extension webpage",
 			"[Improved] Some buttons in the extension menu have been moved to the Ekşi Sözlük menus.",
