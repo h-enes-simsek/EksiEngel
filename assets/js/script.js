@@ -60,7 +60,7 @@ function waitForElm(selector)
 (async function handleEntryMenus () {
     
 // select all dropdown menus for each entry in the page
-let entryMenus = await waitForElm(".other.dropdown > :last-child");
+let entryMenus = await waitForElm(".other.dropdown .dropdown-menu.right.toggles-menu");
 
 // select all meta tags for each entry in the page
 let entryMetas = await waitForElm("[data-author-id]");
