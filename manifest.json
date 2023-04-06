@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Ekşi Engel",
 	"author": "Hasan Enes Şimşek",
-  "version": "2.4",
+  "version": "2.5",
   "description": "Ekşi Sözlük'te toplu olarak engelleme/başlıklarını engelleme işlemi yapın.",
   "icons": {
     "16": "assets/img/eksiengel16.png",

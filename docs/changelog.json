@@ -2,6 +2,14 @@
   {
     "name": "",
     "notes": [
+			"[Bug] Support the new Ekşi Sözlük URL, eksisozluk2023.com, github issue: #4"
+    ],
+    "pub_date": "2023-04-07",
+    "version": "2.5.0"
+  },
+  {
+    "name": "",
+    "notes": [
 			"[Fixed] Support the users that have 'move' permission authorized by Ekşi Sözlük. github issue: #3"
     ],
     "pub_date": "2023-03-28",
