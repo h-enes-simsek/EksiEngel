@@ -73,7 +73,7 @@ export class RelationHandler
     else if(targetType == enums.TargetType.MUTE)
       targetTypeText = "u";
     
-    let url = `https://eksisozluk.com/userrelation/${banModeText}/${id}?r=${targetTypeText}`;
+    let url = `https://eksisozluk2023.com/userrelation/${banModeText}/${id}?r=${targetTypeText}`;
     return url;
 	}
   

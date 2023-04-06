@@ -27,7 +27,7 @@ export class ScrapingHandler
     let responseText = "";
     try
     {
-      let response = await fetch("https://eksisozluk.com/", {
+      let response = await fetch("https://eksisozluk2023.com/", {
         method: 'GET',
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
@@ -100,7 +100,7 @@ export class ScrapingHandler
       let authorId = entryElement.getAttribute("data-author-id");
       let authorName = entryElement.getAttribute("data-author");
       authorName = authorName.replace(/ /gi, "-"); // replace withspaces with -
-      let entryId = entryUrl.match(/\d/g).join("");
+      let entryId = entryUrl.match(/(\d+)(?!.*\d)/g).join("");
       let titleId =  dom.window.document.getElementById("title").getAttribute("data-id");
       let titleName =  dom.window.document.getElementById("title").getAttribute("data-title");
       titleName = titleName.replace(/ /gi, "-"); // replace withspaces with -
@@ -127,8 +127,8 @@ export class ScrapingHandler
     let responseText = "";
     try
     {
-      let entryId = entryUrl.match(/\d/g).join("");
-      let targetUrl = "https://eksisozluk.com/entry/favorileyenler?entryId=" + entryId;
+      let entryId = entryUrl.match(/(\d+)(?!.*\d)/g).join("");
+      let targetUrl = "https://eksisozluk2023.com/entry/favorileyenler?entryId=" + entryId;
       let response = await fetch(targetUrl, {
         method: 'GET',
           headers: {
@@ -137,6 +137,8 @@ export class ScrapingHandler
           }
       });
       responseText = await response.text();
+      if(response.status != 200 || !response.ok)
+        throw "targetURL: " + targetUrl + ", response status: " + response.status + ", isOk: " + response.ok;
     }
     catch(err)
     {
@@ -185,8 +187,8 @@ export class ScrapingHandler
       let responseTextNoob = "";
       try
       {
-        let entryId = entryUrl.match(/\d/g).join("");
-        let targetUrl = "https://eksisozluk.com/entry/caylakfavorites?entryId=" + entryId;
+        let entryId = entryUrl.match(/(\d+)(?!.*\d)/g).join("");
+        let targetUrl = "https://eksisozluk2023.com/entry/caylakfavorites?entryId=" + entryId;
         let response = await fetch(targetUrl, {
           method: 'GET',
             headers: {
@@ -260,7 +262,7 @@ export class ScrapingHandler
       // note: real url is like .../relation-list?relationType=m&pageIndex=1&_=123456789
       // but i couldn't figure out what and where is the query parameter '_'
       // without this query parameter it works anyway at least for now.
-      let targetUrl = `https://eksisozluk.com/relation-list?relationType=${targetTypeTextInURL}&pageIndex=${index}`;
+      let targetUrl = `https://eksisozluk2023.com/relation-list?relationType=${targetTypeTextInURL}&pageIndex=${index}`;
       let response = await fetch(targetUrl, {
         method: 'GET',
           headers: {
@@ -420,7 +422,7 @@ export class ScrapingHandler
       // note: real url is like .../follower?nick=abcdefg&pageIndex=1&_=123456789
       // but i couldn't figure out what and where is the query parameter '_'
       // without this query parameter it works anyway at least for now.
-      let targetUrl = `https://eksisozluk.com/follower?nick=${authorName}&pageIndex=${index}`;
+      let targetUrl = `https://eksisozluk2023.com/follower?nick=${authorName}&pageIndex=${index}`;
       let response = await fetch(targetUrl, {
         method: 'GET',
           headers: {
@@ -488,7 +490,7 @@ export class ScrapingHandler
     
     try
     {
-      let targetUrl = "https://eksisozluk.com/biri/" + authorName;
+      let targetUrl = "https://eksisozluk2023.com/biri/" + authorName;
       let response = await fetch(targetUrl, {
         method: 'GET',
           headers: {

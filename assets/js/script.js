@@ -74,7 +74,7 @@ for (let i = 0; i < entryMenus.length; i++)
   let authorName = entryMeta.getAttribute("data-author");
   let authorId = entryMeta.getAttribute("data-author-id");
   let entryId = entryMeta.getAttribute("data-id");
-  let entryUrl = `https://eksisozluk.com/entry/${entryId}`;
+  let entryUrl = `https://eksisozluk2023.com/entry/${entryId}`;
   
   // replace every whitespace with - (ekşi naming convention)
   authorName = authorName.replace(/ /gi, "-");

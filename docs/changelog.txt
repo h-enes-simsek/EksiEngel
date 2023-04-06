@@ -58,6 +58,10 @@ v2.4
 yayın: 28.03.2023
 bug fix: Support the users that have 'move' permission authorized by Ekşi Sözlük. github issue: #3
 
+v2.5
+yayın: 
+bug fix: Support new Ekşi Sözlük domain eksisozluk2023.com
+
 Versiyon notları (detaylı) 
 -------------------------------------------------
 v1.0  
@@ -173,7 +177,15 @@ v2.4
 gönderim: 28.03.2023 yayın: 28.03.2023
 bug fix: Support the users that have 'move' permission authorized by Ekşi Sözlük. github issue: #3
 
+v2.5
+gönderim: yayın: 
+bug fix: Support new Ekşi Sözlük domain eksisozluk2023.com
+
 YÜKSEK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
+kullanıcı sayfasına takipçilerini engelle butonu eklenmeli
+markettext içinde MUTE'den bahsedilmeli
+notification sayfasındaki BAN/UNDOBAN gibi ifadeler türkçeleştirilmeli
+notification sayfasına yapılabilecek tüm işlemlerin anlatıldığı bir diyagram konulmalı.
 unique identifier ile, bazı butonlara ve yükleme sonrasında bildirim gitsin.
 notification kısmında tahmini bitiş süresi
 performans analizi yapılmalı
