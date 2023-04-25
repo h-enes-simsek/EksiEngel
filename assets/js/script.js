@@ -104,15 +104,18 @@ console.log("handleEntryMenus: done");
 })();
 
 (async function handleRelationButtons () {
-  
-// TODO: handleRelationButtons should be implemented in these pages as well
-let page = window.location.pathname.split('/')[1];
-if(page == "takip" || page == "takipci" )
-  return;
 
-// css fix
+// target url: https://website.com/biri/example-user
+let page = window.location.pathname.split('/')[1];
+if(page != "biri")
+  return
+// TODO: handleRelationButtons should be implemented in these pages as well
+//if(page == "takip" || page == "takipci" )
+//  return;
+
 try
 {
+  // css fix
   document.querySelectorAll(".profile-buttons .dropdown-menu")[1].style.width = '210px';
 }
 catch(e)
@@ -124,6 +127,8 @@ let buttonsRelation = await waitForElm(".relation-link");
 
 let authorName = document.querySelector("[data-nick]").getAttribute("data-nick");
 let authorId = String(document.getElementById("who").value); // String is in case
+
+let buttonRelationTitleBan; // TODO fix this mess
 
 for (let i = 0; i < buttonsRelation.length; i++) 
 {
@@ -174,6 +179,8 @@ for (let i = 0; i < buttonsRelation.length; i++)
     }
     buttonRelation.parentNode.parentNode.append(newButton);
     
+    buttonRelationTitleBan = buttonRelation; // TODO: fix this mess
+    
   }
   else if(nameOfTheButton == "sessize al")
   {
@@ -194,7 +201,15 @@ for (let i = 0; i < buttonsRelation.length; i++)
   }
    
 }
-  
+
+// TODO: fix later, find better place to do it
+// add 'follow ban' button
+let newButtonFollow = document.createElement("li"); 
+newButtonFollow.innerHTML = `<a><span><img src=${eksiEngelIconURL}> takipçilerini engelle</span></a>`;
+newButtonFollow.addEventListener("click", function(){ EksiEngel_sendMessage("FOLLOW", "BAN", null, authorName, authorId) });
+buttonRelationTitleBan.parentNode.parentNode.append(newButtonFollow);
+
+
 console.log("handleRelationButtons: done"); 
  
 })();
