@@ -2,9 +2,9 @@
   {
     "name": "",
     "notes": [
-			"[Bug] Support the new Ekşi Sözlük URL, eksisozluk2023.com, github issue: #4"
+			"[Fixed] Support the new Ekşi Sözlük URL, eksisozluk2023.com, github issue: #4"
     ],
-    "pub_date": "2023-04-07",
+    "pub_date": "2023-04-06",
     "version": "2.5.0"
   },
   {

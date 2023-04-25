@@ -59,7 +59,7 @@ yayın: 28.03.2023
 bug fix: Support the users that have 'move' permission authorized by Ekşi Sözlük. github issue: #3
 
 v2.5
-yayın: 
+yayın: 06.04.2023
 bug fix: Support new Ekşi Sözlük domain eksisozluk2023.com
 
 Versiyon notları (detaylı) 
@@ -178,7 +178,7 @@ gönderim: 28.03.2023 yayın: 28.03.2023
 bug fix: Support the users that have 'move' permission authorized by Ekşi Sözlük. github issue: #3
 
 v2.5
-gönderim: yayın: 
+gönderim: 06.04.2023 yayın: 06.04.2023
 bug fix: Support new Ekşi Sözlük domain eksisozluk2023.com
 
 YÜKSEK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
