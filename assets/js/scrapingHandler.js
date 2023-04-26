@@ -15,7 +15,7 @@ function Relation(authorName, authorId, isBannedUser, isBannedTitle, isBannedMut
   this.doTheyFollowMe = doTheyFollowMe;   // this author follows me
 }
 
-export class ScrapingHandler
+class ScrapingHandler
 {
   scrapeUserAgent = () =>
   {
@@ -514,3 +514,5 @@ export class ScrapingHandler
     }
   }
 }
+
+export let scrapingHandler = new ScrapingHandler();

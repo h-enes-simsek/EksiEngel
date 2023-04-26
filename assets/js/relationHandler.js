@@ -4,7 +4,7 @@ import * as utils from './utils.js'
 import {programController} from './programController.js';
 
 // a class to manage relations (ban/undoban users/users' titles)
-export class RelationHandler
+class RelationHandler
 {
   successfulAction;
   performedAction;
@@ -133,3 +133,5 @@ export class RelationHandler
     return res;
 	}
 }
+
+export let relationHandler = new RelationHandler();

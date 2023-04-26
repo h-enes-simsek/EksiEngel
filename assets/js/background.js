@@ -5,14 +5,10 @@ import * as utils from './utils.js';
 import {config, getConfig, saveConfig, handleConfig} from './config.js';
 import {log} from './log.js';
 import {commHandler} from './commHandler.js';
-import {RelationHandler} from './relationHandler.js';
-import {ScrapingHandler} from './scrapingHandler.js';
+import {relationHandler} from './relationHandler.js';
+import {scrapingHandler} from './scrapingHandler.js';
 import {autoQueue} from './queue.js';
 import {programController} from './programController.js';
-
-let relationHandler = new RelationHandler();
-let scrapingHandler = new ScrapingHandler();
-//let commHandler = new CommHandler();
 
 log.info("bg: init.");
 let g_notificationTabId = 0;
