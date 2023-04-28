@@ -241,12 +241,14 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
   }
   else if(banSource === enums.BanSource.FAV)
   {
+    const enableMute = config.enableMute;
     entryMetaData = await scrapingHandler.scrapeMetaDataFromEntryPage(entryUrl);
-    authorNameList = await scrapingHandler.scrapeAuthorNamesFromFavs(entryUrl); // names will be scraped
+    let scrapedRelations = await scrapingHandler.scrapeAuthorNamesFromFavs(entryUrl); // names will be scraped
+    
+    log.info("number of user to ban (before analysis): " + scrapedRelations.size);
     
     // stop if there is no user
-    log.info("number of user to ban " + authorNameList.length);
-    if(authorNameList.length === 0)
+    if(scrapedRelations.size === 0)
     {
       chrome.runtime.sendMessage(null, {"notification":{"status":"error_NoAccount", "completedProcess":{"banSource":banSource, "banMode":banMode}}}, function(response) {
         let lastError = chrome.runtime.lastError;
@@ -255,14 +257,63 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
       return;
     }
     
-    const enableMute = config.enableMute;
+    // analysis before operation 
+    if(config.enableAnalysisBeforeOperation && config.enableProtectFollowedUsers && banMode == enums.BanMode.BAN)
+    {
+      // scrape the authors that ${clientName} follows
+      let mapFollowing = await scrapingHandler.scrapeFollowing(clientName);
+      
+      // remove the authors that ${clientName} follows from the list to protect      
+      for (let name of scrapedRelations.keys()) {
+        if (mapFollowing.has(name))
+          scrapedRelations.delete(name);
+      }
+    }
+    if(config.enableAnalysisBeforeOperation && config.enabledOnlyRequiredActions)
+    {
+      // Note: Ekşi Sözlük API response doesn't include blocked authors, but it includes authors who muted and title blocked
+      // This condition doesn't provide a simplification of the following algorithm
+      
+      // scrape the authors that ${clientName} blocked
+      let mapBlocked = await scrapingHandler.scrapeAuthorNamesFromBannedAuthorPage();
+      
+      // update the list with info obtained from mapBlocked
+      for (let name of scrapedRelations.keys()) {
+        if (mapBlocked.has(name))
+        {
+          scrapedRelations.get(name).isBannedUser = mapBlocked.get(name).isBannedUser;
+          scrapedRelations.get(name).isBannedTitle = mapBlocked.get(name).isBannedTitle;
+          scrapedRelations.get(name).isBannedMute = mapBlocked.get(name).isBannedMute;
+        }
+      }
+    }
     
-    for (let i = 0; i < authorNameList.length; i++)
+    log.info("number of user to ban (after analysis): " + scrapedRelations.size);
+    
+    // stop if there is no user
+    if(scrapedRelations.size === 0)
+    {
+      chrome.runtime.sendMessage(null, {"notification":{"status":"error_NoAccount", "completedProcess":{"banSource":banSource, "banMode":banMode}}}, function(response) {
+        let lastError = chrome.runtime.lastError;
+      });
+      log.err("Program has been finished (error_NoAccount)");
+      return;
+    }
+    
+    authorNameList = Array.from(scrapedRelations, ([name, value]) => name);
+    
+    for (const [name, value] of scrapedRelations)
     {
       if(programController.earlyStop)
         break;
-      let authorId = await scrapingHandler.scrapeAuthorIdFromAuthorProfilePage(authorNameList[i]);
-      let res = await relationHandler.performAction(banMode, authorId, !enableMute, true, enableMute);
+      let authorId = await scrapingHandler.scrapeAuthorIdFromAuthorProfilePage(name);
+      let res = await relationHandler.performAction(banMode, 
+                                                    authorId,
+                                                    (!value.isBannedUser && !enableMute),
+                                                    (!value.isBannedTitle && true), 
+                                                    (!value.isBannedMute && enableMute));
+      
+      
       authorIdList.push(authorId);
       
       if(res.resultType == enums.ResultType.FAIL)
@@ -300,7 +351,14 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
         }); 
         
         if(!programController.earlyStop)
-          res = await relationHandler.performAction(banMode, authorId, !enableMute, true, enableMute);
+        {
+          res = await relationHandler.performAction(banMode, 
+                                                    authorId,
+                                                    (!value.isBannedUser && !enableMute),
+                                                    (!value.isBannedTitle && true), 
+                                                    (!value.isBannedMute && enableMute));
+        }
+
       }
       
       // send message to notification page
@@ -321,14 +379,21 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
     let scrapedRelations = await scrapingHandler.scrapeFollower(singleAuthorName);
     log.info("number of user to ban (before analysis): " + scrapedRelations.size);
     
-    // analysis before operation
-    let mapFollowing = new Map();
-    let mapBlocked = new Map();
+    // stop if there is no user
+    if(scrapedRelations.size === 0)
+    {
+      chrome.runtime.sendMessage(null, {"notification":{"status":"error_NoAccount", "completedProcess":{"banSource":banSource, "banMode":banMode}}}, function(response) {
+        let lastError = chrome.runtime.lastError;
+      });
+      log.err("Program has been finished (error_NoAccount)");
+      return;
+    }
     
+    // analysis before operation 
     if(config.enableAnalysisBeforeOperation && config.enableProtectFollowedUsers && banMode == enums.BanMode.BAN)
     {
       // scrape the authors that ${clientName} follows
-      mapFollowing = await scrapingHandler.scrapeFollowing(clientName);
+      let mapFollowing = await scrapingHandler.scrapeFollowing(clientName);
       
       // remove the authors that ${clientName} follows from the list to protect      
       for (let name of scrapedRelations.keys()) {
@@ -336,11 +401,10 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
           scrapedRelations.delete(name);
       }
     }
-      
     if(config.enableAnalysisBeforeOperation && config.enabledOnlyRequiredActions)
     {
       // scrape the authors that ${clientName} blocked
-      mapBlocked = await scrapingHandler.scrapeAuthorNamesFromBannedAuthorPage();
+      let mapBlocked = await scrapingHandler.scrapeAuthorNamesFromBannedAuthorPage();
       
       // update the list with info obtained from mapBlocked
       for (let name of scrapedRelations.keys()) {

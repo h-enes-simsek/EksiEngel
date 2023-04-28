@@ -120,10 +120,10 @@ class ScrapingHandler
   async scrapeAuthorNamesFromFavs(entryUrl)
   {
     // entryUrl: string, entry url. example: https://eksisozluk.com/entry/1
-    // return: string[], only author names
-    // return(error): [] 
+    // return: Map(authorName, RelationObject)
+    // return(err): empty Map()
     
-    let authorList = [];
+    let scrapedRelations = new Map();
     let responseText = "";
     try
     {
@@ -143,7 +143,7 @@ class ScrapingHandler
     catch(err)
     {
       log.err("scrapingHandler: scrapeAuthorNamesFromFavs: " + err);
-      return [];
+      return new Map();
     }
     
     try
@@ -155,7 +155,16 @@ class ScrapingHandler
       for(let i = 0; i < authListNodeList.length; i++) 
       {
         let val = authListNodeList[i].innerHTML;
-        if (val) 
+        
+        // last element could be exception
+        if(val && i == authListNodeList.length-1)
+        {
+          // if there is a fav from "çaylak" users, last value of list indicates it
+          if(val.includes("çaylak"))
+            continue
+        }
+        
+        if(val) 
         { 
           // delete '@' char from nicknames
           // "@example_user" --> "example_user"
@@ -163,23 +172,15 @@ class ScrapingHandler
           
           // replace every whitespace with - (eksisozluk.com convention)
           val = val.replace(/ /gi, "-");
-          authorList.push(val); 
+          scrapedRelations.set(val, new Relation(val, null, null, null, null, null, null)); 
         }
       }
       
-      if(authorList.length > 0)
-      {
-        // if there is a fav from "çaylak" users, last value of list indicates it
-        if(authorList[authorList.length-1].includes("çaylak"))
-          authorList.pop()
-      } 
-      
-      //log.info(JSON.stringify(authorList));
     }
     catch(err)
     {
       log.err("scrapingHandler: scrapeAuthorNamesFromFavs: " + err);
-      return [];
+      return new Map();
     }
 
     if(config.enableNoobBan)
@@ -201,7 +202,7 @@ class ScrapingHandler
       catch(err)
       {
         log.err("scrapingHandler: scrapeAuthorNamesFromFavs: " + err);
-        return [];
+        return new Map();
       }
       
       try
@@ -221,22 +222,20 @@ class ScrapingHandler
             
             // replace every whitespace with - (eksisozluk.com convention)
             val = val.replace(/ /gi, "-");
-            authorList.push(val); 
+            scrapedRelations.set(val, new Relation(val, null, null, null, null, null, null)); 
           }
         }
-        
-        //log.info(JSON.stringify(authorList));
         
       }
       catch(err)
       {
         log.err("scrapingHandler: (noob) scrapeAuthorNamesFromFavs: " + err);
-        return [];
+        return new Map();
       }
       
     }
     
-    return authorList;
+    return scrapedRelations;
 
   }
 
