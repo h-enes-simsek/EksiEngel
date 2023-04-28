@@ -318,12 +318,47 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
   }
   else if(banSource === enums.BanSource.FOLLOW)
   {
-    let scrapedRelations = await scrapingHandler.scrapeFollowingAuthors(singleAuthorName);
+    let scrapedRelations = await scrapingHandler.scrapeFollower(singleAuthorName);
+    log.info("number of user to ban (before analysis): " + scrapedRelations.size);
+    
+    // analysis before operation
+    let mapFollowing = new Map();
+    let mapBlocked = new Map();
+    
+    if(config.enableAnalysisBeforeOperation && config.enableProtectFollowedUsers && banMode == enums.BanMode.BAN)
+    {
+      // scrape the authors that ${clientName} follows
+      mapFollowing = await scrapingHandler.scrapeFollowing(clientName);
+      
+      // remove the authors that ${clientName} follows from the list to protect      
+      for (let name of scrapedRelations.keys()) {
+        if (mapFollowing.has(name))
+          scrapedRelations.delete(name);
+      }
+    }
+      
+    if(config.enableAnalysisBeforeOperation && config.enabledOnlyRequiredActions)
+    {
+      // scrape the authors that ${clientName} blocked
+      mapBlocked = await scrapingHandler.scrapeAuthorNamesFromBannedAuthorPage();
+      
+      // update the list with info obtained from mapBlocked
+      for (let name of scrapedRelations.keys()) {
+        if (mapBlocked.has(name))
+        {
+          scrapedRelations.get(name).isBannedUser = mapBlocked.get(name).isBannedUser;
+          scrapedRelations.get(name).isBannedTitle = mapBlocked.get(name).isBannedTitle;
+          scrapedRelations.get(name).isBannedMute = mapBlocked.get(name).isBannedMute;
+        }
+      }
+    }
+      
+    log.info("number of user to ban (after analysis): " + scrapedRelations.size);
+    
     authorNameList = Array.from(scrapedRelations, ([name, value]) => name);
     authorIdList = Array.from(scrapedRelations, ([name, value]) => value.authorId);
     
     // stop if there is no user
-    log.info("number of user to ban " + scrapedRelations.size);
     if(scrapedRelations.size === 0)
     {
       chrome.runtime.sendMessage(null, {"notification":{"status":"error_NoAccount", "completedProcess":{"banSource":banSource, "banMode":banMode}}}, function(response) {
@@ -340,7 +375,12 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
       if(programController.earlyStop)
         break;
       
-      let res = await relationHandler.performAction(banMode, value.authorId, !enableMute, true, enableMute);
+      // value.isBannedUser and others are null if analysis is not enabled
+      let res = await relationHandler.performAction(banMode, 
+                                                    value.authorId, 
+                                                    (!value.isBannedUser && !enableMute), 
+                                                    (!value.isBannedTitle && true), 
+                                                    (!value.isBannedMute && enableMute));
       
       if(res.resultType == enums.ResultType.FAIL)
       {
@@ -377,7 +417,14 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
         }); 
         
         if(!programController.earlyStop)
-          res = await relationHandler.performAction(banMode, value.authorId, !enableMute, true, enableMute);
+        {
+          // value.isBannedUser and others are null if analysis is not enabled
+          res = await relationHandler.performAction(banMode, 
+                                                    value.authorId, 
+                                                    (!value.isBannedUser && !enableMute),
+                                                    (!value.isBannedTitle && true), 
+                                                    (!value.isBannedMute && enableMute));
+        }
       }
       
       // send message to notification page

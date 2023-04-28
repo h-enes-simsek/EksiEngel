@@ -4,15 +4,15 @@ import {JSDOM} from './jsdom.js';
 import {config} from './config.js';
 
 function Relation(authorName, authorId, isBannedUser, isBannedTitle, isBannedMute, doIFollow, doTheyFollowMe) {
-  this.authorId = authorId;
-  this.authorName = authorName;
+  this.authorId = authorId;               // this author's id
+  this.authorName = authorName;           // this author's username
   
-  this.isBannedUser = isBannedUser;       // i banned this author
-  this.isBannedTitle = isBannedTitle;     // i banned this author's titles
-  this.isBannedMute = isBannedMute;       // i muted this author
+  this.isBannedUser = isBannedUser;       // did I ban this author
+  this.isBannedTitle = isBannedTitle;     // did I ban this author's titles
+  this.isBannedMute = isBannedMute;       // did I mute this author
   
-  this.doIFollow = doIFollow;             // i follow this author
-  this.doTheyFollowMe = doTheyFollowMe;   // this author follows me
+  this.doIFollow = doIFollow;             // do I follow this author
+  this.doTheyFollowMe = doTheyFollowMe;   // does this author follow me
 }
 
 class ScrapingHandler
@@ -408,10 +408,10 @@ class ScrapingHandler
     }
   }
 
-  #scrapeFollowingAuthorsPartially = async (scrapedRelations, authorName, index) =>
+  #scrapeFollowerPartially = async (scrapedRelations, authorName, index) =>
   {
     // index: integer(1...n) Scraping must be done with multiple requests, index indicates the number of the page to scrape
-    // authorName: the author followed by other authors that will be scraped
+    // authorName: the author whose followers will be scraped
     // return: isLast: bool
     // return(err): true
     // note: isLast indicates that this is the last page and has no info
@@ -455,18 +455,18 @@ class ScrapingHandler
     }
     catch(err)
     {
-      log.err("scrapingHandler: scrapeFollowingAuthorsPartially: " + err);
+      log.err("scrapingHandler: scrapeFollowerPartially: " + err);
       return true; // isLast
     }
     
     
   }
 
-  async scrapeFollowingAuthors(authorName)
+  async scrapeFollower(authorName)
   {
-    // authorName: the author followed by other authors that will be scraped
-    // return: {authorNames: String[], authorIds: String[]}
-    // return(err): {authorNames: [], authorIds: []}
+    // authorName: the author whose followers will be scraped
+    // return: map(authName, Relation)
+    // return(err): map()
     
     // map: authorName - Relation
     let scrapedRelations = new Map();
@@ -476,7 +476,81 @@ class ScrapingHandler
     while(!isLast)
     {
       index++;
-      isLast = await this.#scrapeFollowingAuthorsPartially(scrapedRelations, authorName, index);
+      isLast = await this.#scrapeFollowerPartially(scrapedRelations, authorName, index);
+    }
+    
+    return scrapedRelations;
+  }
+
+  #scrapeFollowingPartially = async (scrapedRelations, authorName, index) =>
+  {
+    // index: integer(1...n) Scraping must be done with multiple requests, index indicates the number of the page to scrape
+    // authorName: the author whose followers will be scraped
+    // return: isLast: bool
+    // return(err): true
+    // note: isLast indicates that this is the last page and has no info
+    
+    let responseJson = "";
+    try
+    {
+      // note: real url is like .../following?nick=abcdefg&pageIndex=1&_=123456789
+      // but i couldn't figure out what and where is the query parameter '_'
+      // without this query parameter it works anyway at least for now.
+      let targetUrl = `https://eksisozluk2023.com/following?nick=${authorName}&pageIndex=${index}`;
+      let response = await fetch(targetUrl, {
+        method: 'GET',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+            'x-requested-with': 'XMLHttpRequest'
+          }
+      });
+      responseJson = await response.json();
+      
+      let authorNameList = [];
+      let authorIdList = [];
+      let authorNumber = responseJson.length;
+      for(let i = 0; i < authorNumber; i++)
+      {
+        let authName = responseJson[i].Nick.Value;
+        // replace every whitespace with - (eksisozluk.com convention)
+        authName = authName.replace(/ /gi, "-");
+        let authId = String(responseJson[i].Id);
+        
+        let doTheyFollowMe = responseJson[i].IsFollowCurrentUser;
+        let doIFollow = responseJson[i].IsBuddy;
+        
+        scrapedRelations.set(authName, new Relation(authName, authId, null, null, null, doIFollow, doTheyFollowMe)); 
+      }
+      
+      if(Number.isInteger(authorNumber) && authorNumber > 0)
+        return false; // isLast
+      else
+        return true; // isLast
+    }
+    catch(err)
+    {
+      log.err("scrapingHandler: scrapeFollowingPartially: " + err);
+      return true; // isLast
+    }
+    
+    
+  }
+
+  async scrapeFollowing(authorName)
+  {
+    // authorName: the author following the authors to be scraped
+    // return: map(authName, Relation)
+    // return(err): map()
+    
+    // map: authorName - Relation
+    let scrapedRelations = new Map();
+    
+    let isLast = false;
+    let index = 0;
+    while(!isLast)
+    {
+      index++;
+      isLast = await this.#scrapeFollowingPartially(scrapedRelations, authorName, index);
     }
     
     return scrapedRelations;

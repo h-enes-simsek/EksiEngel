@@ -14,6 +14,10 @@ export let config =
     
   "enableNoobBan":      false,                            /* enable/disable noob author scraping for FAV */
   "enableMute":         false,                            /* enable/disable TargetType.MUTE operations */
+  
+  "enableAnalysisBeforeOperation": true,                  /* do analysis before performing any operation */
+    "enabledOnlyRequiredActions": true,                   /* do analysis to reduce unnecessary blocking/unblocking actions */
+    "enableProtectFollowedUsers": true,                   /* do not block if an author is followed by the user */
 	
 	"anonymouseClientName": "anonymouse",									  /* client name if sendClientName false */
 	"erroneousText": 				"",											        /* default text if smt goes wrong */
