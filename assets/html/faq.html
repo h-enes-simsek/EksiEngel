@@ -107,8 +107,8 @@ margin-bottom: 8px;
     aynı anda gerçekleşemez. Her iki durumda da yazarların entry'sini görmezsiniz. 
     Engellenen yazar sizin entrylerinizi göremez ve size mesaj atamaz.
     Sessize alınan görebilir ve mesaj atabilir dolayısıyla sessize alındığını fark edemez.
-    Başlıklarını engelle işlemi bu iki seçenekten bağımsız çalışır,
-    Ekşi Engel her iki durumda da başlıkları engelliyor." 
+    Başlıklarını engelle işlemi bu iki seçenekten bağımsızdır.
+    Ekşi Engel, bu ayardan bağımsız olarak başlıkları engelliyor." 
     style="text-align: left;" id="noobBanSwitchText">Engelle veya sessize al.</a>
 
     <div class="grid-item">
@@ -123,9 +123,38 @@ margin-bottom: 8px;
       </div>
     </div>
     <a class="grid-item tooltip bottom" tip="Bu ayar sadece favori engeli için geçerlidir.
-    Tüm engeller kaldırılırken ya da listeden işlem 
-    yapılırken yazarın çaylak olup olmadığına bakılmaz." 
+    Diğer işlemler yapılırken yazarın çaylak olup olmadığına bakılmaz." 
     style="text-align: left;" id="noobBanSwitchText">Çaylak yazarları da engelle.</a>
+
+    <div class="grid-item">
+      <div id="protectFollowedUsersSwitch" class="switch-toggle switch-3 switch-candy" style="display:inline-flex;width:132px;">
+        <input id="protectFollowedUsersDisabled" value="protectFollowedUsersDisabled" name="state-d-protectFollowedUsers" type="radio" checked="checked">
+        <label for="protectFollowedUsersDisabled">Kapalı</label>
+
+        <input id="protectFollowedUsersEnabled" value="protectFollowedUsersEnabled" name="state-d-protectFollowedUsers" type="radio" checked="">
+        <label for="protectFollowedUsersEnabled">Açık</label>
+
+        <a></a>
+      </div>
+    </div>
+    <a class="grid-item tooltip bottom" tip="Bu ayar sadece favori ve takipçi engeli için geçerlidir.
+    Aktifken sizin takip ettiğiniz yazarlar engellenmez." 
+    style="text-align: left;" id="protectFollowedUsersSwitchText">Takip ettiğim yazarları engelleme.</a>
+
+    <div class="grid-item">
+      <div id="onlyRequiredActionsSwitch" class="switch-toggle switch-3 switch-candy" style="display:inline-flex;width:132px;">
+        <input id="onlyRequiredActionsDisabled" value="onlyRequiredActionsDisabled" name="state-d-onlyRequiredActions" type="radio" checked="">
+        <label for="onlyRequiredActionsDisabled">Kapalı</label>
+
+        <input id="onlyRequiredActionsEnabled" value="onlyRequiredActionsEnabled" name="state-d-onlyRequiredActions" type="radio" checked="">
+        <label for="onlyRequiredActionsEnabled">Açık</label>
+
+        <a></a>
+      </div>
+    </div>
+    <a class="grid-item tooltip bottom" tip="Bu ayar sadece favori ve takipçi engeli için geçerlidir.
+    Aktifken sadece gerekli işlemleri yapılır, yani engellenmiş yazar tekrar engellemeye çalışılmaz." 
+    style="text-align: left;" id="onlyRequiredActions">Sadece gerekli işlemleri yap.</a>
     
     <div class="grid-item"> 
       <div id="threeStateSwitch" class="switch-toggle switch-3 switch-candy" style="display:inline-flex;width:200px;">
@@ -216,30 +245,6 @@ margin-bottom: 8px;
     </li>
   </ol>
   
-  </div>
-  
-  <div style="display:none">
-  <h3 style="text-align: center;">
-    <b style="color:green">Ekşi Engel</b> Detaylı İşlem Tablosu
-  </h3>
-  <div class="grid-container three-column" style="border: 1px solid black">
-  
-    <div class="grid-item"></div>
-    <div class="grid-item">Engelle</div>
-    <div class="grid-item">Engeli Kaldır</div>
-    
-    <div class="grid-item">Favori</div>
-    <div class="grid-item">Başlıkları engelle + Ayarlara göre (Engelle veya Sessize al)</div>
-    <div class="grid-item">-</div>
-    
-    <div class="grid-item">Liste</div>
-    <div class="grid-item">Başlıkları engelle + Ayarlara göre (Engelle veya Sessize al)</div>
-    <div class="grid-item">Başlıkları engelle + Engelle + Sessize al</div>
-    
-    <div class="grid-item">Tüm engelleri kaldır</div>
-    <div class="grid-item">-</div>
-    <div class="grid-item">Sadece gerekli işlemleri yap (Başlıkları engelle + Engelle + Sessize al)</div>
-  </div>
   </div>
   
   <br><br><br>

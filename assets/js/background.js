@@ -269,7 +269,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
           scrapedRelations.delete(name);
       }
     }
-    if(config.enableAnalysisBeforeOperation && config.enabledOnlyRequiredActions)
+    if(config.enableAnalysisBeforeOperation && config.enableOnlyRequiredActions)
     {
       // Note: Ekşi Sözlük API response doesn't include blocked authors, but it includes authors who muted and title blocked
       // This condition doesn't provide a simplification of the following algorithm
@@ -401,7 +401,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
           scrapedRelations.delete(name);
       }
     }
-    if(config.enableAnalysisBeforeOperation && config.enabledOnlyRequiredActions)
+    if(config.enableAnalysisBeforeOperation && config.enableOnlyRequiredActions)
     {
       // scrape the authors that ${clientName} blocked
       let mapBlocked = await scrapingHandler.scrapeAuthorNamesFromBannedAuthorPage();

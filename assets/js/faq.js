@@ -9,9 +9,11 @@ document.addEventListener('DOMContentLoaded', async function () {
   
   // load the current configuration from storage
   let config = await getConfig();
-  console.log("sendData:" + config.sendData + " sendClientName:" + config.sendClientName);
+  console.log("sendData:" + config.sendData + ", sendClientName:" + config.sendClientName);
   console.log("enableNoobBan:" + config.enableNoobBan);
   console.log("enableMute:" + config.enableMute);
+  console.log("enableProtectFollowedUsers:" + config.enableProtectFollowedUsers);
+  console.log("enableOnlyRequiredActions:" + config.enableOnlyRequiredActions);
   if(!config)
     return;
   
@@ -31,29 +33,17 @@ document.addEventListener('DOMContentLoaded', async function () {
 		document.getElementById("threeStateBoth").checked = true;
 		document.getElementById("threeStateSwitchText").innerHTML = "Ekşi Sözlük kullanıcı adınız ve engel listeniz <b style='color:green'>Ekşi Engel</b> sunucularına gönderiliyor.";
 	}
-  
-  // load the current configuration to switch buttons
-  if(config.enableNoobBan)
-  {
-    document.getElementById("noobBanEnabled").checked = true;
-    //document.getElementById("noobBanSwitchText").innerHTML = "";
-  }
-  else
-  {
-    document.getElementById("noobBanDisabled").checked = true;
-    //document.getElementById("noobBanSwitchText").innerHTML = "";
-  }
-  
-  // load the current configuration to switch buttons
-  if(config.enableMute)
-  {
-    document.getElementById("muteEnabled").checked = true;
-  }
-  else
-  {
-    document.getElementById("muteDisabled").checked = true;
-  }
-  
+
+  // load the current states to switch buttons
+  document.getElementById("noobBanEnabled").checked = config.enableNoobBan === true;
+  document.getElementById("noobBanDisabled").checked = config.enableNoobBan !== true;
+  document.getElementById("muteEnabled").checked = config.enableMute === true;
+  document.getElementById("muteDisabled").checked = config.enableMute !== true;
+  document.getElementById("protectFollowedUsersEnabled").checked = config.enableProtectFollowedUsers === true;
+  document.getElementById("protectFollowedUsersDisabled").checked = config.enableProtectFollowedUsers !== true;
+  document.getElementById("onlyRequiredActionsEnabled").checked = config.enableOnlyRequiredActions === true;
+  document.getElementById("onlyRequiredActionsDisabled").checked = config.enableOnlyRequiredActions !== true;
+
   // add onclick function to three state radio buttons
   document.getElementById("threeStateNone").addEventListener("click", function(element) {
 		document.getElementById("threeStateSwitchText").innerHTML = "Hiçbir veriniz <b style='color:green'>Ekşi Engel</b> sunucularına gönderilmiyor.";
@@ -84,6 +74,22 @@ document.addEventListener('DOMContentLoaded', async function () {
   });
   document.getElementById("muteDisabled").addEventListener("click", function(element) {
     muteSwitchOnClick(config);
+  });
+    
+  // add onclick function to two state radio buttons
+  document.getElementById("protectFollowedUsersEnabled").addEventListener("click", function(element) {
+    protectFollowedUsersSwitchOnClick(config);
+  });
+  document.getElementById("protectFollowedUsersDisabled").addEventListener("click", function(element) {
+    protectFollowedUsersSwitchOnClick(config);
+  });
+
+  // add onclick function to two state radio buttons
+  document.getElementById("onlyRequiredActionsEnabled").addEventListener("click", function(element) {
+    onlyRequiredActionsSwitchOnClick(config);
+  });
+  document.getElementById("onlyRequiredActionsDisabled").addEventListener("click", function(element) {
+    onlyRequiredActionsSwitchOnClick(config);
   });
 });
 
@@ -123,6 +129,22 @@ function noobBanSwitchOnClick(config)
 	console.log("enableNoobBan:" + config.enableNoobBan);
 	saveConfig(config);
 }
+
+function protectFollowedUsersSwitchOnClick(config)
+{
+	config.enableProtectFollowedUsers = document.getElementById("protectFollowedUsersEnabled").checked;
+	console.log("enableProtectFollowedUsers:" + config.enableProtectFollowedUsers);
+	saveConfig(config);
+}
+
+function onlyRequiredActionsSwitchOnClick(config)
+{
+	config.enableOnlyRequiredActions = document.getElementById("onlyRequiredActionsEnabled").checked;
+	console.log("enableOnlyRequiredActions:" + config.enableOnlyRequiredActions);
+	saveConfig(config);
+}
+
+
 
 async function getConfig()
 {

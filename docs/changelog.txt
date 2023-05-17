@@ -181,8 +181,16 @@ v2.5
 gönderim: 06.04.2023 yayın: 06.04.2023
 bug fix: Support new Ekşi Sözlük domain eksisozluk2023.com
 
+v2.6
+gönderim: yayın: 
+yeni özellik: takip ettiğim kullanıcıları yanlışlıkla engelleme ayarı (fav ve follow ban için)
+yeni özellik: sadece gereken işlemleri yaparak toplam işlem sayısını ve dolayısıyla geçen zamanı kısalt ayarı (fav ve follow ban için) (undobanall için bir ayara gerek yok, önceden de böyle çalışıyordu)
+yeni özellik: yazarın profil sayfasına takipçilerini engelle butonu eklendi
+
 YÜKSEK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
-kullanıcı sayfasına takipçilerini engelle butonu eklenmeli
+ayarlar sayfası tasarımı
+ekşisözlük domain değişiklikleri
+list ban için kaydedilen liste string değil bir string queue olmalı.
 markettext içinde MUTE'den bahsedilmeli
 notification sayfasındaki BAN/UNDOBAN gibi ifadeler türkçeleştirilmeli
 notification sayfasına yapılabilecek tüm işlemlerin anlatıldığı bir diyagram konulmalı.
