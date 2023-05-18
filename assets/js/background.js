@@ -9,6 +9,7 @@ import {relationHandler} from './relationHandler.js';
 import {scrapingHandler} from './scrapingHandler.js';
 import {autoQueue} from './queue.js';
 import {programController} from './programController.js';
+import {handleEksiSozlukURL} from './urlHandler.js';
 
 log.info("bg: init.");
 let g_notificationTabId = 0;
@@ -82,6 +83,16 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
   
   await handleConfig(); // load config
   relationHandler.reset(); // reset the counters to reuse
+
+  const isEksiSozlukAccessible = await handleEksiSozlukURL();
+  if(!isEksiSozlukAccessible)
+  {
+    log.err("Program has been finished (error_Access)");
+    chrome.runtime.sendMessage(null, {"notification":{"status":"error_Access", "completedProcess":{"banSource":banSource, "banMode":banMode}}}, function(response) {
+      let lastError = chrome.runtime.lastError;
+    });
+    return;
+  }
 
   let userAgent = await scrapingHandler.scrapeUserAgent();
   let clientName = await scrapingHandler.scrapeClientName(); 

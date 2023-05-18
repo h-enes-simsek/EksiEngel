@@ -2,13 +2,14 @@
 
 <head>
 <style>
-.grid-container.five-column {
+.grid-container.six-column {
   display: grid;
-  grid-template-columns: auto auto auto auto auto;
+  grid-template-columns: auto auto auto auto auto auto;
   padding: 10px;
 }
 .grid-item {
   padding: 10px;
+  border: 1px solid;
 }
 </style>
 </head>
@@ -18,42 +19,48 @@
     <h3 style="text-align: center;">
       <b style="color:green">Ekşi Engel</b> Detaylı İşlem Tablosu
     </h3>
-    <div class="grid-container five-column" style="border: 1px solid black">
+    <div class="grid-container six-column" style="border: 1px solid black">
     
       <div class="grid-item"></div>
       <div class="grid-item">Engelleme Modu <br>(BanMode::BAN)</div>
       <div class="grid-item">Engeli Kaldırma Modu <br>(BanMode::UNDOBAN)</div>
       <div class="grid-item">Takipçilerimi Koru</div>
-      <div class="grid-item">Çaylaklar Üzerinde İşlem</div>
+      <div class="grid-item">Çaylaklar Üzerinde<br>İşlem</div>
+      <div class="grid-item">Sadece Gerekli<br>İşlemleri Yap</div>
 
       <div class="grid-item">Tek İşlem <br>(BanSource::SINGLE)</div>
       <div class="grid-item">Seçime göre (Engelle veya Başlıklarını engelle veya Sessize al)</div>
       <div class="grid-item">Seçime göre (Engelle veya Başlıklarını engelle veya Sessize al)</div>
       <div class="grid-item">Kapalı</div>
       <div class="grid-item">Açık</div>
+      <div class="grid-item">Kapalı</div>
       
       <div class="grid-item">Favori <br>(BanSource::FAV)</div>
-      <div class="grid-item">[Sadece Gerekli İşlemler Ayarı: Açık] Sadece gerekli işlemleri yap (Başlıkları engelle + Engelle + Sessize al) <br> [Sadece Gerekli İşlemler Ayarı: Kapalı] Başlıkları engelle + Ayarlara göre (Engelle veya Sessize al)</div>
+      <div class="grid-item">Başlıkları engelle + Ayarlara göre (Engelle veya Sessize al)</div>
       <div class="grid-item">-</div>
+      <div class="grid-item">Ayarlara göre</div>
       <div class="grid-item">Ayarlara göre</div>
       <div class="grid-item">Ayarlara göre</div>
 
       <div class="grid-item">Takipçi <br>(BanSource::FOLLOW)</div>
-      <div class="grid-item">[Sadece Gerekli İşlemler Ayarı: Açık] Sadece gerekli işlemleri yap (Başlıkları engelle + Engelle + Sessize al) <br> [Sadece Gerekli İşlemler Ayarı: Kapalı] Başlıkları engelle + Ayarlara göre (Engelle veya Sessize al)</div>
+      <div class="grid-item">Başlıkları engelle + Ayarlara göre (Engelle veya Sessize al)</div>
       <div class="grid-item">-</div>
       <div class="grid-item">Ayarlara göre</div>
       <div class="grid-item">Açık</div>
+      <div class="grid-item">Ayarlara göre</div>
       
       <div class="grid-item">Liste <br>(BanSource::LIST)</div>
       <div class="grid-item">Başlıkları engelle + Ayarlara göre (Engelle veya Sessize al)</div>
       <div class="grid-item">Başlıkları engelle + Engelle + Sessize al</div>
       <div class="grid-item">Kapalı</div>
       <div class="grid-item">Açık</div>
+      <div class="grid-item">Kapalı</div>
       
       <div class="grid-item">Tüm engelleri kaldır <br>(BanSource::UNDOBANALL)</div>
       <div class="grid-item">-</div>
-      <div class="grid-item">Sadece gerekli işlemleri yap (Başlıkları engelle + Engelle + Sessize al)</div>
+      <div class="grid-item">Başlıkları engelle + Engelle + Sessize al</div>
       <div class="grid-item">-</div>
+      <div class="grid-item">Açık</div>
       <div class="grid-item">Açık</div>
     </div>
 </div>

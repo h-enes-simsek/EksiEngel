@@ -1,8 +1,11 @@
 import * as enums from './enums.js';
 import * as utils from './utils.js';
+import {log} from './log.js';
 
 export let config = 
 {
+  "EksiSozlukURL":      "https://eksisozluk1923.com",
+  "whereIsEksiSozlukURL":"https://eksiengel.hesimsek.com/where_is_eksisozluk",
 	"serverURL": 				  "https://eksiengel.hesimsek.com/client_data_collector/upload",
 	"serverAnalyticsURL": "https://eksiengel.hesimsek.com/client_data_collector/analytics",
 	"sendData": 				  true,														  /* send data to server */
@@ -49,6 +52,7 @@ export async function getConfig()
 
 export async function saveConfig(config)
 {
+  log.info("A config saved into storage");
   return new Promise((resolve, reject) => {
     chrome.storage.local.set({ "config": config }, function(){
       if(!chrome.runtime.error){
@@ -66,10 +70,12 @@ export async function handleConfig()
   let c = await getConfig();
   if(c)
   {
+    log.info("Config restored from storage");
     config = c;
   }
   else
   {
+    log.info("No config in storage, hardcoded config will be saved into storage");
     saveConfig(config);
   }
 }
@@ -83,5 +89,6 @@ chrome.runtime.onMessage.addListener(async function messageListener_Faq(message,
 		return;
   
   // config in storage updated by settings, load it.
+  log.info("Config updated by faq");
   await handleConfig();
 });

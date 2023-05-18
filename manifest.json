@@ -26,15 +26,10 @@
   ],
 	"content_scripts": [
    {
-     "matches": ["https://eksisozluk.com/*", "https://eksisozluk2023.com/*"],
+     "matches": ["*://*/*"],
      "js": ["assets/js/script.js"]
    }
 	],
-  "host_permissions": [
-    "https://eksisozluk.com/*", 
-    "https://eksisozluk2023.com/*", 
-		"https://eksiengel.hesimsek.com/*"
-  ],
   "background": {
     "service_worker": "assets/js/background.js",
 		"type": "module"

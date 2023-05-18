@@ -35,7 +35,16 @@ chrome.runtime.onMessage.addListener(async function messageListener_Background(m
 		return;
   
   console.log("incoming message: " + obj.notification.status);
-  
+
+  if(obj.notification.status === "error_Access")
+  {
+    document.getElementById("statusText").innerHTML = "Ekşisözlük'e erişilemiyor.";
+    updateCompletedProcessesTable(obj.notification.completedProcess.banSource,
+                                  obj.notification.completedProcess.banMode,
+                                  0,0,0,
+                                  "ekşisözlük'e erişilemedi");
+    return;
+  }
   if(obj.notification.status === "error_NoAccount")
   {
     document.getElementById("statusText").innerHTML = "Engellenecek yazar listesi boş.";

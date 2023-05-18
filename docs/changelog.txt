@@ -192,6 +192,7 @@ ayarlar sayfası tasarımı
 ekşisözlük domain değişiklikleri
 list ban için kaydedilen liste string değil bir string queue olmalı.
 markettext içinde MUTE'den bahsedilmeli
+kullanıcı VPN kullandığında eski url yönlendiriliyo. şu anda bu durum erişim eksikliği olarak yorumlanıyor ama yönlendirilen url, yeni url olarak yorumlanabilir.
 notification sayfasındaki BAN/UNDOBAN gibi ifadeler türkçeleştirilmeli
 notification sayfasına yapılabilecek tüm işlemlerin anlatıldığı bir diyagram konulmalı.
 unique identifier ile, bazı butonlara ve yükleme sonrasında bildirim gitsin.
