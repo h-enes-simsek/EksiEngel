@@ -1,5 +1,3 @@
-import {config} from './config.js';
-
 // custom logger
 class Log
 {
@@ -7,8 +5,8 @@ class Log
   {
     this.g_LoggedData = [];					      /* logged data */
 		this.level = Log.Levels.INFO;		      /* minimum log level that will be logged */
-		this._isEnabled = config.enableLog;	  /* on-off logger */
-		this._logConsole = config.logConsole;  /* log to console as well */
+		this._isEnabled = true;	  /* on-off logger */
+		this._logConsole = true;  /* log to console as well */
   }
 	
 	setLevel = (level) =>
