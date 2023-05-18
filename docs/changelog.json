@@ -2,6 +2,18 @@
   {
     "name": "",
     "notes": [
+			"[New] Domain changes in eksisozluk.com was solved by obtaining the latest URL from Ekşi Engel servers. github issue: #8",
+			"[New] Added preference to carry out only required operations. This increases the preparing time because it requires an analysis, but reduce the time spent overall. (only for source:FAV and source:FOLLOW) (it was implemented and is mandatory for source:UNDOBANALL) github issue: #7",
+			"[New] Added the source:FOLLOW button to authors' profile pages. github issue: #6",
+			"[New] Added preference to protect followed users from blocking. This increases the preparing time because it requires an analysis (only for source:FAV and source:FOLLOW) ",
+			"[Improved] Footer design is removed from pages"
+    ],
+    "pub_date": "2023-05-18",
+    "version": "2.6.0"
+  },
+  {
+    "name": "",
+    "notes": [
 			"[Fixed] Support the new Ekşi Sözlük URL, eksisozluk2023.com, github issue: #4"
     ],
     "pub_date": "2023-04-06",

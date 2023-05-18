@@ -62,6 +62,14 @@ v2.5
 yayın: 06.04.2023
 bug fix: Support new Ekşi Sözlük domain eksisozluk2023.com
 
+v2.6
+yayın:
+yeni özellik: ekşisözlük domain değişiklikleri, son domain'nin ekşi engel sunucularından elde edilmesiyle çözüldü.
+yeni özellik: takip ettiğim kullanıcıları yanlışlıkla engelleme ayarı (fav ve follow ban için)
+yeni özellik: sadece gereken işlemleri yaparak toplam işlem sayısını ve dolayısıyla geçen zamanı kısalt ayarı (fav ve follow ban için) (undobanall için bir ayara gerek yok, önceden de böyle çalışıyordu)
+yeni özellik: yazarın profil sayfasına takipçilerini engelle butonu eklendi
+yeni özellik: sayfalardan footer kaldırıldı
+
 Versiyon notları (detaylı) 
 -------------------------------------------------
 v1.0  
@@ -182,17 +190,18 @@ gönderim: 06.04.2023 yayın: 06.04.2023
 bug fix: Support new Ekşi Sözlük domain eksisozluk2023.com
 
 v2.6
-gönderim: yayın: 
+gönderim: 18.05.2023 yayın: 
+yeni özellik: ekşisözlük domain değişiklikleri, son domain'nin ekşi engel sunucularından elde edilmesiyle çözüldü.
 yeni özellik: takip ettiğim kullanıcıları yanlışlıkla engelleme ayarı (fav ve follow ban için)
 yeni özellik: sadece gereken işlemleri yaparak toplam işlem sayısını ve dolayısıyla geçen zamanı kısalt ayarı (fav ve follow ban için) (undobanall için bir ayara gerek yok, önceden de böyle çalışıyordu)
 yeni özellik: yazarın profil sayfasına takipçilerini engelle butonu eklendi
+yeni özellik: sayfalardan footer kaldırıldı
 
 YÜKSEK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
 ayarlar sayfası tasarımı
-ekşisözlük domain değişiklikleri
 list ban için kaydedilen liste string değil bir string queue olmalı.
 markettext içinde MUTE'den bahsedilmeli
-kullanıcı VPN kullandığında eski url yönlendiriliyo. şu anda bu durum erişim eksikliği olarak yorumlanıyor ama yönlendirilen url, yeni url olarak yorumlanabilir.
+kullanıcı VPN kullandığında eski url, yönlendiriliyor. şu anda bu durum erişim eksikliği olarak yorumlanıyor ama yönlendirilen url, yeni url olarak yorumlanabilir.
 notification sayfasındaki BAN/UNDOBAN gibi ifadeler türkçeleştirilmeli
 notification sayfasına yapılabilecek tüm işlemlerin anlatıldığı bir diyagram konulmalı.
 unique identifier ile, bazı butonlara ve yükleme sonrasında bildirim gitsin.
@@ -205,10 +214,7 @@ performans analizi yapılmalı
     obje içinde array silindiğinde reflerin durumu ne oluyor?
 
 DÜŞÜK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
-takipçilerini engelle için takip ettiklerimi/beni takip edenleri engelleme ayarı kolayca getirebilir.
 başlığa yazan herkesi engelle
-footer content overlaps olmasın ama yine de hep en aşağıda kalsın.
-takip edilen yazarlar engellenemesin ayarı
 sayfa kapatıldığında iki kere earlyStop sinyali üretiliyor. Buga neden olmuyor. Muhtemelen notification sayfasına bilgi gönderme 
 işlemi asenkron olmadığı için buna neden oluyor.
 [çok zor] firefox desteği (hiçbir şey düzgün çalışmıyor, manifest v3 desteği bile tam gelmemiş)
