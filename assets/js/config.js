@@ -79,16 +79,3 @@ export async function handleConfig()
     saveConfig(config);
   }
 }
-
-// listen to update config from settings
-chrome.runtime.onMessage.addListener(async function messageListener_Faq(message, sender, sendResponse) {
-  sendResponse({status: 'ok'}); // added to suppress 'message port closed before a response was received' error
-	
-	const obj = utils.filterMessage(message, "config");
-	if(obj.resultType === enums.ResultType.FAIL)
-		return;
-  
-  // config in storage updated by settings, load it.
-  log.info("Config updated by faq");
-  await handleConfig();
-});

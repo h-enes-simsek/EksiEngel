@@ -27,7 +27,7 @@ class ScrapingHandler
     let responseText = "";
     try
     {
-      let response = await fetch("https://eksisozluk2023.com/", {
+      let response = await fetch(config.EksiSozlukURL, {
         method: 'GET',
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
@@ -128,7 +128,7 @@ class ScrapingHandler
     try
     {
       let entryId = entryUrl.match(/(\d+)(?!.*\d)/g).join("");
-      let targetUrl = "https://eksisozluk2023.com/entry/favorileyenler?entryId=" + entryId;
+      let targetUrl = config.EksiSozlukURL + "/entry/favorileyenler?entryId=" + entryId;
       let response = await fetch(targetUrl, {
         method: 'GET',
           headers: {
@@ -189,7 +189,7 @@ class ScrapingHandler
       try
       {
         let entryId = entryUrl.match(/(\d+)(?!.*\d)/g).join("");
-        let targetUrl = "https://eksisozluk2023.com/entry/caylakfavorites?entryId=" + entryId;
+        let targetUrl = config.EksiSozlukURL + "/entry/caylakfavorites?entryId=" + entryId;
         let response = await fetch(targetUrl, {
           method: 'GET',
             headers: {
@@ -261,7 +261,7 @@ class ScrapingHandler
       // note: real url is like .../relation-list?relationType=m&pageIndex=1&_=123456789
       // but i couldn't figure out what and where is the query parameter '_'
       // without this query parameter it works anyway at least for now.
-      let targetUrl = `https://eksisozluk2023.com/relation-list?relationType=${targetTypeTextInURL}&pageIndex=${index}`;
+      let targetUrl = `${config.EksiSozlukURL}/relation-list?relationType=${targetTypeTextInURL}&pageIndex=${index}`;
       let response = await fetch(targetUrl, {
         method: 'GET',
           headers: {
@@ -421,7 +421,7 @@ class ScrapingHandler
       // note: real url is like .../follower?nick=abcdefg&pageIndex=1&_=123456789
       // but i couldn't figure out what and where is the query parameter '_'
       // without this query parameter it works anyway at least for now.
-      let targetUrl = `https://eksisozluk2023.com/follower?nick=${authorName}&pageIndex=${index}`;
+      let targetUrl = `${config.EksiSozlukURL}/follower?nick=${authorName}&pageIndex=${index}`;
       let response = await fetch(targetUrl, {
         method: 'GET',
           headers: {
@@ -495,7 +495,7 @@ class ScrapingHandler
       // note: real url is like .../following?nick=abcdefg&pageIndex=1&_=123456789
       // but i couldn't figure out what and where is the query parameter '_'
       // without this query parameter it works anyway at least for now.
-      let targetUrl = `https://eksisozluk2023.com/following?nick=${authorName}&pageIndex=${index}`;
+      let targetUrl = `${config.EksiSozlukURL}/following?nick=${authorName}&pageIndex=${index}`;
       let response = await fetch(targetUrl, {
         method: 'GET',
           headers: {
@@ -563,7 +563,7 @@ class ScrapingHandler
     
     try
     {
-      let targetUrl = "https://eksisozluk2023.com/biri/" + authorName;
+      let targetUrl = config.EksiSozlukURL + "/biri/" + authorName;
       let response = await fetch(targetUrl, {
         method: 'GET',
           headers: {

@@ -2,6 +2,7 @@ import {log} from './log.js';
 import * as enums from './enums.js';
 import * as utils from './utils.js'
 import {programController} from './programController.js';
+import {config} from './config.js';
 
 // a class to manage relations (ban/undoban users/users' titles)
 class RelationHandler
@@ -73,7 +74,7 @@ class RelationHandler
     else if(targetType == enums.TargetType.MUTE)
       targetTypeText = "u";
     
-    let url = `https://eksisozluk2023.com/userrelation/${banModeText}/${id}?r=${targetTypeText}`;
+    let url = `${config.EksiSozlukURL}/userrelation/${banModeText}/${id}?r=${targetTypeText}`;
     return url;
 	}
   

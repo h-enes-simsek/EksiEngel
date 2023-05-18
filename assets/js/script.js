@@ -65,6 +65,8 @@ let entryMenus = await waitForElm(".other.dropdown .dropdown-menu.right.toggles-
 // select all meta tags for each entry in the page
 let entryMetas = await waitForElm("[data-author-id]");
 
+let eksiSozlukURL = window.location.origin;
+
 for (let i = 0; i < entryMenus.length; i++) 
 {
   let entryMenu = entryMenus[i];
@@ -74,7 +76,7 @@ for (let i = 0; i < entryMenus.length; i++)
   let authorName = entryMeta.getAttribute("data-author");
   let authorId = entryMeta.getAttribute("data-author-id");
   let entryId = entryMeta.getAttribute("data-id");
-  let entryUrl = `https://eksisozluk2023.com/entry/${entryId}`;
+  let entryUrl = `${eksiSozlukURL}/entry/${entryId}`;
   
   // replace every whitespace with - (ekşi naming convention)
   authorName = authorName.replace(/ /gi, "-");

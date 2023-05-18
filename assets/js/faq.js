@@ -1,22 +1,28 @@
 import * as enums from './enums.js';
 import {commHandler} from './commHandler.js';
+import {config, handleConfig, saveConfig} from './config.js';
 
 document.addEventListener('DOMContentLoaded', async function () {
-  // analytics
-  linkAboutLimit.onclick = function(element) {
-    commHandler.sendAnalyticsData({click_type:enums.ClickType.FAQ_LINK_ENTRY_LIMIT});
-  };
-  
+
   // load the current configuration from storage
-  let config = await getConfig();
+  await handleConfig();
   console.log("sendData:" + config.sendData + ", sendClientName:" + config.sendClientName);
   console.log("enableNoobBan:" + config.enableNoobBan);
   console.log("enableMute:" + config.enableMute);
   console.log("enableProtectFollowedUsers:" + config.enableProtectFollowedUsers);
   console.log("enableOnlyRequiredActions:" + config.enableOnlyRequiredActions);
   if(!config)
+  {
+    alert("Konfigurasyon dosyasi bulunamadi.");
     return;
+  }
   
+  // link about restrictions applied by eksisozluk 
+  linkAboutLimit.onclick = function(element) {
+    commHandler.sendAnalyticsData({click_type:enums.ClickType.FAQ_LINK_ENTRY_LIMIT});
+  };
+  linkAboutLimit.href = `${config.EksiSozlukURL}/eksi-sozlukun-yazar-engellemeye-sinir-getirmesi--7547420`;
+
   // load the current configuration to switch buttons
 	if(!config.sendData)
 	{
@@ -47,53 +53,53 @@ document.addEventListener('DOMContentLoaded', async function () {
   // add onclick function to three state radio buttons
   document.getElementById("threeStateNone").addEventListener("click", function(element) {
 		document.getElementById("threeStateSwitchText").innerHTML = "Hiçbir veriniz <b style='color:green'>Ekşi Engel</b> sunucularına gönderilmiyor.";
-    threeStateSwitchOnClick(config);
+    threeStateSwitchOnClick();
   });
 	document.getElementById("threeStateOnlyList").addEventListener("click", function(element) {
 		document.getElementById("threeStateSwitchText").innerHTML = "Log verileri <b style='color:green'>Ekşi Engel</b> sunucularına gönderiliyor. (Kullanıcı adınız gönderilmiyor.)";
-    threeStateSwitchOnClick(config);
+    threeStateSwitchOnClick();
   });
 	document.getElementById("threeStateBoth").addEventListener("click", function(element) {
 		document.getElementById("threeStateSwitchText").innerHTML = "Ekşi Sözlük kullanıcı adınız ve log verileri <b style='color:green'>Ekşi Engel</b> sunucularına gönderiliyor.";
-    threeStateSwitchOnClick(config);
+    threeStateSwitchOnClick();
   });
   
   // add onclick function to two state radio buttons
   document.getElementById("noobBanEnabled").addEventListener("click", function(element) {
 		//document.getElementById("noobBanSwitchText").innerHTML = "";
-    noobBanSwitchOnClick(config);
+    noobBanSwitchOnClick();
   });
   document.getElementById("noobBanDisabled").addEventListener("click", function(element) {
 		//document.getElementById("noobBanSwitchText").innerHTML = "";
-    noobBanSwitchOnClick(config);
+    noobBanSwitchOnClick();
   });
   
   // add onclick function to two state radio buttons
   document.getElementById("muteEnabled").addEventListener("click", function(element) {
-    muteSwitchOnClick(config);
+    muteSwitchOnClick();
   });
   document.getElementById("muteDisabled").addEventListener("click", function(element) {
-    muteSwitchOnClick(config);
+    muteSwitchOnClick();
   });
     
   // add onclick function to two state radio buttons
   document.getElementById("protectFollowedUsersEnabled").addEventListener("click", function(element) {
-    protectFollowedUsersSwitchOnClick(config);
+    protectFollowedUsersSwitchOnClick();
   });
   document.getElementById("protectFollowedUsersDisabled").addEventListener("click", function(element) {
-    protectFollowedUsersSwitchOnClick(config);
+    protectFollowedUsersSwitchOnClick();
   });
 
   // add onclick function to two state radio buttons
   document.getElementById("onlyRequiredActionsEnabled").addEventListener("click", function(element) {
-    onlyRequiredActionsSwitchOnClick(config);
+    onlyRequiredActionsSwitchOnClick();
   });
   document.getElementById("onlyRequiredActionsDisabled").addEventListener("click", function(element) {
-    onlyRequiredActionsSwitchOnClick(config);
+    onlyRequiredActionsSwitchOnClick();
   });
 });
 
-function threeStateSwitchOnClick(config)
+function threeStateSwitchOnClick()
 {
 	config.sendData = !document.getElementById("threeStateNone").checked;
 	config.sendClientName = document.getElementById("threeStateBoth").checked;
@@ -116,72 +122,30 @@ function threeStateSwitchOnClick(config)
 	saveConfig(config);
 }
 
-function muteSwitchOnClick(config)
+function muteSwitchOnClick()
 {
 	config.enableMute = document.getElementById("muteEnabled").checked;
 	console.log("enableMute:" + config.enableMute);
 	saveConfig(config);
 }
 
-function noobBanSwitchOnClick(config)
+function noobBanSwitchOnClick()
 {
 	config.enableNoobBan = document.getElementById("noobBanEnabled").checked;
 	console.log("enableNoobBan:" + config.enableNoobBan);
 	saveConfig(config);
 }
 
-function protectFollowedUsersSwitchOnClick(config)
+function protectFollowedUsersSwitchOnClick()
 {
 	config.enableProtectFollowedUsers = document.getElementById("protectFollowedUsersEnabled").checked;
 	console.log("enableProtectFollowedUsers:" + config.enableProtectFollowedUsers);
 	saveConfig(config);
 }
 
-function onlyRequiredActionsSwitchOnClick(config)
+function onlyRequiredActionsSwitchOnClick()
 {
 	config.enableOnlyRequiredActions = document.getElementById("onlyRequiredActionsEnabled").checked;
 	console.log("enableOnlyRequiredActions:" + config.enableOnlyRequiredActions);
 	saveConfig(config);
-}
-
-
-
-async function getConfig()
-{
-  return new Promise((resolve, reject) => {
-    chrome.storage.local.get("config", function(items){
-      if(!chrome.runtime.error)
-      {
-        if(items != undefined && items.config != undefined && Object.keys(items.config).length != 0)
-        {
-          resolve(items.config);  
-        }
-        else 
-        {
-          alert("Konfigurasyon dosyasi bulunamadi.");
-          resolve("");
-        }
-      }
-      else 
-      {
-        alert("Konfigurasyon dosyasi bulunamadi_2.");
-        resolve("");
-      }
-    }); 
-  });
-}
-
-async function saveConfig(config)
-{
-  return new Promise((resolve, reject) => {
-    chrome.storage.local.set({ "config": config }, function(){
-      if(chrome.runtime.error){
-        resolve(false);
-      }else{
-        // send message to background script that config is updated
-        chrome.runtime.sendMessage(null, {"config":0});
-        resolve(true);
-      }
-    });
-  });
 }

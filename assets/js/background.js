@@ -67,7 +67,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
       log.err("bg: (initial ongoing) could not establish a connection with notification page");
   });
   */
-  
+
   // TODO fix: if page is new, lastError is generated, probably notification page is not ready here.
   // update planned processes table in notification page
   log.info("bg: (update_Planned in processHandler) notification page's queue will be updated.");

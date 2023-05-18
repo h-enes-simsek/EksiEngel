@@ -1,3 +1,5 @@
+import {config} from './config.js';
+
 document.addEventListener('DOMContentLoaded', async function () {
   document.getElementById("earlyStop").addEventListener("click", function(element) {
     chrome.runtime.sendMessage(null, {"earlyStop":0});
@@ -99,7 +101,9 @@ chrome.runtime.onMessage.addListener(async function messageListener_Background(m
     document.getElementById("statusText").innerHTML = "İşlem devam ediyor.";
   else if(obj.notification.status === "cooldown")
   {
-    document.getElementById("statusText").innerHTML = "İşlem devam ediyor. (dakikada 6 engel limiti bekleniyor) <a target='_blank' href='https://eksisozluk2023.com/eksi-sozlukun-yazar-engellemeye-sinir-getirmesi--7547420' style='color:red;'>Bu ne demek?</a>";
+    const url = config.EksiSozlukURL;
+    document.getElementById("statusText").innerHTML = `İşlem devam ediyor. (dakikada 6 engel limiti bekleniyor) <a target='_blank' href='${url}/eksi-sozlukun-yazar-engellemeye-sinir-getirmesi--7547420' style='color:red;'>Bu ne demek?</a>`;
+    
     document.getElementById("remainingTimeInSec").innerHTML = obj.notification.remainingTimeInSec + " saniye";
     return;
   }
