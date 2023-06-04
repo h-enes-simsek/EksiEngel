@@ -19,8 +19,10 @@ export let config =
   "enableMute":         false,                            /* enable/disable TargetType.MUTE operations */
   
   "enableAnalysisBeforeOperation": true,                  /* do analysis before performing any operation */
-    "enableOnlyRequiredActions": true,                   /* do analysis to reduce unnecessary blocking/unblocking actions */
-    "enableProtectFollowedUsers": true,                   /* do not block if an author is followed by the user */
+    "enableOnlyRequiredActions": false,                    /* do analysis to reduce unnecessary blocking/unblocking actions */
+    "enableProtectFollowedUsers": false,                   /* do not block if an author is followed by the user */
+
+  "banPremiumIcons": false,                               /* hide premium icons, green and yellow badges */
 	
 	"anonymouseClientName": "anonymouse",									  /* client name if sendClientName false */
 	"erroneousText": 				"",											        /* default text if smt goes wrong */

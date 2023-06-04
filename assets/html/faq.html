@@ -156,6 +156,20 @@ margin-bottom: 8px;
     <a class="grid-item tooltip bottom" tip="Bu ayar sadece favori ve takipçi engeli için geçerlidir.
     Aktifken sadece gerekli işlemleri yapılır, yani engellenmiş yazar tekrar engellenmeye çalışılmaz." 
     style="text-align: left;" id="onlyRequiredActions">Sadece gerekli işlemleri yap.</a>
+
+    <div class="grid-item">
+      <div id="banPremiumIconsSwitch" class="switch-toggle switch-3 switch-candy" style="display:inline-flex;width:132px;">
+        <input id="banPremiumIconsDisabled" value="banPremiumIconsDisabled" name="state-d-banPremiumIcons" type="radio" checked="">
+        <label for="banPremiumIconsDisabled">Kapalı</label>
+
+        <input id="banPremiumIconsEnabled" value="banPremiumIconsEnabled" name="state-d-banPremiumIcons" type="radio" checked="">
+        <label for="banPremiumIconsEnabled">Açık</label>
+
+        <a></a>
+      </div>
+    </div>
+    <a class="grid-item tooltip bottom" tip="Sadece ikonları gizler, hesabı ya da entryleri değil. Yeşil tik: doğrulanmış hesap, sarı tik: reklamsız özelliği satın almış premium hesap." 
+    style="text-align: left;" id="banPremiumIcons">Yeşil ve sarı tikleri gizle.</a>
     
     <div class="grid-item"> 
       <div id="threeStateSwitch" class="switch-toggle switch-3 switch-candy" style="display:inline-flex;width:200px;">

@@ -1,5 +1,28 @@
 let eksiEngelIconURL = chrome.runtime.getURL('assets/img/eksiengel16.png');
 
+async function getConfig()
+{
+  return new Promise((resolve, reject) => {
+    chrome.storage.local.get("config", function(items){
+      if(!chrome.runtime.error)
+      {
+        if(items != undefined && items.config != undefined && Object.keys(items.config).length !== 0)
+        {
+          resolve(items.config);  
+        }
+        else 
+        {
+          resolve(false);
+        }
+      }
+      else 
+      {
+        resolve(false);
+      }
+    }); 
+  });
+}
+
 let EksiEngel_sendMessage = (banSource, banMode, entryUrl, authorName, authorId, isTargetUser, isTargetTitle, isTargetMute) =>
 {
   chrome.runtime.sendMessage(
@@ -56,6 +79,78 @@ function waitForElm(selector)
     );
   });
 }
+
+async function handleYellowIcons (config) {
+
+  // info: source code has invalid html because there are multiple components that have the same ID
+  // <div id="subscriber-badge-entry">
+  //   <svg class="eksico subscriber-badge" id="svg-subscriber-badge">
+  //     <use xlink:href="#eksico-status-badge"></use>
+  //   </svg>
+  // </div>
+
+  // select all icons in the page
+  let icons = await waitForElm(".eksico.subscriber-badge");
+  
+  for (let i = 0; i < icons.length; i++) 
+  {
+    try 
+    {
+      let parentNode = icons[i].parentNode;
+      if(parentNode.id === "subscriber-badge-entry")
+        parentNode.style.display = "none";
+    }
+    catch (err)
+    {
+      console.log("handleYellowIcons: " + err);
+    }
+  }
+
+  console.log("handleYellowIcons: done");
+}
+
+async function handleGreenIcons (config) {
+
+  // info: source code has invalid html because there are multiple components that have the same ID
+  // <div id="verified-badge-entry">
+  //   <svg class="eksico verified-badge" id="svg-verified-badge">
+  //     <use xlink:href="#eksico-status-badge"></use>
+  //   </svg>
+  // </div>
+
+  // select all icons in the page
+  let icons = await waitForElm(".eksico.verified-badge");
+  
+  for (let i = 0; i < icons.length; i++) 
+  {
+    try 
+    {
+      let parentNode = icons[i].parentNode;
+      if(parentNode.id === "verified-badge-entry")
+        parentNode.style.display = "none";
+    }
+    catch (err)
+    {
+      console.log("handleGreenIcons: " + err);
+    }
+  }
+
+  console.log("handleGreenIcons: done");
+}
+
+(async function handleIcons () {
+  const config = await getConfig();
+  if(config && config.banPremiumIcons)
+  {
+    handleYellowIcons(config); // without await
+    handleGreenIcons(config); // without await
+  }
+  else
+  {
+    // config could not be read maybe not exist, do nothing
+    return;
+  }
+})();
 
 (async function handleEntryMenus () {
     

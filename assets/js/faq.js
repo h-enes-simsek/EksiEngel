@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', async function () {
   console.log("enableMute:" + config.enableMute);
   console.log("enableProtectFollowedUsers:" + config.enableProtectFollowedUsers);
   console.log("enableOnlyRequiredActions:" + config.enableOnlyRequiredActions);
+  console.log("banPremiumIcons:" + config.banPremiumIcons);
   if(!config)
   {
     alert("Konfigurasyon dosyasi bulunamadi.");
@@ -49,6 +50,8 @@ document.addEventListener('DOMContentLoaded', async function () {
   document.getElementById("protectFollowedUsersDisabled").checked = config.enableProtectFollowedUsers !== true;
   document.getElementById("onlyRequiredActionsEnabled").checked = config.enableOnlyRequiredActions === true;
   document.getElementById("onlyRequiredActionsDisabled").checked = config.enableOnlyRequiredActions !== true;
+  document.getElementById("banPremiumIconsEnabled").checked = config.banPremiumIcons === true;
+  document.getElementById("banPremiumIconsDisabled").checked = config.banPremiumIcons !== true;
 
   // add onclick function to three state radio buttons
   document.getElementById("threeStateNone").addEventListener("click", function(element) {
@@ -96,6 +99,14 @@ document.addEventListener('DOMContentLoaded', async function () {
   });
   document.getElementById("onlyRequiredActionsDisabled").addEventListener("click", function(element) {
     onlyRequiredActionsSwitchOnClick();
+  });
+
+  // add onclick function to two state radio buttons
+  document.getElementById("banPremiumIconsEnabled").addEventListener("click", function(element) {
+    banPremiumIconsSwitchOnClick();
+  });
+  document.getElementById("banPremiumIconsDisabled").addEventListener("click", function(element) {
+    banPremiumIconsSwitchOnClick();
   });
 });
 
@@ -149,3 +160,11 @@ function onlyRequiredActionsSwitchOnClick()
 	console.log("enableOnlyRequiredActions:" + config.enableOnlyRequiredActions);
 	saveConfig(config);
 }
+
+function banPremiumIconsSwitchOnClick()
+{
+	config.banPremiumIcons = document.getElementById("banPremiumIconsEnabled").checked;
+	console.log("banPremiumIcons:" + config.banPremiumIcons);
+	saveConfig(config);
+}
+
