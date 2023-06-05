@@ -7,9 +7,10 @@ import {log} from './log.js';
 import {commHandler} from './commHandler.js';
 import {relationHandler} from './relationHandler.js';
 import {scrapingHandler} from './scrapingHandler.js';
-import {autoQueue} from './queue.js';
+import {processQueue} from './queue.js';
 import {programController} from './programController.js';
 import {handleEksiSozlukURL} from './urlHandler.js';
+import { notificationHandler } from './notificationHandler.js';
 
 log.info("bg: init.");
 let g_notificationTabId = 0;
@@ -25,16 +26,10 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
   let wrapperProcessHandler = processHandler.bind(null, obj.banSource, obj.banMode, obj.entryUrl, obj.authorName, obj.authorId, obj.isTargetUser, obj.isTargetTitle, obj.isTargetMute);
   wrapperProcessHandler.banSource = obj.banSource;
   wrapperProcessHandler.banMode = obj.banMode;
-  autoQueue.enqueue(wrapperProcessHandler);
-  log.info("bg: number of waiting processes in the queue: " + autoQueue.size);
-  
-  log.info("bg: (update_Planned in messageListener_Popup) notification page's queue will be updated.");
-  chrome.runtime.sendMessage(null, {"notification":{"status":"update_Planned", "plannedProcesses":autoQueue.itemAttributes}}, function(response) {
-    let lastError = chrome.runtime.lastError;
-    // for the first operation, it should be failed here because there is no notification page yet.
-    if(lastError)
-      log.err("bg: (update_Planned in popopListener) could not establish a connection with notification page");
-  });
+  wrapperProcessHandler.creationDateInStr = new Date().getHours() + ":" + new Date().getMinutes(); 
+  processQueue.enqueue(wrapperProcessHandler);
+  log.info("bg: number of waiting processes in the queue: " + processQueue.size);
+  notificationHandler.updatePlannedProcessesList(processQueue.itemAttributes);
 });
 
 async function processHandler(banSource, banMode, entryUrl, singleAuthorName, singleAuthorId, isTargetUser, isTargetTitle, isTargetMute)
@@ -57,25 +52,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
     let tab = await chrome.tabs.create({ url: chrome.runtime.getURL("assets/html/notification.html") });
     g_notificationTabId = tab.id;
   }
-  
-  // TODO fix: lastError is generated, probably notification page is not ready here.
-  /*
-  // fetch takes too much time if it fails and results error_Login.  during operation user should be informed that program is running 
-  chrome.runtime.sendMessage(null, {"notification":{status:"ongoing", successfulAction:0, performedAction:0, plannedAction:0}}, function(response) {
-    let lastError = chrome.runtime.lastError;
-    if(lastError)
-      log.err("bg: (initial ongoing) could not establish a connection with notification page");
-  });
-  */
-
-  // TODO fix: if page is new, lastError is generated, probably notification page is not ready here.
-  // update planned processes table in notification page
-  log.info("bg: (update_Planned in processHandler) notification page's queue will be updated.");
-  chrome.runtime.sendMessage(null, {"notification":{"status":"update_Planned", "plannedProcesses":autoQueue.itemAttributes}}, function(response) {
-    let lastError = chrome.runtime.lastError;
-    if(lastError)
-      log.err("bg: (update_Planned in processHandler) could not establish a connection with notification page");
-  });
+  notificationHandler.updatePlannedProcessesList(processQueue.itemAttributes);
 
   let authorNameList = [];
   let authorIdList = [];
@@ -84,29 +61,29 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
   await handleConfig(); // load config
   relationHandler.reset(); // reset the counters to reuse
 
+  notificationHandler.notifyControlAccess();
   const isEksiSozlukAccessible = await handleEksiSozlukURL();
   if(!isEksiSozlukAccessible)
   {
-    log.err("Program has been finished (error_Access)");
-    chrome.runtime.sendMessage(null, {"notification":{"status":"error_Access", "completedProcess":{"banSource":banSource, "banMode":banMode}}}, function(response) {
-      let lastError = chrome.runtime.lastError;
-    });
+    log.err("Program has been finished (finishErrorAccess)");
+    notificationHandler.finishErrorAccess(banSource, banMode);
     return;
   }
 
+  notificationHandler.notifyControlLogin();
   let userAgent = await scrapingHandler.scrapeUserAgent();
   let clientName = await scrapingHandler.scrapeClientName(); 
   if(!clientName)
   {
-    log.err("Program has been finished (error_Login)");
-    chrome.runtime.sendMessage(null, {"notification":{"status":"error_Login", "completedProcess":{"banSource":banSource, "banMode":banMode}}}, function(response) {
-      let lastError = chrome.runtime.lastError;
-    });
+    log.err("Program has been finished (finishErrorLogin)");
+    notificationHandler.finishErrorLogin(banSource, banMode);
     return;
   }
   
   if(banSource === enums.BanSource.SINGLE)
   {
+    notificationHandler.notifyOngoing(0, 0, 1);
+
     let res = await relationHandler.performAction(banMode, singleAuthorId, isTargetUser, isTargetTitle, isTargetMute);
     authorIdList.push(singleAuthorId);
     authorNameList.push(singleAuthorName);
@@ -126,17 +103,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
           if(programController.earlyStop)
             break;
           
-          // send message to notification page
-          chrome.runtime.sendMessage(null, {"notification":{status:"cooldown", remainingTimeInSec:waitTimeInSec-i}}, function(response) {
-            let lastError = chrome.runtime.lastError;
-            if (lastError) 
-            {
-              // 'Could not establish connection. Receiving end does not exist.'
-              console.info("relationHandler: (cooldown) notification page is probably closed, early stop will be generated automatically.");
-              programController.earlyStop = true;
-              return;
-            }
-          });
+          notificationHandler.notifyCooldown(waitTimeInSec-i);
           
           // wait 1 sec
           await new Promise(resolve2 => { setTimeout(resolve2, 1000); }); 
@@ -149,17 +116,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
         res = await relationHandler.performAction(banMode, singleAuthorId, isTargetUser, isTargetTitle, isTargetMute);
     }
     
-    // send message to notification page
-    chrome.runtime.sendMessage(null, {"notification":{status:"ongoing", successfulAction:res.successfulAction, performedAction:res.performedAction, plannedAction:authorNameList.length}}, function(response) {
-      let lastError = chrome.runtime.lastError;
-      if (lastError) 
-      {
-        // 'Could not establish connection. Receiving end does not exist.'
-        console.info("relationHandler: (ongoing) notification page is probably closed, early stop will be generated automatically.");
-        programController.earlyStop = true;
-        return;
-      }
-    });
+    notificationHandler.notifyOngoing(res.successfulAction, res.performedAction, authorNameList.length);
   }
   else if(banSource === enums.BanSource.LIST)
   {
@@ -170,12 +127,12 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
     log.info("number of user to ban " + authorNameList.length);
     if(authorNameList.length === 0)
     {
-      chrome.runtime.sendMessage(null, {"notification":{"status":"error_NoAccount", "completedProcess":{"banSource":banSource, "banMode":banMode}}}, function(response) {
-        let lastError = chrome.runtime.lastError;
-      });
-      log.err("Program has been finished (error_NoAccount)");
+      notificationHandler.finishErrorNoAccount(banSource, banMode);
+      log.err("Program has been finished (finishErrorNoAccount)");
       return;
     }
+
+    notificationHandler.notifyOngoing(0, 0, authorNameList.length);
     
     const enableMute = config.enableMute;
     
@@ -209,16 +166,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
               break;
             
             // send message to notification page
-            chrome.runtime.sendMessage(null, {"notification":{status:"cooldown", remainingTimeInSec:waitTimeInSec-i}}, function(response) {
-              let lastError = chrome.runtime.lastError;
-              if (lastError) 
-              {
-                // 'Could not establish connection. Receiving end does not exist.'
-                console.info("relationHandler: (cooldown) notification page is probably closed, early stop will be generated automatically.");
-                programController.earlyStop = true;
-                return;
-              }
-            });
+            notificationHandler.notifyCooldown(waitTimeInSec-i);
             
             // wait 1 sec
             await new Promise(resolve2 => { setTimeout(resolve2, 1000); }); 
@@ -237,21 +185,14 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
       }
 
       // send message to notification page
-      chrome.runtime.sendMessage(null, {"notification":{status:"ongoing", successfulAction:res.successfulAction, performedAction:res.performedAction, plannedAction:authorNameList.length}}, function(response) {
-        let lastError = chrome.runtime.lastError;
-        if (lastError) 
-        {
-          // 'Could not establish connection. Receiving end does not exist.'
-          console.info("relationHandler: (ongoing) notification page is probably closed, early stop will be generated automatically.");
-          programController.earlyStop = true;
-          return;
-        }
-      });
+      notificationHandler.notifyOngoing(res.successfulAction, res.performedAction, authorNameList.length);
     }
     
   }
   else if(banSource === enums.BanSource.FAV)
   {
+    notificationHandler.notifyScrapeFavs();
+
     const enableMute = config.enableMute;
     entryMetaData = await scrapingHandler.scrapeMetaDataFromEntryPage(entryUrl);
     let scrapedRelations = await scrapingHandler.scrapeAuthorNamesFromFavs(entryUrl); // names will be scraped
@@ -261,10 +202,8 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
     // stop if there is no user
     if(scrapedRelations.size === 0)
     {
-      chrome.runtime.sendMessage(null, {"notification":{"status":"error_NoAccount", "completedProcess":{"banSource":banSource, "banMode":banMode}}}, function(response) {
-        let lastError = chrome.runtime.lastError;
-      });
-      log.err("Program has been finished (error_NoAccount)");
+      notificationHandler.finishErrorNoAccount(banSource, banMode);
+      log.err("Program has been finished (finishErrorNoAccount)");
       return;
     }
     
@@ -272,9 +211,11 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
     if(config.enableAnalysisBeforeOperation && config.enableProtectFollowedUsers && banMode == enums.BanMode.BAN)
     {
       // scrape the authors that ${clientName} follows
+      notificationHandler.notifyScrapeFollowings();
       let mapFollowing = await scrapingHandler.scrapeFollowing(clientName);
       
-      // remove the authors that ${clientName} follows from the list to protect      
+      // remove the authors that ${clientName} follows from the list to protect    
+      notificationHandler.notifyAnalysisProtectFollowedUsers();  
       for (let name of scrapedRelations.keys()) {
         if (mapFollowing.has(name))
           scrapedRelations.delete(name);
@@ -286,9 +227,11 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
       // This condition doesn't provide a simplification of the following algorithm
       
       // scrape the authors that ${clientName} blocked
+      notificationHandler.notifyScrapeBanned();
       let mapBlocked = await scrapingHandler.scrapeAuthorNamesFromBannedAuthorPage();
       
       // update the list with info obtained from mapBlocked
+      notificationHandler.notifyAnalysisOnlyRequiredActions();
       for (let name of scrapedRelations.keys()) {
         if (mapBlocked.has(name))
         {
@@ -304,14 +247,14 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
     // stop if there is no user
     if(scrapedRelations.size === 0)
     {
-      chrome.runtime.sendMessage(null, {"notification":{"status":"error_NoAccount", "completedProcess":{"banSource":banSource, "banMode":banMode}}}, function(response) {
-        let lastError = chrome.runtime.lastError;
-      });
-      log.err("Program has been finished (error_NoAccount)");
+      notificationHandler.finishErrorNoAccount(banSource, banMode);
+      log.err("Program has been finished (finishErrorNoAccount)");
       return;
     }
     
     authorNameList = Array.from(scrapedRelations, ([name, value]) => name);
+
+    notificationHandler.notifyOngoing(0, 0, authorNameList.length);
     
     for (const [name, value] of scrapedRelations)
     {
@@ -343,16 +286,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
               break;
             
             // send message to notification page
-            chrome.runtime.sendMessage(null, {"notification":{status:"cooldown", remainingTimeInSec:waitTimeInSec-i}}, function(response) {
-              let lastError = chrome.runtime.lastError;
-              if (lastError) 
-              {
-                // 'Could not establish connection. Receiving end does not exist.'
-                console.info("relationHandler: (cooldown) notification page is probably closed, early stop will be generated automatically.");
-                programController.earlyStop = true;
-                return;
-              }
-            });
+            notificationHandler.notifyCooldown(waitTimeInSec-i);
             
             // wait 1 sec
             await new Promise(resolve2 => { setTimeout(resolve2, 1000); }); 
@@ -373,29 +307,20 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
       }
       
       // send message to notification page
-      chrome.runtime.sendMessage(null, {"notification":{status:"ongoing", successfulAction:res.successfulAction, performedAction:res.performedAction, plannedAction:authorNameList.length}}, function(response) {
-        let lastError = chrome.runtime.lastError;
-        if (lastError) 
-        {
-          // 'Could not establish connection. Receiving end does not exist.'
-          console.info("relationHandler: (ongoing) notification page is probably closed, early stop will be generated automatically.");
-          programController.earlyStop = true;
-          return;
-        }
-      });
+      notificationHandler.notifyOngoing(res.successfulAction, res.performedAction, authorNameList.length);
     }
   }
   else if(banSource === enums.BanSource.FOLLOW)
   {
+    notificationHandler.notifyScrapeFollowers();
+
     let scrapedRelations = await scrapingHandler.scrapeFollower(singleAuthorName);
     log.info("number of user to ban (before analysis): " + scrapedRelations.size);
     
     // stop if there is no user
     if(scrapedRelations.size === 0)
     {
-      chrome.runtime.sendMessage(null, {"notification":{"status":"error_NoAccount", "completedProcess":{"banSource":banSource, "banMode":banMode}}}, function(response) {
-        let lastError = chrome.runtime.lastError;
-      });
+      notificationHandler.finishErrorNoAccount(banSource, banMode);
       log.err("Program has been finished (error_NoAccount)");
       return;
     }
@@ -404,9 +329,11 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
     if(config.enableAnalysisBeforeOperation && config.enableProtectFollowedUsers && banMode == enums.BanMode.BAN)
     {
       // scrape the authors that ${clientName} follows
+      notificationHandler.notifyScrapeFollowings();
       let mapFollowing = await scrapingHandler.scrapeFollowing(clientName);
       
-      // remove the authors that ${clientName} follows from the list to protect      
+      // remove the authors that ${clientName} follows from the list to protect  
+      notificationHandler.notifyAnalysisProtectFollowedUsers();    
       for (let name of scrapedRelations.keys()) {
         if (mapFollowing.has(name))
           scrapedRelations.delete(name);
@@ -415,9 +342,11 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
     if(config.enableAnalysisBeforeOperation && config.enableOnlyRequiredActions)
     {
       // scrape the authors that ${clientName} blocked
+      notificationHandler.notifyScrapeBanned();
       let mapBlocked = await scrapingHandler.scrapeAuthorNamesFromBannedAuthorPage();
       
       // update the list with info obtained from mapBlocked
+      notificationHandler.notifyAnalysisOnlyRequiredActions();
       for (let name of scrapedRelations.keys()) {
         if (mapBlocked.has(name))
         {
@@ -430,18 +359,18 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
       
     log.info("number of user to ban (after analysis): " + scrapedRelations.size);
     
-    authorNameList = Array.from(scrapedRelations, ([name, value]) => name);
-    authorIdList = Array.from(scrapedRelations, ([name, value]) => value.authorId);
-    
     // stop if there is no user
     if(scrapedRelations.size === 0)
     {
-      chrome.runtime.sendMessage(null, {"notification":{"status":"error_NoAccount", "completedProcess":{"banSource":banSource, "banMode":banMode}}}, function(response) {
-        let lastError = chrome.runtime.lastError;
-      });
+      notificationHandler.finishErrorNoAccount(banSource, banMode);
       log.err("Program has been finished (error_NoAccount)");
       return;
     }
+
+    authorNameList = Array.from(scrapedRelations, ([name, value]) => name);
+    authorIdList = Array.from(scrapedRelations, ([name, value]) => value.authorId);
+
+    notificationHandler.notifyOngoing(0, 0, authorNameList.length);
     
     const enableMute = config.enableMute;
     
@@ -473,16 +402,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
               break;
             
             // send message to notification page
-            chrome.runtime.sendMessage(null, {"notification":{status:"cooldown", remainingTimeInSec:waitTimeInSec-j}}, function(response) {
-              let lastError = chrome.runtime.lastError;
-              if (lastError) 
-              {
-                // 'Could not establish connection. Receiving end does not exist.'
-                console.info("relationHandler: (cooldown) notification page is probably closed, early stop will be generated automatically.");
-                programController.earlyStop = true;
-                return;
-              }
-            });
+            notificationHandler.notifyCooldown(waitTimeInSec-j);
             
             // wait 1 sec
             await new Promise(resolve2 => { setTimeout(resolve2, 1000); }); 
@@ -503,16 +423,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
       }
       
       // send message to notification page
-      chrome.runtime.sendMessage(null, {"notification":{status:"ongoing", successfulAction:res.successfulAction, performedAction:res.performedAction, plannedAction:authorIdList.length}}, function(response) {
-        let lastError = chrome.runtime.lastError;
-        if (lastError) 
-        {
-          // 'Could not establish connection. Receiving end does not exist.'
-          console.info("relationHandler: (ongoing) notification page is probably closed, early stop will be generated automatically.");
-          programController.earlyStop = true;
-          return;
-        }
-      });
+      notificationHandler.notifyOngoing(res.successfulAction, res.performedAction, authorIdList.length);
     }
 
     
@@ -520,19 +431,20 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
   else if(banSource === enums.BanSource.UNDOBANALL)
   {
     let scrapedRelations = await scrapingHandler.scrapeAuthorNamesFromBannedAuthorPage(); // names and ids will be scraped
-    authorNameList = Array.from(scrapedRelations, ([name, value]) => name);
-    authorIdList = Array.from(scrapedRelations, ([name, value]) => value.authorId);
     
     // stop if there is no user
     log.info("number of user to ban " + scrapedRelations.size);
     if(scrapedRelations.size === 0)
     {
-      chrome.runtime.sendMessage(null, {"notification":{"status":"error_NoAccount", "completedProcess":{"banSource":banSource, "banMode":banMode}}}, function(response) {
-        let lastError = chrome.runtime.lastError;
-      });
+      notificationHandler.finishErrorNoAccount(banSource, banMode);
       log.err("Program has been finished (error_NoAccount)");
       return;
     }
+
+    authorNameList = Array.from(scrapedRelations, ([name, value]) => name);
+    authorIdList = Array.from(scrapedRelations, ([name, value]) => value.authorId);
+
+    notificationHandler.notifyOngoing(0, 0, authorNameList.length);
     
     for (const [name, value] of scrapedRelations)
     {
@@ -557,16 +469,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
               break;
             
             // send message to notification page
-            chrome.runtime.sendMessage(null, {"notification":{status:"cooldown", remainingTimeInSec:waitTimeInSec-j}}, function(response) {
-              let lastError = chrome.runtime.lastError;
-              if (lastError) 
-              {
-                // 'Could not establish connection. Receiving end does not exist.'
-                console.info("relationHandler: (cooldown) notification page is probably closed, early stop will be generated automatically.");
-                programController.earlyStop = true;
-                return;
-              }
-            });
+            notificationHandler.notifyCooldown(waitTimeInSec-j);
             
             // wait 1 sec
             await new Promise(resolve2 => { setTimeout(resolve2, 1000); }); 
@@ -580,16 +483,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
       }
       
       // send message to notification page
-      chrome.runtime.sendMessage(null, {"notification":{status:"ongoing", successfulAction:res.successfulAction, performedAction:res.performedAction, plannedAction:authorIdList.length}}, function(response) {
-        let lastError = chrome.runtime.lastError;
-        if (lastError) 
-        {
-          // 'Could not establish connection. Receiving end does not exist.'
-          console.info("relationHandler: (ongoing) notification page is probably closed, early stop will be generated automatically.");
-          programController.earlyStop = true;
-          return;
-        }
-      });
+      notificationHandler.notifyOngoing(res.successfulAction, res.performedAction, authorIdList.length);
     }
   }
   
@@ -616,24 +510,23 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
 
   if(config.sendData)
     await commHandler.sendData(dataToSend);
+
+  notificationHandler.finishSuccess(banSource, banMode, successfulAction, performedAction, authorNameList.length);
   
   // if early stop was generated, erase planned processes in notification page
   if(programController.earlyStop)
   {
-    log.info("bg: (update_Planned just before finished) notification page's queue will be updated.");
-    chrome.runtime.sendMessage(null, {"notification":{"status":"update_Planned", "plannedProcesses":""}}, function(response) {
-      let lastError = chrome.runtime.lastError;
-      if(lastError)
-        log.err("bg: (update_Planned just before finished) could not establish a connection with notification page");
-    });
+    log.info("bg: (updatePlannedProcessesList just before finished) notification page's queue will be updated.");
+    notificationHandler.updatePlannedProcessesList(""); // erase the processes in the planned processes table
+    // add the remaining processes to completed process table
+    let remainingProcessesArray = processQueue.itemAttributes;
+    for (const element of remainingProcessesArray)
+      notificationHandler.finishErrorEarlyStop(element.banSource, element.banMode);
+    processQueue.clear(); // clear the remaining planned processes in the queue 
   }
   
   log.info("Program has been finished (successfull:" + successfulAction + ", performed:" + performedAction + ", planned:" + authorNameList.length + ")");
-  // send message to notification page
-  chrome.runtime.sendMessage(null, {"notification":{status:"finished", successfulAction:successfulAction, performedAction:performedAction, plannedAction:authorNameList.length, "completedProcess":{"banSource":banSource, "banMode":banMode}}}, function(response) {
-    let lastError = chrome.runtime.lastError;
-  });
-  
+
   programController.earlyStop = false; // reset to reuse
   log.resetData();
 }
@@ -659,5 +552,14 @@ chrome.runtime.onInstalled.addListener(async (details) =>
     
     // open welcome page
     let tab = await chrome.tabs.create({ url: chrome.runtime.getURL("assets/html/welcome.html") });
+  }
+});
+
+// this listener fired every time a tab is closed by the user
+chrome.tabs.onRemoved.addListener(function(tabid, removed) {
+  if(tabid == g_notificationTabId)
+  {
+    log.info("bg: user has closed the notification tab, earlyStop will be generated automatically.");
+    programController.earlyStop = true;
   }
 });

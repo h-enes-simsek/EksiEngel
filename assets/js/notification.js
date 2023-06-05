@@ -1,4 +1,5 @@
-import {config} from './config.js';
+import * as enums from './enums.js';
+import * as utils from './utils.js';
 
 document.addEventListener('DOMContentLoaded', async function () {
   document.getElementById("earlyStop").addEventListener("click", function(element) {
@@ -6,8 +7,8 @@ document.addEventListener('DOMContentLoaded', async function () {
   });
 });
 
-// update completed processes table
-function updateCompletedProcessesTable(banSource, banMode, successfulAction, performedAction, plannedAction, errorStatus)
+// insert a row to completed processes table
+function insertCompletedProcessesTable(banSource, banMode, successfulAction, performedAction, plannedAction, errorStatus)
 {
   let table = document.getElementById("completedProcesses").getElementsByTagName('tbody')[0];
   let row = table.insertRow(0);
@@ -28,130 +29,80 @@ function updateCompletedProcessesTable(banSource, banMode, successfulAction, per
   cell7.innerHTML = errorStatus;
 }
 
+// recreate the planned processes table
+function updatePlannedProcessesTable(plannedProcesses)
+{
+  let rowNumber = document.getElementById("plannedProcesses").tBodies[0].rows.length;
+  let table = document.getElementById("plannedProcesses").getElementsByTagName('tbody')[0];
+  for(let i = 0; i < rowNumber; i++)
+    table.deleteRow(0);
+  for(let i = 0; i < plannedProcesses.length; i++)
+  {
+    let row = table.insertRow(0);
+    let cell1 = row.insertCell(0);
+    let cell2 = row.insertCell(1);
+    let cell3 = row.insertCell(2);
+    cell1.innerHTML = plannedProcesses[i].creationDateInStr; 
+    cell2.innerHTML = plannedProcesses[i].banSource;
+    cell3.innerHTML = plannedProcesses[i].banMode;
+  }
+}
+
 // listen background script
 chrome.runtime.onMessage.addListener(async function messageListener_Background(message, sender, sendResponse) {
   sendResponse({status: 'ok'}); // added to suppress 'message port closed before a response was received' error
 
-	const obj = filterMessage(message, "notification");
+	const obj = utils.filterMessage(message, "notification");
 	if(obj.resultType === "FAIL")
 		return;
   
   console.log("incoming message: " + obj.notification.status);
 
-  if(obj.notification.status === "error_Access")
+  if(obj.notification.status === enums.NotificationType.FINISH)
   {
-    document.getElementById("statusText").innerHTML = "Ekşisözlük'e erişilemiyor.";
-    updateCompletedProcessesTable(obj.notification.completedProcess.banSource,
-                                  obj.notification.completedProcess.banMode,
-                                  0,0,0,
-                                  "ekşisözlük'e erişilemedi");
-    return;
-  }
-  if(obj.notification.status === "error_NoAccount")
-  {
-    document.getElementById("statusText").innerHTML = "Engellenecek yazar listesi boş.";
-    updateCompletedProcessesTable(obj.notification.completedProcess.banSource,
-                                  obj.notification.completedProcess.banMode,
-                                  0,0,0,
-                                  "yazar listesi boş");
-    return;
-  }
-  else if(obj.notification.status === "error_Login")
-  {
-    document.getElementById("statusText").innerHTML = "Ekşi Sözlük hesabınıza giriş yapmanız gerekiyor.";
-    updateCompletedProcessesTable(obj.notification.completedProcess.banSource,
-                                  obj.notification.completedProcess.banMode,
-                                  0,0,0,
-                                  "giriş yapılmadı");
-    return;
-  }
-  else if(obj.notification.status === "update_Planned")
-  {
-    // update planned processes table
-    let rowNumber = document.getElementById("plannedProcesses").tBodies[0].rows.length;
-    let table = document.getElementById("plannedProcesses").getElementsByTagName('tbody')[0];
-    for(let i = 0; i < rowNumber; i++)
-      table.deleteRow(0);
-    for(let i = 0; i < obj.notification.plannedProcesses.length; i++)
-    {
-      let row = table.insertRow(0);
-      let cell1 = row.insertCell(0);
-      let cell2 = row.insertCell(1);
-      let cell3 = row.insertCell(2);
-      let d = new Date();
-      cell1.innerHTML = d.getHours() + ":" + d.getMinutes(); 
-      cell2.innerHTML = obj.notification.plannedProcesses[i].banSource;
-      cell3.innerHTML = obj.notification.plannedProcesses[i].banMode;
-    }
-    return;
-  }
-  else if(obj.notification.status === "finished")
-  {
-    document.getElementById("statusText").innerHTML = "İşlem tamamlandı.";
-    let table = document.getElementById("completedProcesses").getElementsByTagName('tbody')[0];
-    updateCompletedProcessesTable(obj.notification.completedProcess.banSource,
+    document.getElementById("statusText").innerHTML = obj.notification.statusText;
+    insertCompletedProcessesTable(obj.notification.completedProcess.banSource,
                                   obj.notification.completedProcess.banMode,
                                   obj.notification.successfulAction,
                                   obj.notification.performedAction,
                                   obj.notification.plannedAction,
-                                  "yok");
-    return;   
+                                  obj.notification.errorText);
+    return;
   }
-  else if(obj.notification.status === "ongoing")
-    document.getElementById("statusText").innerHTML = "İşlem devam ediyor.";
-  else if(obj.notification.status === "cooldown")
+  if(obj.notification.status === enums.NotificationType.NOTIFY)
   {
-    const url = config.EksiSozlukURL;
-    document.getElementById("statusText").innerHTML = `İşlem devam ediyor. (dakikada 6 engel limiti bekleniyor) <a target='_blank' href='${url}/eksi-sozlukun-yazar-engellemeye-sinir-getirmesi--7547420' style='color:red;'>Bu ne demek?</a>`;
-    
+    document.getElementById("statusText").innerHTML = obj.notification.statusText;
+    return;
+  }
+  if(obj.notification.status === enums.NotificationType.COOLDOWN)
+  {
+    document.getElementById("statusText").innerHTML = obj.notification.statusText;
     document.getElementById("remainingTimeInSec").innerHTML = obj.notification.remainingTimeInSec + " saniye";
     return;
   }
+  if(obj.notification.status === enums.NotificationType.UPDATE_PLANNED_PROCESSES)
+  {
+    updatePlannedProcessesTable(obj.notification.plannedProcesses);
+    return;
+  }
+  if(obj.notification.status === enums.NotificationType.ONGOING)
+  {
+    document.getElementById("statusText").innerHTML = obj.notification.statusText;
   
-  // update values
-  document.getElementById("successfulAction").innerHTML = obj.notification.successfulAction;
-  document.getElementById("performedAction").innerHTML = obj.notification.performedAction;
-  document.getElementById("plannedAction").innerHTML = obj.notification.plannedAction;
-  
-  // update bar
-  let bar = document.getElementById("bar");   
-  let barText = document.getElementById("barText");  
-  let percentage = (100 * obj.notification.performedAction) / obj.notification.plannedAction;
-  if(obj.notification.plannedAction == 0 || obj.notification.plannedAction == "0")
-    percentage = 0;
-  percentage = parseInt(percentage);
-  barText.innerHTML = '%' + percentage;
-  bar.style.width = percentage + '%'; 
+    // update values
+    document.getElementById("successfulAction").innerHTML = obj.notification.successfulAction;
+    document.getElementById("performedAction").innerHTML = obj.notification.performedAction;
+    document.getElementById("plannedAction").innerHTML = obj.notification.plannedAction;
+    
+    // update bar
+    let bar = document.getElementById("bar");   
+    let barText = document.getElementById("barText");  
+    let percentage = (100 * obj.notification.performedAction) / obj.notification.plannedAction;
+    if(obj.notification.plannedAction == 0 || obj.notification.plannedAction == "0")
+      percentage = 0;
+    percentage = parseInt(percentage);
+    barText.innerHTML = '%' + percentage;
+    bar.style.width = percentage + '%'; 
+    return;
+  }
 });
-
-function filterMessage(message, ...keys)
-{
-	// message: object
-	// ..keys: string(s), keys of object
-	// return: object of message + object.resultType
-	
-	// is message object
-	if(typeof message !== 'object' ||
-     Array.isArray(message) ||
-     message === null)
-	{
-		// not object
-		return {"resultType": "FAIL"};
-	}
-  
-	// has message got required keys
-	for(const key of keys)
-	{
-		if(key in message)
-		{
-			;
-		}
-		else
-		{
-			return {"resultType": "FAIL"};
-		}
-	}
-	
-	message.resultType = "SUCCESS";
-	return message;
-}

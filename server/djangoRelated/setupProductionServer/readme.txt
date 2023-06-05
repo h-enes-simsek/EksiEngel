@@ -12,6 +12,10 @@ ALTER ROLE myprojectuser SET client_encoding TO 'utf8';
 ALTER ROLE myprojectuser SET default_transaction_isolation TO 'read committed';
 ALTER ROLE myprojectuser SET timezone TO 'UTC';
 GRANT ALL PRIVILEGES ON DATABASE myproject TO myprojectuser;
+
+if there is a test code to carry out test, the user might need to create a db priviliage
+ALTER USER myprojectuser CREATEDB;
+
 \q
 
 # install django project (maybe from git)

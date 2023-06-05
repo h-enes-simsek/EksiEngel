@@ -197,7 +197,23 @@ yeni özellik: sadece gereken işlemleri yaparak toplam işlem sayısını ve do
 yeni özellik: yazarın profil sayfasına takipçilerini engelle butonu eklendi
 yeni özellik: sayfalardan footer kaldırıldı
 
+v2.7
+gönderim: 18.05.2023 yayın: 
+yeni özellik: yeşil ve sarı tikleri gizleme özelliği (sadece tik)
+bug fix: queue'ya eklenen işlemlerin saati düzeltildi.
+yeni özellik: devam eden süreçle ilgili daha fazla bilgi notification.html üzerinden verildi.
+notificationHandler ile notification kısmı refactor edildi. GUI üzerindeki logic büyük ölçüde bg'ye kaydırıldı.
+earlyStop notification kapanınca otomatik olarak üretildi. eskiden haberleşme eksikliğinde üretiliyordu.
+
 YÜKSEK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
+notification sayfası ile iletişim refactor
+takip edilen kullancıları engelleme ve sadece gerekli işlemleri yap ayarı çok uzun sürüyor.
+  bu esnada kullanıcıya bilgi verilmeli
+  ayarlardan kaldırılmalı ve otomatik hale getirilmeli
+  yeni durumda engel listesi belli bir sayıdan fazla ise devreye girmeli
+  yeni durumda engellenmiş ve takip edilen yazarların scrape işlemleri için bir limit gelmeli.
+  [düşük] takip edilen ve engellenen kişiler listesi localde tutulup arada sync edilerek scrape işlemi süreci azaltılabilir
+  [düşük] localde tutulursa scrape için belki bir sınır getirmeye gerek yoktur
 ayarlar sayfası tasarımı
 list ban için kaydedilen liste string değil bir string queue olmalı.
 markettext içinde MUTE'den bahsedilmeli

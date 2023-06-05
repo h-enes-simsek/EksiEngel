@@ -1,6 +1,6 @@
 import * as enums from './enums.js';
 import * as utils from './utils.js'
-import {autoQueue} from './queue.js';
+import {processQueue} from './queue.js';
 import {log} from './log.js';
 
 class ProgramController
@@ -12,7 +12,7 @@ class ProgramController
   
   get isActive()
   {
-    return autoQueue.isRunning;
+    return processQueue.isRunning;
   }
   
   get earlyStop()
@@ -22,7 +22,7 @@ class ProgramController
     
   set earlyStop(val)
   {
-    if(!autoQueue.isRunning)
+    if(!processQueue.isRunning)
     {
       log.info("progCtrl: early stop received, yet program is not running, so it will be ignored.");
       return;
@@ -31,8 +31,7 @@ class ProgramController
     this._earlyStop = val;
     if(val)
     {
-      log.info("progCtrl: early stop received, number of waiting processes in the queue: " + autoQueue.size);
-      autoQueue.clear(); // clear the remaining planned processes in the queue 
+      log.info("progCtrl: early stop received, number of waiting processes in the queue: " + processQueue.size);
     }
     else
     {

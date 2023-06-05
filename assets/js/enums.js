@@ -38,3 +38,11 @@ export const ClickType = {
   INSTALL_OR_UPDATE: "INSTALL_OR_UPDATE",                     /* user has installed or updated the extension */
   WELCOME_PAGE: "WELCOME_PAGE"                                /* user has seen the welcome.html  */
 };         
+
+export const NotificationType = {
+  UPDATE_PLANNED_PROCESSES: "UPDATE_PLANNED_PROCESSES",
+  ONGOING:                  "ONGOING",
+  COOLDOWN:                 "COOLDOWN",
+  FINISH:                   "FINISH",
+  NOTIFY:                   "NOTIFY",
+};

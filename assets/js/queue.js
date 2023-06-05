@@ -26,6 +26,7 @@ class AutoQueue extends Queue
       let obj = {};
       obj.banSource = this._items[i].action.banSource;
       obj.banMode =  this._items[i].action.banMode;
+      obj.creationDateInStr = this._items[i].action.creationDateInStr;
       attrs.push(obj);   
     }
     return attrs;
@@ -72,5 +73,4 @@ class AutoQueue extends Queue
   }
 }
 
-// queue instance
-export let autoQueue = new AutoQueue(); 
+export let processQueue = new AutoQueue(); 
