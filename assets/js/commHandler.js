@@ -120,6 +120,7 @@ class CommHandler
 
   sendAnalyticsData = async (dataObj) =>
   {
+    /*
     let dataToServerObj = {};
     
     // client_name
@@ -152,8 +153,9 @@ class CommHandler
     {
       log.err("commHandler: err: " + err); 
     }
-  
+    */
   }
+  
 }
 
 export let commHandler = new CommHandler();
