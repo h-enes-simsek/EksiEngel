@@ -200,13 +200,13 @@ yeni özellik: sayfalardan footer kaldırıldı
 v2.7
 gönderim: 18.05.2023 yayın: 
 yeni özellik: yeşil ve sarı tikleri gizleme özelliği (sadece tik)
-bug fix: queue'ya eklenen işlemlerin saati düzeltildi.
 yeni özellik: devam eden süreçle ilgili daha fazla bilgi notification.html üzerinden verildi.
+yeni özellik: bir ekşi engel butonuna tıklandığında artık kullanıcıya ekşi sözlük üzerinden ekşi sözlük API kullanılarak bir geri bildirim veriliyor.
+bug fix: queue'ya eklenen işlemlerin saati düzeltildi.
 notificationHandler ile notification kısmı refactor edildi. GUI üzerindeki logic büyük ölçüde bg'ye kaydırıldı.
 earlyStop notification kapanınca otomatik olarak üretildi. eskiden haberleşme eksikliğinde üretiliyordu.
 
 YÜKSEK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
-notification sayfası ile iletişim refactor
 takip edilen kullancıları engelleme ve sadece gerekli işlemleri yap ayarı çok uzun sürüyor.
   bu esnada kullanıcıya bilgi verilmeli
   ayarlardan kaldırılmalı ve otomatik hale getirilmeli

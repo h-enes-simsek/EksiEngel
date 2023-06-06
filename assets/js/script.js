@@ -43,7 +43,17 @@ let EksiEngel_sendMessage = (banSource, banMode, entryUrl, authorName, authorId,
       if(lastError)
         console.log("could not establish a connection with a page");
       else
+      {
         console.log("established a connection with a page");
+        
+        // notify the user about their action with using eksisozluk notification API, known classes: class="success" and class="error"
+        let ul = document.createElement("ul"); 
+        ul.innerHTML = `<ul><li class="success" style=""><img src=${eksiEngelIconURL}> Ekşi Engel, istediğiniz işlemi sıraya ekledi.<a class="close">×</a></li></ul>`;
+        document.getElementById('user-notifications').appendChild(ul);
+      
+        // close the notifications after a while automatically
+        setTimeout(() => ul.remove(), 3000);
+      }
     }
   );
 }

@@ -49,7 +49,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
   catch(e)
   {
     // not exist, so create one
-    let tab = await chrome.tabs.create({ url: chrome.runtime.getURL("assets/html/notification.html") });
+    let tab = await chrome.tabs.create({ active: false, url: chrome.runtime.getURL("assets/html/notification.html") });
     g_notificationTabId = tab.id;
   }
   notificationHandler.updatePlannedProcessesList(processQueue.itemAttributes);
