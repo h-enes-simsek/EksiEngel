@@ -9,4 +9,12 @@ Ekşi Engel ile neler yapabilirsiniz?
 - Bir liste halinde gireceğiniz yazarları engelleyin veya engelini kaldırın.
 - Engellediğiniz tüm yazarların engelini kaldırın.
 
+Ekşi Sözlük'te üç çeşit engelleme metodu bulunuyor ve Ekşi Engel hepsini destekliyor.
+- Yazarı engelle
+- Başlıklarını engelle
+- Sessize al
+
+Ek Özellikler:
+- Turuncu ve yeşil tikleri gizleyin.
+
 Versiyon notları için: https://h-enes-simsek.github.io/EksiEngel

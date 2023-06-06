@@ -207,8 +207,7 @@ notificationHandler ile notification kısmı refactor edildi. GUI üzerindeki lo
 earlyStop notification kapanınca otomatik olarak üretildi. eskiden haberleşme eksikliğinde üretiliyordu.
 
 YÜKSEK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
-takip edilen kullancıları engelleme ve sadece gerekli işlemleri yap ayarı çok uzun sürüyor.
-  bu esnada kullanıcıya bilgi verilmeli
+takip edilen kullanıcıları engelleme ve sadece gerekli işlemleri yap ayarı çok uzun sürüyor.
   ayarlardan kaldırılmalı ve otomatik hale getirilmeli
   yeni durumda engel listesi belli bir sayıdan fazla ise devreye girmeli
   yeni durumda engellenmiş ve takip edilen yazarların scrape işlemleri için bir limit gelmeli.
@@ -216,7 +215,6 @@ takip edilen kullancıları engelleme ve sadece gerekli işlemleri yap ayarı ç
   [düşük] localde tutulursa scrape için belki bir sınır getirmeye gerek yoktur
 ayarlar sayfası tasarımı
 list ban için kaydedilen liste string değil bir string queue olmalı.
-markettext içinde MUTE'den bahsedilmeli
 kullanıcı VPN kullandığında eski url, yönlendiriliyor. şu anda bu durum erişim eksikliği olarak yorumlanıyor ama yönlendirilen url, yeni url olarak yorumlanabilir.
 notification sayfasındaki BAN/UNDOBAN gibi ifadeler türkçeleştirilmeli
 notification sayfasına yapılabilecek tüm işlemlerin anlatıldığı bir diyagram konulmalı.
