@@ -52,6 +52,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
     let tab = await chrome.tabs.create({ active: false, url: chrome.runtime.getURL("assets/html/notification.html") });
     g_notificationTabId = tab.id;
   }
+  programController.tabId = g_notificationTabId;
   notificationHandler.updatePlannedProcessesList(processQueue.itemAttributes);
 
   let authorNameList = [];
@@ -555,11 +556,3 @@ chrome.runtime.onInstalled.addListener(async (details) =>
   }
 });
 
-// this listener fired every time a tab is closed by the user
-chrome.tabs.onRemoved.addListener(function(tabid, removed) {
-  if(tabid == g_notificationTabId)
-  {
-    log.info("bg: user has closed the notification tab, earlyStop will be generated automatically.");
-    programController.earlyStop = true;
-  }
-});

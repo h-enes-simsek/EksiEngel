@@ -7,12 +7,23 @@ class ProgramController
 {
   constructor() 
   { 
-    this._earlyStop = false; 
+    this._earlyStop = false;
+    this._tabId = 0; 
   }
   
   get isActive()
   {
     return processQueue.isRunning;
+  }
+
+  set tabId(val)
+  {
+    this._tabId = val;
+  }
+
+  get tabId()
+  {
+    return this._tabId;
   }
   
   get earlyStop()
@@ -56,4 +67,13 @@ chrome.runtime.onMessage.addListener(async function messageListener_Notification
   }
 		
   programController.earlyStop = true;
+});
+
+// this listener fired every time a tab is closed by the user
+chrome.tabs.onRemoved.addListener(function(tabid, removed) {
+  if(tabid == programController.tabId)
+  {
+    log.info("bg: user has closed the notification tab, earlyStop will be generated automatically.");
+    programController.earlyStop = true;
+  }
 });

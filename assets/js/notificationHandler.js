@@ -95,7 +95,7 @@ class NotificationHandler
   finishErrorEarlyStop = (banSource, banMode) => {
     this.#finish(banSource, banMode,
       "",
-      "erken durduruldu", 
+      "iptal edildi", 
       0, 0, 0);
   }
   finishSuccess = (banSource, banMode, successfulAction, performedAction, plannedAction) => {
