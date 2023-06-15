@@ -17,11 +17,12 @@ export let config =
     
   "enableNoobBan":      false,                            /* enable/disable noob author scraping for FAV */
   "enableMute":         false,                            /* enable/disable TargetType.MUTE operations */
+  "enableTitleBan":     true,                             /* enable/disable title ban */
   
   "enableAnalysisBeforeOperation": true,                  /* do analysis before performing any operation */
     "enableOnlyRequiredActions": false,                    /* do analysis to reduce unnecessary blocking/unblocking actions */
     "enableProtectFollowedUsers": false,                   /* do not block if an author is followed by the user */
-
+    
   "banPremiumIcons": false,                               /* hide premium icons, green and yellow badges */
 	
 	"anonymouseClientName": "anonymouse",									  /* client name if sendClientName false */

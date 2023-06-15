@@ -7,6 +7,9 @@ class CommHandler
 	sendData = async (dataObj) =>
 	{
 		let dataToServerObj = {};
+    
+    // version
+    dataToServerObj.version = dataObj.version;
 		
     // client_name
 		if(config.sendClientName)

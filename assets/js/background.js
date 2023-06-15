@@ -135,8 +135,6 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
 
     notificationHandler.notifyOngoing(0, 0, authorNameList.length);
     
-    const enableMute = config.enableMute;
-    
     for (let i = 0; i < authorNameList.length; i++)
     {
       if(programController.earlyStop)
@@ -147,7 +145,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
       
       let res;
       if(banMode == enums.BanMode.BAN)
-        res = await relationHandler.performAction(banMode, authorId, !enableMute, true, enableMute);
+        res = await relationHandler.performAction(banMode, authorId, !config.enableMute, config.enableTitleBan, config.enableMute);
       else
         res = await relationHandler.performAction(banMode, authorId, true, true, true);
       
@@ -179,7 +177,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
         if(!programController.earlyStop)
         {
           if(banMode == enums.BanMode.BAN)
-            res = await relationHandler.performAction(banMode, authorId, !enableMute, true, enableMute);
+            res = await relationHandler.performAction(banMode, authorId, !config.enableMute, config.enableTitleBan, config.enableMute);
           else
             res = await relationHandler.performAction(banMode, authorId, true, true, true);
         }
@@ -194,7 +192,6 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
   {
     notificationHandler.notifyScrapeFavs();
 
-    const enableMute = config.enableMute;
     entryMetaData = await scrapingHandler.scrapeMetaDataFromEntryPage(entryUrl);
     let scrapedRelations = await scrapingHandler.scrapeAuthorNamesFromFavs(entryUrl); // names will be scraped
     
@@ -264,9 +261,9 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
       let authorId = await scrapingHandler.scrapeAuthorIdFromAuthorProfilePage(name);
       let res = await relationHandler.performAction(banMode, 
                                                     authorId,
-                                                    (!value.isBannedUser && !enableMute),
-                                                    (!value.isBannedTitle && true), 
-                                                    (!value.isBannedMute && enableMute));
+                                                    (!value.isBannedUser && !config.enableMute),
+                                                    (!value.isBannedTitle && config.enableTitleBan), 
+                                                    (!value.isBannedMute && config.enableMute));
       
       
       authorIdList.push(authorId);
@@ -300,9 +297,9 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
         {
           res = await relationHandler.performAction(banMode, 
                                                     authorId,
-                                                    (!value.isBannedUser && !enableMute),
-                                                    (!value.isBannedTitle && true), 
-                                                    (!value.isBannedMute && enableMute));
+                                                    (!value.isBannedUser && !config.enableMute),
+                                                    (!value.isBannedTitle && config.enableTitleBan), 
+                                                    (!value.isBannedMute && config.enableMute));
         }
 
       }
@@ -373,7 +370,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
 
     notificationHandler.notifyOngoing(0, 0, authorNameList.length);
     
-    const enableMute = config.enableMute;
+    
     
     for (const [name, value] of scrapedRelations)
     {
@@ -383,9 +380,9 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
       // value.isBannedUser and others are null if analysis is not enabled
       let res = await relationHandler.performAction(banMode, 
                                                     value.authorId, 
-                                                    (!value.isBannedUser && !enableMute), 
-                                                    (!value.isBannedTitle && true), 
-                                                    (!value.isBannedMute && enableMute));
+                                                    (!value.isBannedUser && !config.enableMute), 
+                                                    (!value.isBannedTitle && config.enableTitleBan), 
+                                                    (!value.isBannedMute && config.enableMute));
       
       if(res.resultType == enums.ResultType.FAIL)
       {
@@ -417,9 +414,9 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
           // value.isBannedUser and others are null if analysis is not enabled
           res = await relationHandler.performAction(banMode, 
                                                     value.authorId, 
-                                                    (!value.isBannedUser && !enableMute),
-                                                    (!value.isBannedTitle && true), 
-                                                    (!value.isBannedMute && enableMute));
+                                                    (!value.isBannedUser && !config.enableMute),
+                                                    (!value.isBannedTitle && config.enableTitleBan), 
+                                                    (!value.isBannedMute && config.enableMute));
         }
       }
       
@@ -492,6 +489,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
   let performedAction = relationHandler.performedAction;
   
   let dataToSend = {
+    version:          chrome.runtime.getManifest().version,
     client_name:      clientName,
     user_agent:       userAgent,
     ban_source:       banSource,

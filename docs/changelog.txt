@@ -198,7 +198,7 @@ yeni özellik: yazarın profil sayfasına takipçilerini engelle butonu eklendi
 yeni özellik: sayfalardan footer kaldırıldı
 
 v2.7
-gönderim:  yayın: 
+gönderim: 06.06.2023 yayın: 06.06.2023
 yeni özellik: yeşil ve sarı tikleri gizleme özelliği (sadece tik)
 yeni özellik: devam eden süreçle ilgili daha fazla bilgi notification.html üzerinden verildi.
 yeni özellik: bir ekşi engel butonuna tıklandığında artık kullanıcıya ekşi sözlük üzerinden ekşi sözlük API kullanılarak bir geri bildirim veriliyor.
@@ -207,7 +207,17 @@ notificationHandler ile notification kısmı refactor edildi. GUI üzerindeki lo
 earlyStop, notification.html kapanınca otomatik olarak üretildi. eskiden haberleşme eksikliğinde üretiliyordu.
 analitik verilerin toplanması durduruldu.
 
+v2.8
+gönderim: yayın:
+yeni özellik: başlıkları da engelle ayarı eklendi. 
+gönderilen loglara versiyon bilgisi eklendi.
+
 YÜKSEK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
+hardcoded versiyon olmalı
+versiyon bilgisi loglara eklensin, belki dbye de eklenebilir
+servera settings gönderilsin
+server clientdata için toplam engel sayısını göstersin
+loglar incelenmeli, bitişte bittiğine dair bir bilgi olmalı
 takip edilen kullanıcıları engelleme ve sadece gerekli işlemleri yap ayarı çok uzun sürüyor.
   ayarlardan kaldırılmalı ve otomatik hale getirilmeli
   yeni durumda engel listesi belli bir sayıdan fazla ise devreye girmeli

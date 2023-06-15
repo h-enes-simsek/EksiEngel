@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', async function () {
   // load the current configuration from storage
   await handleConfig();
   console.log("sendData:" + config.sendData + ", sendClientName:" + config.sendClientName);
+  console.log("enableTitleBan:" + config.enableTitleBan);
   console.log("enableNoobBan:" + config.enableNoobBan);
   console.log("enableMute:" + config.enableMute);
   console.log("enableProtectFollowedUsers:" + config.enableProtectFollowedUsers);
@@ -42,6 +43,8 @@ document.addEventListener('DOMContentLoaded', async function () {
 	}
 
   // load the current states to switch buttons
+  document.getElementById("titleBanEnabled").checked = config.enableTitleBan === true;
+  document.getElementById("titleBanDisabled").checked = config.enableTitleBan !== true;
   document.getElementById("noobBanEnabled").checked = config.enableNoobBan === true;
   document.getElementById("noobBanDisabled").checked = config.enableNoobBan !== true;
   document.getElementById("muteEnabled").checked = config.enableMute === true;
@@ -66,14 +69,20 @@ document.addEventListener('DOMContentLoaded', async function () {
 		document.getElementById("threeStateSwitchText").innerHTML = "Ekşi Sözlük kullanıcı adınız ve log verileri <b style='color:green'>Ekşi Engel</b> sunucularına gönderiliyor.";
     threeStateSwitchOnClick();
   });
+
+  // add onclick function to two state radio buttons
+  document.getElementById("titleBanEnabled").addEventListener("click", function(element) {
+    titleBanSwitchOnClick();
+  });
+  document.getElementById("titleBanDisabled").addEventListener("click", function(element) {
+    titleBanSwitchOnClick();
+  });
   
   // add onclick function to two state radio buttons
   document.getElementById("noobBanEnabled").addEventListener("click", function(element) {
-		//document.getElementById("noobBanSwitchText").innerHTML = "";
     noobBanSwitchOnClick();
   });
   document.getElementById("noobBanDisabled").addEventListener("click", function(element) {
-		//document.getElementById("noobBanSwitchText").innerHTML = "";
     noobBanSwitchOnClick();
   });
   
@@ -137,6 +146,13 @@ function muteSwitchOnClick()
 {
 	config.enableMute = document.getElementById("muteEnabled").checked;
 	console.log("enableMute:" + config.enableMute);
+	saveConfig(config);
+}
+
+function titleBanSwitchOnClick()
+{
+	config.enableTitleBan = document.getElementById("titleBanEnabled").checked;
+	console.log("enableTitleBan:" + config.enableTitleBan);
 	saveConfig(config);
 }
 
