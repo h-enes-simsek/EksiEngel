@@ -13,56 +13,35 @@ class CommHandler
 		
     // client_name
 		if(config.sendClientName)
-		{
-			if(dataObj.client_name)
-				dataToServerObj.client_name = dataObj.client_name;
-			else
-				dataToServerObj.client_name = config.erroneousText;
-		}
+			dataToServerObj.client_name = dataObj.client_name;
 		else
-		{
 			dataToServerObj.client_name = config.anonymouseClientName;
-		}
     
     // user_agent
-    if(dataObj.user_agent)
-      dataToServerObj.user_agent = dataObj.user_agent;
-    else
-      dataToServerObj.user_agent = config.erroneousText;
+    dataToServerObj.user_agent = dataObj.user_agent;
     
     // ban_source
-    dataToServerObj.ban_source = dataObj.ban_source;
+    dataToServerObj.ban_source_id = dataObj.ban_source;
     
     // ban_mode
-    dataToServerObj.ban_mode = dataObj.ban_mode;
+    dataToServerObj.ban_mode_id = dataObj.ban_mode;
+
+    // target_type
+    dataToServerObj.target_type_id = dataObj.target_type;
+
+    // click_source
+    dataToServerObj.click_source_id = dataObj.click_source;
 
     // fav_entry_id
-		if(dataObj.fav_entry_id)
-			dataToServerObj.fav_entry_id = dataObj.fav_entry_id;
-		else
-			dataToServerObj.fav_entry_id = config.erroneousInt;
+		dataToServerObj.fav_entry_id = dataObj.fav_entry_id;
     
     // fav_author_name and fav_author_id
-		if(dataObj.fav_author_name)
-			dataToServerObj.fav_author_name = dataObj.fav_author_name;
-		else
-			dataToServerObj.fav_author_name = config.erroneousText;
-		
-		if(dataObj.fav_author_id)
-			dataToServerObj.fav_author_id = dataObj.fav_author_id;
-		else
-			dataToServerObj.fav_author_id = config.erroneousInt;
+		dataToServerObj.fav_author_name = dataObj.fav_author_name;
+		dataToServerObj.fav_author_id = dataObj.fav_author_id;
     
     // fav_title_name and fav_title_id
-		if(dataObj.fav_title_name)
-			dataToServerObj.fav_title_name = dataObj.fav_title_name;
-		else
-			dataToServerObj.fav_title_name = config.erroneousText;
-
-		if(dataObj.fav_title_id)
-			dataToServerObj.fav_title_id = dataObj.fav_title_id;
-		else
-			dataToServerObj.fav_title_id = config.erroneousInt;
+		dataToServerObj.fav_title_name = dataObj.fav_title_name;
+		dataToServerObj.fav_title_id = dataObj.fav_title_id;
     
     // author_list_size
     dataToServerObj.author_list_size = dataObj.author_list_size;
@@ -92,15 +71,17 @@ class CommHandler
     // log_level and log
 		if(config.sendLog && log.isEnabled)
 		{
-			dataToServerObj.log_level = log.getLevel();
+			dataToServerObj.log_level_id = log.level;
 			dataToServerObj.log = log.getData();
 		}
 		else
 		{
-      dataToServerObj.log_level = "DISABLED";
-			dataToServerObj.log = config.erroneousText;
+      dataToServerObj.log_level_id = log.constructor.Levels.DISABLED; 
+			dataToServerObj.log = undefined;
 		}
     
+    console.log(dataToServerObj);
+
 		try
 		{
 			const response = await fetch(config.serverURL, {

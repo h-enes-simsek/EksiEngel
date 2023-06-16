@@ -17,13 +17,13 @@ let g_notificationTabId = 0;
 
 chrome.runtime.onMessage.addListener(async function messageListener_Popup(message, sender, sendResponse) {
   sendResponse({status: 'ok'}); // added to suppress 'message port closed before a response was received' error
-	
+
 	const obj = utils.filterMessage(message, "banSource", "banMode");
 	if(obj.resultType === enums.ResultType.FAIL)
 		return;
 	
   log.info("bg: a new process added to the queue, banSource: " + obj.banSource + ", banMode: " + obj.banMode);
-  let wrapperProcessHandler = processHandler.bind(null, obj.banSource, obj.banMode, obj.entryUrl, obj.authorName, obj.authorId, obj.isTargetUser, obj.isTargetTitle, obj.isTargetMute);
+  let wrapperProcessHandler = processHandler.bind(null, obj.banSource, obj.banMode, obj.entryUrl, obj.authorName, obj.authorId, obj.targetType, obj.clickSource);
   wrapperProcessHandler.banSource = obj.banSource;
   wrapperProcessHandler.banMode = obj.banMode;
   wrapperProcessHandler.creationDateInStr = new Date().getHours() + ":" + new Date().getMinutes(); 
@@ -32,7 +32,7 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
   notificationHandler.updatePlannedProcessesList(processQueue.itemAttributes);
 });
 
-async function processHandler(banSource, banMode, entryUrl, singleAuthorName, singleAuthorId, isTargetUser, isTargetTitle, isTargetMute)
+async function processHandler(banSource, banMode, entryUrl, singleAuthorName, singleAuthorId, targetType, clickSource)
 {
   log.info("Process has been started with " + 
            "banSource: "    + banSource + 
@@ -84,8 +84,8 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
   if(banSource === enums.BanSource.SINGLE)
   {
     notificationHandler.notifyOngoing(0, 0, 1);
-
-    let res = await relationHandler.performAction(banMode, singleAuthorId, isTargetUser, isTargetTitle, isTargetMute);
+    
+    let res = await relationHandler.performAction(banMode, singleAuthorId, targetType == enums.TargetType.USER, targetType == enums.TargetType.TITLE, targetType == enums.TargetType.MUTE);
     authorIdList.push(singleAuthorId);
     authorNameList.push(singleAuthorName);
     
@@ -114,7 +114,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
       }); 
       
       if(!programController.earlyStop)
-        res = await relationHandler.performAction(banMode, singleAuthorId, isTargetUser, isTargetTitle, isTargetMute);
+        res = await relationHandler.performAction(banMode, singleAuthorId, targetType == enums.TargetType.USER, targetType == enums.TargetType.TITLE, targetType == enums.TargetType.MUTE);
     }
     
     notificationHandler.notifyOngoing(res.successfulAction, res.performedAction, authorNameList.length);
@@ -494,6 +494,8 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
     user_agent:       userAgent,
     ban_source:       banSource,
     ban_mode:         banMode,
+    target_type:      targetType,
+    click_source:      clickSource,
     fav_entry_id:     entryMetaData.entryId,
     fav_author_name:  entryMetaData.authorName,
     fav_author_id:    entryMetaData.authorId,

@@ -210,7 +210,11 @@ analitik verilerin toplanması durduruldu.
 v2.8
 gönderim: yayın:
 yeni özellik: başlıkları da engelle ayarı eklendi. 
-gönderilen loglara versiyon bilgisi eklendi.
+server API /upload güncellendi, yeni adresi /upload_v2
+  geriye dönük uyumluluk bir süre korunacak. hem /upload hem /upload_v2 destekleniyor.
+  gönderilen verilere versiyon, clickSource ve targetType eklendi. 
+  model_to_dict ile basit düzeyde serializer kullanıldı.
+API değişikliği nedebiyle gerekenler enumlar stringten integera çevirildi.
 
 YÜKSEK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
 hardcoded versiyon olmalı

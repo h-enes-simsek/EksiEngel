@@ -6,7 +6,7 @@ export let config =
 {
   "EksiSozlukURL":      "https://eksisozluk1923.com",
   "whereIsEksiSozlukURL":"https://eksiengel.hesimsek.com/where_is_eksisozluk",
-	"serverURL": 				  "https://eksiengel.hesimsek.com/client_data_collector/upload",
+	"serverURL": 				  "https://eksiengel.hesimsek.com/client_data_collector/upload_v2",
 	"serverAnalyticsURL": "https://eksiengel.hesimsek.com/client_data_collector/analytics",
 	"sendData": 				  true,														  /* send data to server */
 		"sendClientName":   true,															/* send client name to server */

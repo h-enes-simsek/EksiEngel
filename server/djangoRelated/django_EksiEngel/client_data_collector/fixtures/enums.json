@@ -51,6 +51,64 @@
   },
 
   {
+    "model": "client_data_collector.TargetType",
+    "pk": 1,
+    "fields": {
+      "target_type": "USER"
+    }
+  },
+  {
+    "model": "client_data_collector.TargetType",
+    "pk": 2,
+    "fields": {
+      "target_type": "TITLE"
+    }
+  },
+  {
+    "model": "client_data_collector.TargetType",
+    "pk": 3,
+    "fields": {
+      "target_type": "MUTE"
+    }
+  },
+
+  {
+    "model": "client_data_collector.ClickSource",
+    "pk": 1,
+    "fields": {
+      "click_source": "ENTRY"
+    }
+  },
+  {
+    "model": "client_data_collector.ClickSource",
+    "pk": 2,
+    "fields": {
+      "click_source": "PROFILE"
+    }
+  },
+  {
+    "model": "client_data_collector.ClickSource",
+    "pk": 3,
+    "fields": {
+      "click_source": "QUESTION"
+    }
+  },
+  {
+    "model": "client_data_collector.ClickSource",
+    "pk": 4,
+    "fields": {
+      "click_source": "FOLLOWING"
+    }
+  },
+  {
+    "model": "client_data_collector.ClickSource",
+    "pk": 5,
+    "fields": {
+      "click_source": "FOLLOWER"
+    }
+  },
+
+  {
     "model": "client_data_collector.LogLevel",
     "pk": 1,
     "fields": {

@@ -3,41 +3,10 @@ class Log
 {
   constructor()
   {
-    this.g_LoggedData = [];					      /* logged data */
+		this.g_LoggedData = [];					      /* logged data */
 		this.level = Log.Levels.INFO;		      /* minimum log level that will be logged */
-		this._isEnabled = true;	  /* on-off logger */
-		this._logConsole = true;  /* log to console as well */
-  }
-	
-	setLevel = (level) =>
-	{
-		this.level = level;
-	}
-  
-  getLevel = () => 
-  {
-    // string key of the enum, not the integer value
-    return Object.keys(Log.Levels)[this.level];
-  }
-	 
-	set isEnabled(isEnabled)
-	{
-		this._isEnabled = isEnabled;
-	}
-  
-  get isEnabled()
-  {
-    return this._isEnabled;
-  }
-	
-	set logConsole(logConsole)
-	{
-		this._logConsole = logConsole;
-	}
-  
-  get logConsole()
-  {
-    return this._logConsole;
+		this.isEnabled = true;	  						/* on-off logger */
+		this.logConsole = true;  							/* log to console as well */
   }
   
 	info = (data) =>
@@ -60,10 +29,10 @@ class Log
 	
 	logData = (logMsg, level) =>
 	{
-		if(this._logConsole)
+		if(this.logConsole)
 			console.log(logMsg);
 		
-		if(level >= this.level)
+		if(parseInt(level) >= parseInt(this.level))
 			this.g_LoggedData.push(logMsg);
 	}
   
@@ -98,10 +67,10 @@ class Log
 	
   static Levels = 
   {
-    DISABLED: 0,
-    INFO:     1,
-    WARN:     2,
-    ERR:      3
+    DISABLED: "1",
+    INFO:     "2",
+    WARN:     "3",
+    ERR:      "4"
   }
 	
 }

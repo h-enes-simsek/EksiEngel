@@ -4,6 +4,7 @@ from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 import json
+from django.forms.models import model_to_dict
 
 from .models import ClientData,BanSource,BanMode,LogLevel
 from .models import ClientAnalytic,ClickType
@@ -83,3 +84,36 @@ def analytics(request):
             return HttpResponse(e, status=400)
     else:
         return HttpResponse('Method Not Allowed', status=405)
+
+@csrf_exempt    
+def upload_v2(request):
+    if request.method == 'POST':
+        data = None
+        if(request.POST):
+            # form data
+            data = request.POST
+        elif(request.body):
+            # raw json data
+            try:
+                data = json.loads(request.body) 
+            except:
+                return HttpResponse('An Error Occured', status=400)
+        else:
+            return HttpResponse('Empty Request', status=400)
+        try:
+            # create a row in ClientData table
+            ClientData.objects.create(**data)
+            return HttpResponse('OK', status=200)
+        except Exception as e:
+            print(e)
+            return HttpResponse(e, status=400)
+    else:
+        return HttpResponse('Method Not Allowed', status=405)
+
+
+
+
+
+
+
+

@@ -1,3 +1,5 @@
+import * as enums from './enums.js';
+
 function saveAuthorListToStorage()
 {
 	let userListString = document.getElementById("userList").value;
@@ -14,13 +16,13 @@ function saveAuthorListToStorage()
 // send message to background.js to start banning process
 document.getElementById("startBan").addEventListener("click", function(){
 	saveAuthorListToStorage();
-	chrome.runtime.sendMessage(null, {"banSource":"LIST", "banMode":"BAN"});
+	chrome.runtime.sendMessage(null, {"banSource":enums.BanSource.LIST, "banMode":enums.BanMode.BAN});
 });
 
 // send message to background.js to start banning process
 document.getElementById("startUndoban").addEventListener("click", function(){
 	saveAuthorListToStorage();
-	chrome.runtime.sendMessage(null, {"banSource":"LIST", "banMode":"UNDOBAN"});
+	chrome.runtime.sendMessage(null, {"banSource":enums.BanSource.LIST, "banMode":enums.BanMode.UNDOBAN});
 });
 
 // if local storage save is successfull, show a message to the user

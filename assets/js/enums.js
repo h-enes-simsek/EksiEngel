@@ -1,21 +1,29 @@
 export const BanSource = {
-  SINGLE:     "SINGLE",       /* Ban/Undoban a author */
-  FAV:  			"FAV",          /* Ban all authors that favorited a specific entry */
-  FOLLOW:     "FOLLOW",       /* Ban all authors that followed a specific author */
-  LIST: 			"LIST",         /* Ban/Undoban authors in the list that will be filled by user */
-	UNDOBANALL: "UNDOBANALL"    /* Undoban all banned authors */
+  SINGLE:     "1",       /* Ban/Undoban a author */
+  FAV:  			"2",          /* Ban all authors that favorited a specific entry */
+  FOLLOW:     "3",       /* Ban all authors that followed a specific author */
+  LIST: 			"4",         /* Ban/Undoban authors in the list that will be filled by user */
+	UNDOBANALL: "5"    /* Undoban all banned authors */
 };
 
 export const BanMode = {
-  BAN:     "BAN",
-  UNDOBAN: "UNDOBAN"
+  BAN:     "1",
+  UNDOBAN: "2"
 };
 
 export const TargetType = {
-  USER:  "USER",
-  TITLE: "TITLE",
-  MUTE: "MUTE"
+  USER:  "1",
+  TITLE: "2",
+  MUTE: "3"
 };
+
+export const ClickSource = {
+  ENTRY: "1",
+  PROFILE: "2",
+  QUESTION: "3",
+  FOLLOWING: "4",
+  FOLLOWER: "5"
+}
 
 export const ResultType = {
   SUCCESS:  "SUCCESS",

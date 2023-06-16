@@ -16,7 +16,7 @@ openauthorListPage.onclick = function(element) {
 startUndobanAll.onclick = function(element) {
   commHandler.sendAnalyticsData({click_type:enums.ClickType.EXTENSION_MENU_UNDOBANALL});
 	// send message to background page
-	chrome.runtime.sendMessage(null, {"banSource":"UNDOBANALL", "banMode":"UNDOBAN"});
+	chrome.runtime.sendMessage(null, {"banSource":enums.BanSource.UNDOBANALL, "banMode":enums.BanMode.UNDOBAN});
 };
 
 openFaq.onclick = function(element) {
