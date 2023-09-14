@@ -62,7 +62,8 @@ class Action(models.Model):
     ban_mode = models.ForeignKey(BanMode, on_delete=models.PROTECT, blank=False, null=False)
     author_list = models.ManyToManyField(EksiSozlukUser, related_name="author_list_in_action", blank=False)
     author_list_size = models.IntegerField(blank=False, null=False) 
-    total_action = models.IntegerField(blank=False, null=False)
+    planned_action = models.IntegerField(blank=False, null=False) 
+    performed_action = models.IntegerField(blank=False, null=False)
     successful_action = models.IntegerField(blank=False, null=False)
     is_early_stopped = models.BooleanField(blank=False, null=False)
     log_level = models.ForeignKey(LogLevel, on_delete=models.PROTECT, blank=False, null=False)
@@ -78,7 +79,7 @@ class Action(models.Model):
     fav_author = models.ForeignKey(EksiSozlukUser, on_delete=models.CASCADE, related_name="fav_author_in_action", blank=True, null=True)
 
     def __str__(self):
-        return f"{self.id} {self.date.strftime('%Y-%m-%d %H:%M:%S')} {self.eksi_engel_user.eksisozluk_name} {self.ban_source} {self.successful_action}/{self.total_action}/{self.author_list_size} {self.is_early_stopped}"
+        return f"{self.id} {self.date.strftime('%Y-%m-%d %H:%M:%S')} {self.eksi_engel_user.eksisozluk_name} {self.ban_source} {self.successful_action}/{self.performed_action}/{self.planned_action} {self.is_early_stopped}"
         
 class ActionConfig(models.Model):
     action = models.OneToOneField(Action, related_name='action_config', on_delete=models.CASCADE, blank=False, null=False)
