@@ -24,12 +24,14 @@ INSTALLED_APPS = [
     'corsheaders',
     'client_data_collector.apps.ClientDataCollectorConfig',
     'where_is_eksisozluk.apps.WhereIsEksisozlukConfig',
+    'api.apps.ApiConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
 ]
 
 MIDDLEWARE = [

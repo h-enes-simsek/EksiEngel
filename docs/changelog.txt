@@ -214,13 +214,11 @@ server API /upload güncellendi, yeni adresi /upload_v2
   geriye dönük uyumluluk bir süre korunacak. hem /upload hem /upload_v2 destekleniyor.
   gönderilen verilere versiyon, clickSource ve targetType eklendi. 
   model_to_dict ile basit düzeyde serializer kullanıldı.
-API değişikliği nedebiyle gerekenler enumlar stringten integera çevirildi.
+API değişikliği nedeniyle enumlar stringten integera çevirildi.
 
 YÜKSEK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
-hardcoded versiyon olmalı
-versiyon bilgisi loglara eklensin, belki dbye de eklenebilir
+notification sayfasında ve loglarda enumların ne olduğu anlaşılmıyor.
 servera settings gönderilsin
-server clientdata için toplam engel sayısını göstersin
 loglar incelenmeli, bitişte bittiğine dair bir bilgi olmalı
 takip edilen kullanıcıları engelleme ve sadece gerekli işlemleri yap ayarı çok uzun sürüyor.
   ayarlardan kaldırılmalı ve otomatik hale getirilmeli
