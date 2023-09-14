@@ -6,15 +6,23 @@ from rest_framework.response import Response
 from django.http import HttpResponse
 from .serializers import CollectActionDataSerializer, EksiSozlukUserStatViewSerializer, MostBannedUsersSerializer, MostBannedUsersUniqueSerializer
 from .models import Action, ActionConfig, EksiSozlukUser
+from rest_framework.authentication import SessionAuthentication, BasicAuthentication 
+
+class CsrfExemptSessionAuthentication(SessionAuthentication):
+
+    def enforce_csrf(self, request):
+        return  # To not perform the csrf check previously happening
 
 class WhereIsEksiSozlukView(views.APIView):
     permission_classes = [AllowAny]
+    authentication_classes = (CsrfExemptSessionAuthentication, BasicAuthentication)
 
     def get(self, request, format=None):
         return HttpResponse("https://eksisozluk1923.com")
         
 class CollectActionDataView(views.APIView):
     permission_classes = [AllowAny]
+    authentication_classes = (CsrfExemptSessionAuthentication, BasicAuthentication)
     
     # for debug
     def get(self, request, format=None):
@@ -30,6 +38,7 @@ class CollectActionDataView(views.APIView):
 
 class MostBannedUsersUniqueView(generics.ListAPIView):
     permission_classes = [AllowAny]
+    authentication_classes = (CsrfExemptSessionAuthentication, BasicAuthentication)
     
     serializer_class = MostBannedUsersUniqueSerializer
     

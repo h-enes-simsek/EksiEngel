@@ -172,9 +172,9 @@ class WriteActionViewSerializer(serializers.ModelSerializer):
     # also, some fields are optinal and that is why we need to handle them manually
     eksi_engel_user = WriteEksiEngelUserSerializer(many=False, read_only=False)
     author_list = WriteEksiEngelUserSerializer(many=True, read_only=False)
-    fav_author = WriteFavAuthorSerializer(many=False, read_only=False, required=False)
-    fav_title = WriteEksiSozlukTitleSerializer(many=False, read_only=False, required=False)
-    fav_entry = WriteEksiSozlukEntrySerializer(many=False, read_only=False, required=False)
+    fav_author = WriteFavAuthorSerializer(many=False, read_only=False, required=False, allow_null=True)
+    fav_title = WriteEksiSozlukTitleSerializer(many=False, read_only=False, required=False, allow_null=True)
+    fav_entry = WriteEksiSozlukEntrySerializer(many=False, read_only=False, required=False, allow_null=True)
         
     class Meta:
         model = Action
@@ -216,7 +216,7 @@ class WriteActionViewSerializer(serializers.ModelSerializer):
         
         
         author_list_dict = validated_data.pop('author_list')
-        action = Action.objects.create(eksi_engel_user=eksi_engel_user, fav_author=fav_author, fav_title=fav_title, **validated_data)
+        action = Action.objects.create(eksi_engel_user=eksi_engel_user, fav_author=fav_author, fav_title=fav_title, fav_entry=fav_entry, **validated_data)
         action.save()
         
         # create users in the author_list if necessary
@@ -236,7 +236,7 @@ class WriteActionViewSerializer(serializers.ModelSerializer):
         
 class CollectActionDataSerializer(serializers.Serializer):
     action = WriteActionViewSerializer(many=False, read_only=False)
-    action_config = WriteActionConfigSerializer(many=False, read_only=False)
+    action_config = WriteActionConfigSerializer(many=False, read_only=False, required=False, allow_null=True)
         
     def create(self, validated_data):
         # access action        
@@ -247,8 +247,10 @@ class CollectActionDataSerializer(serializers.Serializer):
         
         # create the action_config
         action_config_dict = validated_data.get('action_config')
-        action_config = ActionConfig.objects.create(action=action, **action_config_dict)
-        action_config.save()
+        action_config = None
+        if action_config_dict:
+            action_config = ActionConfig.objects.create(action=action, **action_config_dict)
+            action_config.save()
         
         return {
             "action": action,
