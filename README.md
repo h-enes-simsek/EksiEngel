@@ -1,5 +1,5 @@
 <div float="left">
-<h2><img src="assets/img/eksiengel48.png" width="48" height="48"> Ekşi Engel</h2>
+<h2><img src="frontend/app/assets/img/eksiengel48.png" width="48" height="48"> Ekşi Engel</h2>
 </div>
 Google Chrome extension that allows mass blocking of authors for the social media platform Ekşi Sözlük.
 
@@ -42,10 +42,10 @@ Ekşi Engel in Chrome Webstore: [link](https://chrome.google.com/webstore/detail
 Version notes: [link](https://h-enes-simsek.github.io/EksiEngel/releaseNotes.html)  
 
 <div float="left">
-<img src="publish/ss/entryMenu.png" width="480" height="300">
+<img src="frontend/publish/ss/entryMenu.png" width="480" height="300">
 <br>
-<img src="publish/ss/authorMenu.png" width="480" height="300">
-<img src="publish/ss/popup.png" width="480" height="300">
-<img src="publish/ss/authorListPage.png" width="480" height="300">
-<img src="publish/ss/notification.png" width="480" height="300">
+<img src="frontend/publish/ss/authorMenu.png" width="480" height="300">
+<img src="frontend/publish/ss/popup.png" width="480" height="300">
+<img src="frontend/publish/ss/authorListPage.png" width="480" height="300">
+<img src="frontend/publish/ss/notification.png" width="480" height="300">
 </div>
