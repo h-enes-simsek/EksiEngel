@@ -84,7 +84,6 @@ class ActionConfig(models.Model):
     action = models.OneToOneField(Action, related_name='action_config', on_delete=models.CASCADE, blank=False, null=False)
     eksi_sozluk_url = models.CharField(max_length=100, blank=True, null=True)
     send_data = models.BooleanField(blank=True, null=True)
-    send_client_name = models.BooleanField(blank=True, null=True)
     enable_noob_ban = models.BooleanField(blank=True, null=True)
     enable_mute = models.BooleanField(blank=True, null=True)
     enable_title_ban = models.BooleanField(blank=True, null=True)

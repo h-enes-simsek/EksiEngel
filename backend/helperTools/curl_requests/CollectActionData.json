@@ -45,7 +45,6 @@
   "action_config": {
       "eksi_sozluk_url": "test.com",
       "send_data": true,
-      "send_client_name": false,
       "enable_noob_ban": true,
       "enable_mute": false,
       "enable_title_ban": false,
