@@ -17,17 +17,16 @@ function Relation(authorName, authorId, isBannedUser, isBannedTitle, isBannedMut
 
 class ScrapingHandler
 {
-  scrapeUserAgent = () =>
+  #fetchEksiSozluk = async (url) => 
   {
-    return navigator.userAgent;
-  }
-  
-  scrapeClientName = async () =>
-  {
+    // fetch with custom headers for eksisozluk website
+    // return: response.text()
+    // return(err): throw Error
+
     let responseText = "";
     try
     {
-      let response = await fetch(config.EksiSozlukURL, {
+      let response = await fetch(url, {
         method: 'GET',
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
@@ -35,17 +34,38 @@ class ScrapingHandler
           }
       });
       responseText = await response.text();
+      return responseText;
+    }
+    catch(err)
+    {
+      throw new Error(err);
+    }
+  }
+
+  scrapeUserAgent = () =>
+  {
+    return navigator.userAgent;
+  }
+  
+  scrapeClientNameAndId = async () =>
+  {
+    // return: {clientName, clientId}
+    // return(error): {clientName:"", clientId:""}
+
+    let responseText = "";
+    try
+    {
+      responseText = await this.#fetchEksiSozluk(config.EksiSozlukURL);
     }
     catch(err)
     {
       log.err("scrapingHandler: scrapeClientName: " + err);
-      return "";
+      return {clientName:"", clientId:""};
     }
     
+    let clientName = "";
     try
     {
-      let clientName = "";
-      
       // parse string response as html document
       let dom = new JSDOM(responseText);
       let cName = dom.window.document.querySelector(".mobile-notification-icons").querySelector(".mobile-only a").title;
@@ -56,13 +76,18 @@ class ScrapingHandler
       }
       
       log.info("scrapingHandler: clientName: " + clientName);
-      return clientName;
     }
     catch(err)
     {
       log.err("scrapingHandler: scrapeClientName: " + err);
-      return "";
+      return {clientName:"", clientId:""};
     }
+
+    let clientId = await this.scrapeAuthorIdFromAuthorProfilePage(clientName);
+    if(clientId == 0)
+      return {clientName:"", clientId:""};
+    else 
+      return {clientName, clientId};
     
   }
 

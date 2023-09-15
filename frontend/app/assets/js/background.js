@@ -4,7 +4,7 @@ import * as enums from './enums.js';
 import * as utils from './utils.js';
 import {config, getConfig, saveConfig, handleConfig} from './config.js';
 import {log} from './log.js';
-import {commHandler} from './commHandler.js';
+import {Action, createEksiSozlukEntry, createEksiSozlukTitle, createEksiSozlukUser, commHandler} from './commHandler.js';
 import {relationHandler} from './relationHandler.js';
 import {scrapingHandler} from './scrapingHandler.js';
 import {processQueue} from './queue.js';
@@ -73,7 +73,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
 
   notificationHandler.notifyControlLogin();
   let userAgent = await scrapingHandler.scrapeUserAgent();
-  let clientName = await scrapingHandler.scrapeClientName(); 
+  const {clientName, clientId} = await scrapingHandler.scrapeClientNameAndId(); 
   if(!clientName)
   {
     log.err("Program has been finished (finishErrorLogin)");
@@ -488,29 +488,54 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
   let successfulAction = relationHandler.successfulAction;
   let performedAction = relationHandler.performedAction;
   
-  let dataToSend = {
+  let eksi_engel_user = createEksiSozlukUser(clientName, clientId);
+  let fav_author = createEksiSozlukUser(entryMetaData.authorName, entryMetaData.authorId);
+  let fav_title = createEksiSozlukTitle(entryMetaData.titleName, entryMetaData.titleId);
+  let fav_entry = createEksiSozlukEntry(fav_title /* TODO */, entryMetaData.entryId);
+
+  // TODO: extremely inefficient solution, delete authorNameList and authorId arrays
+  let author_list = authorIdList.map((id, index) => {
+    return {
+      eksisozluk_id: id,
+      eksisozluk_name: authorNameList[index]
+    }
+  });
+
+  let action = new Action({
+    eksi_engel_user:  eksi_engel_user,
     version:          chrome.runtime.getManifest().version,
-    client_name:      clientName,
     user_agent:       userAgent,
     ban_source:       banSource,
     ban_mode:         banMode,
-    target_type:      targetType,
-    click_source:      clickSource,
-    fav_entry_id:     entryMetaData.entryId,
-    fav_author_name:  entryMetaData.authorName,
-    fav_author_id:    entryMetaData.authorId,
-    fav_title_name:   entryMetaData.titleName,
-    fav_title_id:     entryMetaData.titleId,
-    author_list_size: authorNameList.length,
-    author_name_list: authorNameList,
-    author_id_list:   authorIdList,
-    total_action:     performedAction,
+    author_list:      author_list,
+    author_list_size: author_list.length,
+    planned_action:   authorNameList.length,
+    performed_action: performedAction,
     successful_action:successfulAction,
-    is_early_stopped: programController.earlyStop
-  };
+    is_early_stopped: programController.earlyStop,
+    log_level:        null,
+    log:              null,
+    target_type:      targetType,
+    click_source:     clickSource,
+    fav_title:        fav_title,
+    fav_entry:        fav_entry,
+    fav_author:       fav_author
+  });
+
+  // log_level and log
+  if(config.sendLog && log.isEnabled)
+  {
+    action.log_level = log.level;
+    action.log = log.getData().toString();
+  }
+  else
+  {
+    action.log_level = log.constructor.Levels.DISABLED; 
+    action.log = null;
+  }
 
   if(config.sendData)
-    await commHandler.sendData(dataToSend);
+    await commHandler.sendData(action);
 
   notificationHandler.finishSuccess(banSource, banMode, successfulAction, performedAction, authorNameList.length);
   
