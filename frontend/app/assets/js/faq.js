@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
   // load the current configuration from storage
   await handleConfig();
-  console.log("sendData:" + config.sendData + ", sendClientName:" + config.sendClientName);
+  console.log("sendData:" + config.sendData);
   console.log("enableTitleBan:" + config.enableTitleBan);
   console.log("enableNoobBan:" + config.enableNoobBan);
   console.log("enableMute:" + config.enableMute);
@@ -25,24 +25,9 @@ document.addEventListener('DOMContentLoaded', async function () {
   };
   linkAboutLimit.href = `${config.EksiSozlukURL}/eksi-sozlukun-yazar-engellemeye-sinir-getirmesi--7547420`;
 
-  // load the current configuration to switch buttons
-	if(!config.sendData)
-	{
-		document.getElementById("threeStateNone").checked = true;
-		document.getElementById("threeStateSwitchText").innerHTML = "Hiçbir veriniz <b style='color:green'>Ekşi Engel</b> sunucularına gönderilmiyor.";
-	}
-	else if(!config.sendClientName)
-	{
-		document.getElementById("threeStateOnlyList").checked = true;
-		document.getElementById("threeStateSwitchText").innerHTML = "Engel listeniz <b style='color:green'>Ekşi Engel</b> sunucularına gönderiliyor. (Kullanıcı adınız gönderilmiyor.)";
-	}
-	else
-	{
-		document.getElementById("threeStateBoth").checked = true;
-		document.getElementById("threeStateSwitchText").innerHTML = "Ekşi Sözlük kullanıcı adınız ve engel listeniz <b style='color:green'>Ekşi Engel</b> sunucularına gönderiliyor.";
-	}
-
   // load the current states to switch buttons
+  document.getElementById("sendDataEnabled").checked = config.sendData === true;
+  document.getElementById("sendDataDisabled").checked = config.sendData !== true;
   document.getElementById("titleBanEnabled").checked = config.enableTitleBan === true;
   document.getElementById("titleBanDisabled").checked = config.enableTitleBan !== true;
   document.getElementById("noobBanEnabled").checked = config.enableNoobBan === true;
@@ -56,18 +41,12 @@ document.addEventListener('DOMContentLoaded', async function () {
   document.getElementById("banPremiumIconsEnabled").checked = config.banPremiumIcons === true;
   document.getElementById("banPremiumIconsDisabled").checked = config.banPremiumIcons !== true;
 
-  // add onclick function to three state radio buttons
-  document.getElementById("threeStateNone").addEventListener("click", function(element) {
-		document.getElementById("threeStateSwitchText").innerHTML = "Hiçbir veriniz <b style='color:green'>Ekşi Engel</b> sunucularına gönderilmiyor.";
-    threeStateSwitchOnClick();
+  // add onclick function to two state radio buttons
+  document.getElementById("sendDataEnabled").addEventListener("click", function(element) {
+    sendDataSwitchOnClick();
   });
-	document.getElementById("threeStateOnlyList").addEventListener("click", function(element) {
-		document.getElementById("threeStateSwitchText").innerHTML = "Log verileri <b style='color:green'>Ekşi Engel</b> sunucularına gönderiliyor. (Kullanıcı adınız gönderilmiyor.)";
-    threeStateSwitchOnClick();
-  });
-	document.getElementById("threeStateBoth").addEventListener("click", function(element) {
-		document.getElementById("threeStateSwitchText").innerHTML = "Ekşi Sözlük kullanıcı adınız ve log verileri <b style='color:green'>Ekşi Engel</b> sunucularına gönderiliyor.";
-    threeStateSwitchOnClick();
+  document.getElementById("sendDataDisabled").addEventListener("click", function(element) {
+    sendDataSwitchOnClick();
   });
 
   // add onclick function to two state radio buttons
@@ -119,26 +98,10 @@ document.addEventListener('DOMContentLoaded', async function () {
   });
 });
 
-function threeStateSwitchOnClick()
+function sendDataSwitchOnClick()
 {
-	config.sendData = !document.getElementById("threeStateNone").checked;
-	config.sendClientName = document.getElementById("threeStateBoth").checked;
-  
-  // kindly ask the user to send at least anonymous data to the server
-  let res;
-  if(!config.sendData)
-  {
-    res = confirm("Ekşi Engeli sorunsuzca geliştirmeye devam ettirmek için log verilerine ihtiyacımız var.\n" + 
-                  "Verileri anonim olarak olarak göndermek ister misiniz?");
-    if(res)
-    {
-      // user changed his/her idea
-      document.getElementById("threeStateOnlyList").click();
-      return;
-    }
-  }
-    
-	console.log("sendData:" + config.sendData + " sendClientName:" + config.sendClientName);
+	config.sendData = document.getElementById("sendDataEnabled").checked;
+	console.log("sendData:" + config.sendData);
 	saveConfig(config);
 }
 
