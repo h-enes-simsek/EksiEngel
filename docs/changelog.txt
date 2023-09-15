@@ -207,16 +207,31 @@ notificationHandler ile notification kısmı refactor edildi. GUI üzerindeki lo
 earlyStop, notification.html kapanınca otomatik olarak üretildi. eskiden haberleşme eksikliğinde üretiliyordu.
 analitik verilerin toplanması durduruldu.
 
-v2.8
+v3.0
 gönderim: yayın:
 yeni özellik: başlıkları da engelle ayarı eklendi. 
-server API /upload güncellendi, yeni adresi /upload_v2
+server API güncellendi. 
+  /upload güncellendi, yeni adresi /upload_v2
   geriye dönük uyumluluk bir süre korunacak. hem /upload hem /upload_v2 destekleniyor.
   gönderilen verilere versiyon, clickSource ve targetType eklendi. 
   model_to_dict ile basit düzeyde serializer kullanıldı.
-API değişikliği nedeniyle enumlar stringten integera çevirildi.
+  enumlar stringten integera çevirildi.
+server API tekrar güncellendi yeni adresi /api/action
+  TODO: uyumluluk?
+  drf kullanılmaya başlandı.
+  /upload_v2 güncellendi, yeni adresi /action
+  yeni eklenen tablolar: EksiSozlukUser, EksiSozlukTitle, EksiSozlukEntry, ActionConfig
+  güncellenen tablolar: ClientData, Action olarak güncellendi
+  silinen tablolar: ClientAnalytic, ClickType
+  author_list_name ve author_list_id arrayleri birleştirildi, author_list oldu
+  is_early_stopped integerdan booleana çevirildi.
+  author_list_size aslında planned_action sayısını tutuyordu. bundan dolayı planned_action eklendi ve author_list_size'ın artık gerçekten author_list'in size'ını tutması sağlandı.
+frontend değişiklikleri:
+  anonim veri gönderme seçeneği iptal edildi.
+  client id, client name'e ek olarak çekilmeye başlandı.
 
 YÜKSEK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
+frontend tarafında arraylerden author_list verimsiz bir biçimde oluşturuluyor.
 notification sayfasında ve loglarda enumların ne olduğu anlaşılmıyor.
 servera settings gönderilsin
 loglar incelenmeli, bitişte bittiğine dair bir bilgi olmalı

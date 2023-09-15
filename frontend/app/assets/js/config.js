@@ -5,11 +5,9 @@ import {log} from './log.js';
 export let config = 
 {
   "EksiSozlukURL":      "https://eksisozluk1923.com",
-  "whereIsEksiSozlukURL":"https://eksiengel.hesimsek.com/where_is_eksisozluk",
-	"serverURL": 				  "https://eksiengel.hesimsek.com/client_data_collector/upload_v2",
-	"serverAnalyticsURL": "https://eksiengel.hesimsek.com/client_data_collector/analytics",
-	"sendData": 				  true,														  /* send data to server */
-		"sendClientName":   true,															/* send client name to server */
+  "whereIsEksiSozlukURL":"https://eksiengel.hesimsek.com/api/where_is_eksisozluk",
+  "serverURL": 				  "https://eksiengel.hesimsek.com/api/action/",
+	"sendData": 				  true,														  /* send data to server */		
 		"sendLog": 				  true,															/* send log data to server */
 	
 	"enableLog": 				  true,														  /* enable/disable logger */
@@ -23,11 +21,7 @@ export let config =
     "enableOnlyRequiredActions": false,                    /* do analysis to reduce unnecessary blocking/unblocking actions */
     "enableProtectFollowedUsers": false,                   /* do not block if an author is followed by the user */
     
-  "banPremiumIcons": false,                               /* hide premium icons, green and yellow badges */
-	
-	"anonymouseClientName": "anonymouse",									  /* client name if sendClientName false */
-	"erroneousText": 				"",											        /* default text if smt goes wrong */
-	"erroneousInt": 				"0", 													  /* default int if smt goes wrong */
+  "banPremiumIcons": false                               /* hide premium icons, green and yellow badges */
 };
 
 export async function getConfig()
