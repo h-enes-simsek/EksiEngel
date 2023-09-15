@@ -4,7 +4,7 @@ import * as enums from './enums.js';
 import * as utils from './utils.js';
 import {config, getConfig, saveConfig, handleConfig} from './config.js';
 import {log} from './log.js';
-import {Action, createEksiSozlukEntry, createEksiSozlukTitle, createEksiSozlukUser, commHandler} from './commHandler.js';
+import {Action, createEksiSozlukEntry, createEksiSozlukTitle, createEksiSozlukUser, commHandler, ActionConfig} from './commHandler.js';
 import {relationHandler} from './relationHandler.js';
 import {scrapingHandler} from './scrapingHandler.js';
 import {processQueue} from './queue.js';
@@ -534,8 +534,20 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
     action.log = null;
   }
 
+  let action_config = new ActionConfig({
+    eksi_sozluk_url: config.EksiSozlukURL,
+    send_data: config.sendData,
+    enable_noob_ban: config.enableNoobBan,
+    enable_mute: config.enableMute,
+    enable_title_ban: config.enableTitleBan,
+    enable_anaylsis_before_operations: config.enableAnalysisBeforeOperation,
+    enable_only_required_actions: config.enableOnlyRequiredActions,
+    enable_protect_followed_users: config.enableProtectFollowedUsers,
+    ban_premium_icons: config.banPremiumIcons
+  });
+
   if(config.sendData)
-    await commHandler.sendData(action);
+    await commHandler.sendData(action, action_config);
 
   notificationHandler.finishSuccess(banSource, banMode, successfulAction, performedAction, authorNameList.length);
   

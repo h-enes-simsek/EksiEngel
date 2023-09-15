@@ -85,6 +85,7 @@ export function Action({
 }
 
 export function ActionConfig({
+  eksi_sozluk_url,
   send_data,
   enable_noob_ban,
   enable_mute,
@@ -94,6 +95,7 @@ export function ActionConfig({
   enable_protect_followed_users,
   ban_premium_icons})
 {
+  this.eksi_sozluk_url = eksi_sozluk_url;
   this.send_data = send_data;
   this.enable_noob_ban = enable_noob_ban;
   this.enable_mute = enable_mute;
@@ -106,10 +108,10 @@ export function ActionConfig({
 
 class CommHandler 
 {
-	sendData = async (action) =>
+	sendData = async (action, action_config) =>
 	{
-    const actionData = {action, action_config:{}};
-    console.log(actionData);
+    const actionData = {action, action_config};
+    //console.log(actionData);
 
 		try
 		{
