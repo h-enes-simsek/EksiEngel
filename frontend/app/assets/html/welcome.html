@@ -53,7 +53,7 @@ tr > td:first-child {
       versiyon:
     </td>
     <td>
-      2.7
+      3.0
     </td>
   </tr>
   <tr>
@@ -61,15 +61,7 @@ tr > td:first-child {
       major: 
     </td>
     <td>
-      Entry'lerdeki yeşil ve sarı tikler artık gizlenebiliyor. (Sadece tik, entry değil) Ayarlardan açabilirsiniz. Default değeri: Kapalı
-    </td>
-  </tr>
-  <tr>
-    <td>
-      major: 
-    </td>
-    <td>
-      Bir Ekşi Engel butonuna tıklandığında Ekşi Sözlük üzerinde bir geri bildirim gösteriliyor.
+      Engel istatistiklerinin yayınlanması için server tarafında büyük değişiklikler yapıldı. Yakında yayınlanmaya hazır gelecek.
     </td>
   </tr>
   <tr>
@@ -77,7 +69,7 @@ tr > td:first-child {
       minor: 
     </td>
     <td>
-      Notification sayfası üzerinde süreç hakkında daha fazla bilgi veriliyor.
+      Başlıklarını engelle ayarı eklendi, default değeri: açık.  Eskiden her yazarın başlığı engelleniyordu ve kapatmak mümkün değildi.
     </td>
   </tr>
   <tr>
@@ -85,15 +77,7 @@ tr > td:first-child {
       minor: 
     </td>
     <td>
-      Analitik verilerin toplanması durduruldu.
-    </td>
-  </tr>
-  <tr>
-    <td>
-      bug fix: 
-    </td>
-    <td>
-      Notification sayfasındaki planlanan işlemler tablosunda yer alan işlemlerin saatleri düzeltildi.
+      Anonim olarak veri gönderme özelliği kaldırıldı, artık sadece verileri gönder ve gönderme olarak iki seçenek var. Anonim verilerin güvenilirliği tartışmalı olduğu için istatistiki verileri güvensiz hale getiriyordu.
     </td>
   </tr>
   </table>
@@ -105,9 +89,7 @@ tr > td:first-child {
               transition: opacity 0.6s;
               margin-bottom: 15px;
               margin-top: 40px;">
-    Ekşi Sözlük, Ocak 2023'te engelleme hızına limit getirdi. 2018 yılında entry silme hızına da limit getirmişti. 
-    Ekşi Sözlük'ün artan baskıcı tutumu hakkında bilgi sahibi olmak için 
-    <a id="linkAboutLimit" style="color:black" target="_blank" href="This link will be updated after domContentLoaded">tıklayın</a>
+    Bu güncelleme ile mevcut ayarlarınız default değerlerine geri döndü. Çünkü geriye yönelik uyumluluğu bir buga neden olmadan çözmek oldukça fazla test ve dolayısıyla insan gücüne ihtiyaç duyuyor.
   </div>
   
   <img src="../img/semsiye.png" id="semsiye">

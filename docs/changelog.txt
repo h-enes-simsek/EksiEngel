@@ -1,29 +1,45 @@
 Versiyon notları (son kullanıcı için)
 -------------------------------------------------
-v1.0 
-yayın: 06.05.2022
-kullanıcıdan alınan listedeki yazarlar engellendi. 
 
-v1.1 
-yayın: 09.05.2022
-market sayfasındaki resimler güncellendi.
+v3.0
+yayın: 
+yeni özellik: başlıklarını engelle ayarı eklendi. eskiden default olarak engelleniyordu ve kapatmak mümkün değildi.
+yeni özellik: anonim veri gönderme özelliği iptal edildi.
 
-v1.2
-yayın: 27.09.2022
-yeni özellik: bir entry'i favlayan yazarların engellemesi
-bug fix: adblocker gibi sayfaya müdahale eden eklentilerin neden olduğu sorunlar giderildi.
-bug fix: engelleme devam ederken sayfa kapatıldığında uygulamanın çökmesi engellendi. 
-bug fix: nickinde whitespace olan yazarların engellenememesi sorunu çözüldü.
-arayüz sadeleştirildi. 
+v2.7
+yayın: 06.06.2023
+yeni özellik: yeşil ve sarı tikleri gizleme özelliği (sadece tik)
+yeni özellik: devam eden süreçle ilgili daha fazla bilgi notification.html üzerinden verildi.
+yeni özellik: bir ekşi engel butonuna tıklandığında artık kullanıcıya ekşi sözlük üzerinden ekşi sözlük API kullanılarak bir geri bildirim veriliyor.
+yeni özellik: analitik verilerin toplanması durduruldu.
+bug fix: queue'ya eklenen işlemlerin saati düzeltildi.
 
-v1.3
-yayın: 14.11.2022
-yeni özellik: tüm kullanıcıların engelini kaldırma özelliği eklendi.
-yeni özellik: engelleme/engeli kaldırma işlemi hızlandırıldı.
-yeni özellik: kullanıcının ekşi sözlük kullanıcı ismi ve engellediği yazarların isimleri toplanmaya ve işlenmeye başlandı.
-              ayarlar menüsünden verilerin toplanması engellenebiliyor.
-              detaylı liste için versiyon notlarına göz atın.
-bug fix: url yönlendirmenin bazen çalışmaması durumu düzeltildi.
+v2.6
+yayın: 21.05.2023
+yeni özellik: Ekşi Sözlük ikinci kez engellendi ve yeni domainine taşındı eksisozluk1923.com 
+              Sık yaşanan domain değişiklikleri, son domain'nin ekşi engel sunucularından elde edilmesiyle çözüldü.
+yeni özellik: takip ettiğim kullanıcıları yanlışlıkla engelleme ayarı (fav ve follow ban için)
+yeni özellik: sadece gereken işlemleri yaparak toplam işlem sayısını ve dolayısıyla geçen zamanı kısalt ayarı (fav ve follow ban için) 
+              (undobanall için bir ayara gerek yok, önceden de böyle çalışıyordu)
+yeni özellik: yazarın profil sayfasına takipçilerini engelle butonu eklendi
+yeni özellik: sayfalardan footer kaldırıldı
+
+v2.5
+yayın: 06.04.2023
+bug fix: Ekşi Engel'in, Ekşi Sözlük'ün mahkeme kararı ile engellenmesi üzerine geçtiği yeni domain 
+         eksisozluk2023.com üzerinde çalışması sağlandı. 
+
+v2.4
+yayın: 28.03.2023
+bug fix: Ekşi Sözlük tarafından taşıma yetkisi verilen kullanıcıların entry menüsünü düzgün görememesine neden olan bug giderildi.
+
+v2.3
+yayın: 23.03.2023
+yeni özellik: bir yazarı takip eden herkesi engelleme butonu eklendi.
+yeni özellik: eklenti menüsündeki bazı butonlar ekşi sözlük arayüzüne taşındı. 
+yeni özellik: bazı analitik verileri toplanmaya başlandı.
+bug fix: bir başka engel işlemi devam ederken cooldown sürecinde ekşi sözlük arayüzündeki butonlar çalışmıyordu (engel limitinden dolayı).
+         alternatif ekşi engel butonlarının, ekşi sözlük yazar sayfasındaki menüye eklenmesiyle bu işlemler de kuyruğa alınarak problem çözüldü.
 
 v2.0
 yayın: 19.11.2022
@@ -36,7 +52,7 @@ yeni özellik: ekşi sözlük tarafından engelleme hızına limit getirildiği 
               (mevcut işlem hızı limiti: 6 engel/dakika, 10 engeli kaldır/dakika)
 yeni özellik: engel hızı limitinden dolayı işlemler uzun sürdüğü için işlem kuyruğu özelliği geliştirildi.
               bir engel işlemi sürerken yeni bir işlem yapmak isterseniz kuyruğa alınıyor ve zamanı gelince işleniyor.
-engel işlemi sürerken yeni açılan bir sekmede bahsi geçen cooldown ve işlem kuyruğunu görebilirsiniz.
+yeni özellik: engel işlemi sürerken yeni açılan bir sekmede bahsi geçen cooldown ve işlem kuyruğunu görebilirsiniz.
 bug fix: tüm engelleri kaldırma özelliği ekşisözlük.com güncellemesi nedeniyle bozulmuştu, düzeltildi.
 
 v2.2
@@ -46,29 +62,30 @@ yeni özellik: çaylakları da engelleme tercihi ayar menüsüne eklendi.
 yeni özellik: tüm yazarların engelini kaldırma işlemi optimize edilerek süreç hızlandırıldı.
 bug fix: yükleme ve güncellemeden sonra geriye dönük uyumluluk sağlanamadığı için eklentinin ayarlarının sıfırlanması sağlandı.
 
-v2.3
-yayın: 23.03.2023
-yeni özellik: bir yazarı takip eden herkesi engelleme butonu eklendi.
-yeni özellik: eklenti menüsündeki bazı butonlar ekşi sözlük arayüzüne taşındı. 
-yeni özellik: bazı analitik verileri toplanmaya başlandı.
-bug fix: bir başka engel işlemi devam ederken cooldown sürecinde ekşi sözlük arayüzündeki butonlar çalışmıyordu (engel limitinden dolayı).
-         alternatif ekşi engel butonlarının, ekşi sözlük yazar sayfasındaki menüye eklenmesiyle bu işlemler de kuyruğa alınarak problem çözüldü.
+v1.3
+yayın: 14.11.2022
+yeni özellik: tüm kullanıcıların engelini kaldırma özelliği eklendi.
+yeni özellik: engelleme/engeli kaldırma işlemi hızlandırıldı.
+yeni özellik: kullanıcının ekşi sözlük kullanıcı ismi ve engellediği yazarların isimleri toplanmaya ve işlenmeye başlandı.
+              ayarlar menüsünden verilerin toplanması engellenebiliyor.
+              detaylı liste için versiyon notlarına göz atın.
+bug fix: url yönlendirmenin bazen çalışmaması durumu düzeltildi.
 
-v2.4
-yayın: 28.03.2023
-bug fix: Support the users that have 'move' permission authorized by Ekşi Sözlük. github issue: #3
+v1.2
+yayın: 27.09.2022
+yeni özellik: bir entry'i favlayan yazarların engellemesi
+yeni özellik: arayüz sadeleştirildi. 
+bug fix: adblocker gibi sayfaya müdahale eden eklentilerin neden olduğu sorunlar giderildi.
+bug fix: engelleme devam ederken sayfa kapatıldığında uygulamanın çökmesi engellendi. 
+bug fix: nickinde whitespace olan yazarların engellenememesi sorunu çözüldü.
 
-v2.5
-yayın: 06.04.2023
-bug fix: Support new Ekşi Sözlük domain eksisozluk2023.com
+v1.1 
+yayın: 09.05.2022
+bug fix: market sayfasındaki resimler güncellendi.
 
-v2.6
-yayın:
-yeni özellik: ekşisözlük domain değişiklikleri, son domain'nin ekşi engel sunucularından elde edilmesiyle çözüldü.
-yeni özellik: takip ettiğim kullanıcıları yanlışlıkla engelleme ayarı (fav ve follow ban için)
-yeni özellik: sadece gereken işlemleri yaparak toplam işlem sayısını ve dolayısıyla geçen zamanı kısalt ayarı (fav ve follow ban için) (undobanall için bir ayara gerek yok, önceden de böyle çalışıyordu)
-yeni özellik: yazarın profil sayfasına takipçilerini engelle butonu eklendi
-yeni özellik: sayfalardan footer kaldırıldı
+v1.0 
+yayın: 06.05.2022
+yeni özellik: kullanıcıdan alınan listedeki yazarlar engellendi. 
 
 Versiyon notları (detaylı) 
 -------------------------------------------------
@@ -187,11 +204,11 @@ bug fix: Support the users that have 'move' permission authorized by Ekşi Sözl
 
 v2.5
 gönderim: 06.04.2023 yayın: 06.04.2023
-bug fix: Support new Ekşi Sözlük domain eksisozluk2023.com
+bug fix: Support new Ekşi Sözlük domain eksisozluk2023.com github issue: #4
 
 v2.6
 gönderim: 18.05.2023 yayın: 21.05.2023
-yeni özellik: ekşisözlük domain değişiklikleri, son domain'nin ekşi engel sunucularından elde edilmesiyle çözüldü.
+yeni özellik: ekşisözlük domain değişiklikleri, son domain'nin ekşi engel sunucularından elde edilmesiyle çözüldü. github issue: #8
 yeni özellik: takip ettiğim kullanıcıları yanlışlıkla engelleme ayarı (fav ve follow ban için)
 yeni özellik: sadece gereken işlemleri yaparak toplam işlem sayısını ve dolayısıyla geçen zamanı kısalt ayarı (fav ve follow ban için) (undobanall için bir ayara gerek yok, önceden de böyle çalışıyordu)
 yeni özellik: yazarın profil sayfasına takipçilerini engelle butonu eklendi
@@ -210,6 +227,7 @@ analitik verilerin toplanması durduruldu.
 v3.0
 gönderim: yayın:
 yeni özellik: başlıkları da engelle ayarı eklendi. 
+proje yapısı güncellendi. bundan dolayı bu versiyondan itibaren venv'i tekrar kurmak gerekiyor.
 server API güncellendi. 
   /upload güncellendi, yeni adresi /upload_v2
   geriye dönük uyumluluk bir süre korunacak. hem /upload hem /upload_v2 destekleniyor.
@@ -217,9 +235,10 @@ server API güncellendi.
   model_to_dict ile basit düzeyde serializer kullanıldı.
   enumlar stringten integera çevirildi.
 server API tekrar güncellendi yeni adresi /api/action
-  TODO: uyumluluk?
+  geriye dönük uyumluluk bir süre korunacak. hem /api/action hem /upload hem /upload_v2 destekleniyor.
   drf kullanılmaya başlandı.
   /upload_v2 güncellendi, yeni adresi /action
+  frontentenddeki ayarlar ActionConfig tablosu ile toplanmaya başlandı
   yeni eklenen tablolar: EksiSozlukUser, EksiSozlukTitle, EksiSozlukEntry, ActionConfig
   güncellenen tablolar: ClientData, Action olarak güncellendi
   silinen tablolar: ClientAnalytic, ClickType
@@ -233,7 +252,6 @@ frontend değişiklikleri:
 YÜKSEK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
 frontend tarafında arraylerden author_list verimsiz bir biçimde oluşturuluyor.
 notification sayfasında ve loglarda enumların ne olduğu anlaşılmıyor.
-servera settings gönderilsin
 loglar incelenmeli, bitişte bittiğine dair bir bilgi olmalı
 takip edilen kullanıcıları engelleme ve sadece gerekli işlemleri yap ayarı çok uzun sürüyor.
   ayarlardan kaldırılmalı ve otomatik hale getirilmeli

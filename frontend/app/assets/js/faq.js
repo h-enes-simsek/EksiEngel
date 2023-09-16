@@ -19,12 +19,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     return;
   }
   
-  // link about restrictions applied by eksisozluk 
-  linkAboutLimit.onclick = function(element) {
-    commHandler.sendAnalyticsData({click_type:enums.ClickType.FAQ_LINK_ENTRY_LIMIT});
-  };
-  linkAboutLimit.href = `${config.EksiSozlukURL}/eksi-sozlukun-yazar-engellemeye-sinir-getirmesi--7547420`;
-
   // load the current states to switch buttons
   document.getElementById("sendDataEnabled").checked = config.sendData === true;
   document.getElementById("sendDataDisabled").checked = config.sendData !== true;
