@@ -12,6 +12,13 @@ class RelationHandler
   
   async performAction(banMode, id, isTargetUser, isTargetTitle, isTargetMute)
   {
+    if(id == 0)
+    {
+      // action failed
+      this.performedAction++;
+      return {resultType: enums.ResultType.SUCCESS, successfulAction: this.successfulAction, performedAction: this.performedAction};
+    }
+
     let resUser, resTitle, resMute;
     if(isTargetUser)
     {

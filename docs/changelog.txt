@@ -250,6 +250,7 @@ frontend değişiklikleri:
   client id, client name'e ek olarak çekilmeye başlandı.
 
 YÜKSEK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
+backendte 0 idli yazarlar kaydedilmemeli özellikle LIST için, (frontendte 0idli yazarlar filtrelendi) 
 frontend tarafında arraylerden author_list verimsiz bir biçimde oluşturuluyor.
 notification sayfasında ve loglarda enumların ne olduğu anlaşılmıyor.
 loglar incelenmeli, bitişte bittiğine dair bir bilgi olmalı

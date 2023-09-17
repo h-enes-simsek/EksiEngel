@@ -500,6 +500,11 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
       eksisozluk_name: authorNameList[index]
     }
   });
+  // filter id==0 authors (these authors only come with BanSource::LIST)
+  author_list = author_list.filter(function(item){
+    const {eksisozluk_id, eksisozluk_name} = item;
+    return eksisozluk_id != 0;  
+  });
 
   let action = new Action({
     eksi_engel_user:  eksi_engel_user,
