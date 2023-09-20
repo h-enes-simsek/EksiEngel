@@ -52,26 +52,7 @@ class MostBannedUsersView(generics.ListAPIView):
     
     def get_queryset(self):
         return EksiSozlukUser.objects.annotate(banned_by_count=Count('author_list_in_action', distinct=False,  filter=Q(author_list_in_action__ban_mode__ban_mode='BAN'))).order_by('-banned_by_count')
-        
-        """
-        
-         EksiSozlukUser.objects     
-        .annotate(action_for_ban_count=Count('action__eksi_engel_user', distinct=False))
-        .annotate(target_author_for_ban_count=Count('action__author_list', distinct=False))
-        .annotate(unique_target_author_for_ban_count=Count('action__author_list', distinct=True))
-        .annotate(banned_by_count=
-            Count('author_list_in_action', 
-                distict=False,
-                filter=Q(author_list_in_action__ban_mode__ban_mode='BAN')
-            )
-        )
-        .annotate(banned_by_unique_count=
-            Count('author_list_in_action__eksi_engel_user', 
-                distinct=True,
-                filter=Q(author_list_in_action__ban_mode__ban_mode='BAN')
-            )
-         )
-        """         
+  
 
 class EksiSozlukUserStatView(generics.ListAPIView):
     permission_classes = [AllowAny]

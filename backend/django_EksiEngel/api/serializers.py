@@ -39,37 +39,32 @@ class EksiSozlukUserStatViewSerializer(serializers.ModelSerializer):
     def get_action_for_ban_count(self, obj):
         # number of times the user has used the eksi engel
         filtered_obj = EksiSozlukUser.objects.filter(eksisozluk_id=obj.eksisozluk_id) 
-        calculated_val = filtered_obj.aggregate(action_for_ban_count=Count('action__eksi_engel_user', distinct=False, filter=Q(action__ban_mode__ban_mode="BAN")))
+        calculated_val = filtered_obj.aggregate(action_for_ban_count=Count('eksi_engel_user_in_action', distinct=False, filter=Q(eksi_engel_user_in_action__ban_mode__ban_mode="BAN")))
         return calculated_val["action_for_ban_count"]    
         
     def get_ban_count(self, obj):
         # total number of authors targeted by the user (authors not unique)
-        filtered_obj = EksiSozlukUser.objects.filter(eksisozluk_id=obj.eksisozluk_id) 
-        calculated_val = filtered_obj.aggregate(ban_count=Count('action__author_list', distinct=False, filter=Q(action__ban_mode__ban_mode="BAN")))       
+        filtered_obj = EksiSozlukUser.objects.all()    
+        calculated_val = filtered_obj.aggregate(ban_count=Count('author_list_in_action__eksi_engel_user', distinct=False, filter=Q(author_list_in_action__ban_mode__ban_mode="BAN") & Q(author_list_in_action__eksi_engel_user__eksisozluk_id=obj.eksisozluk_id)))    
         return calculated_val["ban_count"]    
         
     def get_ban_unique_count(self, obj):
         # total number of authors targeted by the user (authors are unique)
-        filtered_obj = EksiSozlukUser.objects.filter(eksisozluk_id=obj.eksisozluk_id) 
-        calculated_val = filtered_obj.aggregate(ban_unique_count=Count('action__author_list', distinct=True, filter=Q(action__ban_mode__ban_mode="BAN")))   
+        filtered_obj = EksiSozlukUser.objects.all()
+        calculated_val = filtered_obj.aggregate(ban_unique_count=Count('author_list_in_action__author_list', distinct=True, filter=Q(author_list_in_action__ban_mode__ban_mode="BAN") & Q(author_list_in_action__eksi_engel_user__eksisozluk_id=obj.eksisozluk_id)))    
         return calculated_val["ban_unique_count"] 
         
     def get_banned_by_count(self, obj):
         # total number of ban on the user performed by other authors (authors not unique)
-        return EksiSozlukUser.objects.filter(action__ban_mode__ban_mode="BAN", action__author_list__eksisozluk_id=obj.eksisozluk_id).count()
-        
-        # following code is wrong for some reason i dont know, Q doesnt work properly. without banMode logic, it is fine.
-        #filtered_obj = EksiSozlukUser.objects.filter(eksisozluk_id=obj.eksisozluk_id) 
-        #calculated_val = filtered_obj.aggregate(banned_by_count=Count('author_list', distinct=False, filter=Q(action__ban_mode__ban_mode="BAN"))) 
-            
+        filtered_obj = EksiSozlukUser.objects.filter(eksisozluk_id=obj.eksisozluk_id) 
+        calculated_val = filtered_obj.aggregate(banned_by_count=Count('author_list_in_action__eksi_engel_user', distinct=False, filter=Q(author_list_in_action__ban_mode__ban_mode="BAN"))) 
+        return calculated_val["banned_by_count"]     
         
     def get_banned_by_unique_count(self, obj):
         # total number of ban on the user performed by other authors (authors are unique)
-        return EksiSozlukUser.objects.filter(action__ban_mode__ban_mode="BAN", action__author_list__eksisozluk_id=obj.eksisozluk_id).distinct().count() 
-        
-        # following code is wrong for some reason i dont know, Q doesnt work properly. without banMode logic, it is fine.
-        #filtered_obj = EksiSozlukUser.objects.filter(eksisozluk_id=obj.eksisozluk_id) 
-        #calculated_val = filtered_obj.aggregate(banned_by_unique_count=Count('author_list__eksi_engel_user', distinct=True, filter=Q(action__ban_mode__ban_mode="BAN")))
+        filtered_obj = EksiSozlukUser.objects.filter(eksisozluk_id=obj.eksisozluk_id) 
+        calculated_val = filtered_obj.aggregate(banned_by_unique_count=Count('author_list_in_action__eksi_engel_user', distinct=True, filter=Q(author_list_in_action__ban_mode__ban_mode="BAN")))
+        return calculated_val["banned_by_unique_count"] 
 
 class WriteActionConfigSerializer(serializers.ModelSerializer):
     # ActionConfig has a foreign key to Action, but this key is not exist while collecting data from user

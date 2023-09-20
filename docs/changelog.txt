@@ -2,7 +2,7 @@ Versiyon notları (son kullanıcı için)
 -------------------------------------------------
 
 v3.0
-yayın: 
+yayın: 17.09.2023 
 yeni özellik: başlıklarını engelle ayarı eklendi. eskiden default olarak engelleniyordu ve kapatmak mümkün değildi.
 yeni özellik: anonim veri gönderme özelliği iptal edildi.
 
@@ -225,7 +225,7 @@ earlyStop, notification.html kapanınca otomatik olarak üretildi. eskiden haber
 analitik verilerin toplanması durduruldu.
 
 v3.0
-gönderim: yayın:
+gönderim: 17.09.2023 yayın: 17.09.2023 
 yeni özellik: başlıkları da engelle ayarı eklendi. 
 proje yapısı güncellendi. bundan dolayı bu versiyondan itibaren venv'i tekrar kurmak gerekiyor.
 server API güncellendi. 
@@ -250,6 +250,8 @@ frontend değişiklikleri:
   client id, client name'e ek olarak çekilmeye başlandı.
 
 YÜKSEK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
+loglar daha düzgün yazılmalı başlangıç ve bitişi net olmalı
+action başlangıç ve bitiş süresi ölçülebilir
 backendte 0 idli yazarlar kaydedilmemeli özellikle LIST için, (frontendte 0idli yazarlar filtrelendi) 
 frontend tarafında arraylerden author_list verimsiz bir biçimde oluşturuluyor.
 notification sayfasında ve loglarda enumların ne olduğu anlaşılmıyor.
@@ -275,6 +277,7 @@ performans analizi yapılmalı
     obje içinde array silindiğinde reflerin durumu ne oluyor?
 
 DÜŞÜK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
+kullanıcılar doğrulanmadığı için alınan veriler güvenli değil.
 başlığa yazan herkesi engelle
 sayfa kapatıldığında iki kere earlyStop sinyali üretiliyor. Buga neden olmuyor. Muhtemelen notification sayfasına bilgi gönderme 
 işlemi asenkron olmadığı için buna neden oluyor.
