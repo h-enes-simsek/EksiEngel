@@ -37,7 +37,7 @@ class CollectActionDataView(views.APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class MostBannedUsersUniqueView(generics.ListAPIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAdminUser]
     authentication_classes = (CsrfExemptSessionAuthentication, BasicAuthentication)
     
     serializer_class = MostBannedUsersUniqueSerializer
@@ -46,7 +46,7 @@ class MostBannedUsersUniqueView(generics.ListAPIView):
         return EksiSozlukUser.objects.annotate(banned_by_unique_count=Count('author_list_in_action__eksi_engel_user', distinct=True,  filter=Q(author_list_in_action__ban_mode__ban_mode='BAN'))).order_by('-banned_by_unique_count')
 
 class MostBannedUsersView(generics.ListAPIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAdminUser]
     
     serializer_class = MostBannedUsersSerializer
     
@@ -54,14 +54,14 @@ class MostBannedUsersView(generics.ListAPIView):
         return EksiSozlukUser.objects.annotate(banned_by_count=Count('author_list_in_action', distinct=False,  filter=Q(author_list_in_action__ban_mode__ban_mode='BAN'))).order_by('-banned_by_count')
   
 class EksiSozlukUserStatView(generics.ListAPIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAdminUser]
 
     serializer_class = EksiSozlukUserStatViewSerializer
     queryset = EksiSozlukUser.objects.all()
 
 # List last failed actions
 class FailedActionsView(generics.ListAPIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAdminUser]
     serializer_class = WriteActionViewSerializer
         
     def get_queryset(self):
