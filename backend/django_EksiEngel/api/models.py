@@ -74,6 +74,8 @@ class Action(models.Model):
 
     # SINGLE + FAV + FOLLOW
     click_source = models.ForeignKey(ClickSource, on_delete=models.PROTECT, blank=True, null=True)
+    
+    # FAV
     fav_title = models.ForeignKey(EksiSozlukTitle, on_delete=models.PROTECT, blank=True, null=True)
     fav_entry = models.ForeignKey(EksiSozlukEntry, on_delete=models.PROTECT, blank=True, null=True) 
     fav_author = models.ForeignKey(EksiSozlukUser, on_delete=models.CASCADE, related_name="fav_author_in_action", blank=True, null=True)

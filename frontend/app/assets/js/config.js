@@ -4,14 +4,15 @@ import {log} from './log.js';
 
 export let config = 
 {
-  "EksiSozlukURL":      "https://eksisozluk1923.com",
+  "EksiSozlukURL":       "https://eksisozluk111.com",
   "whereIsEksiSozlukURL":"https://eksiengel.hesimsek.com/api/where_is_eksisozluk",
-  "serverURL": 				  "https://eksiengel.hesimsek.com/api/action/",
-	"sendData": 				  true,														  /* send data to server */		
-		"sendLog": 				  true,															/* send log data to server */
-	
-	"enableLog": 				  true,														  /* enable/disable logger */
-		"logConsole": 		  true, 														/* log into console as well */
+  "serverURL":           "https://eksiengel.hesimsek.com/api/action/",
+
+  "sendData":           true,                             /* send data to server */   
+    "sendLog":          true,                             /* send log data to server */
+  
+  "enableLog":          true,                             /* enable/disable logger */
+    "logConsole":       true,                             /* log into console as well */
     
   "enableNoobBan":      false,                            /* enable/disable noob author scraping for FAV */
   "enableMute":         false,                            /* enable/disable TargetType.MUTE operations */

@@ -18,7 +18,7 @@ class WhereIsEksiSozlukView(views.APIView):
     authentication_classes = (CsrfExemptSessionAuthentication, BasicAuthentication)
 
     def get(self, request, format=None):
-        return HttpResponse("https://eksisozluk1923.com")
+        return HttpResponse("https://eksisozluk111.com")
         
 class CollectActionDataView(views.APIView):
     permission_classes = [AllowAny]
