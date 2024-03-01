@@ -611,6 +611,80 @@ class ScrapingHandler
       return "0";
     }
   }
+  
+  #scrapeAuthorsFromTitlePartially = async (scrapedRelations, titleName, titleId, index) =>
+  {
+    // index: integer(1...n) Scraping must be done with multiple requests, index indicates the number of the page to scrape
+    // titleName: string, name of the title from which users who wrote an entry will be scraped
+    // titleId: string,  name of the corresponding title
+    // return: isLast: bool
+    // return(err): true
+    // note: isLast indicates that this is the last page and has no info
+    
+    try
+    {
+      let targetUrl = config.EksiSozlukURL + "/" + titleName + "--" + titleId + "?p=" + index;
+      let response = await fetch(targetUrl, {
+        method: 'GET',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+            'x-requested-with': 'XMLHttpRequest'
+          }
+      });
+      if(!response.ok)
+        throw "fetch ok: " + response.ok + ", status: " + response.status;
+      let responseText = await response.text();
+      
+      // parse string response as html document
+      let dom = new JSDOM(responseText);
+      let contentHTMLCollection = dom.window.document.getElementsByClassName("content");
+      for(let i = 0; i < contentHTMLCollection.length; i++)
+      {
+        let name = contentHTMLCollection[i].parentNode.getAttribute("data-author"); 
+        name = name.replace(/ /gi, "-");
+        let id = contentHTMLCollection[i].parentNode.getAttribute("data-author-id");
+        
+        if(!scrapedRelations.has(name))
+          scrapedRelations.set(name, new Relation(name, id));    
+      }
+      
+      // this if-else logic copied from other functions, 
+      // but eksisozluk returns 404 when there is no record in a page and catch block catches as error
+      if(Number.isInteger(contentHTMLCollection.length) && contentHTMLCollection.length > 0)
+        return false; // isLast
+      else
+        return true; // isLast
+    }
+    catch(err)
+    {
+      // eksisozluk returns 404 when there is no record in a page and catch block catches as error
+      // that is why this is not logged as error, TODO: additional error detecting algorithm may be applied here to distinguish real errors
+      log.info("scrapingHandler: scrapeAuthorsFromTitle: title: " + titleName + "--" + titleId + ", err: " + err);
+      return true; // isLast
+    }
+    
+  }
+  
+  async scrapeAuthorsFromTitle(titleName, titleId)
+  {
+    // titleName: string, name of the title from which users who wrote an entry will be scraped
+    // titleId: string,  name of the corresponding title
+    // return: map(authName, Relation)
+    // return(err): map()
+   
+    // map: authorName - Relation
+    let scrapedRelations = new Map();
+    
+    let isLast = false;
+    let index = 0;
+    while(!isLast)
+    {
+      index++;
+      isLast = await this.#scrapeAuthorsFromTitlePartially(scrapedRelations, titleName, titleId, index);
+    }
+    
+    return scrapedRelations;   
+  }
 }
 
 export let scrapingHandler = new ScrapingHandler();

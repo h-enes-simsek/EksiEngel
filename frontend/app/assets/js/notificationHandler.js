@@ -64,6 +64,9 @@ class NotificationHandler
   notifyAnalysisOnlyRequiredActions = () => {
     this.#notify("Daha önce engellediğiniz yazarlar, engellenecek yazarlar listesinden çıkarılıyor.");
   }
+  notifyScrapeTitle = () => {
+    this.#notify("Hedef başlıkta entry'si bulunan yazarlar toplanıyor.");
+  }
 
   #finish = (banSource, banMode, statusText, errorText, successfulAction, performedAction, plannedAction) => {
     this.#sendMessage(enums.NotificationType.FINISH, 

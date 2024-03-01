@@ -1,9 +1,10 @@
 export const BanSource = {
-  SINGLE:     "1",       /* Ban/Undoban a author */
-  FAV:  			"2",          /* Ban all authors that favorited a specific entry */
-  FOLLOW:     "3",       /* Ban all authors that followed a specific author */
-  LIST: 			"4",         /* Ban/Undoban authors in the list that will be filled by user */
-	UNDOBANALL: "5"    /* Undoban all banned authors */
+  SINGLE:     "1",   /* Ban/Undoban a author */
+  FAV:        "2",   /* Ban all authors that favorited a specific entry */
+  FOLLOW:     "3",   /* Ban all authors that followed a specific author */
+  LIST:       "4",   /* Ban/Undoban authors in the list that will be filled by user */
+  UNDOBANALL: "5",   /* Undoban all banned authors */
+  TITLE:      "6"    /* Ban all authors that wrote a specific title */
 };
 
 export const BanMode = {
@@ -18,11 +19,12 @@ export const TargetType = {
 };
 
 export const ClickSource = {
-  ENTRY: "1",
-  PROFILE: "2",
-  QUESTION: "3",
-  FOLLOWING: "4",
-  FOLLOWER: "5"
+  ENTRY:     "1",
+  PROFILE:   "2",
+  QUESTION:  "3",
+  FOLLOWING: "4",    /* Obsolete due to new Eksi Sozluk design */
+  FOLLOWER:  "5",    /* Obsolete due to new Eksi Sozluk design */
+  TITLE:     "6"
 }
 
 export const ResultType = {

@@ -26,7 +26,7 @@
     });
   }
 
-  let EksiEngel_sendMessage = (banSource, banMode, entryUrl, authorName, authorId, targetType, clickSource) =>
+  let EksiEngel_sendMessage = (banSource, banMode, entryUrl, authorName, authorId, targetType, clickSource, titleName, titleId) =>
   {
     chrome.runtime.sendMessage(
       null, 
@@ -37,16 +37,18 @@
         authorName:authorName,
         authorId:authorId,
         targetType:targetType,
-        clickSource:clickSource
+        clickSource:clickSource,
+        titleName: titleName,
+        titleId: titleId
       }, 
       function(response) 
       {
         let lastError = chrome.runtime.lastError;
         if(lastError)
-          console.log("could not establish a connection with a page");
+          console.log("Eksi Engel: could not establish a connection with a page");
         else
         {
-          console.log("established a connection with a page");
+          console.log("Eksi Engel: established a connection with a page");
           
           // notify the user about their action with using eksisozluk notification API, known classes: class="success" and class="error"
           let ul = document.createElement("ul"); 
@@ -60,23 +62,23 @@
     );
   }
 
-  function waitForElm(selector) 
+  function waitForElm(selector, debugComment) 
   {
     return new Promise(resolve => 
     {
       if (document.querySelectorAll(selector).length) 
       {
-        console.log("observation stopped immediately for: " + selector);
+        console.log("Eksi Engel: observation stopped immediately for: " + debugComment);
         return resolve(document.querySelectorAll(selector));
       }
 
-      console.log("observation started for: " + selector);
+      console.log("Eksi Engel: observation started for: " + debugComment);
       
       const observer = new MutationObserver(mutations => 
       {
         if (document.querySelectorAll(selector).length) 
         {
-          console.log("observation stopped for: " + selector);
+          console.log("Eksi Engel: observation stopped for: " + debugComment);
           resolve(document.querySelectorAll(selector));
           observer.disconnect();
         }
@@ -102,7 +104,7 @@
     // </div>
 
     // select all icons in the page
-    let icons = await waitForElm(".eksico.subscriber-badge");
+    let icons = await waitForElm(".eksico.subscriber-badge", "yellow icons");
     
     for (let i = 0; i < icons.length; i++) 
     {
@@ -114,11 +116,11 @@
       }
       catch (err)
       {
-        console.log("handleYellowIcons: " + err);
+        console.log("Eksi Engel: handleYellowIcons: " + err);
       }
     }
 
-    console.log("handleYellowIcons: done");
+    console.log("Eksi Engel: handleYellowIcons: done");
   }
 
   async function handleGreenIcons (config) {
@@ -131,7 +133,7 @@
     // </div>
 
     // select all icons in the page
-    let icons = await waitForElm(".eksico.verified-badge");
+    let icons = await waitForElm(".eksico.verified-badge", "green icons");
     
     for (let i = 0; i < icons.length; i++) 
     {
@@ -143,11 +145,11 @@
       }
       catch (err)
       {
-        console.log("handleGreenIcons: " + err);
+        console.log("Eksi Engel: handleGreenIcons: " + err);
       }
     }
 
-    console.log("handleGreenIcons: done");
+    console.log("Eksi Engel: handleGreenIcons: done");
   }
 
   (async function handleIcons () {
@@ -164,6 +166,36 @@
     }
   })();
 
+  (async function handleTitleMenus () {
+    
+    // select the search menu in a title page
+    let htmlElementSearchMenu = await waitForElm("#in-topic-search-options", "title menu");
+    
+    // create new buttons
+    let li1 = document.createElement("li"); 
+    let li2 = document.createElement("li"); 
+    li1.innerHTML = `<a><img src=${eksiEngelIconURL}> başlıktakileri engelle (son 24 saatte)</a>`;
+    li2.innerHTML = `<a><img src=${eksiEngelIconURL}> başlıktakileri engelle (tümü)</a>`;
+    
+    // append the created buttons to before last element in entry page menu (search menu)
+    htmlElementSearchMenu[0].insertBefore(li1, htmlElementSearchMenu[0].children[htmlElementSearchMenu[0].childElementCount-1]);
+    htmlElementSearchMenu[0].insertBefore(li2, htmlElementSearchMenu[0].children[htmlElementSearchMenu[0].childElementCount-1]);
+    
+    // get title name and id
+    let titleName = document.querySelector("#title").getAttribute("data-slug");
+    let titleId = document.querySelector("#title").getAttribute("data-id");
+    
+    // add listener to appended button
+    li1.addEventListener("click", function(){
+      // todo add 24 hours or all Option
+      EksiEngel_sendMessage(enums.BanSource.TITLE, enums.BanMode.BAN, null, null, null, null, enums.ClickSource.TITLE, titleName, titleId);
+    });
+    li2.addEventListener("click", function(){
+      //EksiEngel_sendMessage(enums.BanSource.TITLE, enums.BanMode.BAN, null, null, null, null, enums.ClickSource.TITLE, titleName, titleId);
+    });
+    
+  })();
+
   (async function handleEntryMenus () {
 
   // find source of the page to determine clickSource
@@ -174,10 +206,10 @@
     clickSource = enums.ClickSource.QUESTION;
       
   // select all dropdown menus for each entry in the page
-  let entryMenus = await waitForElm(".other.dropdown .dropdown-menu.right.toggles-menu");
+  let entryMenus = await waitForElm(".other.dropdown .dropdown-menu.right.toggles-menu", "entry menu");
 
   // select all meta tags for each entry in the page
-  let entryMetas = await waitForElm("[data-author-id]");
+  let entryMetas = await waitForElm("[data-author-id]", "meta in entry");
 
   let eksiSozlukURL = window.location.origin;
 
@@ -215,7 +247,7 @@
     newButtonBanFollow.addEventListener("click", function(){ EksiEngel_sendMessage(enums.BanSource.FOLLOW, enums.BanMode.BAN, entryUrl, authorName, authorId, null, clickSource) });
   }
 
-  console.log("handleEntryMenus: done");
+  console.log("Eksi Engel: handleEntryMenus: done");
 
   })();
 
@@ -227,6 +259,7 @@
     return
   // TODO: handleRelationButtons should be implemented in these pages as well
   // dont forget click source while working this todo
+  // TODO amendment: it seems no more ban/undo ban button is exist in takip and takipçi pages. but i cannot remember  
   //if(page == "takip" || page == "takipci" )
   //  return;
 
@@ -240,7 +273,7 @@
     // dont do anything
   }
 
-  let buttonsRelation = await waitForElm(".relation-link");
+  let buttonsRelation = await waitForElm(".relation-link", "author menu");
 
   let authorName = document.querySelector("[data-nick]").getAttribute("data-nick");
   let authorId = String(document.getElementById("who").value); // String is in case
@@ -327,7 +360,7 @@
   buttonRelationTitleBan.parentNode.parentNode.append(newButtonFollow);
 
 
-  console.log("handleRelationButtons: done"); 
+  console.log("Eksi Engel: handleRelationButtons: done"); 
   
   })();
 

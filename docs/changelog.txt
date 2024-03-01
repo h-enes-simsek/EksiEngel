@@ -248,8 +248,13 @@ server API tekrar güncellendi yeni adresi /api/action
 frontend değişiklikleri:
   anonim veri gönderme seçeneği iptal edildi.
   client id, client name'e ek olarak çekilmeye başlandı.
+  
+v3.1
+gönderim: yayın:
+yeni özellik: bir başlıkta yazan herkesi engelleme özelliği eklendi. son 24 saatte yazan ve tümü olmak üzere iki ayrı seçenek mevcut.
 
 YÜKSEK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
+ekşi sözlük sayfasından mevcut domain okunabiliyor. ekşi engele entegre edilebilir.
 loglar daha düzgün yazılmalı başlangıç ve bitişi net olmalı
 action başlangıç ve bitiş süresi ölçülebilir
 backendte 0 idli yazarlar kaydedilmemeli özellikle LIST için, (frontendte 0idli yazarlar filtrelendi) 
@@ -278,7 +283,6 @@ performans analizi yapılmalı
 
 DÜŞÜK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
 kullanıcılar doğrulanmadığı için alınan veriler güvenli değil.
-başlığa yazan herkesi engelle
 sayfa kapatıldığında iki kere earlyStop sinyali üretiliyor. Buga neden olmuyor. Muhtemelen notification sayfasına bilgi gönderme 
 işlemi asenkron olmadığı için buna neden oluyor.
 [çok zor] firefox desteği (hiçbir şey düzgün çalışmıyor, manifest v3 desteği bile tam gelmemiş)
@@ -288,5 +292,5 @@ işlemi asenkron olmadığı için buna neden oluyor.
 [belki] istatistiki verilere göre engel yapılabilmeli
 [gerekli mi]test yazılımı (geliştirme süreci yarım kaldı)
 [gerekli mi]yazar sayfasındayken scroll ile yeni entryler açıldığında yeni açılan entrylerin content script tarafından menuleri güncellenmiyor.
-[is necessary]menus in 'sorunsal' and 'sorunsallar' pages unnecessarily have 'fav ban' option (doesn't lead a bug or error log) 
+[is necessary]menus in 'sorunsal' and 'sorunsallar' pages unnecessarily have 'fav ban' option (doesn't lead a bug or error log) (artık ediyor favdan dolayı 2 kişiyi engelledi, nedenini araştırmadım ama butonu silmek daha doğrusu eklememek en kolayı)
 [is necessary]buttons are not bypassed in 'takip' and 'takipci' pages.
