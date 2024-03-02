@@ -62,7 +62,9 @@ export function Action({
   click_source,
   fav_title,
   fav_entry,
-  fav_author})
+  fav_author,
+  time_specifier
+  })
 {
   this.eksi_engel_user = eksi_engel_user; 
   this.version = version;
@@ -82,6 +84,7 @@ export function Action({
   this.fav_title = fav_title;
   this.fav_entry = fav_entry;
   this.fav_author = fav_author;
+  this.time_specifier = time_specifier;
 }
 
 export function ActionConfig({

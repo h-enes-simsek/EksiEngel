@@ -58,9 +58,9 @@ export const NotificationType = {
 };
 
 export const TimeSpecifier = {
-  LAST_24_H: "LAST_24_H",
-  LAST_1_W:  "LAST_1_W",
-  LAST_1_M:  "LAST_1_M",
-  LAST_3_M:  "LAST_3_M",
-  ALL:       "ALL",
+  LAST_24_H: "1",
+  LAST_1_W:  "2",
+  LAST_1_M:  "3",
+  LAST_3_M:  "4",
+  ALL:       "5",
 };

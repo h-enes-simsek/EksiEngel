@@ -645,7 +645,8 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
     click_source:     clickSource,
     fav_title:        fav_title,
     fav_entry:        fav_entry,
-    fav_author:       fav_author
+    fav_author:       fav_author,
+    time_specifier:   timeSpecifier
   });
 
   // log_level and log
