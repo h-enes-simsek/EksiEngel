@@ -16,7 +16,7 @@ SECRET_KEY = env("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = (env("DEBUG") == "True")
 
-ALLOWED_HOSTS = [".eksiengel.hesimsek.com", "165.227.163.107", "localhost"]
+ALLOWED_HOSTS = [".eksiengel.hesimsek.com", "107.172.80.226", "localhost"]
 
 # Application definition
 
