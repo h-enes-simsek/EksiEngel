@@ -1,6 +1,10 @@
 Versiyon notları (son kullanıcı için)
 -------------------------------------------------
 
+v3.1 
+yayın: 
+yeni özellik: bir başlıkta yazısı olan herkesi engelleme özelliği eklendi. son 24 saatte yazan ve tümü olmak üzere iki ayrı seçenek mevcut.
+
 v3.0
 yayın: 17.09.2023 
 yeni özellik: başlıklarını engelle ayarı eklendi. eskiden default olarak engelleniyordu ve kapatmak mümkün değildi.
@@ -251,7 +255,10 @@ frontend değişiklikleri:
   
 v3.1
 gönderim: yayın:
-yeni özellik: bir başlıkta yazan herkesi engelleme özelliği eklendi. son 24 saatte yazan ve tümü olmak üzere iki ayrı seçenek mevcut.
+yeni özellik: bir başlıkta yazısı olan herkesi engelleme özelliği eklendi. son 24 saatte yazan ve tümü olmak üzere iki ayrı seçenek mevcut.
+webserver taşındı. bu kapsamda çeşitli değişikler yaşandı.
+  config.js içinde server urlsi yerine geçici olarak ip adresi kullanıldı. domain yönlendirmeden sonra düzeltilecek.
+  sertifikalar henüz yüklenmediği için https değil şimdilik http bağlantısı ile servera erişiliyor.   
 
 YÜKSEK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
 ekşi sözlük sayfasından mevcut domain okunabiliyor. ekşi engele entegre edilebilir.

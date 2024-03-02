@@ -26,7 +26,7 @@
     });
   }
 
-  let EksiEngel_sendMessage = (banSource, banMode, entryUrl, authorName, authorId, targetType, clickSource, titleName, titleId) =>
+  let EksiEngel_sendMessage = (banSource, banMode, entryUrl, authorName, authorId, targetType, clickSource, titleName, titleId, timeSpecifier) =>
   {
     chrome.runtime.sendMessage(
       null, 
@@ -39,7 +39,8 @@
         targetType:targetType,
         clickSource:clickSource,
         titleName: titleName,
-        titleId: titleId
+        titleId: titleId,
+        timeSpecifier: timeSpecifier
       }, 
       function(response) 
       {
@@ -187,11 +188,12 @@
     
     // add listener to appended button
     li1.addEventListener("click", function(){
-      // todo add 24 hours or all Option
-      EksiEngel_sendMessage(enums.BanSource.TITLE, enums.BanMode.BAN, null, null, null, null, enums.ClickSource.TITLE, titleName, titleId);
+      // last 24 hours 
+      EksiEngel_sendMessage(enums.BanSource.TITLE, enums.BanMode.BAN, null, null, null, null, enums.ClickSource.TITLE, titleName, titleId, enums.TimeSpecifier.LAST_24_H);
     });
     li2.addEventListener("click", function(){
-      //EksiEngel_sendMessage(enums.BanSource.TITLE, enums.BanMode.BAN, null, null, null, null, enums.ClickSource.TITLE, titleName, titleId);
+      // all time
+      EksiEngel_sendMessage(enums.BanSource.TITLE, enums.BanMode.BAN, null, null, null, null, enums.ClickSource.TITLE, titleName, titleId, enums.TimeSpecifier.ALL);
     });
     
   })();

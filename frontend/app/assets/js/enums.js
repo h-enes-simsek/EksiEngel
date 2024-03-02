@@ -15,7 +15,7 @@ export const BanMode = {
 export const TargetType = {
   USER:  "1",
   TITLE: "2",
-  MUTE: "3"
+  MUTE:  "3"
 };
 
 export const ClickSource = {
@@ -29,12 +29,12 @@ export const ClickSource = {
 
 export const ResultType = {
   SUCCESS:  "SUCCESS",
-  FAIL: "FAIL"
+  FAIL:     "FAIL"
 };
 
 export const ResultTypeHttpReq = {
-  SUCCESS:  "SUCCESS",
-  FAIL: "FAIL",
+  SUCCESS:      "SUCCESS",
+  FAIL:         "FAIL",
   TOO_MANY_REQ: "TOO_MANY_REQ",
 };
 
@@ -55,4 +55,12 @@ export const NotificationType = {
   COOLDOWN:                 "COOLDOWN",
   FINISH:                   "FINISH",
   NOTIFY:                   "NOTIFY",
+};
+
+export const TimeSpecifier = {
+  LAST_24_H: "LAST_24_H",
+  LAST_1_W:  "LAST_1_W",
+  LAST_1_M:  "LAST_1_M",
+  LAST_3_M:  "LAST_3_M",
+  ALL:       "ALL",
 };

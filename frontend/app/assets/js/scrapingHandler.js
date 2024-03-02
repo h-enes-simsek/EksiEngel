@@ -612,18 +612,23 @@ class ScrapingHandler
     }
   }
   
-  #scrapeAuthorsFromTitlePartially = async (scrapedRelations, titleName, titleId, index) =>
+  #scrapeAuthorsFromTitlePartially = async (scrapedRelations, titleName, titleId, timeSpecifier, index) =>
   {
     // index: integer(1...n) Scraping must be done with multiple requests, index indicates the number of the page to scrape
     // titleName: string, name of the title from which users who wrote an entry will be scraped
     // titleId: string,  name of the corresponding title
+    // timeSpecifier: enum
     // return: isLast: bool
     // return(err): true
     // note: isLast indicates that this is the last page and has no info
     
     try
     {
-      let targetUrl = config.EksiSozlukURL + "/" + titleName + "--" + titleId + "?p=" + index;
+      let targetUrl = "";
+      if(timeSpecifier == enums.TimeSpecifier.ALL)
+        targetUrl = config.EksiSozlukURL + "/" + titleName + "--" + titleId + "?p=" + index;
+      else if(timeSpecifier == enums.TimeSpecifier.LAST_24_H)
+        targetUrl = config.EksiSozlukURL + "/" + titleName + "--" + titleId + "?a=dailynice&p=" + index;
       let response = await fetch(targetUrl, {
         method: 'GET',
           headers: {
@@ -665,10 +670,11 @@ class ScrapingHandler
     
   }
   
-  async scrapeAuthorsFromTitle(titleName, titleId)
+  async scrapeAuthorsFromTitle(titleName, titleId, timeSpecifier)
   {
     // titleName: string, name of the title from which users who wrote an entry will be scraped
     // titleId: string,  name of the corresponding title
+    // timeSpecifier: enum
     // return: map(authName, Relation)
     // return(err): map()
    
@@ -680,7 +686,7 @@ class ScrapingHandler
     while(!isLast)
     {
       index++;
-      isLast = await this.#scrapeAuthorsFromTitlePartially(scrapedRelations, titleName, titleId, index);
+      isLast = await this.#scrapeAuthorsFromTitlePartially(scrapedRelations, titleName, titleId, timeSpecifier, index);
     }
     
     return scrapedRelations;   

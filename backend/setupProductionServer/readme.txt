@@ -22,14 +22,19 @@ ALTER USER myprojectuser CREATEDB;
 git clone <project_path>
 
 # create python venv for django
-cd <django_root_path> # not in the /root or anyfolder about system
+cd <django_root_path>/backend # not in the /root or anyfolder about system
 python3 -m venv myprojectenv
 source myprojectenv/bin/activate
-pip install django gunicorn psycopg2-binary
-pip install django-cors-headers # if disabling cors is required
+
+pip install -r requirements.txt
+(racknerd had a problem about psycopg2 because some essentials libs were missing, if so install :
+sudo apt-get install build-essential
+sudo apt-get install python-dev
+)
+pip install django-cors-headers (included in requirements.txt, if disabling cors is required)
 
 # create .env file for hardcoded settings
-pip install django-environ
+pip install django-environ (included in requirements.txt)
 cd <django_root_path>/<project_name>
 nano .env
 SECRET_KEY=
@@ -49,8 +54,15 @@ python manage.py makemigrations <app_name>
 python3 manage.py migrate
 python3 manage.py migrate <app_name>
 
-# load initial hardcoded values to database if any
+# load initial hardcoded values to database if any (do not run this if db is going to be moved)
 python manage.py loaddata enums.json # this is project specific
+
+### if the django project is planned to be moved
+# dump the old data from old project
+python manage.py dumpdata --natural-foreign --natural-primary -e contenttypes -e auth.Permission --indent 2 > dump.json
+
+# load the old data to new project
+python manage.py loaddata dump.json
 
 # allow port if necessary with ufw
 ufw allow <port_number>
@@ -109,6 +121,27 @@ ExecStart=<project_virtual_env>/bin/gunicorn \
 [Install]
 WantedBy=multi-user.target
 
+
+Example::::
+[Unit]
+Description=gunicorn daemon
+Requires=gunicorn.socket
+After=network.target
+
+[Service]
+User=root
+Group=www-data
+WorkingDirectory=/var/www/EksiEngel/backend/django_EksiEngel
+ExecStart=/var/www/EksiEngel/backend/VENV_Django_4_1_EksiEngel/bin/gunicorn \
+          --access-logfile - \
+          --workers 3 \
+          --bind unix:/run/gunicorn.sock \
+          django_EksiEngel.wsgi:application
+
+[Install]
+WantedBy=multi-user.target
+
+
 sudo systemctl start gunicorn.socket
 sudo systemctl enable gunicorn.socket
 sudo systemctl status gunicorn.socket # should be active
@@ -125,6 +158,7 @@ sudo systemctl restart gunicorn
 ## nginx config
 # create nginx config
 sudo nano /etc/nginx/sites-available/myproject
+sudo nano /etc/nginx/sites-available/eksiengel.hesimsek.com
 server {
     listen <port>;
     server_name <server_domain_or_IP>;
@@ -139,6 +173,26 @@ server {
         proxy_pass http://unix:/run/gunicorn.sock;
     }
 }
+
+
+Example:::
+server {
+    listen 80;
+    server_name eksiengel.hesimsek.com www.eksiengel.hesimsek.com;
+    location = /favicon.ico { access_log off; log_not_found off; }
+    location /static/ {
+        root /var/www/EksiEngel/server/djangoRelated/django_EksiEngel;
+    }
+
+    location / {
+        include proxy_params;
+        proxy_pass http://unix:/run/gunicorn.sock;
+    }
+
+}
+
+
+
 # create sym link
 sudo ln -s /etc/nginx/sites-available/myproject /etc/nginx/sites-enabled
 

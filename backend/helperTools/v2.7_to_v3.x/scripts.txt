@@ -1,0 +1,13 @@
+There are major differences between v2.7 and v3.0 in terms of db design. 
+The collected data in the form of v2.7 should be transferred into the form of v3.0 somehow. 
+My first plan was to running one-off script(s) to convert the data. However, I did nothing so far. 
+Outline of this action:
+  1. examine the db models of v2.7 and v3.0
+  2. decide which data is needed/proper, which data has to be lost during conversion
+  3. write the scripts
+  4. save the old db into somewhere just in case
+  5. delete the old API from Django project (at the moment clients are not using the old API nevertheless)
+Current Status: I did nothing so far. 
+
+The backend server has been moved from DigitalOcean to another provider with v3.1
+This action did not effect the problem above. All the db and project have been moved into new host. 

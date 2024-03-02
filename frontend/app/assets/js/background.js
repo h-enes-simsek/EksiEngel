@@ -23,7 +23,7 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
 		return;
 	
   log.info("bg: a new process added to the queue, banSource: " + obj.banSource + ", banMode: " + obj.banMode);
-  let wrapperProcessHandler = processHandler.bind(null, obj.banSource, obj.banMode, obj.entryUrl, obj.authorName, obj.authorId, obj.targetType, obj.clickSource, obj.titleName, obj.titleId);
+  let wrapperProcessHandler = processHandler.bind(null, obj.banSource, obj.banMode, obj.entryUrl, obj.authorName, obj.authorId, obj.targetType, obj.clickSource, obj.titleName, obj.titleId, obj.timeSpecifier);
   wrapperProcessHandler.banSource = obj.banSource;
   wrapperProcessHandler.banMode = obj.banMode;
   wrapperProcessHandler.creationDateInStr = new Date().getHours() + ":" + new Date().getMinutes(); 
@@ -32,7 +32,7 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
   notificationHandler.updatePlannedProcessesList(processQueue.itemAttributes);
 });
 
-async function processHandler(banSource, banMode, entryUrl, singleAuthorName, singleAuthorId, targetType, clickSource, titleName, titleId)
+async function processHandler(banSource, banMode, entryUrl, singleAuthorName, singleAuthorId, targetType, clickSource, titleName, titleId, timeSpecifier)
 {
   log.info("Process has been started with " + 
            "banSource: "          + banSource + 
@@ -495,7 +495,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
     notificationHandler.notifyScrapeTitle();
 
     // scrapedRelations does not hold duplicated records, scraping handler is responsible to keep it clean
-    let scrapedRelations = await scrapingHandler.scrapeAuthorsFromTitle(titleName, titleId);
+    let scrapedRelations = await scrapingHandler.scrapeAuthorsFromTitle(titleName, titleId, timeSpecifier);
     log.info("number of user to ban (before analysis): " + scrapedRelations.size);
     
     // stop if there is no user
