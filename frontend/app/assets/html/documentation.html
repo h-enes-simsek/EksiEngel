@@ -7,6 +7,12 @@
   grid-template-columns: auto auto auto auto auto auto;
   padding: 10px;
 }
+
+.grid-container.seven-column {
+  display: grid;
+  grid-template-columns: auto auto auto auto auto auto auto;
+  padding: 10px;
+}
 .grid-item {
   padding: 10px;
   border: 1px solid;
@@ -76,7 +82,7 @@
     <h3 style="text-align: center;">
       <b style="color:green">Ekşi Engel</b> Toplanan Veriler Tablosu (v3.0 ve sonrası)
     </h3>
-    <div class="grid-container six-column" style="border: 1px solid black">
+    <div class="grid-container seven-column" style="border: 1px solid black">
     
       <div class="grid-item"></div>
       <div class="grid-item">Target Type</div>
@@ -84,10 +90,12 @@
       <div class="grid-item">Fav Başlık</div>
       <div class="grid-item">Fav Entry</div>
       <div class="grid-item">Fav Yazar</div>
+      <div class="grid-item">Zaman</div>
 
       <div class="grid-item">Tek İşlem <br>(BanSource::SINGLE)</div>
       <div class="grid-item">+</div>
       <div class="grid-item">+</div>
+      <div class="grid-item">-</div>
       <div class="grid-item">-</div>
       <div class="grid-item">-</div>
       <div class="grid-item">-</div>
@@ -98,6 +106,7 @@
       <div class="grid-item">+</div>
       <div class="grid-item">+</div>
       <div class="grid-item">+</div>
+      <div class="grid-item">-</div>
 
       <div class="grid-item">Takipçi <br>(BanSource::FOLLOW)</div>
       <div class="grid-item">-</div>
@@ -105,8 +114,10 @@
       <div class="grid-item">-</div>
       <div class="grid-item">-</div>
       <div class="grid-item">-</div>
+      <div class="grid-item">-</div>
       
       <div class="grid-item">Liste <br>(BanSource::LIST)</div>
+      <div class="grid-item">-</div>
       <div class="grid-item">-</div>
       <div class="grid-item">-</div>
       <div class="grid-item">-</div>
@@ -119,13 +130,15 @@
       <div class="grid-item">-</div>
       <div class="grid-item">-</div>
       <div class="grid-item">-</div>
+      <div class="grid-item">-</div>
       
       <div class="grid-item">Başlık <br>(BanSource::TITLE)</div>
-      <div class="grid-item">?</div>
-      <div class="grid-item">?</div>
-      <div class="grid-item">?</div>
-      <div class="grid-item">?</div>
-      <div class="grid-item">?</div>
+      <div class="grid-item">-</div>
+      <div class="grid-item">+</div>
+      <div class="grid-item">-</div>
+      <div class="grid-item">-</div>
+      <div class="grid-item">-</div>
+      <div class="grid-item">+</div>
     </div>
 </div>
 
