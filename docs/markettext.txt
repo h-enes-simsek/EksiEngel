@@ -6,6 +6,7 @@ Görmek istemediğiniz Ekşi Sözlük hesaplarını ve açtıkları başlıklar�
 Ekşi Engel ile neler yapabilirsiniz?
 - Bir entry'i favorileyen tüm yazarları engelleyin.
 - Bir yazarın tüm takipçilerini engelleyin.
+- Bir başlığa yazmış herkesi engelleyin.
 - Bir liste halinde gireceğiniz yazarları engelleyin veya engelini kaldırın.
 - Engellediğiniz tüm yazarların engelini kaldırın.
 

@@ -33,13 +33,15 @@ collectActionDataViewDataString = '''
     "ban_source" : 1,
     "ban_mode" : 1,
     "author_list_size" : 2,
-    "total_action" : 1,
+    "planned_action" : 1,
+    "performed_action" : 1,
     "successful_action" : 1,
     "is_early_stopped" : 0,
     "log_level" : 1,
     "log" : "['INF deneme','ERR hata']",
     "target_type": 1,
     "click_source": 1,
+    "time_specifier": 2,
     "fav_entry" : {
       "eksisozluk_id": 5,
       "eksisozluk_title": {

@@ -34,6 +34,13 @@
       "ban_source": "UNDOBANALL"
     }
   },
+	{
+    "model": "api.BanSource",
+    "pk": 6,
+    "fields": {
+      "ban_source": "TITLE"
+    }
+  },
 	
 	{
     "model": "api.BanMode",
@@ -107,6 +114,13 @@
       "click_source": "FOLLOWER"
     }
   },
+	{
+    "model": "api.ClickSource",
+    "pk": 6,
+    "fields": {
+      "click_source": "TITLE"
+    }
+  },
 
   {
     "model": "api.LogLevel",
@@ -137,6 +151,42 @@
     }
   },
 	
+	{
+    "model": "api.TimeSpecifier",
+    "pk": 1,
+    "fields": {
+      "time_specifier": "LAST_24_H"
+    }
+  },
+  {
+    "model": "api.TimeSpecifier",
+    "pk": 2,
+    "fields": {
+      "time_specifier": "LAST_1_W"
+    }
+  },
+	{
+    "model": "api.TimeSpecifier",
+    "pk": 3,
+    "fields": {
+      "time_specifier": "LAST_1_M"
+    }
+  },
+	{
+    "model": "api.TimeSpecifier",
+    "pk": 4,
+    "fields": {
+      "time_specifier": "LAST_3_M"
+    }
+  },
+	{
+    "model": "api.TimeSpecifier",
+    "pk": 5,
+    "fields": {
+      "time_specifier": "ALL"
+    }
+  },
+
   {
     "model": "api.ClickType",
     "pk": 1,

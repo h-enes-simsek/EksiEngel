@@ -11,6 +11,8 @@ Ekşi Engel can perform the following actions.
 
 - To block everyone who follows a specific author
 
+- To block everyone who posted on a specific topic
+
 - To block/unblock authors entered as a list
 
 - To unblock all blocked authors
