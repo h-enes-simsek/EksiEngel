@@ -46,10 +46,10 @@
       {
         let lastError = chrome.runtime.lastError;
         if(lastError)
-          console.log("Eksi Engel: could not establish a connection with a page");
+          //console.log("Eksi Engel: could not establish a connection with a page");
         else
         {
-          console.log("Eksi Engel: established a connection with a page");
+          //console.log("Eksi Engel: established a connection with a page");
           
           // notify the user about their action with using eksisozluk notification API, known classes: class="success" and class="error"
           let ul = document.createElement("ul"); 
@@ -69,17 +69,17 @@
     {
       if (document.querySelectorAll(selector).length) 
       {
-        console.log("Eksi Engel: observation stopped immediately for: " + debugComment);
+        //console.log("Eksi Engel: observation stopped immediately for: " + debugComment);
         return resolve(document.querySelectorAll(selector));
       }
 
-      console.log("Eksi Engel: observation started for: " + debugComment);
+      //console.log("Eksi Engel: observation started for: " + debugComment);
       
       const observer = new MutationObserver(mutations => 
       {
         if (document.querySelectorAll(selector).length) 
         {
-          console.log("Eksi Engel: observation stopped for: " + debugComment);
+          //console.log("Eksi Engel: observation stopped for: " + debugComment);
           resolve(document.querySelectorAll(selector));
           observer.disconnect();
         }
@@ -117,11 +117,11 @@
       }
       catch (err)
       {
-        console.log("Eksi Engel: handleYellowIcons: " + err);
+        //console.log("Eksi Engel: handleYellowIcons: " + err);
       }
     }
 
-    console.log("Eksi Engel: handleYellowIcons: done");
+    //console.log("Eksi Engel: handleYellowIcons: done");
   }
 
   async function handleGreenIcons (config) {
@@ -146,11 +146,11 @@
       }
       catch (err)
       {
-        console.log("Eksi Engel: handleGreenIcons: " + err);
+        //console.log("Eksi Engel: handleGreenIcons: " + err);
       }
     }
 
-    console.log("Eksi Engel: handleGreenIcons: done");
+    //console.log("Eksi Engel: handleGreenIcons: done");
   }
 
   (async function handleIcons () {
@@ -249,7 +249,7 @@
     newButtonBanFollow.addEventListener("click", function(){ EksiEngel_sendMessage(enums.BanSource.FOLLOW, enums.BanMode.BAN, entryUrl, authorName, authorId, null, clickSource) });
   }
 
-  console.log("Eksi Engel: handleEntryMenus: done");
+  //console.log("Eksi Engel: handleEntryMenus: done");
 
   })();
 
@@ -362,7 +362,7 @@
   buttonRelationTitleBan.parentNode.parentNode.append(newButtonFollow);
 
 
-  console.log("Eksi Engel: handleRelationButtons: done"); 
+  //console.log("Eksi Engel: handleRelationButtons: done"); 
   
   })();
 

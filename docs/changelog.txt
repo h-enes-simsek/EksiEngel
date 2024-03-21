@@ -2,7 +2,7 @@ Versiyon notları (son kullanıcı için)
 -------------------------------------------------
 
 v3.1 
-yayın: 
+yayın: 03.03.2024  
 yeni özellik: bir başlıkta yazısı olan herkesi engelleme özelliği eklendi. son 24 saatte yazan ve tümü olmak üzere iki ayrı seçenek mevcut.
 
 v3.0
@@ -254,7 +254,7 @@ frontend değişiklikleri:
   client id, client name'e ek olarak çekilmeye başlandı.
   
 v3.1
-gönderim: yayın:
+gönderim: 02.03.2024 yayın: 03.03.2024
 yeni özellik: bir başlıkta yazısı olan herkesi engelleme özelliği eklendi. son 24 saatte yazan ve tümü olmak üzere iki ayrı seçenek mevcut.
 webserver taşındı. bu kapsamda çeşitli değişikler yaşandı.
   config.js içinde server urlsi yerine geçici olarak ip adresi kullanıldı. domain yönlendirmeden sonra düzeltilecek.
