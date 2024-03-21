@@ -46,7 +46,9 @@
       {
         let lastError = chrome.runtime.lastError;
         if(lastError)
+        {
           //console.log("Eksi Engel: could not establish a connection with a page");
+        }
         else
         {
           //console.log("Eksi Engel: established a connection with a page");
