@@ -1,6 +1,10 @@
 Versiyon notları (son kullanıcı için)
 -------------------------------------------------
 
+v3.2
+yayın: 
+bug fix: Ekşi Engel serverı taşındığı için URL adresleri güncel değildi.
+
 v3.1 
 yayın: 03.03.2024  
 yeni özellik: bir başlıkta yazısı olan herkesi engelleme özelliği eklendi. son 24 saatte yazan ve tümü olmak üzere iki ayrı seçenek mevcut.
@@ -259,6 +263,10 @@ yeni özellik: bir başlıkta yazısı olan herkesi engelleme özelliği eklendi
 webserver taşındı. bu kapsamda çeşitli değişikler yaşandı.
   config.js içinde server urlsi yerine geçici olarak ip adresi kullanıldı. domain yönlendirmeden sonra düzeltilecek.
   sertifikalar henüz yüklenmediği için https değil şimdilik http bağlantısı ile servera erişiliyor.   
+  
+v3.2 
+gönderim: 09.04.2024 yayın: 
+bug fix: Ekşi Engel serverı taşındığı için URL adresleri güncel değildi.
 
 YÜKSEK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
 ekşi sözlük sayfasından mevcut domain okunabiliyor. ekşi engele entegre edilebilir.
