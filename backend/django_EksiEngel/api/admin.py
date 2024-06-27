@@ -5,7 +5,6 @@ from .models import EksiSozlukUser, Action, ActionConfig, EksiSozlukTitle, EksiS
 admin.site.register(EksiSozlukUser)
 admin.site.register(EksiSozlukTitle)
 admin.site.register(EksiSozlukEntry)
-admin.site.register(ActionConfig)
 
 class BanSourceAdmin(admin.ModelAdmin):
     list_display = ('pk', '__str__',)
@@ -46,4 +45,10 @@ class ActionAdmin(admin.ModelAdmin):
     
     # do not fetch all values for drop-down menu
     raw_id_fields = ("eksi_engel_user", "fav_title", "fav_entry", "fav_author", "fav_author")
+
 admin.site.register(Action, ActionAdmin)
+
+class ActionConfigAdmin(admin.ModelAdmin): 
+    raw_id_fields = ("action",)
+
+admin.site.register(ActionConfig, ActionConfigAdmin)
