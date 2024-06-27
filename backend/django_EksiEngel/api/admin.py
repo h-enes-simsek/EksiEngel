@@ -4,7 +4,6 @@ from .models import EksiSozlukUser, Action, ActionConfig, EksiSozlukTitle, EksiS
 
 admin.site.register(EksiSozlukUser)
 admin.site.register(EksiSozlukTitle)
-admin.site.register(EksiSozlukEntry)
 
 class BanSourceAdmin(admin.ModelAdmin):
     list_display = ('pk', '__str__',)
@@ -52,3 +51,8 @@ class ActionConfigAdmin(admin.ModelAdmin):
     raw_id_fields = ("action",)
 
 admin.site.register(ActionConfig, ActionConfigAdmin)
+
+class EksiSozlukEntryAdmin(admin.ModelAdmin): 
+    raw_id_fields = ("eksisozluk_title",)
+
+admin.site.register(EksiSozlukEntry, EksiSozlukEntryAdmin)
