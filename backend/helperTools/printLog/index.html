@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log Table</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+        }
+        .ERR {
+            background-color: red;
+            color: white; /* Text color to contrast with background */
+        }
+        .WRN {
+            background-color: #F0E68C; /* Pale Goldenrod */
+            color: black; /* Dark text for better readability */
+        }
+    </style>
+</head>
+<body>
+
+<textarea id="logTextArea" rows="4" cols="50" placeholder="Copy and paste your logs here" oninput="changeText(this)"></textarea>
+    <table id="logTable">
+        <thead>
+            <tr>
+                <th>Severity</th>
+                <th>Timestamp</th>
+                <th>Message</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+<script>
+function changeText(field) 
+{ 
+            let logString = field.value;
+            
+
+            const logTable = document.getElementById('logTable').getElementsByTagName('tbody')[0];
+            logTable.innerHTML = '';
+
+            const logEntries = logString.split(/(INFO|WARN|WRN|ERR)/).filter(entry => entry.trim() !== '');
+            
+            for (let i = 0; i < logEntries.length; i += 2) {
+                const severity = logEntries[i];
+                const logDetails = logEntries[i + 1].trim();
+                
+                // Extract timestamp and message
+                const [timestamp, ...messageParts] = logDetails.split(' ');
+                const message = messageParts.join(' ');
+
+                const row = logTable.insertRow();
+
+                const cellSeverity = row.insertCell(0);
+                const cellTimestamp = row.insertCell(1);
+                const cellMessage = row.insertCell(2);
+
+                cellSeverity.textContent = severity;
+                cellTimestamp.textContent = timestamp;
+                cellMessage.textContent = message;
+
+                // Apply CSS class based on severity
+                if (severity === 'ERR') {
+                    cellSeverity.className = 'ERR';
+                    cellTimestamp.className = 'ERR';
+                    cellMessage.className = 'ERR';
+                } else if (severity === 'WRN' || severity === 'WARN') {
+                    cellSeverity.className = 'WRN';
+                    cellTimestamp.className = 'WRN';
+                    cellMessage.className = 'WRN';
+                }
+            }
+        
+
+}
+</script> 
+
+</body>
+</html>
+
