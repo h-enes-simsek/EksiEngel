@@ -272,6 +272,8 @@ v3.3
 gönderim: yayın: 
 admin panelinde bir Action, ActionConfig veya EksiSozlukEntry'e göz atılmak istendiğinde ForeignKeylerden dolayı tüm veriler drop-down list için serverdan fetch ediliyordu. salt okunur hale getirilerek bunun önüne geçildi. ayrıca Action içideki yazar listesi, sadece ilgili yazarları fetch edecek şekilde filtrelendi.
 logların daha kolay okunması için harici bir html sayfası debug tool olarak kodlandı. log formatı güncellendi.
+yeni API /api/total_action eklendi. günlere göre Action sayısını dönüyor.
+yeni HTML /api/total_action_html eklendi. /api/total_action APIsini görselleştiriyor. 
 
 YÜKSEK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
 bug: en yeni kullanicilarin first activity tarihi bos gorunuyor

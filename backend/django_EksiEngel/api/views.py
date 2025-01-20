@@ -4,9 +4,11 @@ from rest_framework import views, status
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from django.http import HttpResponse
-from .serializers import CollectActionDataSerializer, EksiSozlukUserStatViewSerializer, MostBannedUsersSerializer, MostBannedUsersUniqueSerializer, WriteActionViewSerializer
+from .serializers import CollectActionDataSerializer, EksiSozlukUserStatViewSerializer, MostBannedUsersSerializer, MostBannedUsersUniqueSerializer, WriteActionViewSerializer, TotalActionViewSerializer
 from .models import Action, ActionConfig, EksiSozlukUser
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication 
+from django.db.models.functions import TruncDay
+from django.shortcuts import render
 
 class CsrfExemptSessionAuthentication(SessionAuthentication):
 
@@ -72,3 +74,19 @@ class FailedActionsView(generics.ListAPIView):
                     Q(planned_action=F('performed_action')) &
                     Q(performed_action=F('successful_action'))
                ).order_by('-pk')[:10]
+               
+# List Total Action Number day by day
+class TotalActionView(generics.ListAPIView):
+    serializer_class = TotalActionViewSerializer
+
+    def get_queryset(self):
+        return (
+            Action.objects.annotate(day=TruncDay('date'))  # Group by day
+            .values('day')                                # Select only the day field
+            .annotate(total=Count('id'))                 # Count actions per day
+            .order_by('day')                             # Sort by day
+        )
+
+# Visualize Total Action Number day by day 
+def TotalActionHTMLView(request):
+    return render(request, 'api/total_action.html')

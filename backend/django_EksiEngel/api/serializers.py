@@ -252,3 +252,6 @@ class CollectActionDataSerializer(serializers.Serializer):
             "action_config": action_config
         }
         
+class TotalActionViewSerializer(serializers.Serializer):
+    day = serializers.DateTimeField(format="%Y-%m-%d")  # To represent the day
+    total = serializers.IntegerField()  # To represent the count
