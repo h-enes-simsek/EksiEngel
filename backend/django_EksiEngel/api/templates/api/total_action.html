@@ -3,23 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Action Statistics</title>
+    <title>Zoomable Bar Chart</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
             background-color: #f5f5f5;
             margin: 0;
-            padding: 0;
+            padding: 20px;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
-            height: 100vh;
         }
 
         .chart-container {
-            max-width: 600px;
+            max-width: 1000px;
+            height: 500px;
             margin: 20px auto;
             padding: 20px;
             border: 1px solid #ccc;
@@ -28,63 +29,133 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
 
-        #actionChart {
-            max-width: 100%;
-            height: auto;
+        canvas {
+            width: 100% !important;
+            height: 400px !important;
+        }
+
+        .controls {
+            margin-top: 20px;
+        }
+
+        .controls button {
+            padding: 10px 15px;
+            font-size: 16px;
+            margin-right: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+        }
+
+        .controls button:hover {
+            background-color: #0056b3;
         }
     </style>
 </head>
 <body>
+    <h1>Zoomable Bar Chart</h1>
     <div class="chart-container">
         <canvas id="actionChart"></canvas>
     </div>
+    <div class="controls">
+        <button onclick="resetZoom()">Reset Zoom</button>
+    </div>
     <script>
-        fetch('/api/total_action/?format=json')
+        let chart;
+
+        // Fetch data and initialize the chart
+        fetch('https://eksiengel.hesimsek.com/api/total_action/')
             .then(response => response.json())
             .then(data => {
-                const labels = data.map(entry => entry.day);  // Extract days
-                const values = data.map(entry => entry.total);  // Extract totals
+                if (!data.length) {
+                    console.error('No data available');
+                    return;
+                }
 
-                const ctx = document.getElementById('actionChart').getContext('2d');
-                new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Total Actions Per Day',
-                            data: values,
-                            borderColor: 'rgba(75, 192, 192, 1)',
-                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                            borderWidth: 2
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        aspectRatio: 1.5,  // Aspect ratio for the chart
-                        scales: {
-                            x: {
-                                type: 'time',
-                                time: {
-                                    unit: 'day'
+                const labels = data.map(entry => entry.day); // Dates
+                const values = data.map(entry => entry.total); // Totals
+
+                createChart(labels, values);
+            })
+            .catch(error => console.error('Error fetching action statistics:', error));
+
+        // Create the chart
+        function createChart(labels, values) {
+            const ctx = document.getElementById('actionChart').getContext('2d');
+
+            // Destroy existing chart if any
+            if (chart) chart.destroy();
+
+            chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Total Actions Per Day',
+                        data: values,
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true, // Maintain proper aspect ratio
+                    plugins: {
+                        zoom: {
+                            zoom: {
+                                wheel: {
+                                    enabled: true // Enable zooming with mouse wheel
                                 },
-                                title: {
-                                    display: true,
-                                    text: 'Date'
+                                pinch: {
+                                    enabled: true // Enable pinch zooming
+                                },
+                                drag: {
+                                    enabled: true // Enable drag zooming
+                                },
+                                mode: 'x', // Zoom along X-axis only
+                                onZoomComplete: ({ chart }) => {
+                                    console.log('Zoom Complete');
+                                    chart.update('none');
                                 }
                             },
-                            y: {
-                                beginAtZero: true,
-                                title: {
-                                    display: true,
-                                    text: 'Number of Actions'
-                                }
+                            pan: {
+                                enabled: true, // Enable panning
+                                mode: 'x' // Pan along X-axis only
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'day'
+                            },
+                            title: {
+                                display: true,
+                                text: 'Date'
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Number of Actions'
                             }
                         }
                     }
-                });
-            })
-            .catch(error => console.error('Error fetching action statistics:', error));
+                }
+            });
+        }
+
+        // Reset zoom
+        function resetZoom() {
+            if (chart) {
+                chart.resetZoom();
+            }
+        }
     </script>
 </body>
 </html>
