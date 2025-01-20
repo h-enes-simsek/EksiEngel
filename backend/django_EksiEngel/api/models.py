@@ -86,7 +86,8 @@ class Action(models.Model):
     fav_author = models.ForeignKey(EksiSozlukUser, on_delete=models.CASCADE, related_name="fav_author_in_action", blank=True, null=True)
     
     # TITLE
-    time_specifier =models.ForeignKey(TimeSpecifier, on_delete=models.PROTECT, blank=True, null=True)
+    time_specifier = models.ForeignKey(TimeSpecifier, on_delete=models.PROTECT, blank=True, null=True)
+    #title = models.ForeignKey(EksiSozlukTitle, on_delete=models.PROTECT, blank=True, null=True)
 
     def __str__(self):
         return f"{self.id} {self.date.strftime('%Y-%m-%d %H:%M:%S')} {self.eksi_engel_user.eksisozluk_name} {self.ban_source} {self.successful_action}/{self.performed_action}/{self.planned_action} {self.is_early_stopped}"

@@ -50,7 +50,7 @@ export async function getConfig()
 
 export async function saveConfig(config)
 {
-  log.info("A config saved into storage");
+  log.info("config", "A config saved into storage");
   return new Promise((resolve, reject) => {
     chrome.storage.local.set({ "config": config }, function(){
       if(!chrome.runtime.error){
@@ -68,12 +68,12 @@ export async function handleConfig()
   let c = await getConfig();
   if(c)
   {
-    log.info("Config restored from storage");
+    log.info("config", "Config restored from storage");
     config = c;
   }
   else
   {
-    log.info("No config in storage, hardcoded config will be saved into storage");
+    log.info("config", "No config in storage, hardcoded config will be saved into storage");
     saveConfig(config);
   }
 }

@@ -12,7 +12,7 @@ import {programController} from './programController.js';
 import {handleEksiSozlukURL} from './urlHandler.js';
 import { notificationHandler } from './notificationHandler.js';
 
-log.info("bg: init.");
+log.info("bg", "initialized");
 let g_notificationTabId = 0;
 
 chrome.runtime.onMessage.addListener(async function messageListener_Popup(message, sender, sendResponse) {
@@ -22,19 +22,19 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
 	if(obj.resultType === enums.ResultType.FAIL)
 		return;
 	
-  log.info("bg: a new process added to the queue, banSource: " + obj.banSource + ", banMode: " + obj.banMode);
+  log.info("bg", "a new process added to the queue, banSource: " + obj.banSource + ", banMode: " + obj.banMode);
   let wrapperProcessHandler = processHandler.bind(null, obj.banSource, obj.banMode, obj.entryUrl, obj.authorName, obj.authorId, obj.targetType, obj.clickSource, obj.titleName, obj.titleId, obj.timeSpecifier);
   wrapperProcessHandler.banSource = obj.banSource;
   wrapperProcessHandler.banMode = obj.banMode;
   wrapperProcessHandler.creationDateInStr = new Date().getHours() + ":" + new Date().getMinutes(); 
   processQueue.enqueue(wrapperProcessHandler);
-  log.info("bg: number of waiting processes in the queue: " + processQueue.size);
+  log.info("bg", "number of waiting processes in the queue: " + processQueue.size);
   notificationHandler.updatePlannedProcessesList(processQueue.itemAttributes);
 });
 
 async function processHandler(banSource, banMode, entryUrl, singleAuthorName, singleAuthorId, targetType, clickSource, titleName, titleId, timeSpecifier)
 {
-  log.info("Process has been started with " + 
+  log.info("bg", "Process has been started with " + 
            "banSource: "          + banSource + 
            ", banMode: "          + banMode + 
            ", entryUrl: "         + entryUrl + 
@@ -71,7 +71,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
   const isEksiSozlukAccessible = await handleEksiSozlukURL();
   if(!isEksiSozlukAccessible)
   {
-    log.err("Program has been finished (finishErrorAccess)");
+    log.err("bg", "Program has been finished (finishErrorAccess)");
     notificationHandler.finishErrorAccess(banSource, banMode);
     return;
   }
@@ -81,7 +81,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
   const {clientName, clientId} = await scrapingHandler.scrapeClientNameAndId(); 
   if(!clientName)
   {
-    log.err("Program has been finished (finishErrorLogin)");
+    log.err("bg", "Program has been finished (finishErrorLogin)");
     notificationHandler.finishErrorLogin(banSource, banMode);
     return;
   }
@@ -130,11 +130,11 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
     utils.cleanUserList(authorNameList);
     
     // stop if there is no user
-    log.info("number of user to ban " + authorNameList.length);
+    log.info("bg", "number of user to ban " + authorNameList.length);
     if(authorNameList.length === 0)
     {
       notificationHandler.finishErrorNoAccount(banSource, banMode);
-      log.err("Program has been finished (finishErrorNoAccount)");
+      log.err("bg", "Program has been finished (finishErrorNoAccount)");
       return;
     }
 
@@ -200,13 +200,13 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
     entryMetaData = await scrapingHandler.scrapeMetaDataFromEntryPage(entryUrl);
     let scrapedRelations = await scrapingHandler.scrapeAuthorNamesFromFavs(entryUrl); // names will be scraped
     
-    log.info("number of user to ban (before analysis): " + scrapedRelations.size);
+    log.info("bg", "number of user to ban (before analysis): " + scrapedRelations.size);
     
     // stop if there is no user
     if(scrapedRelations.size === 0)
     {
       notificationHandler.finishErrorNoAccount(banSource, banMode);
-      log.err("Program has been finished (finishErrorNoAccount)");
+      log.err("bg", "Program has been finished (finishErrorNoAccount)");
       return;
     }
     
@@ -245,13 +245,13 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
       }
     }
     
-    log.info("number of user to ban (after analysis): " + scrapedRelations.size);
+    log.info("bg", "number of user to ban (after analysis): " + scrapedRelations.size);
     
     // stop if there is no user
     if(scrapedRelations.size === 0)
     {
       notificationHandler.finishErrorNoAccount(banSource, banMode);
-      log.err("Program has been finished (finishErrorNoAccount)");
+      log.err("bg", "Program has been finished (finishErrorNoAccount)");
       return;
     }
     
@@ -318,13 +318,13 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
     notificationHandler.notifyScrapeFollowers();
 
     let scrapedRelations = await scrapingHandler.scrapeFollower(singleAuthorName);
-    log.info("number of user to ban (before analysis): " + scrapedRelations.size);
+    log.info("bg", "number of user to ban (before analysis): " + scrapedRelations.size);
     
     // stop if there is no user
     if(scrapedRelations.size === 0)
     {
       notificationHandler.finishErrorNoAccount(banSource, banMode);
-      log.err("Program has been finished (error_NoAccount)");
+      log.err("bg", "Program has been finished (error_NoAccount)");
       return;
     }
     
@@ -360,13 +360,13 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
       }
     }
       
-    log.info("number of user to ban (after analysis): " + scrapedRelations.size);
+    log.info("bg", "number of user to ban (after analysis): " + scrapedRelations.size);
     
     // stop if there is no user
     if(scrapedRelations.size === 0)
     {
       notificationHandler.finishErrorNoAccount(banSource, banMode);
-      log.err("Program has been finished (error_NoAccount)");
+      log.err("bg", "Program has been finished (error_NoAccount)");
       return;
     }
 
@@ -436,11 +436,11 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
     let scrapedRelations = await scrapingHandler.scrapeAuthorNamesFromBannedAuthorPage(); // names and ids will be scraped
     
     // stop if there is no user
-    log.info("number of user to ban " + scrapedRelations.size);
+    log.info("bg", "number of user to ban " + scrapedRelations.size);
     if(scrapedRelations.size === 0)
     {
       notificationHandler.finishErrorNoAccount(banSource, banMode);
-      log.err("Program has been finished (error_NoAccount)");
+      log.err("bg", "Program has been finished (error_NoAccount)");
       return;
     }
 
@@ -496,13 +496,13 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
 
     // scrapedRelations does not hold duplicated records, scraping handler is responsible to keep it clean
     let scrapedRelations = await scrapingHandler.scrapeAuthorsFromTitle(titleName, titleId, timeSpecifier);
-    log.info("number of user to ban (before analysis): " + scrapedRelations.size);
+    log.info("bg", "number of user to ban (before analysis): " + scrapedRelations.size);
     
     // stop if there is no user
     if(scrapedRelations.size === 0)
     {
       notificationHandler.finishErrorNoAccount(banSource, banMode);
-      log.err("Program has been finished (error_NoAccount)");
+      log.err("bg", "Program has been finished (error_NoAccount)");
       return;
     }
     
@@ -538,13 +538,13 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
       }
     }
       
-    log.info("number of user to ban (after analysis): " + scrapedRelations.size);
+    log.info("bg", "number of user to ban (after analysis): " + scrapedRelations.size);
     
     // stop if there is no user
     if(scrapedRelations.size === 0)
     {
       notificationHandler.finishErrorNoAccount(banSource, banMode);
-      log.err("Program has been finished (error_NoAccount)");
+      log.err("bg", "Program has been finished (error_NoAccount)");
       return;
     }
 
@@ -681,7 +681,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
   // if early stop was generated, erase planned processes in notification page
   if(programController.earlyStop)
   {
-    log.info("bg: (updatePlannedProcessesList just before finished) notification page's queue will be updated.");
+    log.info("bg", "(updatePlannedProcessesList just before finished) notification page's queue will be updated.");
     notificationHandler.updatePlannedProcessesList(""); // erase the processes in the planned processes table
     // add the remaining processes to completed process table
     let remainingProcessesArray = processQueue.itemAttributes;
@@ -690,7 +690,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
     processQueue.clear(); // clear the remaining planned processes in the queue 
   }
   
-  log.info("Program has been finished (successfull:" + successfulAction + ", performed:" + performedAction + ", planned:" + authorNameList.length + ")");
+  log.info("bg", "Program has been finished (successfull:" + successfulAction + ", performed:" + performedAction + ", planned:" + authorNameList.length + ")");
 
   programController.earlyStop = false; // reset to reuse
   log.resetData();
@@ -704,7 +704,7 @@ chrome.runtime.onInstalled.addListener(async (details) =>
       details.reason === chrome.runtime.OnInstalledReason.UPDATE) 
   {
     // first install or extension is updated
-    log.info("bg: program installed or updated.");
+    log.info("bg", "program installed or updated.");
     
     // erase local storage, because config file could have been changed in the new version.
     await chrome.storage.local.clear();

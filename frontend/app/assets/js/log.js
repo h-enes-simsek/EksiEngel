@@ -9,22 +9,22 @@ class Log
 		this.logConsole = true;  							/* log to console as well */
   }
   
-	info = (data) =>
+	info = (source, data) =>
   {
 		if(this.isEnabled)
-			this.logData("INFO " + this.getDateString() + data, Log.Levels.INFO);
+      this.logData(`${this.getDateString()} INF [${source}] ${data}`, Log.Levels.INFO);
   }
   
-	warn = (data) =>
+	warn = (source, data) =>
   {
 		if(this.isEnabled)
-			this.logData("WARN " + this.getDateString() + data, Log.Levels.WARN);
+      this.logData(`${this.getDateString()} WRN [${source}] ${data}`, Log.Levels.WARN);
   }
   
-	err = (data) =>
+	err = (source, data) =>
   {
 		if(this.isEnabled)
-			this.logData("ERR " + this.getDateString() + data, Log.Levels.ERR);
+      this.logData(`${this.getDateString()} ERR [${source}] ${data}`, Log.Levels.ERR);
   }
 	
 	logData = (logMsg, level) =>
@@ -50,19 +50,21 @@ class Log
 	
 	getDateString = () =>
 	{
-		let date = new Date;
+    const padZero = (num, length = 2) => String(num).padStart(length, '0');
 
-		let miliseconds = date.getMilliseconds();
-		let seconds = date.getSeconds();
-		let minutes = date.getMinutes();
-		let hour = date.getHours();
+    const date = new Date();
+    
+    const miliseconds = padZero(date.getMilliseconds(), 3);
+    const seconds = padZero(date.getSeconds());
+    const minutes = padZero(date.getMinutes());
+    const hour = padZero(date.getHours());
+    
+    const year = date.getFullYear();
+    const month = padZero(date.getMonth() + 1);
+    const day = padZero(date.getDate());
 
-		let year = date.getFullYear();
-		let month = date.getMonth() + 1;
-		let day = date.getDate();
-		
-		let d = year + "_" + month + "_" + day+  "_" + hour + "_" + minutes + "_" + seconds + "_" + miliseconds + " ";
-		return d;
+    const dateString = `${year}_${month}_${day}_${hour}_${minutes}_${seconds}_${miliseconds}`;
+    return dateString;
 	}
 	
   static Levels = 

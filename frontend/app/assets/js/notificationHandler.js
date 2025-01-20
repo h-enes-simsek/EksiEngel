@@ -32,7 +32,7 @@ class NotificationHandler
     try {
       await chrome.runtime.sendMessage(null, {"notification": message});
     } catch (err) {
-      log.warn(err + " :: " +JSON.stringify(message));
+      log.warn("notification", err + " :: " +JSON.stringify(message));
     }
  
   }

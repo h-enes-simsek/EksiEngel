@@ -59,7 +59,7 @@ class ScrapingHandler
     }
     catch(err)
     {
-      log.err("scrapingHandler: scrapeClientName: " + err);
+      log.err("scraping", "scrapeClientName: " + err);
       return {clientName:"", clientId:""};
     }
     
@@ -75,11 +75,11 @@ class ScrapingHandler
         clientName = cName;
       }
       
-      log.info("scrapingHandler: clientName: " + clientName);
+      log.info("scraping", "clientName: " + clientName);
     }
     catch(err)
     {
-      log.err("scrapingHandler: scrapeClientName: " + err);
+      log.err("scraping", "scrapeClientName: " + err);
       return {clientName:"", clientId:""};
     }
 
@@ -111,7 +111,7 @@ class ScrapingHandler
     }
     catch(err)
     {
-      log.err("scrapingHandler: scrapeMetaDataFromEntryPage: " + err);
+      log.err("scraping", "scrapeMetaDataFromEntryPage: " + err);
       return {entryId:"0", authorId:"0", authorName:"", titleId:"0", titleName:""};
     }
     
@@ -136,7 +136,7 @@ class ScrapingHandler
     }
     catch(err)
     {
-      log.err("scrapingHandler: scrapeMetaDataFromEntryPage: " + err);
+      log.err("scraping", "scrapeMetaDataFromEntryPage: " + err);
       return {entryId:0, authorId:0, authorName:"", titleId:0, titleName:""};
     }
   }
@@ -167,7 +167,7 @@ class ScrapingHandler
     }
     catch(err)
     {
-      log.err("scrapingHandler: scrapeAuthorNamesFromFavs: " + err);
+      log.err("scraping", "scrapeAuthorNamesFromFavs: " + err);
       return new Map();
     }
     
@@ -204,7 +204,7 @@ class ScrapingHandler
     }
     catch(err)
     {
-      log.err("scrapingHandler: scrapeAuthorNamesFromFavs: " + err);
+      log.err("scraping", "scrapeAuthorNamesFromFavs: " + err);
       return new Map();
     }
 
@@ -226,7 +226,7 @@ class ScrapingHandler
       }
       catch(err)
       {
-        log.err("scrapingHandler: scrapeAuthorNamesFromFavs: " + err);
+        log.err("scraping", "scrapeAuthorNamesFromFavs: " + err);
         return new Map();
       }
       
@@ -254,7 +254,7 @@ class ScrapingHandler
       }
       catch(err)
       {
-        log.err("scrapingHandler: (noob) scrapeAuthorNamesFromFavs: " + err);
+        log.err("scraping", "(noob) scrapeAuthorNamesFromFavs: " + err);
         return new Map();
       }
       
@@ -312,7 +312,7 @@ class ScrapingHandler
     }
     catch(err)
     {
-      log.err("scrapingHandler: scrapeAuthorNamesFromBannedAuthorPagePartially: " + err);
+      log.err("scraping", "scrapeAuthorNamesFromBannedAuthorPagePartially: " + err);
       return {authorIdList: [], authorNameList: [], isLast: true};
     }
     
@@ -427,7 +427,7 @@ class ScrapingHandler
     }
     catch(err)
     {
-      log.err("scrapingHandler: scrapeAuthorNamesFromBannedAuthorPage: " + err);
+      log.err("scraping", "scrapeAuthorNamesFromBannedAuthorPage: " + err);
       return scrapedRelations;
     }
   }
@@ -479,7 +479,7 @@ class ScrapingHandler
     }
     catch(err)
     {
-      log.err("scrapingHandler: scrapeFollowerPartially: " + err);
+      log.err("scraping", "scrapeFollowerPartially: " + err);
       return true; // isLast
     }
     
@@ -553,7 +553,7 @@ class ScrapingHandler
     }
     catch(err)
     {
-      log.err("scrapingHandler: scrapeFollowingPartially: " + err);
+      log.err("scraping", "scrapeFollowingPartially: " + err);
       return true; // isLast
     }
     
@@ -607,7 +607,7 @@ class ScrapingHandler
     }
     catch(err)
     {
-      log.err("scrapingHandler: scrapeAuthorIdFromAuthorProfilePage: authorName: " + authorName + ", err: " + err);
+      log.err("scraping", "scrapeAuthorIdFromAuthorProfilePage: authorName: " + authorName + ", err: " + err);
       return "0";
     }
   }
@@ -664,7 +664,7 @@ class ScrapingHandler
     {
       // eksisozluk returns 404 when there is no record in a page and catch block catches as error
       // that is why this is not logged as error, TODO: additional error detecting algorithm may be applied here to distinguish real errors
-      log.info("scrapingHandler: scrapeAuthorsFromTitle: title: " + titleName + "--" + titleId + ", err: " + err);
+      log.info("scraping", "scrapeAuthorsFromTitle: title: " + titleName + "--" + titleId + ", err: " + err);
       return true; // isLast
     }
     

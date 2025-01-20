@@ -35,18 +35,18 @@ class ProgramController
   {
     if(!processQueue.isRunning)
     {
-      log.info("progCtrl: early stop received, yet program is not running, so it will be ignored.");
+      log.info("progctrl", "early stop received, yet program is not running, so it will be ignored.");
       return;
     }
     
     this._earlyStop = val;
     if(val)
     {
-      log.info("progCtrl: early stop received, number of waiting processes in the queue: " + processQueue.size);
+      log.info("progctrl", "early stop received, number of waiting processes in the queue: " + processQueue.size);
     }
     else
     {
-      log.info("progCtrl: early stop flag cleared.");
+      log.info("progctrl", "early stop flag cleared.");
     }
   }
 }
@@ -62,7 +62,7 @@ chrome.runtime.onMessage.addListener(async function messageListener_Notification
     return;
   else if(!programController.isActive)
   {
-    log.info("progCtrl: early stop received, yet program is not running, so it will be ignored.");
+    log.info("progctrl", "early stop received, yet program is not running, so it will be ignored.");
     return;
   }
 		
@@ -73,7 +73,7 @@ chrome.runtime.onMessage.addListener(async function messageListener_Notification
 chrome.tabs.onRemoved.addListener(function(tabid, removed) {
   if(tabid == programController.tabId)
   {
-    log.info("bg: user has closed the notification tab, earlyStop will be generated automatically.");
+    log.info("progctrl", "user has closed the notification tab, earlyStop will be generated automatically.");
     programController.earlyStop = true;
   }
 });

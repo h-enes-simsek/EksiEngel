@@ -32,11 +32,11 @@ async function isURLAccessible(url)
 export async function handleEksiSozlukURL()
 {
   let isAccessible = await isURLAccessible(config.EksiSozlukURL);
-  log.info("is EksiSozluk accessible: " + isAccessible + " at " + config.EksiSozlukURL);
+  log.info("url", "is EksiSozluk accessible: " + isAccessible + " at " + config.EksiSozlukURL);
 
   if(!isAccessible)
   {
-    log.warn("EksiSozluk is not accessible at: " + config.EksiSozlukURL);
+    log.warn("url", "EksiSozluk is not accessible at: " + config.EksiSozlukURL);
 
     try 
     {
@@ -46,7 +46,7 @@ export async function handleEksiSozlukURL()
         throw "Where is EksiSozluk API is not accessible";
 
       let newEksiSozlukURL = await response.text();
-      log.info("Obtained EksiSozluk URL: " + newEksiSozlukURL);
+      log.info("url", "Obtained EksiSozluk URL: " + newEksiSozlukURL);
 
       if(config.EksiSozlukURL == newEksiSozlukURL)
         throw "Obtained EksiSozluk URL is the same with the one in the config";
@@ -58,7 +58,7 @@ export async function handleEksiSozlukURL()
 
       if(isNewURLAccessible)
       {
-        log.info("new EksiSozluk URL accessible, saved into config");
+        log.info("url", "new EksiSozluk URL accessible, saved into config");
         config.EksiSozlukURL = newEksiSozlukURL;
         await saveConfig(config);
         return true;
@@ -70,7 +70,7 @@ export async function handleEksiSozlukURL()
     } 
     catch (err) 
     {
-      log.err(err);
+      log.err("url", err);
       return false;
     }
   } 

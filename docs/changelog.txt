@@ -268,7 +268,13 @@ v3.2
 gönderim: 09.04.2024 yayın: 
 bug fix: Ekşi Engel serverı taşındığı için URL adresleri güncel değildi.
 
+v3.3
+gönderim: yayın: 
+admin panelinde bir Action, ActionConfig veya EksiSozlukEntry'e göz atılmak istendiğinde ForeignKeylerden dolayı tüm veriler drop-down list için serverdan fetch ediliyordu. salt okunur hale getirilerek bunun önüne geçildi. ayrıca Action içideki yazar listesi, sadece ilgili yazarları fetch edecek şekilde filtrelendi.
+logların daha kolay okunması için harici bir html sayfası debug tool olarak kodlandı. log formatı güncellendi.
+
 YÜKSEK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
+bug: en yeni kullanicilarin first activity tarihi bos gorunuyor
 ekşi sözlük sayfasından mevcut domain okunabiliyor. ekşi engele entegre edilebilir.
 loglar daha düzgün yazılmalı başlangıç ve bitişi net olmalı
 action başlangıç ve bitiş süresi ölçülebilir

@@ -102,11 +102,11 @@ class RelationHandler
       });
       if(!response.ok)
       {
-        log.err("Relation Handler: http response: " + response.status);
+        log.err("relation", "http response: " + response.status);
         if(response.status == 429)
         {
           //const responseText = await response.text();
-          //log.err("Relation Handler: url: " + url + " response: " + responseText);
+          //log.err("relation", "url: " + url + " response: " + responseText);
           return enums.ResultTypeHttpReq.TOO_MANY_REQ;
         }
         else
@@ -114,7 +114,7 @@ class RelationHandler
           // If status is not 429, yet still erroneous, then something should have gone wrong.
           // dont re-try the operation, assume it was failed.
           const responseText = await response.text();
-          log.err("Relation Handler: url: " + url + " response: " + responseText);
+          log.err("relation", "url: " + url + " response: " + responseText);
           return enums.ResultTypeHttpReq.FAIL; 
         }
           
@@ -131,11 +131,11 @@ class RelationHandler
         res = enums.ResultTypeHttpReq.SUCCESS; 
       else
         res = enums.ResultTypeHttpReq.FAIL;
-      // log.info("Relation Handler: banMode: " + banMode + ", targetType: " + targetType + ", id: " + id + ", response text: " + responseText);
+      // log.info("relation", "banMode: " + banMode + ", targetType: " + targetType + ", id: " + id + ", response text: " + responseText);
     }
     catch(err)
     {
-      log.err(err);
+      log.err("relation", err);
       res = enums.ResultTypeHttpReq.FAIL; 
     }
     return res;
