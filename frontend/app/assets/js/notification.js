@@ -634,8 +634,16 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
         }
       }
 
-      // Update planned processes table if data is provided
-      if (notification.plannedProcesses && notification.plannedProcesses.length >= 0) { // Allow empty array to clear table
+      // Handle UPDATE_PLANNED_PROCESSES status specifically to update queue table
+      if (notification.status === enums.NotificationType.UPDATE_PLANNED_PROCESSES && notification.plannedProcesses) {
+        console.log("Updating planned processes table with", notification.plannedProcesses.length, "items");
+        updatePlannedProcessesTable(notification.plannedProcesses);
+      }
+      
+      // For other statuses, only update planned processes if explicitly provided and not empty
+      // This prevents accidental clearing of the queue during regular status updates
+      else if (notification.plannedProcesses && Array.isArray(notification.plannedProcesses) && notification.plannedProcesses.length > 0) {
+        console.log("Updating planned processes table via fallback with", notification.plannedProcesses.length, "items");
         updatePlannedProcessesTable(notification.plannedProcesses);
       }
     }

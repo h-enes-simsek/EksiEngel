@@ -77,6 +77,11 @@ async function ensureNotificationTabExistsAndIsReady() {
             clearTimeout(timeout);
             chrome.runtime.onMessage.removeListener(messageListener);
             log.info("bg", `Notification page (ID: ${g_notificationTabId}) sent ready message.`);
+            
+            // Send current queue state to the newly ready notification page
+            log.info("bg", `Sending current queue state with ${processQueue.itemAttributes.length} items to notification page`);
+            notificationHandler.updatePlannedProcessesList(processQueue.itemAttributes);
+            
             resolve();
           }
         };
@@ -446,6 +451,9 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
   if (!notificationTabReady) {
     log.err("bg", `Failed to ensure notification tab was ready for processHandler (${banSource}, ${banMode}). Process will likely fail to notify fully.`);
   }
+  
+  // Update queue display to show current items before starting the process
+  // This ensures the queue remains visible during operation
   notificationHandler.updatePlannedProcessesList(processQueue.itemAttributes);
 
   let authorNameList = [];
