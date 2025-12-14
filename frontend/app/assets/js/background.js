@@ -391,7 +391,7 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
         sendResponse({status: 'ok', message: 'Early stop received'});
         responseSent = true;
     }
-    return; 
+    return true; // Keep message channel open for async response
   } else { 
     const obj = utils.filterMessage(message, "banSource", "banMode");
     if(obj.resultType === enums.ResultType.FAIL) {
@@ -400,7 +400,7 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
         sendResponse({status: 'ok', message: 'Unknown action or already handled.'});
         responseSent = true;
       }
-      return;
+      return true; // Keep message channel open for async response
     }
     
     log.info("bg", "a new process added to the queue, banSource: " + obj.banSource + ", banMode: " + obj.banMode);
@@ -424,7 +424,7 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
         sendResponse({status: 'ok', message: 'Process enqueued.'});
         responseSent = true;
     }
-    return true;
+    return true; // Keep message channel open for async response
   }
 });
 

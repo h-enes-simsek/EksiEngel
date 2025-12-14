@@ -16,13 +16,23 @@ function saveAuthorListToStorage()
 // send message to background.js to start banning process
 document.getElementById("startBan").addEventListener("click", function(){
 	saveAuthorListToStorage();
-	chrome.runtime.sendMessage(null, {"banSource":enums.BanSource.LIST, "banMode":enums.BanMode.BAN});
+	chrome.runtime.sendMessage(null, {"banSource":enums.BanSource.LIST, "banMode":enums.BanMode.BAN}, (response) => {
+		if (chrome.runtime.lastError) {
+			console.error("authorListPage.js: Error sending startBan message:", chrome.runtime.lastError.message);
+			alert("Error starting ban process: " + chrome.runtime.lastError.message);
+		}
+	});
 });
 
 // send message to background.js to start banning process
 document.getElementById("startUndoban").addEventListener("click", function(){
 	saveAuthorListToStorage();
-	chrome.runtime.sendMessage(null, {"banSource":enums.BanSource.LIST, "banMode":enums.BanMode.UNDOBAN});
+	chrome.runtime.sendMessage(null, {"banSource":enums.BanSource.LIST, "banMode":enums.BanMode.UNDOBAN}, (response) => {
+		if (chrome.runtime.lastError) {
+			console.error("authorListPage.js: Error sending startUndoban message:", chrome.runtime.lastError.message);
+			alert("Error starting unban process: " + chrome.runtime.lastError.message);
+		}
+	});
 });
 
 // if local storage save is successfull, show a message to the user

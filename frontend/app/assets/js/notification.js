@@ -24,7 +24,11 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     earlyStopButton.addEventListener("click", function(element) {
       // Send the early stop message
-      chrome.runtime.sendMessage(null, {"earlyStop":0});
+      chrome.runtime.sendMessage(null, {"earlyStop":0}, (response) => {
+        if (chrome.runtime.lastError) {
+          console.warn("notification.js: Error sending earlyStop message:", chrome.runtime.lastError.message);
+        }
+      });
 
       // Provide feedback that the button was clicked
       earlyStopButton.textContent = "DURDURULUYOR...";
@@ -66,8 +70,13 @@ document.addEventListener('DOMContentLoaded', async function () {
 
 
   // Send a message to the background script that the notification page is ready
-  chrome.runtime.sendMessage(null, { action: "notificationPageReady" });
-  console.log("Notification page ready message sent");
+  chrome.runtime.sendMessage(null, { action: "notificationPageReady" }, (response) => {
+    if (chrome.runtime.lastError) {
+      console.warn("notification.js: Error sending notificationPageReady message:", chrome.runtime.lastError.message);
+    } else {
+      console.log("Notification page ready message sent");
+    }
+  });
   // Removed 500ms delay
 
 
@@ -172,7 +181,14 @@ function handleOpenAuthorListPage() {
 
 function handleStartUndobanAll() {
   commHandler.sendAnalyticsData({ click_type: enums.ClickType.EXTENSION_MENU_UNDOBANALL });
-  chrome.runtime.sendMessage(null, { "banSource": enums.BanSource.UNDOBANALL, "banMode": enums.BanMode.UNDOBAN });
+  chrome.runtime.sendMessage(null, { "banSource": enums.BanSource.UNDOBANALL, "banMode": enums.BanMode.UNDOBAN }, (response) => {
+    if (chrome.runtime.lastError) {
+      console.error("notification.js: Error sending startUndobanAll message:", chrome.runtime.lastError.message);
+      updateButtonStatus("Error starting 'Undo All Bans': " + chrome.runtime.lastError.message, true, 5000);
+    } else {
+      console.log("notification.js: startUndobanAll message sent.");
+    }
+  });
   updateButtonStatus("Starting 'Undo All Bans'...", false, 2000);
 }
 

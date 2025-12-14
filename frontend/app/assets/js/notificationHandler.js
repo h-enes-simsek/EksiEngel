@@ -194,7 +194,25 @@ class NotificationHandler
     };
 
     try {
-      chrome.runtime.sendMessage(null, {"notification": message});
+      // Use the same async pattern as #sendMessage to avoid port closure issues
+      const sendMessagePromise = new Promise((resolve, reject) => {
+        chrome.runtime.sendMessage(null, {"notification": message}, response => {
+          if (chrome.runtime.lastError) {
+            reject(chrome.runtime.lastError);
+          } else {
+            resolve(response);
+          }
+        });
+        
+        // Add a timeout in case the message never gets a response
+        setTimeout(() => {
+          reject(new Error("Timeout sending migration message"));
+        }, 1000);
+      });
+      
+      sendMessagePromise.catch(err => {
+        log.warn("notification", `Error sending migration message: ${err} :: ${JSON.stringify(message)}`);
+      });
     } catch (err) {
       log.warn("notification", `Error sending migration message: ${err} :: ${JSON.stringify(message)}`);
     }
