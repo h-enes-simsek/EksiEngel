@@ -7,6 +7,9 @@
 *.db
 *.env
 
+# context portal
+context_portal/
+
 # virtual env
 **/VENV_Django_4_1_EksiEngel
 
