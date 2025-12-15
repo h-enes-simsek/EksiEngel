@@ -62,24 +62,41 @@ function handleEarlyStop() {
   earlyStopButton.innerHTML = '<span class="btn-icon">⏳</span><span class="btn-text">Durduruluyor...</span>';
   earlyStopButton.disabled = true;
   
-  chrome.runtime.sendMessage(null, {"earlyStop":0}, (response) => {
-    if (chrome.runtime.lastError) {
-      console.warn("notification.js: Error sending earlyStop message:", chrome.runtime.lastError.message);
-      showStatusMessage("Durdurma işleminde hata oluştu", "error");
-      
-      earlyStopButton.innerHTML = '<span class="btn-icon">🛑</span><span class="btn-text">Erken Durdur</span>';
-      earlyStopButton.disabled = false;
-    }
+  // Use the same timeout pattern as other message sending functions
+  const sendEarlyStopPromise = new Promise((resolve, reject) => {
+    chrome.runtime.sendMessage(null, {"earlyStop":0}, (response) => {
+      if (chrome.runtime.lastError) {
+        reject(chrome.runtime.lastError);
+      } else {
+        resolve(response);
+      }
+    });
+    
+    // Add timeout to prevent hanging during cooldown
+    setTimeout(() => {
+      reject(new Error("Timeout sending earlyStop message"));
+    }, 2000);
   });
-
-  updateStatusIndicator('warning');
   
-  const statusText = document.getElementById("statusText");
-  if (statusText) {
-    statusText.innerHTML = "İşlem kullanıcı tarafından durduruluyor...";
-  }
-  
-  showStatusMessage("İşlem durduruluyor...", "info");
+  sendEarlyStopPromise.then((response) => {
+    console.log("notification.js: earlyStop message sent successfully");
+    updateStatusIndicator('warning');
+    
+    const statusText = document.getElementById("statusText");
+    if (statusText) {
+      statusText.innerHTML = "İşlem kullanıcı tarafından durduruluyor...";
+    }
+    
+    showStatusMessage("İşlem durduruluyor...", "info");
+  }).catch((err) => {
+    console.warn("notification.js: Error sending earlyStop message:", err.message);
+    showStatusMessage("Durdurma işleminde hata oluştu: " + err.message, "error");
+    
+    // Restore button state on error
+    earlyStopButton.innerHTML = '<span class="btn-icon">🛑</span><span class="btn-text">Erken Durdur</span>';
+    earlyStopButton.disabled = false;
+    updateStatusIndicator('inactive');
+  });
 }
 
 function setupActionButtons() {
