@@ -681,7 +681,8 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
           notification.successfulAction,
           notification.performedAction,
           notification.plannedAction,
-          notification.errorText || "Başarılı"
+          notification.errorText || "Başarılı",
+          notification.completedProcess.operationMetadata || null
         );
         if (notification.errorText && notification.errorText !== "Tamamlandı" && errorTextDiv) {
            errorTextDiv.innerHTML = `Hata: ${notification.errorText}`;
@@ -884,7 +885,7 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
 });
 
 // Table Functions
-function insertCompletedProcessesTable(banSource, successfulAction, performedAction, plannedAction, errorStatus) {
+function insertCompletedProcessesTable(banSource, successfulAction, performedAction, plannedAction, errorStatus, operationMetadata = null) {
   let table = document.getElementById("completedProcesses").getElementsByTagName('tbody')[0];
   let row = table.insertRow(0);
   let cell1 = row.insertCell(0);
@@ -896,9 +897,86 @@ function insertCompletedProcessesTable(banSource, successfulAction, performedAct
   let d = new Date();
   cell1.innerHTML = d.getHours() + ":" + d.getMinutes();
   cell2.innerHTML = banSource;
-  cell3.innerHTML = performedAction;
-  cell4.innerHTML = successfulAction;
-  cell5.innerHTML = plannedAction;
+  
+  // Generate rich description using metadata if available, fallback to pattern matching
+  let description = "Toplu işlem";
+  let descriptionDetails = "";
+  
+  if (operationMetadata) {
+    // Use rich metadata if available
+    if (operationMetadata.actionDescription) {
+      description = operationMetadata.actionDescription;
+    } else if (operationMetadata.operationNotes) {
+      description = operationMetadata.operationNotes;
+    } else {
+      // Fallback to metadata-based generation
+      if (operationMetadata.sourceTitle) {
+        description = `${banSource.includes('UN') ? 'Başlık Engel Kaldır' : 'Başlık Engelleme'} (${operationMetadata.sourceTitle})`;
+      } else if (operationMetadata.sourceAuthor) {
+        description = `${banSource.includes('UN') ? 'Takipçi Engel Kaldır' : 'Takipçileri Engelle'} (${operationMetadata.sourceAuthor})`;
+      } else if (operationMetadata.targetTypes && operationMetadata.targetTypes.length > 0) {
+        const targetNames = operationMetadata.targetTypes.map(type => {
+          switch (type) {
+            case enums.TargetType.USER: return 'Engelli';
+            case enums.TargetType.TITLE: return 'Başlık';
+            case enums.TargetType.MUTE: return 'Sessiz';
+            default: return type;
+          }
+        });
+        description = `Toplu İşlem (${targetNames.join(', ')})`;
+      }
+    }
+    
+    // Add additional details to tooltip
+    if (operationMetadata.operationNotes && operationMetadata.actionDescription !== operationMetadata.operationNotes) {
+      descriptionDetails = operationMetadata.operationNotes;
+    }
+  } else {
+    // Fallback to enhanced pattern matching
+    if (banSource.includes("FAV")) {
+      description = "Favori Edenleri Engelle";
+    } else if (banSource.includes("FOLLOW")) {
+      description = "Takipçileri Engelle";
+    } else if (banSource.includes("TITLE")) {
+      description = "Başlık Engelleme İşlemi";
+    } else if (banSource.includes("LIST")) {
+      description = "Listeden Toplu Engelleme";
+    } else if (banSource.includes("MUTED")) {
+      if (banSource.includes("BLOCK")) {
+        description = "Sessiz Kullanıcıları Engelle";
+      } else if (banSource.includes("REFRESH")) {
+        description = "Sessiz Listesi Yenile";
+      } else {
+        description = "Sessiz Kullanıcı İşlemi";
+      }
+    } else if (banSource.includes("BLOCKED")) {
+      if (banSource.includes("MUTED")) {
+        description = "Engelli/Sessiz Başlıkları Engelle";
+      } else if (banSource.includes("REFRESH")) {
+        description = "Engelli Listesi Yenile";
+      } else {
+        description = "Engelli Kullanıcı İşlemi";
+      }
+    } else if (banSource.includes("UNDO")) {
+      description = "Tüm Engelleri Kaldır";
+    } else if (banSource.includes("MIGRATE")) {
+      if (banSource.includes("BLOCKED")) {
+        description = "Engelli Kullanıcıları Sessize Al";
+      } else {
+        description = "Kullanıcı Taşıma İşlemi";
+      }
+    } else if (banSource.includes("REFRESH")) {
+      description = "Liste Yenileme İşlemi";
+    } else if (banSource.includes("SINGLE")) {
+      description = "Tek Kullanıcı Engelleme";
+    }
+  }
+  
+  cell3.innerHTML = description;
+  cell3.title = descriptionDetails ? `İşlem detayları: ${banSource}\n${descriptionDetails}` : `İşlem detayları: ${banSource}`;
+  
+  cell4.innerHTML = performedAction;
+  cell5.innerHTML = successfulAction;
   cell6.innerHTML = errorStatus;
 }
 

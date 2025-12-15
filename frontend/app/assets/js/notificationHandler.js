@@ -109,44 +109,44 @@ class NotificationHandler
     this.notify(`Hedef başlıkta ${timeText} entry'si bulunan yazarlar toplanıyor.`);
   }
 
-  #finish = (banSource, banMode, statusText, errorText, successfulAction, performedAction, plannedAction) => {
-    this.#sendMessage(enums.NotificationType.FINISH, 
-    statusText, 
-    errorText, 
-    [], 
-    {banSource, banMode}, successfulAction, performedAction, plannedAction, 0);
+  #finish = (banSource, banMode, statusText, errorText, successfulAction, performedAction, plannedAction, operationMetadata = null) => {
+    this.#sendMessage(enums.NotificationType.FINISH,
+    statusText,
+    errorText,
+    [],
+    {banSource, banMode, operationMetadata}, successfulAction, performedAction, plannedAction, 0);
     // todo push the dequed item to stack and update the completed list in GUI
     // make private methods
   }
-  finishErrorAccess = (banSource, banMode) => {
+  finishErrorAccess = (banSource, banMode, operationMetadata = null) => {
     this.#finish(banSource, banMode,
       "Ekşi Sözlük'e erişilemedi.",
-      "Ekşi Sözlük'e erişilemedi.", 
-      0, 0, 0);
+      "Ekşi Sözlük'e erişilemedi.",
+      0, 0, 0, operationMetadata);
   }
-  finishErrorLogin = (banSource, banMode) => {
+  finishErrorLogin = (banSource, banMode, operationMetadata = null) => {
     this.#finish(banSource, banMode,
       "Ekşi Sözlük hesabınıza giriş yapmanız gerekiyor.",
-      "Giriş yapılmadı", 
-      0, 0, 0);
+      "Giriş yapılmadı",
+      0, 0, 0, operationMetadata);
   }
-  finishErrorNoAccount = (banSource, banMode) => {
+  finishErrorNoAccount = (banSource, banMode, operationMetadata = null) => {
     this.#finish(banSource, banMode,
       "Engellenecek yazar listesi boş.",
-      "Yazar listesi boş", 
-      0, 0, 0);
+      "Yazar listesi boş",
+      0, 0, 0, operationMetadata);
   }
-  finishErrorEarlyStop = (banSource, banMode) => {
+  finishErrorEarlyStop = (banSource, banMode, operationMetadata = null) => {
     this.#finish(banSource, banMode,
       "",
-      "İptal edildi", 
-      0, 0, 0);
+      "İptal edildi",
+      0, 0, 0, operationMetadata);
   }
-  finishSuccess = (banSource, banMode, successfulAction, performedAction, plannedAction) => {
+  finishSuccess = (banSource, banMode, successfulAction, performedAction, plannedAction, operationMetadata = null) => {
     this.#finish(banSource, banMode,
       "İşlem tamamlandı.",
-      "Tamamlandı", 
-      successfulAction, performedAction, plannedAction);
+      "Tamamlandı",
+      successfulAction, performedAction, plannedAction, operationMetadata);
   }
 
 

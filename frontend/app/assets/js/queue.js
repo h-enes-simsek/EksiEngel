@@ -235,6 +235,13 @@ class AutoQueue extends Queue
     try {
       this._pendingPromise = true;
 
+      // Store metadata for completion callbacks
+      if (item.action && item.action.metadata) {
+        this._currentItemMetadata = item.action.metadata;
+      } else {
+        this._currentItemMetadata = null;
+      }
+
       let payload = await item.action(this);
 
       this._pendingPromise = false;
@@ -243,10 +250,15 @@ class AutoQueue extends Queue
       this._pendingPromise = false;
       item.reject(e);
     } finally {
+      this._currentItemMetadata = null; // Clear metadata after completion
       this.dequeue();
     }
 
     return true;
+  }
+
+  get currentItemMetadata() {
+    return this._currentItemMetadata || null;
   }
 }
 

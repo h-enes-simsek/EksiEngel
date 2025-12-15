@@ -556,17 +556,17 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
   if(!isEksiSozlukAccessible)
   {
     log.err("bg", "Program has been finished (finishErrorAccess)");
-    notificationHandler.finishErrorAccess(banSource, banMode);
+    notificationHandler.finishErrorAccess(banSource, banMode, processQueue.currentItemMetadata);
     return;
   }
 
   notificationHandler.notifyControlLogin();
   let userAgent = await scrapingHandler.scrapeUserAgent();
-  const {clientName, clientId} = await scrapingHandler.scrapeClientNameAndId(); 
+  const {clientName, clientId} = await scrapingHandler.scrapeClientNameAndId();
   if(!clientName)
   {
     log.err("bg", "Program has been finished (finishErrorLogin)");
-    notificationHandler.finishErrorLogin(banSource, banMode);
+    notificationHandler.finishErrorLogin(banSource, banMode, processQueue.currentItemMetadata);
     return;
   }
   
@@ -600,7 +600,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
     utils.cleanUserList(authorNameList);
     if(authorNameList.length === 0)
     {
-      notificationHandler.finishErrorNoAccount(banSource, banMode);
+      notificationHandler.finishErrorNoAccount(banSource, banMode, processQueue.currentItemMetadata);
       log.err("bg", "Program has been finished (finishErrorNoAccount)");
       return;
     }
@@ -646,7 +646,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
     let scrapedRelations = await scrapingHandler.scrapeAuthorNamesFromFavs(entryUrl);
     if(scrapedRelations.size === 0)
     {
-      notificationHandler.finishErrorNoAccount(banSource, banMode);
+      notificationHandler.finishErrorNoAccount(banSource, banMode, processQueue.currentItemMetadata);
       log.err("bg", "Program has been finished (error_NoAccount)");
       return;
     }
@@ -676,7 +676,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
     }
     if(scrapedRelations.size === 0)
     {
-      notificationHandler.finishErrorNoAccount(banSource, banMode);
+      notificationHandler.finishErrorNoAccount(banSource, banMode, processQueue.currentItemMetadata);
       log.err("bg", "Program has been finished (error_NoAccount after analysis)");
       return;
     }
@@ -701,7 +701,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
     scrapedRelations = validScrapedRelations;
     if(scrapedRelations.size === 0)
     {
-      notificationHandler.finishErrorNoAccount(banSource, banMode);
+      notificationHandler.finishErrorNoAccount(banSource, banMode, processQueue.currentItemMetadata);
       log.err("bg", "Program has been finished (error_NoAccount after fetching IDs)");
       return;
     }
@@ -737,7 +737,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
     let scrapedRelations = await scrapingHandler.scrapeFollower(singleAuthorName);
     if(scrapedRelations.size === 0)
     {
-      notificationHandler.finishErrorNoAccount(banSource, banMode);
+      notificationHandler.finishErrorNoAccount(banSource, banMode, processQueue.currentItemMetadata);
       log.err("bg", "Program has been finished (error_NoAccount - followers)");
       return;
     }
@@ -768,7 +768,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
     }
     if(scrapedRelations.size === 0)
     {
-      notificationHandler.finishErrorNoAccount(banSource, banMode);
+      notificationHandler.finishErrorNoAccount(banSource, banMode, processQueue.currentItemMetadata);
       log.err("bg", "Program has been finished (error_NoAccount - followers after analysis)");
       return;
     }
@@ -811,7 +811,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
     let scrapedRelations = await scrapingHandler.scrapeAuthorsFromTitle(titleName, titleId, timeSpecifier);
     if(scrapedRelations.size === 0)
     {
-      notificationHandler.finishErrorNoAccount(banSource, banMode);
+      notificationHandler.finishErrorNoAccount(banSource, banMode, processQueue.currentItemMetadata);
       log.err("bg", "Program has been finished (error_NoAccount - title authors)");
       return;
     }
@@ -842,7 +842,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
     }
     if(scrapedRelations.size === 0)
     {
-      notificationHandler.finishErrorNoAccount(banSource, banMode);
+      notificationHandler.finishErrorNoAccount(banSource, banMode, processQueue.currentItemMetadata);
       log.err("bg", "Program has been finished (error_NoAccount - title authors after analysis)");
       return;
     }
@@ -969,9 +969,9 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
       }
 
       if (programController.earlyStop) {
-          notificationHandler.finishErrorEarlyStop(banSource, banMode);
+          notificationHandler.finishErrorEarlyStop(banSource, banMode, processQueue.currentItemMetadata);
       } else {
-          notificationHandler.finishSuccess(banSource, banMode, totalSuccessful, totalProcessed, totalPlanned);
+          notificationHandler.finishSuccess(banSource, banMode, totalSuccessful, totalProcessed, totalPlanned, processQueue.currentItemMetadata);
       }
       if (!programController.earlyStop) {
           await storageHandler.saveBlockedUserList([]);
@@ -1024,14 +1024,14 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
   if (banSource !== enums.BanSource.SINGLE && banSource !== enums.BanSource.UNDOBANALL) {
     // This block is for LIST, FAV, FOLLOW, TITLE
     if (programController.earlyStop) {
-      notificationHandler.finishErrorEarlyStop(banSource, banMode);
+      notificationHandler.finishErrorEarlyStop(banSource, banMode, processQueue.currentItemMetadata);
     } else {
-      notificationHandler.finishSuccess(banSource, banMode, successfulAction, performedAction, authorNameList.length);
+      notificationHandler.finishSuccess(banSource, banMode, successfulAction, performedAction, authorNameList.length, processQueue.currentItemMetadata);
     }
   } else if (banSource === enums.BanSource.SINGLE && programController.earlyStop) {
     // For a single action that was stopped early, it needs an explicit early stop message
     // as its own completion (line 398) might not have been reached.
-    notificationHandler.finishErrorEarlyStop(banSource, banMode);
+    notificationHandler.finishErrorEarlyStop(banSource, banMode, processQueue.currentItemMetadata);
   }
   // If banSource IS SINGLE and NOT earlyStop: its completion is considered handled by notifyOngoing at line 398.
   // If banSource IS UNDOBANALL: its completion/error was handled within its own block (lines 774-778).
@@ -1042,7 +1042,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
     // It's important to get remainingProcessesArray *before* clearing the queue.
     // The finishErrorEarlyStop might trigger UI updates for each stopped item.
     for (const element of remainingProcessesArray) {
-      notificationHandler.finishErrorEarlyStop(element.banSource, element.banMode);
+      notificationHandler.finishErrorEarlyStop(element.banSource, element.banMode, processQueue.currentItemMetadata);
     }
     processQueue.clear();
     // After clearing the queue, update the UI to reflect it's now empty.

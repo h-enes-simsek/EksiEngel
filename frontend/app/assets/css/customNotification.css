@@ -748,7 +748,7 @@ body {
     border-bottom: none;
 }
 
-/* Compact Table Column Widths */
+/* Updated Table Column Widths for new structure */
 .modern-table th:nth-child(1),
 .modern-table td:nth-child(1) { width: 12%; text-align: center; } /* Saat */
 
@@ -756,13 +756,13 @@ body {
 .modern-table td:nth-child(2) { width: 18%; text-align: center; } /* Kaynak */
 
 .modern-table th:nth-child(3),
-.modern-table td:nth-child(3) { width: 20%; text-align: center; } /* İşlenen */
+.modern-table td:nth-child(3) { width: 20%; text-align: center; } /* Açıklama */
 
 .modern-table th:nth-child(4),
-.modern-table td:nth-child(4) { width: 20%; text-align: center; } /* Başarılı */
+.modern-table td:nth-child(4) { width: 20%; text-align: center; } /* İşlenen */
 
 .modern-table th:nth-child(5),
-.modern-table td:nth-child(5) { width: 20%; text-align: center; } /* Planlanan */
+.modern-table td:nth-child(5) { width: 20%; text-align: center; } /* Başarılı */
 
 .modern-table th:nth-child(6),
 .modern-table td:nth-child(6) { width: 10%; text-align: center; } /* Durum */
@@ -1166,4 +1166,3 @@ body {
         display: none;
     }
 }
-
