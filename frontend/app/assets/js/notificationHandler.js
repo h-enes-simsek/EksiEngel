@@ -156,7 +156,7 @@ class NotificationHandler
   }
   notifyCooldown = (remainingTimeInSec) => {
     this.#sendMessage(enums.NotificationType.COOLDOWN,
-      `COOLDOWN: API limiti aşıldı. (dakikada 12 engel limiti bekleniyor) <a target='_blank' href='${config.EksiSozlukURL}/eksi-sozlukun-yazar-engellemeye-sinir-getirmesi--7547420' style='color:red;'>Bu ne demek?</a>`,
+      `COOLDOWN: API limiti aşıldı. Dakikada 12 engel limiti bekleniyor. <a target='_blank' href='${config.EksiSozlukURL}/eksi-sozlukun-yazar-engellemeye-sinir-getirmesi--7547420' style='color:red;'>Bu ne demek?</a>`,
       "", [], null, 0, 0, 0, remainingTimeInSec);
   }
   notifyOngoing = (successfulAction, performedAction, plannedAction) => {
