@@ -642,12 +642,22 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
           statusTextDiv.innerHTML = notification.statusText;
         }
 
+        // Show and update the cooldown timer
+        const cooldownTimerDiv = document.getElementById("cooldownTimer");
         if (remainingTimeDiv) {
           remainingTimeDiv.innerHTML = `${notification.remainingTimeInSec} saniye`;
           remainingTimeDiv.style.display = "inline";
         }
+        if (cooldownTimerDiv) {
+          cooldownTimerDiv.style.display = "inline";
+        }
       }
     } else {
+      // Hide the cooldown timer for non-cooldown notifications
+      const cooldownTimerDiv = document.getElementById("cooldownTimer");
+      if (cooldownTimerDiv) {
+        cooldownTimerDiv.style.display = "none";
+      }
       if (remainingTimeDiv) {
         remainingTimeDiv.style.display = "none";
       }
