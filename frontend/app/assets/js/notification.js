@@ -122,7 +122,7 @@ function setupActionButtons() {
 
 function initializeRealTimeFeatures() {
   loadMutedUserCount();
-  loadBlockedUserCount();
+  refreshBlockedUserCountDisplay(); // Use the new function to also update export button state
   
   chrome.runtime.sendMessage(null, { action: "notificationPageReady" }, (response) => {
     if (chrome.runtime.lastError) {
@@ -256,6 +256,34 @@ async function loadBlockedUserCount() {
   const blockedUserCountSpan = document.getElementById("blockedUserCount");
   if (blockedUserCountSpan) {
     blockedUserCountSpan.textContent = blockedUserCount;
+  }
+}
+
+// Function to refresh the blocked user count display and update export button state
+async function refreshBlockedUserCountDisplay() {
+  try {
+    const blockedUserCount = await storageHandler.getBlockedUserCount();
+    
+    // Update the count display
+    if (blockedUserCountSpan) {
+      blockedUserCountSpan.textContent = blockedUserCount;
+    }
+    
+    // Update export button state based on count
+    if (exportBlockedListCSVButton) {
+      exportBlockedListCSVButton.disabled = blockedUserCount === 0;
+    }
+    
+    console.log(`notification.js: Updated blocked user count display: ${blockedUserCount}`);
+  } catch (error) {
+    console.error("notification.js: Error refreshing blocked user count display:", error);
+    // Set to 0 on error and disable export
+    if (blockedUserCountSpan) {
+      blockedUserCountSpan.textContent = "0";
+    }
+    if (exportBlockedListCSVButton) {
+      exportBlockedListCSVButton.disabled = true;
+    }
   }
 }
 
@@ -400,13 +428,22 @@ async function handleRefreshBlockedList() {
   console.log("notification.js", "Refresh blocked list button clicked.");
   updateButtonStatus("Initiating blocked list refresh...", false, 0);
 
+  // Disable the refresh button during operation
+  if (refreshBlockedListButton) refreshBlockedListButton.disabled = true;
+  
+  // Disable export button during refresh
+  if (exportBlockedListCSVButton) exportBlockedListCSVButton.disabled = true;
+
   chrome.runtime.sendMessage({ action: "refreshBlockedList" }, (response) => {
     if (chrome.runtime.lastError) {
       console.error("notification.js: Error sending refreshBlockedList message:", chrome.runtime.lastError.message);
       updateButtonStatus("Error initiating refresh: " + chrome.runtime.lastError.message, true, 5000);
+      
+      // Re-enable refresh button on error
       if (refreshBlockedListButton) refreshBlockedListButton.disabled = false;
-      const currentCount = parseInt(blockedUserCountSpan.textContent) || 0;
-      if (exportBlockedListCSVButton) exportBlockedListCSVButton.disabled = currentCount === 0;
+      
+      // Re-enable export button based on current stored count
+      refreshBlockedUserCountDisplay();
     } else {
       console.log("notification.js: refreshBlockedList message sent successfully.");
     }
@@ -470,7 +507,7 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
   if (message && message.action === enums.NotificationType.UPDATE_COUNTS) {
     console.log("Received message to update user counts.");
     loadMutedUserCount();
-    loadBlockedUserCount();
+    refreshBlockedUserCountDisplay(); // Use the new function to also update export button state
     sendResponse({ status: "ok" });
     return true;
   }
@@ -588,12 +625,13 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
   if (message && message.action === "blockedListRefreshComplete") {
     console.log(`Blocked list refresh complete: Success=${message.success}, StoppedEarly=${message.stoppedEarly}, Count=${message.count}, Error=${message.error}`);
 
-    if (blockedUserCountSpan) {
-      blockedUserCountSpan.textContent = message.count;
-    }
-
+    // Re-enable refresh button
     if (refreshBlockedListButton) refreshBlockedListButton.disabled = false;
-    if (exportBlockedListCSVButton) exportBlockedListCSVButton.disabled = message.count === 0;
+    
+    // Refresh the display to update count and export button state
+    refreshBlockedUserCountDisplay().catch(error => {
+      console.error("notification.js: Error updating blocked user count display:", error);
+    });
 
     if (message.success) {
       updateButtonStatus(`Blocked list refreshed. Found ${message.count} users.`, false, 5000);
@@ -611,7 +649,7 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
     if (blockedUserCountSpan) {
       blockedUserCountSpan.textContent = message.count;
     }
-    if (exportBlockedListCSVButton) exportBlockedListCSVButton.disabled = true;
+    if (exportBlockedListCSVButton) exportBlockedListCSVButton.disabled = true; // Keep disabled during refresh
     sendResponse({ status: "ok" });
     return true;
   }

@@ -60,6 +60,8 @@ class ProgramController
         log.info("progctrl", "early stop received during migration process.");
       } else if (this._isMutedListRefreshInProgress) { // Check for muted list refresh
         log.info("progctrl", "early stop received during muted list refresh process.");
+      } else if (this._isBlockedListRefreshInProgress) { // Check for blocked list refresh
+        log.info("progctrl", "early stop received during blocked list refresh process.");
       } else if (this._blockMutedUsersInProgress) { // Check for block muted users
         log.info("progctrl", "early stop received during block muted users process.");
       } else if (this._blockTitlesInProgress) { // Check for block titles
@@ -95,6 +97,15 @@ class ProgramController
 
   get isBlockedListRefreshInProgress() {
     return this._isBlockedListRefreshInProgress;
+  }
+
+  set isBlockedListRefreshInProgress(val) {
+    this._isBlockedListRefreshInProgress = val;
+    if (val) {
+      log.info("progctrl", "Blocked list refresh process started.");
+    } else {
+      log.info("progctrl", "Blocked list refresh process finished.");
+    }
   }
 
   get isBlockMutedUsersInProgress() {
