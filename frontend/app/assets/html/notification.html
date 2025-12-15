@@ -16,16 +16,15 @@
   <header class="main-header">
     <div class="header-content">
       <div class="header-text">
-        <h1>🔒 EksiEngel Plus</h1>
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 4px;">
+          <img src="../img/eksiengel128.png" style="height: 32px; width: 32px; border: 2px solid rgba(255,255,255,0.8); border-radius: 4px; background: rgba(255,255,255,0.1);">
+          <h1 style="margin: 0;">EksiEngel Plus</h1>
+        </div>
         <p class="subtitle">Ekşi Sözlük Toplu İşlem Yöneticisi</p>
       </div>
       <div class="header-actions">
-        <button id="openFaq" class="help-btn-compact">
-          <span class="btn-icon">❓</span>
-          <div class="btn-content">
-            <span class="btn-text">Yardım</span>
-            <span class="btn-description-inline">Ayarlar ve destek</span>
-          </div>
+        <button id="openFaq" class="btn-green-candy">
+          Yardım - Ayarlar ve destek
         </button>
       </div>
     </div>
@@ -102,20 +101,12 @@
     </div>
     
     <div class="actions-grid">
-      <button id="openauthorListPage" class="action-btn primary">
-        <span class="btn-icon">📝</span>
-        <div class="btn-content">
-          <span class="btn-text">Yazar Listesi Yönetimi</span>
-          <span class="btn-description-inline">Listeden toplu engelleme/engeli kaldırma</span>
-        </div>
+      <button id="openauthorListPage" class="btn-green-candy">
+        Yazar Listesi Yönetimi - Listeden toplu engelleme/engeli kaldırma
       </button>
       
-      <button id="startUndobanAll" class="action-btn secondary">
-        <span class="btn-icon">🔓</span>
-        <div class="btn-content">
-          <span class="btn-text">Tüm Engelleri Kaldır</span>
-          <span class="btn-description-inline">Mevcut tüm engelleri temizle</span>
-        </div>
+      <button id="startUndobanAll" class="btn-green-candy">
+        Tüm Engelleri Kaldır - Mevcut tüm engelleri temizle
       </button>
     </div>
   </section>
@@ -127,36 +118,20 @@
     </div>
     
     <div class="actions-grid">
-      <button id="migrateBlockedToMuted" class="action-btn experimental">
-        <span class="btn-icon">🔄</span>
-        <div class="btn-content">
-          <span class="btn-text">Engellileri Sessize Al</span>
-          <span class="btn-description-inline">Engelli kullanıcıları sessize al</span>
-        </div>
+      <button id="migrateBlockedToMuted" class="btn-green-candy">
+        Engellileri Sessize Al - Engelli kullanıcıları sessize al
       </button>
       
-      <button id="btnBlockMutedUsers" class="action-btn experimental">
-        <span class="btn-icon">🚫</span>
-        <div class="btn-content">
-          <span class="btn-text">Sessizleri Engelle</span>
-          <span class="btn-description-inline">Sessiz kullanıcıları engelle</span>
-        </div>
+      <button id="btnBlockMutedUsers" class="btn-green-candy">
+        Sessizleri Engelle - Sessiz kullanıcıları engelle
       </button>
       
-      <button id="btnBlockTitlesOfBlockedMuted" class="action-btn experimental">
-        <span class="btn-icon">📚</span>
-        <div class="btn-content">
-          <span class="btn-text">Başlık Engelleme</span>
-          <span class="btn-description-inline">Engellilerin başlıklarını da engelle</span>
-        </div>
+      <button id="btnBlockTitlesOfBlockedMuted" class="btn-green-candy">
+        Başlık Engelleme - Engellilerin başlıklarını da engelle
       </button>
       
-      <button id="migrateBlockedTitlesToUnblocked" class="action-btn experimental">
-        <span class="btn-icon">📋</span>
-        <div class="btn-content">
-          <span class="btn-text">Engelli Başlık Kaldırma</span>
-          <span class="btn-description-inline">Engellenen başlıkları kaldır</span>
-        </div>
+      <button id="migrateBlockedTitlesToUnblocked" class="btn-green-candy">
+        Engelli Başlık Kaldırma - Engellenen başlıkları kaldır
       </button>
     </div>
   </section>
@@ -174,14 +149,8 @@
           <span class="count-badge" id="mutedUserCount">Yükleniyor...</span>
         </div>
         <div class="stats-card-actions">
-          <button id="refreshMutedList" class="stats-btn">
-            <span class="btn-icon">🔄</span>
-            <span class="btn-text">Yenile</span>
-          </button>
-          <button id="exportMutedListCSV" class="stats-btn" disabled>
-            <span class="btn-icon">💾</span>
-            <span class="btn-text">CSV</span>
-          </button>
+          <button id="refreshMutedList" class="stats-btn">Yenile</button>
+          <button id="exportMutedListCSV" class="stats-btn" disabled>CSV</button>
         </div>
       </div>
       
@@ -191,14 +160,8 @@
           <span class="count-badge" id="blockedUserCount">Yükleniyor...</span>
         </div>
         <div class="stats-card-actions">
-          <button id="refreshBlockedList" class="stats-btn">
-            <span class="btn-icon">🔄</span>
-            <span class="btn-text">Yenile</span>
-          </button>
-          <button id="exportBlockedListCSV" class="stats-btn" disabled>
-            <span class="btn-icon">💾</span>
-            <span class="btn-text">CSV</span>
-          </button>
+          <button id="refreshBlockedList" class="stats-btn">Yenile</button>
+          <button id="exportBlockedListCSV" class="stats-btn" disabled>CSV</button>
         </div>
       </div>
     </div>

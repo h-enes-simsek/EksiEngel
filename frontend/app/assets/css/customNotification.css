@@ -3,20 +3,20 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
-    --primary-color: #4f46e5;
-    --primary-hover: #4338ca;
-    --secondary-color: #64748b;
-    --success-color: #10b981;
+    --primary-color: #4CAF50;
+    --primary-hover: #45a049;
+    --secondary-color: #388E3C;
+    --success-color: #4CAF50;
     --warning-color: #f59e0b;
     --danger-color: #ef4444;
     --danger-hover: #dc2626;
     --experimental-color: #8b5cf6;
     --bg-color: #f8fafc;
     --card-bg: #ffffff;
-    --border-color: #e2e8f0;
-    --text-primary: #1e293b;
-    --text-secondary: #64748b;
-    --text-muted: #94a3b8;
+    --border-color: #388E3C;
+    --text-primary: #000000;
+    --text-secondary: #333333;
+    --text-muted: #666666;
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
@@ -427,17 +427,17 @@ body {
     font-weight: 500;
 }
 
-/* Compact Action Cards */
+/* Compact Action Cards - All using consistent green theme */
 .actions-card {
-    border-left: 3px solid var(--success-color);
+    border-left: 3px solid var(--primary-color);
 }
 
 .migration-card {
-    border-left: 3px solid var(--experimental-color);
+    border-left: 3px solid var(--primary-color);
 }
 
 .help-card {
-    border-left: 3px solid var(--secondary-color);
+    border-left: 3px solid var(--primary-color);
 }
 
 .actions-grid {
@@ -447,105 +447,43 @@ body {
     padding: 12px 16px;
 }
 
-.action-btn {
-    background: white;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    padding: 10px;
-    text-align: left;
-    transition: var(--transition);
+.btn-green-candy {
     cursor: pointer;
-    position: relative;
-    overflow: hidden;
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
-}
-
-.action-btn::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
+    text-decoration: none;
+    padding: 6px 10px !important;
+    font-size: 13px;
+    line-height: 1.2em;
+    text-transform: uppercase;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 400;
+    letter-spacing: 2px;
+    transition: all 0.2s ease;
+    background-color: #4CAF50;
+    color: #000000;
+    border: 1px solid #388E3C;
+    border-radius: 4px;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.45);
+    box-sizing: border-box;
+    text-align: center;
+    display: block;
     width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-    transition: left 0.5s;
+    margin: 2px 0;
 }
 
-.action-btn:hover::before {
-    left: 100%;
-}
-
-.action-btn:hover {
+.btn-green-candy:hover {
+    background-color: #45a049 !important;
+    color: #000000 !important;
+    border: 1px solid #388E3C !important;
     transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
 }
 
-.action-btn.primary {
-    border-color: var(--primary-color);
-    background: linear-gradient(135deg, rgba(79, 70, 229, 0.05) 0%, rgba(79, 70, 229, 0.1) 100%);
-}
+/* Removed action-btn variants - using unified btn-green-candy styling */
 
-.action-btn.primary:hover {
-    border-color: var(--primary-hover);
-    background: linear-gradient(135deg, rgba(79, 70, 229, 0.1) 0%, rgba(79, 70, 229, 0.15) 100%);
-}
-
-.action-btn.secondary {
-    border-color: var(--secondary-color);
-    background: linear-gradient(135deg, rgba(100, 116, 139, 0.05) 0%, rgba(100, 116, 139, 0.1) 100%);
-}
-
-.action-btn.secondary:hover {
-    border-color: var(--text-primary);
-    background: linear-gradient(135deg, rgba(100, 116, 139, 0.1) 0%, rgba(100, 116, 139, 0.15) 100%);
-}
-
-.action-btn.experimental {
-    border-color: var(--experimental-color);
-    background: linear-gradient(135deg, rgba(139, 92, 246, 0.05) 0%, rgba(139, 92, 246, 0.1) 100%);
-}
-
-.action-btn.experimental:hover {
-    border-color: #7c3aed;
-    background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(139, 92, 246, 0.15) 100%);
-}
-
-.action-btn .btn-icon {
-    font-size: 1rem;
-    flex-shrink: 0;
-    margin-top: 2px;
-}
-
-.action-btn .btn-content {
-    flex: 1;
-    min-width: 0;
-}
-
-.action-btn .btn-text {
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 1px;
-    display: block;
-}
-
-.action-btn .btn-description-inline {
-    font-size: 0.65rem;
-    color: var(--text-secondary);
-    line-height: 1.2;
-    display: block;
-}
-
-/* Hide the old separate description style */
-.action-btn .btn-description {
-    display: none;
-}
+/* Removed action-btn icon and content styling - using unified btn-green-candy */
 
 /* Compact Statistics Section */
 .stats-section-card {
-    border-left: 3px solid var(--warning-color);
+    border-left: 3px solid var(--primary-color);
 }
 
 .stats-cards {
@@ -601,15 +539,23 @@ body {
 
 .stats-btn {
     flex: 1;
-    background: white;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-xs);
-    padding: 6px 8px;
-    font-size: 0.7rem;
-    font-weight: 500;
-    color: var(--text-primary);
     cursor: pointer;
-    transition: var(--transition);
+    text-decoration: none;
+    padding: 6px 8px !important;
+    font-size: 13px;
+    line-height: 1.2em;
+    text-transform: uppercase;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 400;
+    letter-spacing: 2px;
+    transition: all 0.2s ease;
+    background-color: #4CAF50;
+    color: #000000;
+    border: 1px solid #388E3C;
+    border-radius: 4px;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.45);
+    box-sizing: border-box;
+    text-align: center;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -617,9 +563,9 @@ body {
 }
 
 .stats-btn:hover:not(:disabled) {
-    background: var(--primary-color);
-    color: white;
-    border-color: var(--primary-color);
+    background-color: #45a049 !important;
+    color: #000000 !important;
+    border: 1px solid #388E3C !important;
     transform: translateY(-1px);
 }
 
@@ -635,8 +581,8 @@ body {
 
 .help-btn {
     width: 100%;
-    background: linear-gradient(135deg, var(--secondary-color) 0%, var(--text-primary) 100%);
-    color: white;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+    color: #000000;
     border: none;
     border-radius: var(--radius-sm);
     padding: 8px 16px;
@@ -683,8 +629,8 @@ body {
     position: fixed;
     bottom: 24px;
     right: 24px;
-    background: var(--text-primary);
-    color: white;
+    background: var(--primary-color);
+    color: #000000;
     padding: 12px 20px;
     border-radius: var(--radius-md);
     font-weight: 500;
@@ -709,7 +655,7 @@ body {
 
 /* Compact Queue Card */
 .queue-card {
-    border-left: 3px solid var(--warning-color);
+    border-left: 3px solid var(--primary-color);
 }
 
 .tables-container {
@@ -770,8 +716,8 @@ body {
 }
 
 .modern-table th {
-    background: var(--text-primary);
-    color: white;
+    background: var(--primary-color);
+    color: #000000;
     font-weight: 600;
     padding: 6px 4px;
     text-align: left;
@@ -865,8 +811,8 @@ body {
     bottom: 100%;
     left: 50%;
     transform: translateX(-50%);
-    background: var(--text-primary);
-    color: white;
+    background: var(--primary-color);
+    color: #000000;
     padding: 8px 12px;
     border-radius: var(--radius-sm);
     font-size: 0.75rem;
@@ -889,7 +835,7 @@ body {
     left: 50%;
     transform: translateX(-50%);
     border: 4px solid transparent;
-    border-top-color: var(--text-primary);
+    border-top-color: var(--primary-color);
     z-index: 1000;
     margin-bottom: 0;
 }
