@@ -12,101 +12,256 @@
 <body>
 
 <div class="container">
-  <!-- Unified Status Bar Section -->
-  <div id="unifiedStatusSection" class="status-section">
-    <h4>İşlem Durumu:</h4>
-    <div class="bar-container">
-      <div id="progressBar" class="bar green" style="height:24px;width:0%"></div>
+  <!-- Header Section -->
+  <header class="main-header">
+    <div class="header-content">
+      <div class="header-text">
+        <h1>🔒 EksiEngel Plus</h1>
+        <p class="subtitle">Ekşi Sözlük Toplu İşlem Yöneticisi</p>
+      </div>
+      <div class="header-actions">
+        <button id="openFaq" class="help-btn-compact">
+          <span class="btn-icon">❓</span>
+          <div class="btn-content">
+            <span class="btn-text">Yardım</span>
+            <span class="btn-description-inline">Ayarlar ve destek</span>
+          </div>
+        </button>
+      </div>
     </div>
-    <p id="progressBarText" class="status-text">0%</p>
-    <p id="progressText" class="status-text"></p>
+  </header>
 
-    <div class="status-details">
-      <div class="status-item">Durum: <span id="statusText">İşlem başlayacak.</span></div>
-      <div class="status-item">Bekleme Süresi: <span id="remainingTimeInSec" style="display: none;"></span></div>
-      <div class="status-item">Başarılı işlem: <span id="successfulAction">0</span></div>
-      <div class="status-item">Gerçekleşen işlem: <span id="performedAction">0</span></div>
-      <div class="status-item">Planlanan işlem: <span id="plannedAction">0</span></div>
-      <div class="status-item">Hata: <span id="errorText" style="color: red; display: none;"></span></div>
+  <!-- Status Card Section -->
+  <section class="card status-card">
+    <div class="card-header">
+      <h2>📊 İşlem Durumu</h2>
+      <div class="status-indicator" id="statusIndicator">
+        <span class="indicator-dot" id="statusDot"></span>
+        <span id="statusText">İşlem başlayacak.</span>
+      </div>
     </div>
-    <input type="button" id="earlyStop" value="Erken Durdur" class="btn btn-dark" style="margin-top:15px;">
-  </div>
-  <!-- End Unified Status Bar Section -->
-
-  <!-- Buttons Section -->
-  <div class="buttons-section">
-    <div class="button-group"> <!-- Grouping for compact alignment -->
-      <button id="openauthorListPage" class="btn btn-dark btn-green-candy">Gireceğim Listedeki Yazarları Engelle/Engelini Kaldır</button>
-      <button id="startUndobanAll" class="btn btn-dark btn-green-candy">Tüm Engellerimi Kaldır</button>
-    </div>
-    <div class="button-group"> <!-- Grouping for experimental user/title actions -->
-      <button id="migrateBlockedToMuted" class="btn btn-dark btn-green-candy">Engellenenleri Sessize Al (Deneysel)</button>
-      <button id="btnBlockMutedUsers" class="btn btn-dark btn-green-candy">Sessizleri Engelle (Deneysel)</button>
-      <button id="btnBlockTitlesOfBlockedMuted" class="btn btn-dark btn-green-candy">Engellilerin Başlıklarını Engelle (Deneysel)</button>
-      <button id="migrateBlockedTitlesToUnblocked" class="btn btn-dark btn-green-candy">Engellenen Başlıkları Kaldır (Deneysel)</button>
-    </div>
-    <div class="button-group"> <!-- Grouping for compact alignment -->
-      <button id="refreshMutedList" class="btn btn-dark btn-green-candy">Sessiz listesini yenile</button>
-      <button id="exportMutedListCSV" class="btn btn-dark btn-green-candy" disabled>Sessiz listesini kaydet (CSV)</button>
-    </div>
-    <!-- Muted User Section -->
-    <div id="mutedInfo" class="button-section"> <!-- Added button-section class -->
-      Sessize alınmış yazarlar: <span id="mutedUserCount">Yükleniyor...</span>
-    </div>
-    <!-- End Muted User Section -->
-    <!-- Blocked User Section -->
-    <div id="blockedInfo" class="button-section"> <!-- Added button-section class -->
-      Engellenmiş yazarlar: <span id="blockedUserCount">Yükleniyor...</span>
-    </div>
-    <div class="button-section button-group"> <!-- Added button-section and button-group classes -->
-      <button id="refreshBlockedList" class="btn btn-dark btn-green-candy">Engelli listesini yenile</button>
-      <button id="exportBlockedListCSV" class="btn btn-dark btn-green-candy" disabled>Engelliler listesini kaydet (CSV)</button>
-    </div>
-    <!-- End Blocked User Section -->
-    <div class="button-group"> <!-- Grouping for compact alignment -->
-      <button id="openFaq" class="btn btn-dark btn-green-candy">Ayarlar ve Yardım</button>
-    </div>
-    <div id="buttonStatus" class="status-text" style="text-align: center; margin-top: 10px;"></div> <!-- Dedicated status for button actions -->
-  </div>
-  <!-- End Buttons Section -->
-
-  <!-- Tables Section -->
-  <div class="tables-section">
-    <div class="table-container">
-      <table id="plannedProcesses">
-        <caption>Sıradakiler</caption>
-        <thead>
-          <tr>
-            <td>Saat</td>
-            <td>Kaynak</td>
-            <td>Mod</td>
-          </tr>
-        </thead>
-        <tbody>
-        </tbody>
-      </table>
+    
+    <div class="progress-section">
+      <div class="progress-container">
+        <div id="progressBar" class="progress-bar">
+          <div class="progress-fill" id="progressFill"></div>
+          <div class="progress-text" id="progressBarText">0%</div>
+        </div>
+      </div>
+      <p id="progressText" class="progress-detail"></p>
     </div>
 
-    <div class="table-container">
-      <table id="completedProcesses">
-        <caption>Tamamlananlar</caption>
-        <thead>
-          <tr>
-            <td>Saat</td>
-            <td>Kaynak</td>
-            <td>Mod</td>
-            <td>Başarılı</td>
-            <td>Gerçekleşen</td>
-            <td>Planlanan</td>
-            <td>Hata</td>
-          </tr>
-        </thead>
-        <tbody>
-        </tbody>
-      </table>
+      <div class="stat-item">
+        <div class="stat-icon">✅</div>
+        <div class="stat-content">
+          <div class="stat-label">Başarılı</div>
+          <div class="stat-value" id="successfulAction">0</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon">⚡</div>
+        <div class="stat-content">
+          <div class="stat-label">İşlenen</div>
+          <div class="stat-value" id="performedAction">0</div>
+        </div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon">📋</div>
+        <div class="stat-content">
+          <div class="stat-label">Planlanan</div>
+          <div class="stat-value" id="plannedAction">0</div>
+        </div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon">⏱️</div>
+        <div class="stat-content">
+          <div class="stat-label">Kalan</div>
+          <div class="stat-value" id="remainingAction">0</div>
+        </div>
+      </div>
     </div>
-  </div>
-  <!-- End Tables Section -->
+
+    <div class="error-section" id="errorSection" style="display: none;">
+      <div class="error-content">
+        <span class="error-icon">⚠️</span>
+        <span id="errorText"></span>
+      </div>
+    </div>
+
+    <div class="action-section">
+      <button id="earlyStop" class="btn btn-danger">
+        <span class="btn-icon">🛑</span>
+        <span class="btn-text">Erken Durdur</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- Actions Section -->
+  <section class="card actions-card">
+    <div class="card-header">
+      <h2>🎯 Ana İşlemler <span class="inline-description">Temel engelleme ve yönetim işlemleri</span></h2>
+    </div>
+    
+    <div class="actions-grid">
+      <button id="openauthorListPage" class="action-btn primary">
+        <span class="btn-icon">📝</span>
+        <div class="btn-content">
+          <span class="btn-text">Yazar Listesi Yönetimi</span>
+          <span class="btn-description-inline">Listeden toplu engelleme/engeli kaldırma</span>
+        </div>
+      </button>
+      
+      <button id="startUndobanAll" class="action-btn secondary">
+        <span class="btn-icon">🔓</span>
+        <div class="btn-content">
+          <span class="btn-text">Tüm Engelleri Kaldır</span>
+          <span class="btn-description-inline">Mevcut tüm engelleri temizle</span>
+        </div>
+      </button>
+    </div>
+  </section>
+
+  <!-- Migration Section -->
+  <section class="card migration-card">
+    <div class="card-header">
+      <h2>🔄 Taşıma İşlemleri <span class="inline-description">Deneysel özellikler - dikkatli kullanın</span> <span class="experimental-badge">Beta</span></h2>
+    </div>
+    
+    <div class="actions-grid">
+      <button id="migrateBlockedToMuted" class="action-btn experimental">
+        <span class="btn-icon">🔄</span>
+        <div class="btn-content">
+          <span class="btn-text">Engellileri Sessize Al</span>
+          <span class="btn-description-inline">Engelli kullanıcıları sessize al</span>
+        </div>
+      </button>
+      
+      <button id="btnBlockMutedUsers" class="action-btn experimental">
+        <span class="btn-icon">🚫</span>
+        <div class="btn-content">
+          <span class="btn-text">Sessizleri Engelle</span>
+          <span class="btn-description-inline">Sessiz kullanıcıları engelle</span>
+        </div>
+      </button>
+      
+      <button id="btnBlockTitlesOfBlockedMuted" class="action-btn experimental">
+        <span class="btn-icon">📚</span>
+        <div class="btn-content">
+          <span class="btn-text">Başlık Engelleme</span>
+          <span class="btn-description-inline">Engellilerin başlıklarını da engelle</span>
+        </div>
+      </button>
+      
+      <button id="migrateBlockedTitlesToUnblocked" class="action-btn experimental">
+        <span class="btn-icon">📋</span>
+        <div class="btn-content">
+          <span class="btn-text">Engelli Başlık Kaldırma</span>
+          <span class="btn-description-inline">Engellenen başlıkları kaldır</span>
+        </div>
+      </button>
+    </div>
+  </section>
+
+  <!-- Statistics Section -->
+  <section class="card stats-section-card">
+    <div class="card-header">
+      <h2>📊 Listeler <span class="inline-description">Mevcut liste durumları ve dışa aktarma</span></h2>
+    </div>
+    
+    <div class="stats-cards">
+      <div class="stats-card">
+        <div class="stats-card-header">
+          <h3>🔇 Sessiz Kullanıcılar</h3>
+          <span class="count-badge" id="mutedUserCount">Yükleniyor...</span>
+        </div>
+        <div class="stats-card-actions">
+          <button id="refreshMutedList" class="stats-btn">
+            <span class="btn-icon">🔄</span>
+            <span class="btn-text">Yenile</span>
+          </button>
+          <button id="exportMutedListCSV" class="stats-btn" disabled>
+            <span class="btn-icon">💾</span>
+            <span class="btn-text">CSV</span>
+          </button>
+        </div>
+      </div>
+      
+      <div class="stats-card">
+        <div class="stats-card-header">
+          <h3>🚫 Engellenmiş Kullanıcılar</h3>
+          <span class="count-badge" id="blockedUserCount">Yükleniyor...</span>
+        </div>
+        <div class="stats-card-actions">
+          <button id="refreshBlockedList" class="stats-btn">
+            <span class="btn-icon">🔄</span>
+            <span class="btn-text">Yenile</span>
+          </button>
+          <button id="exportBlockedListCSV" class="stats-btn" disabled>
+            <span class="btn-icon">💾</span>
+            <span class="btn-text">CSV</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+
+  <!-- Status Messages -->
+  <div id="buttonStatus" class="status-message"></div>
+
+  <!-- Queue Section -->
+  <section class="card queue-card">
+    <div class="card-header">
+      <h2>📋 İşlem Kuyruğu <span class="inline-description">Planlanan ve tamamlanan işlemler</span></h2>
+    </div>
+    
+    <div class="tables-container">
+      <div class="table-section">
+        <div class="table-header">
+          <h3>⏳ Sıradaki İşlemler</h3>
+          <span class="table-badge" id="plannedCount">0</span>
+        </div>
+        <div class="table-wrapper">
+          <table id="plannedProcesses" class="modern-table">
+            <thead>
+              <tr>
+                <th>⏰ Saat</th>
+                <th>📂 Kaynak</th>
+                <th>📝 Açıklama</th>
+                <th>🎯 Hedef</th>
+                <th>📊 Durum</th>
+              </tr>
+            </thead>
+            <tbody>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="table-section">
+        <div class="table-header">
+          <h3>✅ Tamamlanan İşlemler</h3>
+          <span class="table-badge" id="completedCount">0</span>
+        </div>
+        <div class="table-wrapper">
+          <table id="completedProcesses" class="modern-table">
+            <thead>
+              <tr>
+                <th>⏰ Saat</th>
+                <th>📂 Kaynak</th>
+                <th>⚡ İşlenen</th>
+                <th>✅ Başarılı</th>
+                <th>📋 Planlanan</th>
+                <th>📊 Durum</th>
+              </tr>
+            </thead>
+            <tbody>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
 
 </div>
 
