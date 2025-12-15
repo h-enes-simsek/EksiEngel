@@ -317,7 +317,7 @@ function downloadCSV(usernames, listType) {
   const timestamp = new Date().toISOString().slice(0, 10);
   const filenamePrefix = listType === 'blocked' ? 'eksiengel_blocked_users' : 'eksiengel_muted_users';
   link.setAttribute("download", `${filenamePrefix}_${timestamp}.csv`);
-  link.style.visibility = 'hidden';
+  link.style.visibility = "hidden";
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
@@ -713,14 +713,66 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
         if (progressBar) progressBar.style.width = percentage + "%";
         if (progressBarText) progressBarText.innerHTML = "%" + percentage;
         if (progressText) progressText.innerHTML = "İşlenen: " + notification.performedAction + "/" + notification.plannedAction + " Başarılı: " + notification.successfulAction;
+        
+        // UPDATE THE STATISTICS SECTION: Fix for İşlem Durumu statistics
+        const successfulActionElement = document.getElementById("successfulAction");
+        const performedActionElement = document.getElementById("performedAction");
+        const plannedActionElement = document.getElementById("plannedAction");
+        const remainingActionElement = document.getElementById("remainingAction");
+        
+        if (successfulActionElement) {
+          successfulActionElement.textContent = notification.successfulAction || 0;
+        }
+        if (performedActionElement) {
+          performedActionElement.textContent = notification.performedAction || 0;
+        }
+        if (plannedActionElement) {
+          plannedActionElement.textContent = notification.plannedAction || 0;
+        }
+        if (remainingActionElement) {
+          const remaining = Math.max(0, (notification.plannedAction || 0) - (notification.performedAction || 0));
+          remainingActionElement.textContent = remaining;
+        }
+        
       } else if (notification.status === enums.NotificationType.FINISH) {
          if (progressBar) progressBar.style.width = "100%";
          if (progressBarText) progressBarText.innerHTML = "%100";
          if (progressText) progressText.innerHTML = "Tamamlandı. Başarılı: " + notification.successfulAction + "/" + notification.performedAction;
+         
+         // UPDATE THE STATISTICS SECTION: Fix for İşlem Durumu statistics on finish
+         const successfulActionElement = document.getElementById("successfulAction");
+         const performedActionElement = document.getElementById("performedAction");
+         const plannedActionElement = document.getElementById("plannedAction");
+         const remainingActionElement = document.getElementById("remainingAction");
+         
+         if (successfulActionElement) {
+           successfulActionElement.textContent = notification.successfulAction || 0;
+         }
+         if (performedActionElement) {
+           performedActionElement.textContent = notification.performedAction || 0;
+         }
+         if (plannedActionElement) {
+           plannedActionElement.textContent = notification.plannedAction || 0;
+         }
+         if (remainingActionElement) {
+           remainingActionElement.textContent = 0; // All done
+         }
+         
       } else {
          if (progressBar) progressBar.style.width = "0%";
          if (progressBarText) progressBarText.innerHTML = "";
          if (progressText) progressText.innerHTML = "";
+         
+         // Reset statistics when not ongoing/finished
+         const successfulActionElement = document.getElementById("successfulAction");
+         const performedActionElement = document.getElementById("performedAction");
+         const plannedActionElement = document.getElementById("plannedAction");
+         const remainingActionElement = document.getElementById("remainingAction");
+         
+         if (successfulActionElement) successfulActionElement.textContent = "0";
+         if (performedActionElement) performedActionElement.textContent = "0";
+         if (plannedActionElement) plannedActionElement.textContent = "0";
+         if (remainingActionElement) remainingActionElement.textContent = "0";
       }
 
       if (notification.status === enums.NotificationType.FINISH && notification.completedProcess) {
