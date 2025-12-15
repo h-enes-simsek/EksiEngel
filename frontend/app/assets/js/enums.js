@@ -73,3 +73,50 @@ export const TimeSpecifier = {
   LAST_3_M:  "4",
   ALL:       "5",
 };
+
+// Enhanced task type categorization for queue system
+export const TaskCategory = {
+  BLOCKING: "BLOCKING",         // Core blocking operations
+  MIGRATION: "MIGRATION",       // User list migrations
+  REFRESH: "REFRESH",           // List refresh operations
+  UNBLOCKING: "UNBLOCKING",     // Unblock operations
+  ANALYSIS: "ANALYSIS"          // Data analysis operations
+};
+
+export const TaskComplexity = {
+  SIMPLE: "SIMPLE",           // Single user operations
+  MODERATE: "MODERATE",       // List operations with 10-100 users
+  COMPLEX: "COMPLEX",         // Mass operations with 100+ users
+  HEAVY: "HEAVY"              // Very large operations (1000+ users)
+};
+
+export const TaskPriority = {
+  LOW: "LOW",                 // Background operations
+  NORMAL: "NORMAL",           // Standard operations
+  HIGH: "HIGH",               // User-initiated operations
+  URGENT: "URGENT"            // Critical operations
+};
+
+export const TaskStatus = {
+  QUEUED: "QUEUED",           // Waiting in queue
+  PROCESSING: "PROCESSING",   // Currently executing
+  COMPLETED: "COMPLETED",     // Successfully finished
+  FAILED: "FAILED",           // Failed with error
+  CANCELLED: "CANCELLED",     // Cancelled by user
+  PAUSED: "PAUSED"            // Temporarily paused
+};
+
+// Task metadata structure for enhanced queue information
+export const TaskMetadata = {
+  // Source information
+  sourceEntry: null,        // Entry URL for FAV operations
+  sourceAuthor: null,       // Author name for FOLLOW operations
+  sourceTitle: null,        // Title name for TITLE operations
+  sourceList: null,         // User list for LIST operations
+  // Operation details
+  targetTypes: [],          // Array of target types (USER, TITLE, MUTE)
+  timeFilter: null,         // Time specifier for TITLE operations
+  // Additional context
+  operationNotes: "",       // Additional notes about the operation
+  requiresUserInteraction: false  // Whether operation needs user input during execution
+};

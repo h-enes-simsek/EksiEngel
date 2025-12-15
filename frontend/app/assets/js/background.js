@@ -187,6 +187,15 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
       wrapperProcessHandler.banSource = banSource;
       wrapperProcessHandler.banMode = banMode;
       wrapperProcessHandler.creationDateInStr = new Date().getHours() + ":" + new Date().getMinutes();
+      
+      // Add comprehensive metadata for enhanced queue display
+      wrapperProcessHandler.metadata = {
+        operationNotes: isTitleMigration ? "Başlık engellerini kaldırır" : "Engelli kullanıcıları sessiz listesine taşır",
+        requiresUserInteraction: false,
+        targetTypes: [enums.TargetType.TITLE], // Title operations
+        sourceTitle: "Mevcut Engelli/Sessiz Başlıklar"
+      };
+      
       processQueue.enqueue(wrapperProcessHandler);
       notificationHandler.updatePlannedProcessesList(processQueue.itemAttributes);
 
@@ -259,6 +268,15 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
       wrapperProcessHandler.banSource = enums.BanSource.REFRESH_MUTED_LIST;
       wrapperProcessHandler.banMode = getDisplayMode(message.action);
       wrapperProcessHandler.creationDateInStr = new Date().getHours() + ":" + new Date().getMinutes();
+      
+      // Add metadata for muted list refresh
+      wrapperProcessHandler.metadata = {
+        operationNotes: "Sessiz kullanıcı listesini sunucudan yeniler",
+        requiresUserInteraction: false,
+        targetTypes: [enums.TargetType.MUTE],
+        sourceTitle: "Sessiz Kullanıcı Listesi"
+      };
+      
       processQueue.enqueue(wrapperProcessHandler);
       notificationHandler.updatePlannedProcessesList(processQueue.itemAttributes);
 
@@ -328,6 +346,15 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
       wrapperProcessHandler.banSource = enums.BanSource.REFRESH_BLOCKED_LIST;
       wrapperProcessHandler.banMode = getDisplayMode(message.action);
       wrapperProcessHandler.creationDateInStr = new Date().getHours() + ":" + new Date().getMinutes();
+      
+      // Add metadata for blocked list refresh
+      wrapperProcessHandler.metadata = {
+        operationNotes: "Engelli kullanıcı listesini sunucudan yeniler",
+        requiresUserInteraction: false,
+        targetTypes: [enums.TargetType.USER],
+        sourceTitle: "Engelli Kullanıcı Listesi"
+      };
+      
       processQueue.enqueue(wrapperProcessHandler);
       notificationHandler.updatePlannedProcessesList(processQueue.itemAttributes);
 
@@ -349,6 +376,15 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
       wrapperProcessHandler.banSource = enums.BanSource.BLOCK_MUTED_USERS;
       wrapperProcessHandler.banMode = getDisplayMode(message.action);
       wrapperProcessHandler.creationDateInStr = new Date().getHours() + ":" + new Date().getMinutes();
+      
+      // Add metadata for block muted users operation
+      wrapperProcessHandler.metadata = {
+        operationNotes: "Sessiz listesindeki kullanıcıları engeller ve sessizliklerini kaldırır",
+        requiresUserInteraction: false,
+        targetTypes: [enums.TargetType.USER, enums.TargetType.MUTE],
+        sourceTitle: "Mevcut Sessiz Kullanıcılar"
+      };
+      
       processQueue.enqueue(wrapperProcessHandler);
       notificationHandler.updatePlannedProcessesList(processQueue.itemAttributes);
 
@@ -373,6 +409,15 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
       wrapperProcessHandler.banSource = enums.BanSource.BLOCKED_MUTED_TITLES; // Already exists
       wrapperProcessHandler.banMode = getDisplayMode(message.action);
       wrapperProcessHandler.creationDateInStr = new Date().getHours() + ":" + new Date().getMinutes();
+      
+      // Add metadata for block titles operation
+      wrapperProcessHandler.metadata = {
+        operationNotes: "Engelli ve sessiz kullanıcıların başlıklarını engeller",
+        requiresUserInteraction: false,
+        targetTypes: [enums.TargetType.TITLE],
+        sourceTitle: "Engelli/Sessiz Kullanıcı Başlıkları"
+      };
+      
       processQueue.enqueue(wrapperProcessHandler);
       notificationHandler.updatePlannedProcessesList(processQueue.itemAttributes);
 
@@ -413,6 +458,24 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
     wrapperProcessHandler.banSource = obj.banSource;
     wrapperProcessHandler.banMode = obj.banMode;
     wrapperProcessHandler.creationDateInStr = new Date().getHours() + ":" + new Date().getMinutes();
+    
+    // Add comprehensive metadata for standard operations (no hardcoded predictions)
+    wrapperProcessHandler.metadata = {
+      // No hardcoded estimates
+      operationNotes: getOperationNotes(obj.banSource, obj),
+      requiresUserInteraction: false,
+      targetTypes: obj.targetType ? [obj.targetType] : [],
+      
+      // Source information for display
+      sourceEntry: obj.entryUrl || null,
+      sourceAuthor: obj.authorName || null,
+      sourceTitle: obj.titleName || null,
+      timeFilter: obj.timeSpecifier || null,
+      
+      // Operation context
+      clickSource: obj.clickSource || null
+    };
+    
     processQueue.enqueue(wrapperProcessHandler);
     log.info("bg", "number of waiting processes in the queue: " + processQueue.size);
 
@@ -432,6 +495,31 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
     return true; // Keep message channel open for async response
   }
 });
+
+// Helper functions for queue metadata (removed hardcoded predictions)
+function getEstimatedUserCount(banSource, obj) {
+  // Return 0 to indicate no hardcoded prediction
+  return 0;
+}
+
+function getOperationNotes(banSource, obj) {
+  switch (banSource) {
+    case enums.BanSource.SINGLE:
+      return `Tek kullanıcı ${obj.banMode === enums.BanMode.BAN ? 'engelleme' : 'engel kaldırma'}`;
+    case enums.BanSource.FAV:
+      return "Entry'yi favorileyen kullanıcıları engelle";
+    case enums.BanSource.FOLLOW:
+      return `${obj.authorName} kullanıcısının takipçilerini engelle`;
+    case enums.BanSource.LIST:
+      return "Kullanıcı listesinden toplu engelleme";
+    case enums.BanSource.TITLE:
+      return `${obj.titleName} başlığındaki yazarları engelle`;
+    case enums.BanSource.UNDOBANALL:
+      return "Tüm engelleri ve sessizlikleri kaldır";
+    default:
+      return "Kullanıcı engelleme işlemi";
+  }
+}
 
 async function processHandler(banSource, banMode, entryUrl, singleAuthorName, singleAuthorId, targetType, clickSource, titleName, titleId, timeSpecifier)
 {

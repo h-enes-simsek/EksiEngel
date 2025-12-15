@@ -121,31 +121,31 @@ class NotificationHandler
   finishErrorAccess = (banSource, banMode) => {
     this.#finish(banSource, banMode,
       "Ekşi Sözlük'e erişilemedi.",
-      "ekşi sözlük'e erişilemedi", 
+      "Ekşi Sözlük'e erişilemedi.", 
       0, 0, 0);
   }
   finishErrorLogin = (banSource, banMode) => {
     this.#finish(banSource, banMode,
       "Ekşi Sözlük hesabınıza giriş yapmanız gerekiyor.",
-      "giriş yapılmadı", 
+      "Giriş yapılmadı", 
       0, 0, 0);
   }
   finishErrorNoAccount = (banSource, banMode) => {
     this.#finish(banSource, banMode,
       "Engellenecek yazar listesi boş.",
-      "yazar listesi boş", 
+      "Yazar listesi boş", 
       0, 0, 0);
   }
   finishErrorEarlyStop = (banSource, banMode) => {
     this.#finish(banSource, banMode,
       "",
-      "iptal edildi", 
+      "İptal edildi", 
       0, 0, 0);
   }
   finishSuccess = (banSource, banMode, successfulAction, performedAction, plannedAction) => {
     this.#finish(banSource, banMode,
       "İşlem tamamlandı.",
-      "yok", 
+      "Tamamlandı", 
       successfulAction, performedAction, plannedAction);
   }
 
@@ -156,7 +156,7 @@ class NotificationHandler
   }
   notifyCooldown = (remainingTimeInSec) => {
     this.#sendMessage(enums.NotificationType.COOLDOWN,
-      `COOLDOWN: API limiti aşıldı. (dakikada 6 engel limiti bekleniyor) <a target='_blank' href='${config.EksiSozlukURL}/eksi-sozlukun-yazar-engellemeye-sinir-getirmesi--7547420' style='color:red;'>Bu ne demek?</a>`,
+      `COOLDOWN: API limiti aşıldı. (dakikada 12 engel limiti bekleniyor) <a target='_blank' href='${config.EksiSozlukURL}/eksi-sozlukun-yazar-engellemeye-sinir-getirmesi--7547420' style='color:red;'>Bu ne demek?</a>`,
       "", [], null, 0, 0, 0, remainingTimeInSec);
   }
   notifyOngoing = (successfulAction, performedAction, plannedAction) => {
@@ -223,14 +223,14 @@ class NotificationHandler
   }
 
   notifyMigrationAlreadyRunning = () => {
-    this.sendMigrationMessage('error', "Taşıma işlemi zaten चल रहा है.", "Zaten चल रहा है", 0, 0, 0, 0, 0);
+    this.sendMigrationMessage('error', "Taşıma işlemi devam ediyor.", "Zaten devam ediyor", 0, 0, 0, 0, 0);
     // Also consider a simple alert or console log as backup if notification page isn't guaranteed
-    alert("Engellenenleri Sessize Alma işlemi zaten चल रहा है.");
+    alert("Engellenenleri Sessize Alma işlemi zaten devam ediyor.");
   }
 
   notifyMigrationBlockedByQueue = () => {
-    this.sendMigrationMessage('error', "Başka bir işlem (örn. FAV engelleme) चल रहा है.", "Kuyruk meşgul", 0, 0, 0, 0, 0);
-    alert("Başka bir işlem (örn. FAV engelleme) चल रहा iken taşıma işlemi başlatılamaz.");
+    this.sendMigrationMessage('error', "Başka bir işlem (örn. FAV engelleme) devam ediyor.", "Kuyruk meşgul", 0, 0, 0, 0, 0);
+    alert("Başka bir işlem (örn. FAV engelleme) devam ederken taşıma işlemi başlatılamaz.");
   }
 
   notifyMigrationStatus = (statusText) => {
