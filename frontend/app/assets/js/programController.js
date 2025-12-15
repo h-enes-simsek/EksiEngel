@@ -228,13 +228,7 @@ class ProgramController
       const totalBlockedUsers = scrapeResult.count;
 
       if (blockedUsers.length === 0) {
-        log.info("progctrl", "No blocked users found.");
-        chrome.notifications.create({
-          type: 'basic',
-          iconUrl: chrome.runtime.getURL('assets/img/eksiengel48.png'),
-          title: 'EksiEngel',
-          message: 'No blocked users found.'
-        });
+        log.info("progctrl", "No blocked users found - completing with 0 results, queue will continue with next item");
         this._migrationInProgress = false;
         notificationHandler.notify("Engellenen kullanıcı bulunamadı.");
         return;
@@ -611,7 +605,7 @@ class ProgramController
       const usersToProcess = Array.from(combinedUsersMap.values());
 
       if (usersToProcess.length === 0) {
-        log.info("progctrl", "No blocked or muted users found to process titles for.");
+        log.info("progctrl", "No blocked or muted users found to process titles for - completing with 0 results, queue will continue with next item");
         notificationHandler.notify("Başlıkları işlenecek engellenmiş veya sessize alınmış kullanıcı bulunamadı.");
         return;
       }
@@ -769,6 +763,7 @@ class ProgramController
       if (!scrapeResult.success) {
         log.err("progctrl", `Failed to fetch list of users with blocked titles: ${scrapeResult.error}`);
         notificationHandler.notify(`Başlıkları engellenen kullanıcıların listesi getirilemedi: ${scrapeResult.error}`);
+        this._blockTitlesInProgress = false; // Reset flag before returning
         return;
       }
 
@@ -776,8 +771,9 @@ class ProgramController
       const totalCount = scrapeResult.count;
 
       if (usersWithBlockedTitles.length === 0) {
-        log.info("progctrl", "No users with blocked titles found.");
+        log.info("progctrl", "No users with blocked titles found - completing with 0 results, queue will continue with next item");
         notificationHandler.notify("Başlıkları engellenen kullanıcı bulunamadı.");
+        this._blockTitlesInProgress = false; // Reset flag before returning
         return;
       }
 log.info("progctrl", `Successfully fetched list of ${totalCount} users with blocked titles. Starting unblocking process...`);

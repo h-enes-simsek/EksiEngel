@@ -601,7 +601,8 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
     if(authorNameList.length === 0)
     {
       notificationHandler.finishErrorNoAccount(banSource, banMode, processQueue.currentItemMetadata);
-      log.err("bg", "Program has been finished (finishErrorNoAccount)");
+      log.info("bg", "No users found in LIST operation - completing with 0 results, queue will continue with next item");
+      // Complete this task as finished (not error) and let queue continue
       return;
     }
     notificationHandler.notifyOngoing(0, 0, authorNameList.length);
@@ -647,7 +648,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
     if(scrapedRelations.size === 0)
     {
       notificationHandler.finishErrorNoAccount(banSource, banMode, processQueue.currentItemMetadata);
-      log.err("bg", "Program has been finished (error_NoAccount)");
+      log.info("bg", "No users found in FAV operation - completing with 0 results, queue will continue with next item");
       return;
     }
     if(config.enableAnalysisBeforeOperation && config.enableProtectFollowedUsers && banMode == enums.BanMode.BAN)
@@ -677,7 +678,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
     if(scrapedRelations.size === 0)
     {
       notificationHandler.finishErrorNoAccount(banSource, banMode, processQueue.currentItemMetadata);
-      log.err("bg", "Program has been finished (error_NoAccount after analysis)");
+      log.info("bg", "No users found in FAV operation after analysis - completing with 0 results, queue will continue with next item");
       return;
     }
     notificationHandler.notifyScrapeIDs();
@@ -702,7 +703,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
     if(scrapedRelations.size === 0)
     {
       notificationHandler.finishErrorNoAccount(banSource, banMode, processQueue.currentItemMetadata);
-      log.err("bg", "Program has been finished (error_NoAccount after fetching IDs)");
+      log.info("bg", "No users found in FAV operation after fetching IDs - completing with 0 results, queue will continue with next item");
       return;
     }
     notificationHandler.notifyOngoing(0, 0, scrapedRelations.size);
@@ -738,7 +739,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
     if(scrapedRelations.size === 0)
     {
       notificationHandler.finishErrorNoAccount(banSource, banMode, processQueue.currentItemMetadata);
-      log.err("bg", "Program has been finished (error_NoAccount - followers)");
+      log.info("bg", "No users found in FOLLOW operation - completing with 0 results, queue will continue with next item");
       return;
     }
     if(config.enableAnalysisBeforeOperation && config.enableProtectFollowedUsers && banMode == enums.BanMode.BAN)
@@ -769,7 +770,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
     if(scrapedRelations.size === 0)
     {
       notificationHandler.finishErrorNoAccount(banSource, banMode, processQueue.currentItemMetadata);
-      log.err("bg", "Program has been finished (error_NoAccount - followers after analysis)");
+      log.info("bg", "No users found in FOLLOW operation after analysis - completing with 0 results, queue will continue with next item");
       return;
     }
     authorNameList = Array.from(scrapedRelations, ([name, value]) => name);
@@ -812,7 +813,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
     if(scrapedRelations.size === 0)
     {
       notificationHandler.finishErrorNoAccount(banSource, banMode, processQueue.currentItemMetadata);
-      log.err("bg", "Program has been finished (error_NoAccount - title authors)");
+      log.info("bg", "No users found in TITLE operation - completing with 0 results, queue will continue with next item");
       return;
     }
     if(config.enableAnalysisBeforeOperation && config.enableProtectFollowedUsers && banMode == enums.BanMode.BAN)
@@ -843,7 +844,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
     if(scrapedRelations.size === 0)
     {
       notificationHandler.finishErrorNoAccount(banSource, banMode, processQueue.currentItemMetadata);
-      log.err("bg", "Program has been finished (error_NoAccount - title authors after analysis)");
+      log.info("bg", "No users found in TITLE operation after analysis - completing with 0 results, queue will continue with next item");
       return;
     }
     authorNameList = Array.from(scrapedRelations, ([name, value]) => name);

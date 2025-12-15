@@ -225,13 +225,24 @@ class AutoQueue extends Queue
   {
     // If a promise from this queue is already pending, don't start another.
     // If no promise from this queue is pending, but a major programController task is active, also wait.
-    if (this._pendingPromise) return false;
-    if (programController && programController.isActive) return false;
+    if (this._pendingPromise) {
+      console.log("Queue: Skipping dequeue - promise already pending");
+      return false;
+    }
+    if (programController && programController.isActive) {
+      console.log("Queue: Skipping dequeue - programController is active");
+      return false;
+    }
 
     let item = super.dequeue();
 
-    if (!item) return false;
+    if (!item) {
+      console.log("Queue: No item to dequeue");
+      return false;
+    }
 
+    console.log(`Queue: Processing item, queue size before: ${this._items.length + 1}`);
+    
     try {
       this._pendingPromise = true;
 
@@ -251,7 +262,13 @@ class AutoQueue extends Queue
       item.reject(e);
     } finally {
       this._currentItemMetadata = null; // Clear metadata after completion
-      this.dequeue();
+      console.log(`Queue: Finished processing item, queue size after: ${this._items.length}, continuing to next item...`);
+      
+      // Always try to process the next item, regardless of success/failure
+      // Use setTimeout to avoid potential stack overflow and ensure clean execution context
+      setTimeout(() => {
+        this.dequeue();
+      }, 0);
     }
 
     return true;
