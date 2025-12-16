@@ -337,7 +337,6 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
     
     wrapperProcessHandler.metadata = {
       actionDescription: getActionDescription(obj.banSource, obj),
-      operationNotes: getOperationNotes(obj.banSource, obj),
       requiresUserInteraction: false,
       targetTypes: obj.targetType ? [obj.targetType] : [],
       sourceEntry: obj.entryUrl || null,
@@ -365,25 +364,6 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
 
 function getEstimatedUserCount(banSource, obj) {
   return 0;
-}
-
-function getOperationNotes(banSource, obj) {
-  switch (banSource) {
-    case enums.BanSource.SINGLE:
-      return `Tek kullanıcı ${obj.banMode === enums.BanMode.BAN ? 'engelleme' : 'engel kaldırma'}`;
-    case enums.BanSource.FAV:
-      return "Entry'yi favorileyen kullanıcıları engelle";
-    case enums.BanSource.FOLLOW:
-      return `${obj.authorName} kullanıcısının takipçilerini engelle`;
-    case enums.BanSource.LIST:
-      return "Kullanıcı listesinden toplu engelleme";
-    case enums.BanSource.TITLE:
-      return `${obj.titleName} başlığındaki yazarları engelle`;
-    case enums.BanSource.UNDOBANALL:
-      return "Tüm engelleri ve sessizlikleri kaldır";
-    default:
-      return "Kullanıcı engelleme işlemi";
-  }
 }
 
 function getActionDescription(banSource, obj) {

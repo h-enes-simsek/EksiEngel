@@ -598,21 +598,8 @@ function insertCompletedProcessesTable(banSource, successfulAction, performedAct
   cell1.innerHTML = d.getHours() + ":" + d.getMinutes();
   cell2.innerHTML = banSource;
   
-  let description = "Toplu işlem";
-  
-  if (operationMetadata) {
-    if (operationMetadata.actionDescription) {
-      description = operationMetadata.actionDescription;
-    }
-    else if (operationMetadata.operationNotes) {
-      description = operationMetadata.operationNotes;
-    }
-    else {
-      description = generateDescriptionFromMetadataForCompleted(banSource, operationMetadata);
-    }
-  } else {
-    description = generateDescriptionFromMetadataForCompleted(banSource, {});
-  }
+  // Always use unified description for consistency across all sections
+  let description = generateDescriptionFromMetadataForCompleted(banSource, operationMetadata || {});
   
   cell3.innerHTML = description;
   cell3.title = `İşlem detayları: ${banSource}`;

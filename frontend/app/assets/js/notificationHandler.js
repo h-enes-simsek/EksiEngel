@@ -105,13 +105,8 @@ class NotificationHandler
     let statusText = "İşlem devam ediyor.";
     
     if (operationMetadata) {
-      if (operationMetadata.actionDescription) {
-        statusText = operationMetadata.actionDescription;
-      } else if (operationMetadata.operationNotes) {
-        statusText = operationMetadata.operationNotes;
-      } else {
-        statusText = this.#generateDescriptionFromMetadata(operationMetadata);
-      }
+      // Always use unified description for consistency across all sections
+      statusText = this.#generateDescriptionFromMetadata(operationMetadata);
     }
     
     this.#sendMessage(enums.NotificationType.ONGOING, statusText, "", [], null, successfulAction, performedAction, plannedAction, 0);
