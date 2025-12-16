@@ -3,7 +3,7 @@ import * as utils from './utils.js';
 import { commHandler } from './commHandler.js';
 import { storageHandler } from './storageHandler.js';
 import { notificationHandler } from './notificationHandler.js';
-import { generateUnifiedDescription } from './queue.js';
+import { generateUnifiedDescription, processQueue } from './queue.js';
 
 let mutedUserCountSpan;
 let blockedUserCountSpan;
@@ -14,13 +14,13 @@ let exportBlockedListCSVButton;
 let buttonStatusDiv;
 
 document.addEventListener('DOMContentLoaded', async function () {
-  initializeNotificationPage();
+  await initializeNotificationPage();
   setupEarlyStopButton();
   setupActionButtons();
-  initializeRealTimeFeatures();
+  await initializeRealTimeFeatures();
 });
 
-function initializeNotificationPage() {
+async function initializeNotificationPage() {
   console.log("🚀 Initializing EksiEngel Plus Notification Page");
   
   notificationHandler.updateStatusIndicator('inactive');
@@ -35,6 +35,56 @@ function initializeNotificationPage() {
   exportMutedListCSVButton = document.getElementById('exportMutedList');
   refreshBlockedListButton = document.getElementById('refreshBlockedList');
   exportBlockedListCSVButton = document.getElementById('exportBlockedListCSV');
+  
+  await restorePersistedData();
+  await updateStorageUsageDisplay();
+}
+
+async function restorePersistedData() {
+  try {
+    notificationHandler.updateButtonStatus("Restoring queue and completed items...", false, 0);
+    
+    await processQueue.restoreFromStorage();
+    
+    const completedItems = await storageHandler.getCompletedItems();
+    if (completedItems && completedItems.length > 0) {
+      for (const item of completedItems) {
+        insertCompletedProcessesTable(
+          item.banSource,
+          item.successfulAction,
+          item.performedAction,
+          item.plannedAction,
+          item.errorStatus,
+          item.operationMetadata || null
+        );
+      }
+    }
+    
+    notificationHandler.updateTableCounts();
+    notificationHandler.updateButtonStatus("Queue and completed items restored successfully", false, 3000);
+  } catch (error) {
+    console.warn('Failed to restore persisted data:', error);
+    notificationHandler.updateButtonStatus("Failed to restore some data", false, 3000);
+  }
+}
+
+async function updateStorageUsageDisplay() {
+  try {
+    const bytesInUse = await storageHandler.getStorageUsage();
+    const kbInUse = Math.round(bytesInUse / 1024);
+    const mbInUse = (bytesInUse / (1024 * 1024)).toFixed(2);
+    
+    const storageUsageSpan = document.getElementById('storageUsage');
+    if (storageUsageSpan) {
+      storageUsageSpan.textContent = `${mbInUse} MB (${kbInUse} KB)`;
+    }
+  } catch (error) {
+    console.warn('Failed to get storage usage:', error);
+    const storageUsageSpan = document.getElementById('storageUsage');
+    if (storageUsageSpan) {
+      storageUsageSpan.textContent = "Hata";
+    }
+  }
 }
 
 function setupEarlyStopButton() {
@@ -51,12 +101,10 @@ async function handleEarlyStop() {
     return;
   }
   
-  // Update button state immediately
   earlyStopButton.innerHTML = '<span class="btn-icon">⏳</span><span class="btn-text">Durduruluyor...</span>';
   earlyStopButton.disabled = true;
   
   try {
-    // Send early stop message with improved acknowledgment
     const response = await sendEarlyStopWithRetry();
     
     if (response && response.status === 'ok') {
@@ -70,7 +118,6 @@ async function handleEarlyStop() {
       
       notificationHandler.showStatusMessage("İşlem durduruluyor...", "info");
       
-      // Reset button after a short delay to allow for processing
       setTimeout(() => {
         const btn = document.getElementById("earlyStop");
         if (btn) {
@@ -85,7 +132,6 @@ async function handleEarlyStop() {
   } catch (err) {
     console.warn("notification.js: Error sending earlyStop message:", err.message);
     
-    // Show appropriate message based on error type
     let errorMessage = "Durdurma işleminde hata oluştu: ";
     if (err.message.includes("Timeout")) {
       errorMessage += "İşlem zaman aşımına uğradı. Arka plan betiği yanıt vermiyor.";
@@ -97,7 +143,6 @@ async function handleEarlyStop() {
     
     notificationHandler.showStatusMessage(errorMessage, "error");
     
-    // Reset button state
     earlyStopButton.innerHTML = '<span class="btn-icon">🛑</span><span class="btn-text">Erken Durdur</span>';
     earlyStopButton.disabled = false;
     notificationHandler.updateStatusIndicator('inactive');
@@ -128,12 +173,10 @@ async function sendEarlyStopWithRetry(maxRetries = 3, timeoutMs = 5000) {
     } catch (error) {
       lastError = error;
       
-      // If it's the last attempt, throw the error
       if (attempt === maxRetries) {
         throw lastError;
       }
       
-      // Wait before retrying
       await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
     }
   }
@@ -156,6 +199,7 @@ function setupActionButtons() {
   document.getElementById('exportBlockedListCSV')?.addEventListener('click', () => notificationHandler.handleExportBlockedList());
   
   document.getElementById('openFaq')?.addEventListener('click', handleOpenFaq);
+  document.getElementById('clearStoredData')?.addEventListener('click', handleClearStoredData);
 }
 
 function initializeRealTimeFeatures() {
@@ -171,6 +215,42 @@ function initializeRealTimeFeatures() {
   });
   
   notificationHandler.updateRemainingAction();
+}
+
+async function handleClearStoredData() {
+  if (!confirm("Saklanan kuyruk ve tamamlanan işlem verilerini temizlemek istediğinizden emin misiniz? Bu işlem geri alınamaz.")) {
+    return;
+  }
+  
+  const clearButton = document.getElementById('clearStoredData');
+  if (clearButton) {
+    clearButton.disabled = true;
+    clearButton.innerHTML = '<span class="btn-icon">⏳</span><span class="btn-text">Temizleniyor...</span>';
+  }
+  
+  try {
+    await storageHandler.clearPersistedData();
+    
+    await processQueue.restoreFromStorage();
+    
+    const completedTable = document.getElementById("completedProcesses").getElementsByTagName('tbody')[0];
+    while (completedTable.firstChild) {
+      completedTable.removeChild(completedTable.firstChild);
+    }
+    
+    notificationHandler.updateTableCounts();
+    await updateStorageUsageDisplay();
+    
+    notificationHandler.updateButtonStatus("Saklanan veriler temizlendi", false, 3000);
+  } catch (error) {
+    console.error('Failed to clear stored data:', error);
+    notificationHandler.updateButtonStatus("Veriler temizlenirken hata oluştu: " + error.message, true, 5000);
+  } finally {
+    if (clearButton) {
+      clearButton.disabled = false;
+      clearButton.innerHTML = '<span class="btn-icon">🗑️</span><span class="btn-text">Saklanan Verileri Temizle</span>';
+    }
+  }
 }
 
 function setupSmoothScrolling() {
@@ -638,7 +718,7 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
   }
 });
 
-function insertCompletedProcessesTable(banSource, successfulAction, performedAction, plannedAction, errorStatus, operationMetadata = null) {
+async function insertCompletedProcessesTable(banSource, successfulAction, performedAction, plannedAction, errorStatus, operationMetadata = null) {
   let table = document.getElementById("completedProcesses").getElementsByTagName('tbody')[0];
   let row = table.insertRow(0);
   let cell1 = row.insertCell(0);
@@ -651,7 +731,6 @@ function insertCompletedProcessesTable(banSource, successfulAction, performedAct
   cell1.innerHTML = d.getHours() + ":" + d.getMinutes();
   cell2.innerHTML = banSource;
   
-  // Always use unified description for consistency across all sections
   let description = generateDescriptionFromMetadataForCompleted(banSource, operationMetadata || {});
   
   cell3.innerHTML = description;
@@ -660,11 +739,25 @@ function insertCompletedProcessesTable(banSource, successfulAction, performedAct
   cell4.innerHTML = performedAction;
   cell5.innerHTML = successfulAction;
   cell6.innerHTML = errorStatus;
+  
+  const completedItem = {
+    banSource,
+    successfulAction,
+    performedAction,
+    plannedAction,
+    errorStatus,
+    operationMetadata,
+    timestamp: d.getTime()
+  };
+  
+  try {
+    await storageHandler.addCompletedItem(completedItem);
+  } catch (error) {
+    console.warn('Failed to save completed item to storage:', error);
+  }
 }
 
 function generateDescriptionFromMetadataForCompleted(banSource, metadata = {}) {
-  // Use unified description generator for consistency across all sections
-  // Add banMode to metadata if it's missing
   const updatedMetadata = { ...metadata };
   if (!updatedMetadata.banMode) {
     updatedMetadata.banMode = banSource.includes('UN') ? enums.BanMode.UNDOBAN : enums.BanMode.BAN;

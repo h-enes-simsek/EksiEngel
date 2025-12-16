@@ -1,5 +1,6 @@
 import { programController } from './programController.js';
 import * as enums from './enums.js';
+import { storageHandler } from './storageHandler.js';
 
 class Queue {
   constructor() { this._items = []; }
@@ -143,6 +144,37 @@ class AutoQueue extends Queue {
   constructor() {
     super();
     this._pendingPromise = false;
+    this._isInitialized = false;
+    this._initializePersistedQueue();
+  }
+  
+  async _initializePersistedQueue() {
+    try {
+      const persistedItems = await storageHandler.getQueueData();
+      if (persistedItems && Array.isArray(persistedItems)) {
+        this._items = persistedItems;
+        console.log(`Queue: Restored ${this._items.length} items from storage`);
+      }
+    } catch (error) {
+      console.warn('Queue: Failed to restore queue from storage:', error);
+    } finally {
+      this._isInitialized = true;
+    }
+  }
+  
+  async _saveQueueState() {
+    if (!this._isInitialized) return;
+    
+    try {
+      const itemsData = this._items.map(item => ({
+        action: item.action,
+        resolve: undefined,
+        reject: undefined
+      }));
+      await storageHandler.saveQueueData(itemsData);
+    } catch (error) {
+      console.warn('Queue: Failed to save queue state:', error);
+    }
   }
   
   get item() { return this._items; }
@@ -187,13 +219,15 @@ class AutoQueue extends Queue {
   
   get isRunning() { return this._pendingPromise; }
   
-  clear() {
+  async clear() {
     this._items = [];
+    await this._saveQueueState();
   }
 
-  enqueue(action) {
-    return new Promise((resolve, reject) => {
+  async enqueue(action) {
+    return new Promise(async (resolve, reject) => {
       super.enqueue({ action, resolve, reject });
+      await this._saveQueueState();
       this.dequeue();
     });
   }
@@ -236,6 +270,7 @@ class AutoQueue extends Queue {
     } finally {
       this._currentItemMetadata = null;
       console.log(`Queue: Finished processing item, queue size after: ${this._items.length}, continuing to next item...`);
+      await this._saveQueueState();
       
       setTimeout(() => {
         this.dequeue();
@@ -247,6 +282,14 @@ class AutoQueue extends Queue {
 
   get currentItemMetadata() {
     return this._currentItemMetadata || null;
+  }
+
+  async restoreFromStorage() {
+    await this._initializePersistedQueue();
+  }
+
+  async forceSave() {
+    await this._saveQueueState();
   }
 }
 

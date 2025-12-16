@@ -14,7 +14,7 @@ class StorageHandler {
       chrome.storage.local.set({ [MUTED_USER_LIST_KEY]: usernamesArray }, () => {
         if (chrome.runtime.lastError) {
           log.err('storage', `Error saving muted user list: ${chrome.runtime.lastError.message}`);
-          reject(chrome.runtime.lastError);
+          reject(this._handleStorageError(chrome.runtime.lastError));
         } else {
           log.info('storage', `Saved ${usernamesArray.length} muted usernames.`);
           resolve();
@@ -57,7 +57,7 @@ class StorageHandler {
       chrome.storage.local.set({ 'mutedUserCount': count }, () => {
         if (chrome.runtime.lastError) {
           log.err('storage', `Error saving muted user count: ${chrome.runtime.lastError.message}`);
-          reject(chrome.runtime.lastError);
+          reject(this._handleStorageError(chrome.runtime.lastError));
         } else {
           log.info('storage', `Saved muted user count: ${count}.`);
           resolve();
@@ -114,7 +114,7 @@ class StorageHandler {
       chrome.storage.local.set({ 'blockedUserList': usernamesArray }, () => {
         if (chrome.runtime.lastError) {
           log.err('storage', `Error saving blocked user list: ${chrome.runtime.lastError.message}`);
-          reject(chrome.runtime.lastError);
+          reject(this._handleStorageError(chrome.runtime.lastError));
         } else {
           log.info('storage', `Saved ${usernamesArray.length} blocked usernames.`);
           resolve();
@@ -157,7 +157,7 @@ class StorageHandler {
       chrome.storage.local.set({ 'blockedUserCount': count }, () => {
         if (chrome.runtime.lastError) {
           log.err('storage', `Error saving blocked user count: ${chrome.runtime.lastError.message}`);
-          reject(chrome.runtime.lastError);
+          reject(this._handleStorageError(chrome.runtime.lastError));
         } else {
           log.info('storage', `Saved blocked user count: ${count}.`);
           resolve();
@@ -241,6 +241,138 @@ class StorageHandler {
       log.err('storage', `Error removing muted users: ${error.message}`);
       throw error; // Re-throw the error for the caller to handle
     }
+  }
+
+  _handleStorageError(error) {
+    if (error.message.includes('QUOTA_BYTES') || error.message.includes('quota')) {
+      return new Error('Storage quota exceeded. Please clear some data and try again.');
+    }
+    if (error.message.includes('INVALID')) {
+      return new Error('Invalid data format. Data may be corrupted.');
+    }
+    return error;
+  }
+
+  // Queue and completed items persistence methods
+  async saveQueueData(queueItems) {
+    return new Promise((resolve, reject) => {
+      chrome.storage.local.set({ 
+        queueData: {
+          version: '1.0',
+          timestamp: Date.now(),
+          items: queueItems
+        }
+      }, () => {
+        if (chrome.runtime.lastError) {
+          log.err('storage', `Error saving queue data: ${chrome.runtime.lastError.message}`);
+          reject(this._handleStorageError(chrome.runtime.lastError));
+        } else {
+          log.info('storage', `Saved queue data with ${queueItems.length} items.`);
+          resolve();
+        }
+      });
+    });
+  }
+
+  async getQueueData() {
+    return new Promise((resolve) => {
+      chrome.storage.local.get(['queueData'], (result) => {
+        if (chrome.runtime.lastError) {
+          log.err('storage', `Error getting queue data: ${chrome.runtime.lastError.message}`);
+          resolve(null);
+        } else {
+          const queueData = result.queueData;
+          if (queueData && queueData.items && Array.isArray(queueData.items)) {
+            log.info('storage', `Retrieved queue data with ${queueData.items.length} items.`);
+            resolve(queueData.items);
+          } else {
+            log.info('storage', 'No queue data found in storage.');
+            resolve(null);
+          }
+        }
+      });
+    });
+  }
+
+  async saveCompletedItems(completedItems) {
+    return new Promise((resolve, reject) => {
+      const MAX_COMPLETED_ITEMS = 100;
+      const trimmedItems = completedItems.slice(-MAX_COMPLETED_ITEMS);
+      
+      chrome.storage.local.set({ 
+        completedData: {
+          version: '1.0',
+          timestamp: Date.now(),
+          items: trimmedItems
+        }
+      }, () => {
+        if (chrome.runtime.lastError) {
+          log.err('storage', `Error saving completed items: ${chrome.runtime.lastError.message}`);
+          reject(this._handleStorageError(chrome.runtime.lastError));
+        } else {
+          log.info('storage', `Saved completed data with ${trimmedItems.length} items.`);
+          resolve();
+        }
+      });
+    });
+  }
+
+  async getCompletedItems() {
+    return new Promise((resolve) => {
+      chrome.storage.local.get(['completedData'], (result) => {
+        if (chrome.runtime.lastError) {
+          log.err('storage', `Error getting completed items: ${chrome.runtime.lastError.message}`);
+          resolve([]);
+        } else {
+          const completedData = result.completedData;
+          if (completedData && completedData.items && Array.isArray(completedData.items)) {
+            log.info('storage', `Retrieved completed data with ${completedData.items.length} items.`);
+            resolve(completedData.items);
+          } else {
+            log.info('storage', 'No completed data found in storage.');
+            resolve([]);
+          }
+        }
+      });
+    });
+  }
+
+  async addCompletedItem(completedItem) {
+    try {
+      const existingItems = await this.getCompletedItems();
+      existingItems.push(completedItem);
+      await this.saveCompletedItems(existingItems);
+    } catch (error) {
+      log.warn('storage', `Failed to save completed item: ${error.message}`);
+      throw error;
+    }
+  }
+
+  async clearPersistedData() {
+    return new Promise((resolve, reject) => {
+      chrome.storage.local.remove(['queueData', 'completedData'], () => {
+        if (chrome.runtime.lastError) {
+          log.err('storage', `Error clearing persisted data: ${chrome.runtime.lastError.message}`);
+          reject(this._handleStorageError(chrome.runtime.lastError));
+        } else {
+          log.info('storage', 'Cleared persisted queue and completed data.');
+          resolve();
+        }
+      });
+    });
+  }
+
+  async getStorageUsage() {
+    return new Promise((resolve) => {
+      chrome.storage.local.getBytesInUse(null, (bytesInUse) => {
+        if (chrome.runtime.lastError) {
+          log.err('storage', `Error getting storage usage: ${chrome.runtime.lastError.message}`);
+          resolve(0);
+        } else {
+          resolve(bytesInUse);
+        }
+      });
+    });
   }
 }
 
