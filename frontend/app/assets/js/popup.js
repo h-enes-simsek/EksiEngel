@@ -212,26 +212,35 @@ function handleRefreshBlockedList() {
 }
 
 async function handleExportBlockedList() {
-  log.info("popup.js", "handleExportBlockedList triggered.");
-  log.info("popup.js", "Export blocked list button clicked.");
+  console.log("popup.js", "Export blocked list button clicked.");
+  const exportButton = document.getElementById('exportBlockedListCSV');
+  if (exportButton) exportButton.disabled = true;
 
-  if (exportBlockedListCSVButton) exportBlockedListCSVButton.disabled = true;
   updateStatus("Preparing export...", false, 0);
 
   try {
-    const usernames = await storageHandler.getBlockedUserList();
-    log.info("popup.js", `handleExportBlockedList: Retrieved ${usernames ? usernames.length : 0} usernames. Calling downloadCSV with listType 'blocked'.`);
+    // First try permanent storage
+    let usernames = await storageHandler.getBlockedUserList();
+    
+    // If no data in permanent storage, check temporary storage
+    if (!usernames || usernames.length === 0) {
+      const partialData = await storageHandler.getPartialBlockedUsers();
+      if (partialData && partialData.usernames) {
+        usernames = partialData.usernames;
+        updateStatus("Exporting partial list from early stop...", false);
+      }
+    }
+    
     if (usernames && usernames.length > 0) {
       downloadCSV(usernames, 'blocked');
     } else {
       updateStatus("No blocked user list found in storage to export.", true);
     }
   } catch (error) {
-    log.err("popup.js", "Error exporting blocked list:", error);
+    console.error("popup.js", "Error exporting blocked list:", error);
     updateStatus(`Error exporting: ${error.message || 'Unknown error'}`, true);
   } finally {
-    const currentCount = parseInt(blockedUserCountSpan.textContent) || 0;
-    if (exportBlockedListCSVButton) exportBlockedListCSVButton.disabled = currentCount === 0;
+    if (exportButton) exportButton.disabled = false;
   }
 }
 
