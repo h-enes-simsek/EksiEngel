@@ -719,6 +719,7 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
         const performedActionElement = document.getElementById("performedAction");
         const plannedActionElement = document.getElementById("plannedAction");
         const remainingActionElement = document.getElementById("remainingAction");
+        const currentOperationDescriptionElement = document.getElementById("currentOperationDescription");
         
         if (successfulActionElement) {
           successfulActionElement.textContent = notification.successfulAction || 0;
@@ -734,6 +735,14 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
           remainingActionElement.textContent = remaining;
         }
         
+        // UPDATE CURRENT OPERATION DESCRIPTION: Show the same description as in planned/completed operations
+        if (currentOperationDescriptionElement) {
+          const description = notification.statusText && notification.statusText !== "İşlem devam ediyor."
+            ? notification.statusText
+            : "İşlem devam ediyor";
+          currentOperationDescriptionElement.textContent = description;
+        }
+        
       } else if (notification.status === enums.NotificationType.FINISH) {
          if (progressBar) progressBar.style.width = "100%";
          if (progressBarText) progressBarText.innerHTML = "%100";
@@ -744,6 +753,7 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
          const performedActionElement = document.getElementById("performedAction");
          const plannedActionElement = document.getElementById("plannedAction");
          const remainingActionElement = document.getElementById("remainingAction");
+         const currentOperationDescriptionElement = document.getElementById("currentOperationDescription");
          
          if (successfulActionElement) {
            successfulActionElement.textContent = notification.successfulAction || 0;
@@ -758,6 +768,11 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
            remainingActionElement.textContent = 0; // All done
          }
          
+         // UPDATE CURRENT OPERATION DESCRIPTION: Show completion status
+         if (currentOperationDescriptionElement) {
+           currentOperationDescriptionElement.textContent = "İşlem tamamlandı";
+         }
+         
       } else {
          if (progressBar) progressBar.style.width = "0%";
          if (progressBarText) progressBarText.innerHTML = "";
@@ -768,11 +783,13 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
          const performedActionElement = document.getElementById("performedAction");
          const plannedActionElement = document.getElementById("plannedAction");
          const remainingActionElement = document.getElementById("remainingAction");
+         const currentOperationDescriptionElement = document.getElementById("currentOperationDescription");
          
          if (successfulActionElement) successfulActionElement.textContent = "0";
          if (performedActionElement) performedActionElement.textContent = "0";
          if (plannedActionElement) plannedActionElement.textContent = "0";
          if (remainingActionElement) remainingActionElement.textContent = "0";
+         if (currentOperationDescriptionElement) currentOperationDescriptionElement.textContent = "-";
       }
 
       if (notification.status === enums.NotificationType.FINISH && notification.completedProcess) {
@@ -998,86 +1015,108 @@ function insertCompletedProcessesTable(banSource, successfulAction, performedAct
   cell1.innerHTML = d.getHours() + ":" + d.getMinutes();
   cell2.innerHTML = banSource;
   
-  // Generate rich description using metadata if available, fallback to pattern matching
+  // Use the EXACT same description logic as the planned processes table
   let description = "Toplu işlem";
-  let descriptionDetails = "";
   
   if (operationMetadata) {
-    // Use rich metadata if available
+    // First priority: use actionDescription if available (matches planned processes)
     if (operationMetadata.actionDescription) {
       description = operationMetadata.actionDescription;
-    } else if (operationMetadata.operationNotes) {
-      description = operationMetadata.operationNotes;
-    } else {
-      // Fallback to metadata-based generation
-      if (operationMetadata.sourceTitle) {
-        description = `${banSource.includes('UN') ? 'Başlık Engel Kaldır' : 'Başlık Engelleme'} (${operationMetadata.sourceTitle})`;
-      } else if (operationMetadata.sourceAuthor) {
-        description = `${banSource.includes('UN') ? 'Takipçi Engel Kaldır' : 'Takipçileri Engelle'} (${operationMetadata.sourceAuthor})`;
-      } else if (operationMetadata.targetTypes && operationMetadata.targetTypes.length > 0) {
-        const targetNames = operationMetadata.targetTypes.map(type => {
-          switch (type) {
-            case enums.TargetType.USER: return 'Engelli';
-            case enums.TargetType.TITLE: return 'Başlık';
-            case enums.TargetType.MUTE: return 'Sessiz';
-            default: return type;
-          }
-        });
-        description = `Toplu İşlem (${targetNames.join(', ')})`;
-      }
     }
-    
-    // Add additional details to tooltip
-    if (operationMetadata.operationNotes && operationMetadata.actionDescription !== operationMetadata.operationNotes) {
-      descriptionDetails = operationMetadata.operationNotes;
+    // Second priority: use operationNotes if available
+    else if (operationMetadata.operationNotes) {
+      description = operationMetadata.operationNotes;
+    }
+    // Third priority: generate from metadata using EXACT same logic as planned processes
+    else {
+      description = generateDescriptionFromMetadataForCompleted(banSource, operationMetadata);
     }
   } else {
-    // Fallback to enhanced pattern matching
-    if (banSource.includes("FAV")) {
-      description = "Favori Edenleri Engelle";
-    } else if (banSource.includes("FOLLOW")) {
-      description = "Takipçileri Engelle";
-    } else if (banSource.includes("TITLE")) {
-      description = "Başlık Engelleme İşlemi";
-    } else if (banSource.includes("LIST")) {
-      description = "Listeden Toplu Engelleme";
-    } else if (banSource.includes("MUTED")) {
-      if (banSource.includes("BLOCK")) {
-        description = "Sessiz Kullanıcıları Engelle";
-      } else if (banSource.includes("REFRESH")) {
-        description = "Sessiz Listesi Yenile";
-      } else {
-        description = "Sessiz Kullanıcı İşlemi";
-      }
-    } else if (banSource.includes("BLOCKED")) {
-      if (banSource.includes("MUTED")) {
-        description = "Engelli/Sessiz Başlıkları Engelle";
-      } else if (banSource.includes("REFRESH")) {
-        description = "Engelli Listesi Yenile";
-      } else {
-        description = "Engelli Kullanıcı İşlemi";
-      }
-    } else if (banSource.includes("UNDO")) {
-      description = "Tüm Engelleri Kaldır";
-    } else if (banSource.includes("MIGRATE")) {
-      if (banSource.includes("BLOCKED")) {
-        description = "Engelli Kullanıcıları Sessize Al";
-      } else {
-        description = "Kullanıcı Taşıma İşlemi";
-      }
-    } else if (banSource.includes("REFRESH")) {
-      description = "Liste Yenileme İşlemi";
-    } else if (banSource.includes("SINGLE")) {
-      description = "Tek Kullanıcı Engelleme";
-    }
+    // Fallback: generate from banSource only using EXACT same logic as planned processes
+    description = generateDescriptionFromMetadataForCompleted(banSource, {});
   }
   
   cell3.innerHTML = description;
-  cell3.title = descriptionDetails ? `İşlem detayları: ${banSource}\n${descriptionDetails}` : `İşlem detayları: ${banSource}`;
+  cell3.title = `İşlem detayları: ${banSource}`;
   
   cell4.innerHTML = performedAction;
   cell5.innerHTML = successfulAction;
   cell6.innerHTML = errorStatus;
+}
+
+// Helper function to generate description using EXACT same logic as planned processes
+function generateDescriptionFromMetadataForCompleted(banSource, metadata = {}) {
+  // Use EXACT same logic as the planned processes function
+  const { targetTypes = [], sourceEntry, sourceAuthor, sourceTitle, sourceList, timeFilter } = metadata;
+  
+  let baseDescription = "";
+  let operationType = banSource.includes('UN') ? "Engel Kaldır" : "Engelle";
+  
+  switch (banSource) {
+    case enums.BanSource.SINGLE:
+      baseDescription = `Tek Kullanıcı ${operationType}`;
+      if (targetTypes && targetTypes.length > 0) {
+        const targets = targetTypes.map(t =>
+          t === enums.TargetType.USER ? "Kullanıcı" :
+          t === enums.TargetType.TITLE ? "Başlık" : "Sessiz"
+        ).join(", ");
+        baseDescription += ` (${targets})`;
+      }
+      break;
+    case enums.BanSource.FAV:
+      baseDescription = `Favori Edenleri ${operationType}`;
+      if (sourceEntry) {
+        baseDescription += " (Entry)";
+      }
+      break;
+    case enums.BanSource.FOLLOW:
+      baseDescription = `Takipçileri ${operationType}`;
+      if (sourceAuthor) {
+        baseDescription += ` (${sourceAuthor})`;
+      }
+      break;
+    case enums.BanSource.LIST:
+      baseDescription = `Listeden ${operationType}`;
+      if (sourceList && sourceList.length > 0) {
+        baseDescription += ` (${sourceList.length} kullanıcı)`;
+      }
+      break;
+    case enums.BanSource.TITLE:
+      baseDescription = `Başlık ${operationType}`;
+      if (sourceTitle) {
+        baseDescription += ` (${sourceTitle})`;
+      }
+      if (timeFilter) {
+        const timeDesc = timeFilter === enums.TimeSpecifier.LAST_24_H ? "24s" :
+                        timeFilter === enums.TimeSpecifier.LAST_1_W ? "1h" :
+                        timeFilter === enums.TimeSpecifier.LAST_1_M ? "1a" :
+                        timeFilter === enums.TimeSpecifier.LAST_3_M ? "3a" : "Tümü";
+        baseDescription += ` [${timeDesc}]`;
+      }
+      break;
+    case enums.BanSource.UNDOBANALL:
+      baseDescription = "Tüm Engelleri Kaldır";
+      break;
+    case enums.BanSource.MIGRATE_BLOCKED_TO_MUTED:
+      baseDescription = "Engelli Kullanıcıları Sessize al";
+      break;
+    case enums.BanSource.BLOCK_MUTED_USERS:
+      baseDescription = "Sessiz Kullanıcıları Engelle";
+      break;
+    case enums.BanSource.BLOCKED_MUTED_TITLES:
+      baseDescription = "Engelli/Sessiz Başlıkları Engelle";
+      break;
+    case enums.BanSource.REFRESH_MUTED_LIST:
+      baseDescription = "Sessiz Listesi Yenile";
+      break;
+    case enums.BanSource.REFRESH_BLOCKED_LIST:
+      baseDescription = "Engelli Listesi Yenile";
+      break;
+    default:
+      baseDescription = `${operationType} İşlemi`;
+  }
+  
+  return baseDescription;
 }
 
 function updatePlannedProcessesTable(plannedProcesses) {
