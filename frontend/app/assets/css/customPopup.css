@@ -1,149 +1,57 @@
-/* Styles for the popup.html */
-
 body {
-  width: 350px; /* Reduced body width */
-  font-family: sans-serif; /* Basic font */
-  padding: 5px; /* Added padding to body */
-  box-sizing: border-box; /* Include padding in width */
+  width: 350px;
+  font-family: sans-serif;
+  padding: 5px;
+  box-sizing: border-box;
 }
 
 #title {
   text-align: center;
   font-family: 'Montserrat', sans-serif;
-  font-size: 20px; /* Further reduced font size */
-  margin-bottom: 5px; /* Adjusted margin */
-  margin-top: 0; /* Remove top margin */
+  font-size: 20px;
+  margin-bottom: 5px;
+  margin-top: 0;
 }
 
 img {
   display: block;
-  margin: 0 auto 8px auto; /* Adjusted margin */
-  height: 48px; /* Reduced image size */
-  width: 48px; /* Reduced image size */
+  margin: 0 auto 8px auto;
+  height: 48px;
+  width: 48px;
 }
 
 .button-section {
-  margin-bottom: 8px; /* Adjusted space between button groups */
-  text-align: center; /* Center buttons within the section */
+  margin-bottom: 8px;
+  text-align: center;
 }
 
-.button-section button.btn-green-candy {
-  margin: 2px 0; /* Keep vertical margin, remove auto for horizontal */
-  padding: 6px 10px !important; /* Reduced padding */
+.button-section button {
+  margin: 2px 0;
+  padding: 6px 10px;
   cursor: pointer;
-  font-size: 13px; /* Reduced font size */
+  font-size: 13px;
   border-radius: 4px;
   transition: background-color 0.2s ease;
-  background-color: #4CAF50; /* Green */
-  color: #000000; /* Black */
-  border: 1px solid #388E3C; /* Dark Green */
-  width: 100%; /* Make buttons fill the width */
-  box-sizing: border-box; /* Include padding and border in width */
-  text-align: center; /* Ensure text is centered */
-  display: block; /* Ensure block display for full width */
+  background-color: #4CAF50;
+  color: #000000;
+  border: 1px solid #388E3C;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: center;
+  display: block;
 }
 
-.button-section button.btn-green-candy:hover {
-  background-color: #45a049 !important; /* Darker Green */
-  color: #000000 !important; /* Black */
-  border: 1px solid #388E3C !important; /* Dark Green */
-}
-
-.button-group {
-  display: flex; /* Use flexbox for side-by-side buttons */
-  gap: 5px; /* Add a small gap between buttons */
-  width: 100%; /* Ensure button group takes full width */
-  box-sizing: border-box; /* Include padding and border in width */
-}
-
-.button-group button {
-  flex-grow: 1; /* Make buttons grow to fill available space equally */
-  margin: 0; /* Remove margin set for block buttons */
-  padding: 6px 10px !important; /* Reduced padding */
-  font-size: 13px; /* Reduced font size */
-  box-sizing: border-box; /* Include padding and border in the element's total width and height */
-  text-align: center; /* Ensure text is centered */
-  display: flex; /* Use flexbox to center text vertically */
-  align-items: center;
-  justify-content: center;
-  line-height: 1.2em; /* Added line height for consistent text spacing */
-  height: auto; /* Remove fixed height */
-}
-
-/* Ensure green styling for target buttons with maximum specificity in popup.html */
-.button-section button.btn.btn-dark.btn-green-candy {
-    background-color: #4CAF50; /* Green */
-    color: #000000; /* Black */
-    border: 1px solid #388E3C; /* Dark Green */
-}
-
-.button-section button.btn.btn-dark.btn-green-candy:hover,
-.button-section button.btn.btn-dark.btn-green-candy:active {
-    background-color: #4CAF50; /* Green */
-    color: #000000; /* Black */
-    border: 1px solid #388E3C; /* Dark Green */
-}
-
-#mutedInfo,
-#blockedInfo {
-    text-align: center;
-    margin-bottom: 3px; /* Reduced space below user count */
-    font-size: 0.8em; /* Further reduced font size */
-    color: #333;
+.button-section button:hover {
+  background-color: #45a049;
+  color: #000000;
+  border: 1px solid #388E3C;
 }
 
 #popupStatus {
   text-align: center;
-  margin-top: 5px; /* Reduced space above status */
-  height: 1em; /* Reduced height for status message */
-  font-size: 0.8em; /* Reduced font size */
+  margin-top: 5px;
+  height: 1em;
+  font-size: 0.8em;
   color: #333;
-  min-height: 1em; /* Ensure minimum height even when empty */
-}
-
-.btn-green-candy {
-    cursor: pointer;
-    text-decoration: none;
-    padding: 6px 10px; /* Reduced padding */
-    font-size: 13px; /* Reduced font size */
-    line-height: 1.2em; /* Adjusted line height */
-    text-transform: uppercase; /* From .btn */
-    font-family: 'Montserrat', sans-serif; /* From .btn */
-    font-weight: 400; /* From .btn */
-    letter-spacing: 2px; /* Reduced letter spacing */
-    transition: all .4s ease-in-out; /* From .btn */
-    background-color: #4CAF50; /* Green */
-    color: #000000; /* Black */
-    border: 1px solid #388E3C; /* Dark Green */
-    border-radius: 3px; /* From .switch-candy a */
-    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.45); /* From .switch-candy a */
-    box-sizing: border-box; /* Include padding and border in width */
-}
-
-.equal-width-buttons button {
-  flex-grow: 1;
-  line-height: 1.2em; /* Added line height for consistent text spacing */
-  display: flex; /* Use flexbox to center text vertically */
-  align-items: center;
-  justify-content: center;
-  text-align: center; /* Ensure text is centered */
-  box-sizing: border-box; /* Include padding and border in the element's total width and height */
-  height: auto; /* Removed fixed height */
-}
-.button-group.equal-width-buttons {
-  align-items: stretch; /* Make flex items (buttons) stretch to fill the container height */
-}
-
-/* Specific adjustments for buttons that might have longer text */
-#openauthorListPage,
-#startUndobanAll,
-#btnBlockTitlesOfBlockedMuted,
-#migrateBlockedTitlesToUnblocked {
-    word-break: break-word; /* Allow long words to break */
-    white-space: normal; /* Allow text wrapping */
-}
-
-/* Ensure buttons within button-group take equal width */
-.button-group button {
-    flex-basis: 0; /* Allow items to shrink below their content size */
+  min-height: 1em;
 }

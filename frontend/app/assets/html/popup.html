@@ -3,68 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <link rel="stylesheet" href="../css/buttons.css">
-<link rel="stylesheet" href="../css/customPopup.css"> <!-- Link to customPopup.css -->
-
+<link rel="stylesheet" href="../css/customPopup.css">
 <style>
-#title {
-  text-align: center;
-  font-family: 'Montserrat', sans-serif;
-  font-size: 25px;
-}
-img {
-  display: block;
-  margin-left: auto;
-  margin-right: auto;
-  margin-bottom: 10px; /* Increased margin */
-}
-/* Default button styles are in buttons.css, customPopup.css will override for layout */
+#title{text-align:center;font-family:'Montserrat',sans-serif;font-size:25px;}
+img{display:block;margin-left:auto;margin-right:auto;margin-bottom:10px;}
 </style>
-
 </head>
 <body>
 <p id="title">EksiEngelPlus</p>
 <img src="../img/eksiengel128.png">
-
 <div class="button-section">
-  <button id="openauthorListPage" class="btn btn-dark btn-green-candy">Gireceğim Listedeki Yazarları Engelle/Engelini Kaldır</button>
-  <button id="startUndobanAll" class="btn btn-dark btn-green-candy">Tüm Engellerimi Kaldır</button>
+  <button id="openNotification" class="btn btn-dark btn-green-candy">Ana İşlemler</button>
 </div>
-
-<div class="button-section button-group"> <!-- Grouping for compact alignment -->
-  <button id="migrateBlockedToMuted" class="btn btn-dark btn-green-candy">Engellenenleri Sessize Al (Deneysel)</button>
-  <button id="btnBlockMutedUsers" class="btn btn-dark btn-green-candy">Sessizleri Engelle (Deneysel)</button> 
-</div>
-<div class="button-section"> <!-- New group for title/user blocking -->
-  <button id="btnBlockTitlesOfBlockedMuted" class="btn btn-dark btn-green-candy">Engellilerin Başlıklarını Engelle (Deneysel)</button> 
-  <button id="migrateBlockedTitlesToUnblocked" class="btn btn-dark btn-green-candy">Engellenen Başlıkları Kaldır (Deneysel)</button>
-</div>
-
-<!-- Muted User Section -->
-<div id="mutedInfo" class="button-section"> <!-- Added button-section class -->
-  Sessize alınmış yazarlar: <span id="mutedUserCount">Loading...</span>
-</div>
-<div class="button-section button-group equal-width-buttons"> <!-- Added button-section and button-group classes -->
-  <button id="refreshMutedList" class="btn btn-dark btn-green-candy">Sessiz listesini yenile</button>
-  <button id="exportMutedListCSV" class="btn btn-dark btn-green-candy" disabled>Sessiz listesini kaydet (CSV)</button>
-</div>
-<!-- End Muted User Section -->
-
-<!-- Blocked User Section -->
-<div id="blockedInfo" class="button-section"> <!-- Added button-section class -->
-  Engellenmiş yazarlar: <span id="blockedUserCount">Loading...</span>
-</div>
-<div class="button-section button-group equal-width-buttons"> <!-- Added equal-width-buttons class -->
-  <button id="refreshBlockedList" class="btn btn-dark btn-green-candy">Engelli listesini yenile</button>
-  <button id="exportBlockedListCSV" class="btn btn-dark btn-green-candy" disabled>Engelli listesini kaydet (CSV)</button>
-</div>
-<!-- End Blocked User Section -->
 <div class="button-section">
   <button id="openFaq" class="btn btn-dark btn-green-candy">Ayarlar ve Yardım</button>
 </div>
-
-<div id="popupStatus"></div> <!-- Status div -->
-
+<div id="popupStatus"></div>
 <script type="module" src="../js/popup.js"></script>
-
 </body>
 </html>
