@@ -2,6 +2,7 @@ import * as enums from './enums.js';
 import * as utils from './utils.js';
 import { commHandler } from './commHandler.js';
 import { storageHandler } from './storageHandler.js';
+import { notificationHandler } from './notificationHandler.js';
 
 // Element References
 let mutedUserCountSpan;
@@ -24,10 +25,10 @@ function initializeNotificationPage() {
   console.log("🚀 Initializing EksiEngel Plus Notification Page");
   
   // Set initial status indicator
-  updateStatusIndicator('inactive');
+  notificationHandler.updateStatusIndicator('inactive');
   
   // Initialize table counts
-  updateTableCounts();
+  notificationHandler.updateTableCounts();
   
   // Setup smooth scrolling
   setupSmoothScrolling();
@@ -80,22 +81,22 @@ function handleEarlyStop() {
   
   sendEarlyStopPromise.then((response) => {
     console.log("notification.js: earlyStop message sent successfully");
-    updateStatusIndicator('warning');
+    notificationHandler.updateStatusIndicator('warning');
     
     const statusText = document.getElementById("statusText");
     if (statusText) {
       statusText.innerHTML = "İşlem kullanıcı tarafından durduruluyor...";
     }
     
-    showStatusMessage("İşlem durduruluyor...", "info");
+    notificationHandler.showStatusMessage("İşlem durduruluyor...", "info");
   }).catch((err) => {
     console.warn("notification.js: Error sending earlyStop message:", err.message);
-    showStatusMessage("Durdurma işleminde hata oluştu: " + err.message, "error");
+    notificationHandler.showStatusMessage("Durdurma işleminde hata oluştu: " + err.message, "error");
     
     // Restore button state on error
     earlyStopButton.innerHTML = '<span class="btn-icon">🛑</span><span class="btn-text">Erken Durdur</span>';
     earlyStopButton.disabled = false;
-    updateStatusIndicator('inactive');
+    notificationHandler.updateStatusIndicator('inactive');
   });
 }
 
@@ -110,19 +111,19 @@ function setupActionButtons() {
   document.getElementById('btnBlockTitlesOfBlockedMuted')?.addEventListener('click', handleBlockTitlesOfBlockedMuted);
   document.getElementById('migrateBlockedTitlesToUnblocked')?.addEventListener('click', handleMigrateBlockedTitlesToUnblocked);
   
-  // List management
-  document.getElementById('refreshMutedList')?.addEventListener('click', handleRefreshMutedList);
-  document.getElementById('exportMutedListCSV')?.addEventListener('click', handleExportMutedList);
-  document.getElementById('refreshBlockedList')?.addEventListener('click', handleRefreshBlockedList);
-  document.getElementById('exportBlockedListCSV')?.addEventListener('click', handleExportBlockedList);
+  // List management - using notificationHandler methods
+  document.getElementById('refreshMutedList')?.addEventListener('click', () => notificationHandler.handleRefreshMutedList());
+  document.getElementById('exportMutedListCSV')?.addEventListener('click', () => notificationHandler.handleExportMutedList());
+  document.getElementById('refreshBlockedList')?.addEventListener('click', () => notificationHandler.handleRefreshBlockedList());
+  document.getElementById('exportBlockedListCSV')?.addEventListener('click', () => notificationHandler.handleExportBlockedList());
   
   // Help
   document.getElementById('openFaq')?.addEventListener('click', handleOpenFaq);
 }
 
 function initializeRealTimeFeatures() {
-  loadMutedUserCount();
-  refreshBlockedUserCountDisplay(); // Use the new function to also update export button state
+  notificationHandler.loadMutedUserCount();
+  notificationHandler.refreshBlockedUserCountDisplay(); // Use the new function to also update export button state
   
   chrome.runtime.sendMessage(null, { action: "notificationPageReady" }, (response) => {
     if (chrome.runtime.lastError) {
@@ -132,7 +133,7 @@ function initializeRealTimeFeatures() {
     }
   });
   
-  updateRemainingAction();
+  notificationHandler.updateRemainingAction();
 }
 
 function setupSmoothScrolling() {
@@ -175,161 +176,17 @@ function setupKeyboardShortcuts() {
   });
 }
 
-// Utility Functions
-function updateRemainingAction() {
-  const performedAction = parseInt(document.getElementById("performedAction")?.textContent) || 0;
-  const plannedAction = parseInt(document.getElementById("plannedAction")?.textContent) || 0;
-  const remainingAction = Math.max(0, plannedAction - performedAction);
-  
-  const remainingActionElement = document.getElementById("remainingAction");
-  if (remainingActionElement) {
-    remainingActionElement.textContent = remainingAction;
-  }
-}
+// Utility Functions - moved to notificationHandler.js
 
-function updateStatusIndicator(status) {
-  const statusDot = document.getElementById("statusDot");
-  if (!statusDot) return;
-  
-  statusDot.className = "indicator-dot";
-  
-  switch (status) {
-    case 'active':
-      break;
-    case 'inactive':
-      statusDot.classList.add('inactive');
-      break;
-    case 'error':
-      statusDot.classList.add('error');
-      break;
-    case 'warning':
-      statusDot.classList.add('warning');
-      break;
-  }
-}
+// Load functions - moved to notificationHandler.js
 
-function updateTableCounts() {
-  const plannedCountElement = document.getElementById("plannedCount");
-  if (plannedCountElement) {
-    const plannedRows = document.querySelectorAll("#plannedProcesses tbody tr").length;
-    plannedCountElement.textContent = plannedRows;
-  }
-  
-  const completedCountElement = document.getElementById("completedCount");
-  if (completedCountElement) {
-    const completedRows = document.querySelectorAll("#completedProcesses tbody tr").length;
-    completedCountElement.textContent = completedRows;
-  }
-}
-
-function showStatusMessage(message, type = "info") {
-  const statusMessage = document.getElementById("buttonStatus");
-  if (!statusMessage) return;
-  
-  if (statusMessage.timeoutId) {
-    clearTimeout(statusMessage.timeoutId);
-  }
-  
-  statusMessage.textContent = message;
-  statusMessage.className = `status-message ${type}`;
-  
-  setTimeout(() => {
-    statusMessage.classList.add("show");
-  }, 100);
-  
-  statusMessage.timeoutId = setTimeout(() => {
-    statusMessage.classList.remove("show");
-  }, 3000);
-}
-
-// Load functions
-async function loadMutedUserCount() {
-  const mutedUserCount = await storageHandler.getMutedUserCount();
-  const mutedUserCountSpan = document.getElementById("mutedUserCount");
-  if (mutedUserCountSpan) {
-    mutedUserCountSpan.textContent = mutedUserCount;
-  }
-}
-
-async function loadBlockedUserCount() {
-  const blockedUserCount = await storageHandler.getBlockedUserCount();
-  const blockedUserCountSpan = document.getElementById("blockedUserCount");
-  if (blockedUserCountSpan) {
-    blockedUserCountSpan.textContent = blockedUserCount;
-  }
-}
-
-// Function to refresh the blocked user count display and update export button state
-async function refreshBlockedUserCountDisplay() {
-  try {
-    const blockedUserCount = await storageHandler.getBlockedUserCount();
-    
-    // Update the count display
-    if (blockedUserCountSpan) {
-      blockedUserCountSpan.textContent = blockedUserCount;
-    }
-    
-    // Update export button state based on count
-    if (exportBlockedListCSVButton) {
-      exportBlockedListCSVButton.disabled = blockedUserCount === 0;
-    }
-    
-    console.log(`notification.js: Updated blocked user count display: ${blockedUserCount}`);
-  } catch (error) {
-    console.error("notification.js: Error refreshing blocked user count display:", error);
-    // Set to 0 on error and disable export
-    if (blockedUserCountSpan) {
-      blockedUserCountSpan.textContent = "0";
-    }
-    if (exportBlockedListCSVButton) {
-      exportBlockedListCSVButton.disabled = true;
-    }
-  }
-}
-
-// Helper Functions
-function updateButtonStatus(message, isError = false, clearAfterMs = 3000) {
-  if (!buttonStatusDiv) return;
-  buttonStatusDiv.textContent = message;
-  buttonStatusDiv.style.color = isError ? '#dc3545' : '#333';
-
-  if (clearAfterMs > 0) {
-    setTimeout(() => {
-      if (buttonStatusDiv.textContent === message) {
-        buttonStatusDiv.textContent = '';
-      }
-    }, clearAfterMs);
-  }
-}
-
-function downloadCSV(usernames, listType) {
-  if (!Array.isArray(usernames) || usernames.length === 0) {
-    updateButtonStatus("No usernames to export.", true);
-    return;
-  }
-
-  const csvHeader = "Username\n";
-  const csvContent = csvHeader + usernames.join("\n");
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.setAttribute("href", url);
-  const timestamp = new Date().toISOString().slice(0, 10);
-  const filenamePrefix = listType === 'blocked' ? 'eksiengel_blocked_users' : 'eksiengel_muted_users';
-  link.setAttribute("download", `${filenamePrefix}_${timestamp}.csv`);
-  link.style.visibility = "hidden";
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-  updateButtonStatus(`${listType === 'blocked' ? 'Blocked' : 'Muted'} user list exported.`, false);
-}
+// Helper Functions - moved to notificationHandler.js
 
 // Event Handlers
 function handleOpenAuthorListPage() {
   commHandler.sendAnalyticsData({ click_type: enums.ClickType.EXTENSION_MENU_BAN_LIST });
   chrome.tabs.create({ url: chrome.runtime.getURL("assets/html/authorListPage.html") });
-  updateButtonStatus("Opening Author List Page...", false, 2000);
+  notificationHandler.updateButtonStatus("Opening Author List Page...", false, 2000);
 }
 
 function handleStartUndobanAll() {
@@ -337,27 +194,27 @@ function handleStartUndobanAll() {
   chrome.runtime.sendMessage(null, { "banSource": enums.BanSource.UNDOBANALL, "banMode": enums.BanMode.UNDOBAN }, (response) => {
     if (chrome.runtime.lastError) {
       console.error("notification.js: Error sending startUndobanAll message:", chrome.runtime.lastError.message);
-      updateButtonStatus("Error starting 'Undo All Bans': " + chrome.runtime.lastError.message, true, 5000);
+      notificationHandler.updateButtonStatus("Error starting 'Undo All Bans': " + chrome.runtime.lastError.message, true, 5000);
     } else {
       console.log("notification.js: startUndobanAll message sent.");
     }
   });
-  updateButtonStatus("Starting 'Undo All Bans'...", false, 2000);
+  notificationHandler.updateButtonStatus("Starting 'Undo All Bans'...", false, 2000);
 }
 
 function handleOpenFaq() {
   commHandler.sendAnalyticsData({ click_type: enums.ClickType.EXTENSION_MENU_FAQ });
   chrome.tabs.create({ url: chrome.runtime.getURL("assets/html/faq.html") });
-  updateButtonStatus("Opening Settings and Help...", false, 2000);
+  notificationHandler.updateButtonStatus("Opening Settings and Help...", false, 2000);
 }
 
 function handleMigrateBlockedToMuted() {
   commHandler.sendAnalyticsData({ click_type: enums.ClickType.EXTENSION_MENU_MIGRATE });
-  updateButtonStatus("Starting migration (Blocked -> Muted)...", false, 0);
+  notificationHandler.updateButtonStatus("Starting migration (Blocked -> Muted)...", false, 0);
   chrome.runtime.sendMessage(null, { action: "startMigration" }, (response) => {
     if (chrome.runtime.lastError) {
       console.error("notification.js: Error sending startMigration message:", chrome.runtime.lastError.message);
-      updateButtonStatus("Error starting migration: " + chrome.runtime.lastError.message, true, 5000);
+      notificationHandler.updateButtonStatus("Error starting migration: " + chrome.runtime.lastError.message, true, 5000);
     } else {
       console.log("notification.js: Migration start message sent.");
     }
@@ -366,118 +223,25 @@ function handleMigrateBlockedToMuted() {
 
 function handleMigrateBlockedTitlesToUnblocked() {
   commHandler.sendAnalyticsData({ click_type: enums.ClickType.EXTENSION_MENU_MIGRATE_TITLES });
-  updateButtonStatus("Starting title unblock...", false, 0);
+  notificationHandler.updateButtonStatus("Starting title unblock...", false, 0);
   chrome.runtime.sendMessage(null, { action: "startTitleMigration" }, (response) => {
     if (chrome.runtime.lastError) {
       console.error("notification.js: Error sending startTitleMigration message:", chrome.runtime.lastError.message);
-      updateButtonStatus("Error starting title unblock: " + chrome.runtime.lastError.message, true, 5000);
+      notificationHandler.updateButtonStatus("Error starting title unblock: " + chrome.runtime.lastError.message, true, 5000);
     } else {
       console.log("notification.js: Title migration start message sent.");
     }
   });
 }
 
-async function handleRefreshMutedList() {
-  console.log("notification.js", "Refresh muted list button clicked.");
-  commHandler.sendAnalyticsData({ click_type: enums.ClickType.EXTENSION_MENU_REFRESH_MUTED });
-
-  const refreshButton = document.getElementById('refreshMutedList');
-  const earlyStopButton = document.getElementById('earlyStop');
-  if (refreshButton) refreshButton.disabled = true;
-
-  updateButtonStatus("Initiating muted list refresh...", false, 0);
-
-  chrome.runtime.sendMessage({ action: "refreshMutedList" }, (response) => {
-    if (chrome.runtime.lastError) {
-      console.error("notification.js: Error sending refreshMutedList message:", chrome.runtime.lastError.message);
-      updateButtonStatus("Error initiating refresh: " + chrome.runtime.lastError.message, true, 5000);
-      if (refreshButton) refreshButton.disabled = false;
-      if (earlyStopButton) earlyStopButton.disabled = false;
-    } else {
-      console.log("notification.js: refreshMutedList message sent successfully.");
-    }
-  });
-}
-
-async function handleExportMutedList() {
-  console.log("notification.js", "Export muted list button clicked.");
-  commHandler.sendAnalyticsData({ click_type: enums.ClickType.EXTENSION_MENU_EXPORT_MUTED });
-
-  const exportButton = document.getElementById('exportMutedListCSV');
-  if (exportButton) exportButton.disabled = true;
-
-  updateButtonStatus("Preparing export...", false, 0);
-
-  try {
-    const usernames = await storageHandler.getMutedUserList();
-    if (usernames && usernames.length > 0) {
-      downloadCSV(usernames, 'muted');
-    } else {
-      updateButtonStatus("No muted user list found in storage to export.", true);
-    }
-  } catch (error) {
-    console.error("notification.js", "Error exporting muted list:", error);
-    updateButtonStatus(`Error exporting: ${error.message || 'Unknown error'}`, true);
-  } finally {
-    const exportButton = document.getElementById('exportMutedListCSV');
-    if (exportButton) exportButton.disabled = false;
-  }
-}
-
-async function handleRefreshBlockedList() {
-  console.log("notification.js", "Refresh blocked list button clicked.");
-  updateButtonStatus("Initiating blocked list refresh...", false, 0);
-
-  // Disable the refresh button during operation
-  if (refreshBlockedListButton) refreshBlockedListButton.disabled = true;
-  
-  // Disable export button during refresh
-  if (exportBlockedListCSVButton) exportBlockedListCSVButton.disabled = true;
-
-  chrome.runtime.sendMessage({ action: "refreshBlockedList" }, (response) => {
-    if (chrome.runtime.lastError) {
-      console.error("notification.js: Error sending refreshBlockedList message:", chrome.runtime.lastError.message);
-      updateButtonStatus("Error initiating refresh: " + chrome.runtime.lastError.message, true, 5000);
-      
-      // Re-enable refresh button on error
-      if (refreshBlockedListButton) refreshBlockedListButton.disabled = false;
-      
-      // Re-enable export button based on current stored count
-      refreshBlockedUserCountDisplay();
-    } else {
-      console.log("notification.js: refreshBlockedList message sent successfully.");
-    }
-  });
-}
-
-async function handleExportBlockedList() {
-  console.log("notification.js", "Export blocked list button clicked.");
-
-  if (exportBlockedListCSVButton) exportBlockedListCSVButton.disabled = true;
-  updateButtonStatus("Preparing export...", false, 0);
-
-  try {
-    const blockedUsernames = await storageHandler.getBlockedUserList();
-    if (blockedUsernames && blockedUsernames.length > 0) {
-      downloadCSV(blockedUsernames, 'blocked');
-    } else {
-      updateButtonStatus("No blocked user list found in storage to export.", true);
-    }
-  } catch (error) {
-    console.error("notification.js", "Error exporting blocked list:", error);
-    updateButtonStatus(`Error exporting: ${error.message || 'Unknown error'}`, true);
-  } finally {
-    const currentCount = parseInt(blockedUserCountSpan.textContent) || 0;
-    if (exportBlockedListCSVButton) exportBlockedListCSVButton.disabled = currentCount === 0;
-  }
-}
+// List management functions - moved to notificationHandler.js
 
 function handleBlockMutedUsers() {
-  updateButtonStatus("Starting 'Block Muted Users' process...", false, 0);
+  notificationHandler.updateButtonStatus("Starting 'Block Muted Users' process...", false, 0);
   chrome.runtime.sendMessage({ action: "blockMutedUsers" }, (response) => {
     if (chrome.runtime.lastError) {
       console.error("notification.js: Error sending blockMutedUsers message:", chrome.runtime.lastError.message);
-      updateButtonStatus("Error starting process: " + chrome.runtime.lastError.message, true, 5000);
+      notificationHandler.updateButtonStatus("Error starting process: " + chrome.runtime.lastError.message, true, 5000);
     } else {
       console.log("notification.js: blockMutedUsers message sent.");
     }
@@ -485,11 +249,11 @@ function handleBlockMutedUsers() {
 }
 
 function handleBlockTitlesOfBlockedMuted() {
-  updateButtonStatus("Starting 'Block Titles of Blocked/Muted' process...", false, 0);
+  notificationHandler.updateButtonStatus("Starting 'Block Titles of Blocked/Muted' process...", false, 0);
   chrome.runtime.sendMessage({ action: "blockTitlesOfBlockedMuted" }, (response) => {
     if (chrome.runtime.lastError) {
       console.error("notification.js: Error sending blockTitlesOfBlockedMuted message:", chrome.runtime.lastError.message);
-      updateButtonStatus("Error starting process: " + chrome.runtime.lastError.message, true, 5000);
+      notificationHandler.updateButtonStatus("Error starting process: " + chrome.runtime.lastError.message, true, 5000);
     } else {
       console.log("notification.js: blockTitlesOfBlockedMuted message sent.");
     }
@@ -506,8 +270,8 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
 
   if (message && message.action === enums.NotificationType.UPDATE_COUNTS) {
     console.log("Received message to update user counts.");
-    loadMutedUserCount();
-    refreshBlockedUserCountDisplay(); // Use the new function to also update export button state
+    notificationHandler.loadMutedUserCount();
+    notificationHandler.refreshBlockedUserCountDisplay(); // Use the new function to also update export button state
     sendResponse({ status: "ok" });
     return true;
   }
@@ -629,15 +393,15 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
     if (refreshBlockedListButton) refreshBlockedListButton.disabled = false;
     
     // Refresh the display to update count and export button state
-    refreshBlockedUserCountDisplay().catch(error => {
+    notificationHandler.refreshBlockedUserCountDisplay().catch(error => {
       console.error("notification.js: Error updating blocked user count display:", error);
     });
 
     if (message.success) {
-      updateButtonStatus(`Blocked list refreshed. Found ${message.count} users.`, false, 5000);
+      notificationHandler.updateButtonStatus(`Blocked list refreshed. Found ${message.count} users.`, false, 5000);
     } else {
       const errorMessage = message.stoppedEarly ? "Blocked list refresh stopped by user." : `Blocked list refresh failed: ${message.error}`;
-      updateButtonStatus(errorMessage, true, 5000);
+      notificationHandler.updateButtonStatus(errorMessage, true, 5000);
     }
 
     sendResponse({ status: "ok" });
@@ -814,10 +578,12 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
 
       if (notification.status === enums.NotificationType.UPDATE_PLANNED_PROCESSES && notification.plannedProcesses) {
         console.log("Updating planned processes table with", notification.plannedProcesses.length, "items");
+        notificationHandler.updateTableCounts();
         updatePlannedProcessesTable(notification.plannedProcesses);
       }
       else if (notification.plannedProcesses && Array.isArray(notification.plannedProcesses) && notification.plannedProcesses.length > 0) {
         console.log("Updating planned processes table via fallback with", notification.plannedProcesses.length, "items");
+        notificationHandler.updateTableCounts();
         updatePlannedProcessesTable(notification.plannedProcesses);
       }
     }
@@ -826,176 +592,33 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
     return true;
   }
 
-  // Handle migration progress updates
+  // Handle migration progress updates - moved to notificationHandler.js
   if (message && message.action === "updateMigrationProgress") {
-    console.debug(`Updating migration progress: ${message.current}/${message.total} (${message.percentage}%)`);
-
-    const migrationBar = document.getElementById("migrationBar");
-    const migrationBarText = document.getElementById("migrationBarText");
-    const migrationProgressText = document.getElementById("migrationProgressText");
-    const migrationStatusText = document.getElementById("migrationStatusText");
-    const statusTextDiv = document.getElementById("statusText");
-
-    if (migrationBar && migrationBarText && migrationProgressText) {
-      migrationBar.style.width = `${message.percentage}%`;
-      migrationBarText.innerHTML = `%${message.percentage}`;
-      migrationProgressText.innerHTML = `İşlenen: ${message.current} / ${message.total}`;
-
-      if (migrationStatusText) {
-        migrationStatusText.innerHTML = "İşlem devam ediyor...";
-      }
-
-      if (statusTextDiv) {
-        const isTitleUnblocking = window.location.href.includes("startTitleMigration");
-        if (isTitleUnblocking) {
-          statusTextDiv.innerHTML = "Durum: Başlık engelleri kaldırılıyor...";
-        } else {
-          statusTextDiv.innerHTML = "Durum: Engellenen kullanıcılar sessize alınıyor...";
-        }
-      }
-    }
-
+    notificationHandler.handleMigrationProgressUpdate(message);
     sendResponse({ status: "ok" });
     return true;
   }
 
   if (message && message.action === "updateMigrationStatus") {
-    console.debug(`Received migration status update: ${message.statusText}`);
-    const migrationStatusText = document.getElementById("migrationStatusText");
-    if (migrationStatusText) {
-      migrationStatusText.innerHTML = message.statusText;
-    }
+    notificationHandler.handleMigrationStatusUpdate(message);
     sendResponse({ status: "ok" });
     return true;
   }
 
   if (message && message.action === "migrationBatchComplete") {
-    console.log(`Migration batch complete: ${message.message}`);
-
-    const migrationBar = document.getElementById("migrationBar");
-    const migrationBarText = document.getElementById("migrationBarText");
-    const migrationProgressText = document.getElementById("migrationProgressText");
-    const migrationStatusText = document.getElementById("migrationStatusText");
-    const migrationResultText = document.getElementById("migrationResultText");
-
-    if (migrationBar && migrationBarText) {
-      migrationBar.style.width = "0%";
-      migrationBarText.innerHTML = "%0";
-    }
-
-    if (migrationStatusText) {
-      migrationStatusText.innerHTML = "Sonraki grup işleniyor...";
-    }
-
-    const statusTextDiv = document.getElementById("statusText");
-    if (statusTextDiv) {
-      const isTitleUnblocking = window.location.href.includes("startTitleMigration");
-      if (isTitleUnblocking) {
-        statusTextDiv.innerHTML = "Durum: Sonraki başlık grubu işleniyor...";
-      } else {
-        statusTextDiv.innerHTML = "Durum: Sonraki grup işleniyor...";
-      }
-    }
-
-    if (migrationResultText) {
-      migrationResultText.innerHTML = `Grup tamamlandı: Başarılı: ${message.migrated}, Atlanan: ${message.skipped}, Başarısız: ${message.failed}, Toplam: ${message.total}`;
-    }
-
+    notificationHandler.handleMigrationBatchComplete(message);
     sendResponse({ status: "ok" });
     return true;
   }
 
   if (message && message.action === "migrationComplete") {
-    console.log(`Migration complete: ${message.message}`);
-
-    const migrationBar = document.getElementById("migrationBar");
-    const migrationBarText = document.getElementById("migrationBarText");
-    const migrationProgressText = document.getElementById("migrationProgressText");
-    const migrationStatusText = document.getElementById("migrationStatusText");
-    const migrationResultText = document.getElementById("migrationResultText");
-
-    if (migrationBar && migrationBarText) {
-      migrationBar.style.width = "100%";
-      migrationBarText.innerHTML = "%100";
-    }
-
-    if (migrationStatusText) {
-      migrationStatusText.innerHTML = "İşlem tamamlandı!";
-    }
-
-    const statusTextDiv = document.getElementById("statusText");
-    if (statusTextDiv) {
-      const isTitleUnblocking = window.location.href.includes("startTitleMigration");
-      if (isTitleUnblocking) {
-        statusTextDiv.innerHTML = "Durum: Başlık engelleri kaldırma işlemi tamamlandı!";
-      } else {
-        statusTextDiv.innerHTML = "Durum: İşlem tamamlandı!";
-      }
-    }
-
-    if (migrationResultText) {
-      migrationResultText.innerHTML = `Sonuç: Başarılı: ${message.migrated}, Atlanan: ${message.skipped}, Başarısız: ${message.failed}, Toplam: ${message.total}`;
-    }
-
-    const earlyStopButton = document.getElementById("earlyStop");
-    if (earlyStopButton) {
-      earlyStopButton.innerHTML = '<span class="btn-icon">🛑</span><span class="btn-text">Erken Durdur</span>';
-      earlyStopButton.disabled = false;
-    }
-
+    notificationHandler.handleMigrationComplete(message);
     sendResponse({ status: "ok" });
     return true;
   }
 
   if (message && message.action === "migrationStopped") {
-    console.log(`Migration stopped: ${message.message}`);
-
-    const migrationBar = document.getElementById("migrationBar");
-    const migrationBarText = document.getElementById("migrationBarText");
-    const migrationProgressText = document.getElementById("migrationProgressText");
-    const migrationStatusText = document.getElementById("migrationStatusText");
-    const migrationResultText = document.getElementById("migrationResultText");
-
-    if (migrationStatusText) {
-      migrationStatusText.innerHTML = "İşlem kullanıcı tarafından durduruldu!";
-    }
-
-    const statusTextDiv = document.getElementById("statusText");
-    if (statusTextDiv) {
-      const isTitleUnblocking = window.location.href.includes("startTitleMigration");
-      if (isTitleUnblocking) {
-        statusTextDiv.innerHTML = "Durum: Başlık engelleri kaldırma işlemi kullanıcı tarafından durduruldu!";
-      } else {
-        statusTextDiv.innerHTML = "Durum: İşlem kullanıcı tarafından durduruldu!";
-      }
-    }
-
-    if (migrationResultText) {
-      if (message.cooldown) {
-        migrationResultText.innerHTML = "İşlem cooldown sırasında durduruldu.";
-      } else if (message.processed !== undefined) {
-        migrationResultText.innerHTML = `İşlem durduruldu. İşlenen: ${message.processed} / ${message.total}`;
-      } else {
-        migrationResultText.innerHTML = "İşlem durduruldu.";
-      }
-    }
-
-    const earlyStopButton = document.getElementById("earlyStop");
-    if (earlyStopButton) {
-      earlyStopButton.innerHTML = '<span class="btn-icon">🛑</span><span class="btn-text">Erken Durdur</span>';
-      earlyStopButton.disabled = false;
-    }
-
-    const completionCooldownDiv = document.getElementById("remainingTimeInSec");
-    if (completionCooldownDiv) {
-      completionCooldownDiv.innerHTML = "Tamamlandı";
-    }
-
-    const stoppedCooldownDiv = document.getElementById("remainingTimeInSec");
-    if (stoppedCooldownDiv) {
-      stoppedCooldownDiv.innerHTML = "Durduruldu";
-    }
-
+    notificationHandler.handleMigrationStopped(message);
     sendResponse({ status: "ok" });
     return true;
   }
