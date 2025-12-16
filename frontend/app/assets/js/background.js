@@ -844,14 +844,12 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
 
   if(config.sendData) await commHandler.sendData(action, action_config);
 
-  if (banSource !== enums.BanSource.SINGLE && banSource !== enums.BanSource.UNDOBANALL) {
+  if (banSource !== enums.BanSource.UNDOBANALL) {
     if (programController.earlyStop) {
       notificationHandler.finishErrorEarlyStop(banSource, banMode, processQueue.currentItemMetadata);
     } else {
       notificationHandler.finishSuccess(banSource, banMode, successfulAction, performedAction, authorNameList.length, processQueue.currentItemMetadata);
     }
-  } else if (banSource === enums.BanSource.SINGLE && programController.earlyStop) {
-    notificationHandler.finishErrorEarlyStop(banSource, banMode, processQueue.currentItemMetadata);
   }
   
   if(programController.earlyStop) {
