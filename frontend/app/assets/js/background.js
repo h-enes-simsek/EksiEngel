@@ -459,9 +459,10 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
     wrapperProcessHandler.banMode = obj.banMode;
     wrapperProcessHandler.creationDateInStr = new Date().getHours() + ":" + new Date().getMinutes();
     
-    // Add comprehensive metadata for standard operations (no hardcoded predictions)
+    // Add comprehensive metadata for unified descriptions (no hardcoded predictions)
     wrapperProcessHandler.metadata = {
-      // No hardcoded estimates
+      // Rich description for unified display
+      actionDescription: getActionDescription(obj.banSource, obj),
       operationNotes: getOperationNotes(obj.banSource, obj),
       requiresUserInteraction: false,
       targetTypes: obj.targetType ? [obj.targetType] : [],
@@ -473,7 +474,9 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
       timeFilter: obj.timeSpecifier || null,
       
       // Operation context
-      clickSource: obj.clickSource || null
+      clickSource: obj.clickSource || null,
+      banSource: obj.banSource, // Include banSource for description generation
+      banMode: obj.banMode      // Include banMode for description generation
     };
     
     processQueue.enqueue(wrapperProcessHandler);
@@ -519,6 +522,76 @@ function getOperationNotes(banSource, obj) {
     default:
       return "Kullanıcı engelleme işlemi";
   }
+}
+
+function getActionDescription(banSource, obj) {
+  const { targetTypes = [], sourceEntry, sourceAuthor, sourceTitle, sourceList, timeFilter } = obj;
+  
+  let baseDescription = "";
+  let operationType = obj.banMode === enums.BanMode.UNDOBAN ? "Engel Kaldır" : "Engelle";
+  
+  switch (banSource) {
+    case enums.BanSource.SINGLE:
+      baseDescription = `Tek Kullanıcı ${operationType}`;
+      if (targetTypes && targetTypes.length > 0) {
+        const targets = targetTypes.map(t =>
+          t === enums.TargetType.USER ? "Kullanıcı" :
+          t === enums.TargetType.TITLE ? "Başlık" : "Sessiz"
+        ).join(", ");
+        baseDescription += ` (${targets})`;
+      }
+      break;
+    case enums.BanSource.FAV:
+      baseDescription = `Favori Edenleri ${operationType}`;
+      if (sourceEntry) {
+        baseDescription += " (Entry)";
+      }
+      break;
+    case enums.BanSource.FOLLOW:
+      baseDescription = `Takipçileri ${operationType}`;
+      if (sourceAuthor) {
+        baseDescription += ` (${sourceAuthor})`;
+      }
+      break;
+    case enums.BanSource.LIST:
+      baseDescription = `Listeden ${operationType}`;
+      if (sourceList && sourceList.length > 0) {
+        baseDescription += ` (${sourceList.length} kullanıcı)`;
+      }
+      break;
+    case enums.BanSource.TITLE:
+      baseDescription = `Başlıktaki Yazarları ${operationType}`;
+      if (sourceTitle) {
+        baseDescription += ` (${sourceTitle})`;
+      }
+      if (timeFilter) {
+        const timeDesc = timeFilter === enums.TimeSpecifier.LAST_24_H ? "Son 24 saat" : "Tümü";
+        baseDescription += ` - ${timeDesc}`;
+      }
+      break;
+    case enums.BanSource.UNDOBANALL:
+      baseDescription = "Tüm Engelleri Kaldır";
+      break;
+    case enums.BanSource.MIGRATE_BLOCKED_TO_MUTED:
+      baseDescription = "Engelli Kullanıcıları Sessize al";
+      break;
+    case enums.BanSource.BLOCK_MUTED_USERS:
+      baseDescription = "Sessiz Kullanıcıları Engelle";
+      break;
+    case enums.BanSource.BLOCKED_MUTED_TITLES:
+      baseDescription = "Engelli/Sessiz Başlıkları Engelle";
+      break;
+    case enums.BanSource.REFRESH_MUTED_LIST:
+      baseDescription = "Sessiz Listesi Yenile";
+      break;
+    case enums.BanSource.REFRESH_BLOCKED_LIST:
+      baseDescription = "Engelli Listesi Yenile";
+      break;
+    default:
+      baseDescription = `${operationType} İşlemi`;
+  }
+  
+  return baseDescription;
 }
 
 async function processHandler(banSource, banMode, entryUrl, singleAuthorName, singleAuthorId, targetType, clickSource, titleName, titleId, timeSpecifier)
@@ -572,7 +645,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
   
   if(banSource === enums.BanSource.SINGLE)
   {
-    notificationHandler.notifyOngoing(0, 0, 1);
+    notificationHandler.notifyOngoing(0, 0, 1, processQueue.currentItemMetadata);
     let res = await relationHandler.performAction(banMode, singleAuthorId, targetType == enums.TargetType.USER, targetType == enums.TargetType.TITLE, targetType == enums.TargetType.MUTE);
     authorIdList.push(singleAuthorId);
     authorNameList.push(singleAuthorName);
@@ -592,7 +665,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
       if(!programController.earlyStop)
         res = await relationHandler.performAction(banMode, singleAuthorId, targetType == enums.TargetType.USER, targetType == enums.TargetType.TITLE, targetType == enums.TargetType.MUTE);
     }
-    notificationHandler.notifyOngoing(res.successfulAction, res.performedAction, authorNameList.length);
+    notificationHandler.notifyOngoing(res.successfulAction, res.performedAction, authorNameList.length, processQueue.currentItemMetadata);
   }
   else if(banSource === enums.BanSource.LIST)
   {
@@ -605,7 +678,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
       // Complete this task as finished (not error) and let queue continue
       return;
     }
-    notificationHandler.notifyOngoing(0, 0, authorNameList.length);
+    notificationHandler.notifyOngoing(0, 0, authorNameList.length, processQueue.currentItemMetadata);
     for (let i = 0; i < authorNameList.length; i++)
     {
       if(programController.earlyStop) break;
@@ -637,7 +710,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
             res = await relationHandler.performAction(banMode, authorId, true, true, true);
         }
       }
-      notificationHandler.notifyOngoing(res.successfulAction, res.performedAction, authorNameList.length);
+      notificationHandler.notifyOngoing(res.successfulAction, res.performedAction, authorNameList.length, processQueue.currentItemMetadata);
     }
   }
   else if(banSource === enums.BanSource.FAV)
@@ -706,7 +779,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
       log.info("bg", "No users found in FAV operation after fetching IDs - completing with 0 results, queue will continue with next item");
       return;
     }
-    notificationHandler.notifyOngoing(0, 0, scrapedRelations.size);
+    notificationHandler.notifyOngoing(0, 0, scrapedRelations.size, processQueue.currentItemMetadata);
     for (const [name, value] of scrapedRelations)
     {
       if(programController.earlyStop) break;
@@ -729,7 +802,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
           res = await relationHandler.performAction(banMode, value.authorId, (!value.isBannedUser && !config.enableMute), (!value.isBannedTitle && config.enableTitleBan), (!value.isBannedMute && config.enableMute));
         }
       }
-      notificationHandler.notifyOngoing(res.successfulAction, res.performedAction, scrapedRelations.size);
+      notificationHandler.notifyOngoing(res.successfulAction, res.performedAction, scrapedRelations.size, processQueue.currentItemMetadata);
     }
   }
   else if (banSource === enums.BanSource.FOLLOW)
@@ -775,7 +848,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
     }
     authorNameList = Array.from(scrapedRelations, ([name, value]) => name);
     authorIdList = Array.from(scrapedRelations, ([name, value]) => value.authorId);
-    notificationHandler.notifyOngoing(0, 0, scrapedRelations.size);
+    notificationHandler.notifyOngoing(0, 0, scrapedRelations.size, processQueue.currentItemMetadata);
     notificationHandler.notifyStatus("Takipçiler engelleniyor...");
     for (const [name, value] of scrapedRelations)
     {
@@ -803,7 +876,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
           res = await relationHandler.performAction(banMode, value.authorId, (!value.isBannedUser && !config.enableMute), (!value.isBannedTitle && config.enableTitleBan), (!value.isBannedMute && config.enableMute));
         }
       }
-      notificationHandler.notifyOngoing(res.successfulAction, res.performedAction, scrapedRelations.size);
+      notificationHandler.notifyOngoing(res.successfulAction, res.performedAction, scrapedRelations.size, processQueue.currentItemMetadata);
     }
   }
   else if (banSource === enums.BanSource.TITLE)
@@ -849,7 +922,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
     }
     authorNameList = Array.from(scrapedRelations, ([name, value]) => name);
     authorIdList = Array.from(scrapedRelations, ([name, value]) => value.authorId);
-    notificationHandler.notifyOngoing(0, 0, scrapedRelations.size);
+    notificationHandler.notifyOngoing(0, 0, scrapedRelations.size, processQueue.currentItemMetadata);
     for (const [name, value] of scrapedRelations)
     {
       if(programController.earlyStop) break;
@@ -876,7 +949,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
           res = await relationHandler.performAction(banMode, value.authorId, (!value.isBannedUser && !config.enableMute), (!value.isBannedTitle && config.enableTitleBan), (!value.isBannedMute && config.enableMute));
         }
       }
-      notificationHandler.notifyOngoing(res.successfulAction, res.performedAction, scrapedRelations.size);
+      notificationHandler.notifyOngoing(res.successfulAction, res.performedAction, scrapedRelations.size, processQueue.currentItemMetadata);
     }
   }
   else if (banSource === enums.BanSource.UNDOBANALL) {
@@ -890,7 +963,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
           const blockedUsers = blockedUsersResult.usernames.map(username => ({ authorName: username, authorId: null }));
           totalPlanned += blockedUsers.length;
           notificationHandler.notify(`Engellenen ${blockedUsers.length} kullanıcı bulundu. Engeller kaldırılıyor...`);
-          notificationHandler.notifyOngoing(totalSuccessful, totalProcessed, totalPlanned);
+          notificationHandler.notifyOngoing(totalSuccessful, totalProcessed, totalPlanned, processQueue.currentItemMetadata);
           for (let i = 0; i < blockedUsers.length; i++) {
               if (programController.earlyStop) break;
               const user = blockedUsers[i];
@@ -910,7 +983,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
                   totalFailed++;
               }
               totalProcessed++;
-              notificationHandler.notifyOngoing(totalSuccessful, totalProcessed, totalPlanned);
+              notificationHandler.notifyOngoing(totalSuccessful, totalProcessed, totalPlanned, processQueue.currentItemMetadata);
               await utils.sleep(500);
           }
       } else if (!blockedUsersResult.success) {
@@ -930,7 +1003,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
               const mutedUsers = mutedUsersResult.usernames.map(username => ({ authorName: username, authorId: null }));
               totalPlanned += mutedUsers.length;
               notificationHandler.notify(`Sessize alınan ${mutedUsers.length} kullanıcı bulundu. Sessize almalar kaldırılıyor...`);
-              notificationHandler.notifyOngoing(totalSuccessful, totalProcessed, totalPlanned);
+              notificationHandler.notifyOngoing(totalSuccessful, totalProcessed, totalPlanned, processQueue.currentItemMetadata);
               for (let i = 0; i < mutedUsers.length; i++) {
                   if (programController.earlyStop) break;
                   const user = mutedUsers[i];
@@ -950,7 +1023,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
                       totalFailed++;
                   }
                   totalProcessed++;
-                  notificationHandler.notifyOngoing(totalSuccessful, totalProcessed, totalPlanned);
+                  notificationHandler.notifyOngoing(totalSuccessful, totalProcessed, totalPlanned, processQueue.currentItemMetadata);
                   await utils.sleep(500);
               }
               if (!programController.earlyStop) {

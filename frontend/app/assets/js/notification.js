@@ -1082,16 +1082,13 @@ function generateDescriptionFromMetadataForCompleted(banSource, metadata = {}) {
       }
       break;
     case enums.BanSource.TITLE:
-      baseDescription = `Başlık ${operationType}`;
+      baseDescription = `Başlıktaki Yazarları ${operationType}`;
       if (sourceTitle) {
         baseDescription += ` (${sourceTitle})`;
       }
       if (timeFilter) {
-        const timeDesc = timeFilter === enums.TimeSpecifier.LAST_24_H ? "24s" :
-                        timeFilter === enums.TimeSpecifier.LAST_1_W ? "1h" :
-                        timeFilter === enums.TimeSpecifier.LAST_1_M ? "1a" :
-                        timeFilter === enums.TimeSpecifier.LAST_3_M ? "3a" : "Tümü";
-        baseDescription += ` [${timeDesc}]`;
+        const timeDesc = timeFilter === enums.TimeSpecifier.LAST_24_H ? "Son 24 saat" : "Tümü";
+        baseDescription += ` - ${timeDesc}`;
       }
       break;
     case enums.BanSource.UNDOBANALL:

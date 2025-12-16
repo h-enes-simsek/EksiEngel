@@ -159,8 +159,97 @@ class NotificationHandler
       `COOLDOWN: API limiti aşıldı. Dakikada 12 engel limiti bekleniyor. <a target='_blank' href='${config.EksiSozlukURL}/eksi-sozlukun-yazar-engellemeye-sinir-getirmesi--7547420' style='color:red;'>Bu ne demek?</a>`,
       "", [], null, 0, 0, 0, remainingTimeInSec);
   }
-  notifyOngoing = (successfulAction, performedAction, plannedAction) => {
-    this.#sendMessage(enums.NotificationType.ONGOING, "İşlem devam ediyor.", "", [], null, successfulAction, performedAction, plannedAction, 0);
+  notifyOngoing = (successfulAction, performedAction, plannedAction, operationMetadata = null) => {
+    let statusText = "İşlem devam ediyor.";
+    
+    // If we have operation metadata, use the same description logic as planned/completed processes
+    if (operationMetadata) {
+      if (operationMetadata.actionDescription) {
+        statusText = operationMetadata.actionDescription;
+      } else if (operationMetadata.operationNotes) {
+        statusText = operationMetadata.operationNotes;
+      } else {
+        // Use the same description generation logic as notification.js
+        statusText = this.#generateDescriptionFromMetadata(operationMetadata);
+      }
+    }
+    
+    this.#sendMessage(enums.NotificationType.ONGOING, statusText, "", [], null, successfulAction, performedAction, plannedAction, 0);
+  }
+  
+  #generateDescriptionFromMetadata = (metadata = {}) => {
+    const { targetTypes = [], sourceEntry, sourceAuthor, sourceTitle, sourceList, timeFilter } = metadata;
+    
+    let baseDescription = "";
+    let operationType = "Engelle"; // Default for ongoing operations
+    
+    // We need to determine operation type from metadata or use default
+    if (metadata.banSource) {
+      operationType = metadata.banSource.includes('UN') ? "Engel Kaldır" : "Engelle";
+    }
+    
+    switch (metadata.banSource) {
+      case enums.BanSource.SINGLE:
+        baseDescription = `Tek Kullanıcı ${operationType}`;
+        if (targetTypes && targetTypes.length > 0) {
+          const targets = targetTypes.map(t =>
+            t === enums.TargetType.USER ? "Kullanıcı" :
+            t === enums.TargetType.TITLE ? "Başlık" : "Sessiz"
+          ).join(", ");
+          baseDescription += ` (${targets})`;
+        }
+        break;
+      case enums.BanSource.FAV:
+        baseDescription = `Favori Edenleri ${operationType}`;
+        if (sourceEntry) {
+          baseDescription += " (Entry)";
+        }
+        break;
+      case enums.BanSource.FOLLOW:
+        baseDescription = `Takipçileri ${operationType}`;
+        if (sourceAuthor) {
+          baseDescription += ` (${sourceAuthor})`;
+        }
+        break;
+      case enums.BanSource.LIST:
+        baseDescription = `Listeden ${operationType}`;
+        if (sourceList && sourceList.length > 0) {
+          baseDescription += ` (${sourceList.length} kullanıcı)`;
+        }
+        break;
+      case enums.BanSource.TITLE:
+        baseDescription = `Başlıktaki Yazarları ${operationType}`;
+        if (sourceTitle) {
+          baseDescription += ` (${sourceTitle})`;
+        }
+        if (timeFilter) {
+          const timeDesc = timeFilter === enums.TimeSpecifier.ALL ? "Tümü" : "Son 24 saat";
+          baseDescription += ` - ${timeDesc}`;
+        }
+        break;
+      case enums.BanSource.UNDOBANALL:
+        baseDescription = "Tüm Engelleri Kaldır";
+        break;
+      case enums.BanSource.MIGRATE_BLOCKED_TO_MUTED:
+        baseDescription = "Engelli Kullanıcıları Sessize al";
+        break;
+      case enums.BanSource.BLOCK_MUTED_USERS:
+        baseDescription = "Sessiz Kullanıcıları Engelle";
+        break;
+      case enums.BanSource.BLOCKED_MUTED_TITLES:
+        baseDescription = "Engelli/Sessiz Başlıkları Engelle";
+        break;
+      case enums.BanSource.REFRESH_MUTED_LIST:
+        baseDescription = "Sessiz Listesi Yenile";
+        break;
+      case enums.BanSource.REFRESH_BLOCKED_LIST:
+        baseDescription = "Engelli Listesi Yenile";
+        break;
+      default:
+        baseDescription = `${operationType} İşlemi`;
+    }
+    
+    return baseDescription;
   }
 
   // Public method to send a simple status notification

@@ -264,7 +264,7 @@ class ProgramController
 
         // Update progress bar in notification page using notifyOngoing
         // Use migratedCount for successful actions, currentProgress for processed, totalUsers for total
-        notificationHandler.notifyOngoing(migratedCount, currentProgress, totalUsers);
+        notificationHandler.notifyOngoing(migratedCount, currentProgress, totalUsers, processQueue.currentItemMetadata);
 
         // Step A: Get the user ID by scraping their profile page
         log.info("progctrl", `Scraping user ID for: ${user.authorName}...`);
@@ -425,7 +425,7 @@ class ProgramController
 
               // Update progress bar using notifyOngoing
               // Use unmutedCount for successful actions, processedCount for processed, totalUsersFound for total
-              notificationHandler.notifyOngoing(unmutedCount, processedCount, totalUsersFound);
+              notificationHandler.notifyOngoing(unmutedCount, processedCount, totalUsersFound, processQueue.currentItemMetadata);
 
               log.info("progctrl", `Processing user: ${username}...`);
 
@@ -620,7 +620,7 @@ class ProgramController
       let successfulUsersCount = 0; // New counter for users successfully processed
 
       // Initial progress notification
-      notificationHandler.notifyOngoing(successfulUsersCount, usersProcessedCount, usersToProcess.length);
+      notificationHandler.notifyOngoing(successfulUsersCount, usersProcessedCount, usersToProcess.length, processQueue.currentItemMetadata);
 
 
       for (let i = 0; i < usersToProcess.length; i++) {
@@ -635,7 +635,7 @@ class ProgramController
         const isOriginallyBlocked = blockedUsers.some(blockedUser => blockedUser.authorName === user.authorName);
 
         // Update progress before processing each user
-        notificationHandler.notifyOngoing(successfulUsersCount, usersProcessedCount, usersToProcess.length);
+        notificationHandler.notifyOngoing(successfulUsersCount, usersProcessedCount, usersToProcess.length, processQueue.currentItemMetadata);
 
 
         log.info("progctrl", `Attempting to process titles for user: ${user.authorName} (ID: ${user.authorId || 'N/A'})...`);
@@ -651,7 +651,7 @@ class ProgramController
                 failedUsersCount++;
                 usersProcessedCount++;
                 // Update progress after skipping a user
-                notificationHandler.notifyOngoing(successfulUsersCount, usersProcessedCount, usersToProcess.length);
+                notificationHandler.notifyOngoing(successfulUsersCount, usersProcessedCount, usersToProcess.length, processQueue.currentItemMetadata);
                 continue; // Skip to the next user
             }
              log.info("progctrl", `Successfully scraped user ID for ${user.authorName}: ${authorId}`);
@@ -708,7 +708,7 @@ class ProgramController
         }
 
         // Update progress after processing each user
-        notificationHandler.notifyOngoing(successfulUsersCount, usersProcessedCount, usersToProcess.length);
+        notificationHandler.notifyOngoing(successfulUsersCount, usersProcessedCount, usersToProcess.length, processQueue.currentItemMetadata);
 
 
         // Small delay between users
@@ -797,7 +797,7 @@ notificationHandler.notify(`${totalCount} adet başlıkları engellenen kullanı
          const totalUsers = usersWithBlockedTitles.length;
  
          // Use notifyOngoing for progress updates
-         notificationHandler.notifyOngoing(unblockedCount, currentProgress, totalUsers);
+         notificationHandler.notifyOngoing(unblockedCount, currentProgress, totalUsers, processQueue.currentItemMetadata);
  
          log.info("progctrl", `Unblocking titles for user: ${user.authorName} (ID: ${user.authorId})...`);
  
