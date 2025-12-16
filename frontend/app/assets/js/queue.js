@@ -1,16 +1,13 @@
-// queue implementation
 import { programController } from './programController.js';
 import * as enums from './enums.js';
 
-class Queue
-{
+class Queue {
   constructor() { this._items = []; }
   enqueue(item) { this._items.push(item); }
   dequeue()     { return this._items.shift(); }
   get size()    { return this._items.length; }
 }
 
-// Helper function to get task category based on banSource
 function getTaskCategory(banSource) {
   switch (banSource) {
     case enums.BanSource.SINGLE:
@@ -33,7 +30,6 @@ function getTaskCategory(banSource) {
   }
 }
 
-// Helper function to get task complexity based on operation type (no hardcoded counts)
 function getTaskComplexity(banSource) {
   switch (banSource) {
     case enums.BanSource.SINGLE:
@@ -56,7 +52,6 @@ function getTaskComplexity(banSource) {
   }
 }
 
-// Helper function to get task priority based on operation type
 function getTaskPriority(banSource) {
   switch (banSource) {
     case enums.BanSource.REFRESH_MUTED_LIST:
@@ -69,13 +64,10 @@ function getTaskPriority(banSource) {
   }
 }
 
-// Helper function to estimate duration based on task type and complexity (removed hardcoded estimates)
 function estimateDuration(banSource, complexity) {
-  // Duration estimation removed - no hardcoded predictions
   return 0;
 }
 
-// Helper function to get human-readable task description
 function getTaskDescription(action) {
   const { banSource, banMode, metadata = {} } = action;
   
@@ -146,41 +138,32 @@ function getTaskDescription(action) {
   return baseDescription;
 }
 
-// queue implementation that executes promises automatically
-class AutoQueue extends Queue 
-{
-  constructor() 
-  {
+class AutoQueue extends Queue {
+  constructor() {
     super();
     this._pendingPromise = false;
   }
   
   get item() { return this._items; }
   
-  get itemAttributes() 
-  { 
+  get itemAttributes() {
     let attrs = [];
-    for(let i = 0; i < this._items.length; i++)
-    {
+    for(let i = 0; i < this._items.length; i++) {
       const action = this._items[i].action;
       const metadata = action.metadata || {};
       
-      // Remove hardcoded user count estimation - use operation type for complexity
       const complexity = getTaskComplexity(action.banSource);
       
       let obj = {
-        // Original attributes
         banSource: action.banSource,
         banMode: action.banMode,
         creationDateInStr: action.creationDateInStr,
         actionDescription: action.actionDescription || getTaskDescription(action),
         
-        // Enhanced task categorization (no hardcoded estimates)
         taskCategory: getTaskCategory(action.banSource),
         taskComplexity: complexity,
         taskPriority: getTaskPriority(action.banSource),
         
-        // Task metadata (no hardcoded predictions)
         sourceEntry: metadata.sourceEntry || null,
         sourceAuthor: metadata.sourceAuthor || null,
         sourceTitle: metadata.sourceTitle || null,
@@ -188,40 +171,33 @@ class AutoQueue extends Queue
         targetTypes: metadata.targetTypes || [],
         timeFilter: metadata.timeFilter || null,
         
-        // Task status (always QUEUED for items in queue)
         taskStatus: enums.TaskStatus.QUEUED,
         
-        // Additional context
         operationNotes: metadata.operationNotes || "",
         requiresUserInteraction: metadata.requiresUserInteraction || false,
         queuePosition: i + 1,
         totalQueueSize: this._items.length
       };
       
-      attrs.push(obj);   
+      attrs.push(obj);
     }
     return attrs;
   }
   
   get isRunning() { return this._pendingPromise; }
   
-  clear()
-  {
+  clear() {
     this._items = [];
   }
 
-  enqueue(action) 
-  {
+  enqueue(action) {
     return new Promise((resolve, reject) => {
       super.enqueue({ action, resolve, reject });
       this.dequeue();
     });
   }
 
-  async dequeue()
-  {
-    // If a promise from this queue is already pending, don't start another.
-    // If no promise from this queue is pending, but a major programController task is active, also wait.
+  async dequeue() {
     if (this._pendingPromise) {
       console.log("Queue: Skipping dequeue - promise already pending");
       return false;
@@ -243,7 +219,6 @@ class AutoQueue extends Queue
     try {
       this._pendingPromise = true;
 
-      // Store metadata for completion callbacks
       if (item.action && item.action.metadata) {
         this._currentItemMetadata = item.action.metadata;
       } else {
@@ -258,11 +233,9 @@ class AutoQueue extends Queue
       this._pendingPromise = false;
       item.reject(e);
     } finally {
-      this._currentItemMetadata = null; // Clear metadata after completion
+      this._currentItemMetadata = null;
       console.log(`Queue: Finished processing item, queue size after: ${this._items.length}, continuing to next item...`);
       
-      // Always try to process the next item, regardless of success/failure
-      // Use setTimeout to avoid potential stack overflow and ensure clean execution context
       setTimeout(() => {
         this.dequeue();
       }, 0);
@@ -276,4 +249,4 @@ class AutoQueue extends Queue
   }
 }
 
-export let processQueue = new AutoQueue(); 
+export let processQueue = new AutoQueue();

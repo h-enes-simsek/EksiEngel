@@ -4,7 +4,6 @@ import { commHandler } from './commHandler.js';
 import { storageHandler } from './storageHandler.js';
 import { notificationHandler } from './notificationHandler.js';
 
-// Element References
 let mutedUserCountSpan;
 let blockedUserCountSpan;
 let refreshMutedListButton;
@@ -13,7 +12,6 @@ let refreshBlockedListButton;
 let exportBlockedListCSVButton;
 let buttonStatusDiv;
 
-// Initialize on page load
 document.addEventListener('DOMContentLoaded', async function () {
   initializeNotificationPage();
   setupEarlyStopButton();
@@ -24,19 +22,11 @@ document.addEventListener('DOMContentLoaded', async function () {
 function initializeNotificationPage() {
   console.log("🚀 Initializing EksiEngel Plus Notification Page");
   
-  // Set initial status indicator
   notificationHandler.updateStatusIndicator('inactive');
-  
-  // Initialize table counts
   notificationHandler.updateTableCounts();
-  
-  // Setup smooth scrolling
   setupSmoothScrolling();
-  
-  // Add keyboard shortcuts
   setupKeyboardShortcuts();
   
-  // Get element references
   buttonStatusDiv = document.getElementById('buttonStatus');
   mutedUserCountSpan = document.getElementById('mutedUserCount');
   blockedUserCountSpan = document.getElementById('blockedUserCount');
@@ -63,7 +53,6 @@ function handleEarlyStop() {
   earlyStopButton.innerHTML = '<span class="btn-icon">⏳</span><span class="btn-text">Durduruluyor...</span>';
   earlyStopButton.disabled = true;
   
-  // Use the same timeout pattern as other message sending functions
   const sendEarlyStopPromise = new Promise((resolve, reject) => {
     chrome.runtime.sendMessage(null, {"earlyStop":0}, (response) => {
       if (chrome.runtime.lastError) {
@@ -73,7 +62,6 @@ function handleEarlyStop() {
       }
     });
     
-    // Add timeout to prevent hanging during cooldown
     setTimeout(() => {
       reject(new Error("Timeout sending earlyStop message"));
     }, 2000);
@@ -93,7 +81,6 @@ function handleEarlyStop() {
     console.warn("notification.js: Error sending earlyStop message:", err.message);
     notificationHandler.showStatusMessage("Durdurma işleminde hata oluştu: " + err.message, "error");
     
-    // Restore button state on error
     earlyStopButton.innerHTML = '<span class="btn-icon">🛑</span><span class="btn-text">Erken Durdur</span>';
     earlyStopButton.disabled = false;
     notificationHandler.updateStatusIndicator('inactive');
@@ -101,29 +88,25 @@ function handleEarlyStop() {
 }
 
 function setupActionButtons() {
-  // Main operations
   document.getElementById('openauthorListPage')?.addEventListener('click', handleOpenAuthorListPage);
   document.getElementById('startUndobanAll')?.addEventListener('click', handleStartUndobanAll);
   
-  // Migration operations
   document.getElementById('migrateBlockedToMuted')?.addEventListener('click', handleMigrateBlockedToMuted);
   document.getElementById('btnBlockMutedUsers')?.addEventListener('click', handleBlockMutedUsers);
   document.getElementById('btnBlockTitlesOfBlockedMuted')?.addEventListener('click', handleBlockTitlesOfBlockedMuted);
   document.getElementById('migrateBlockedTitlesToUnblocked')?.addEventListener('click', handleMigrateBlockedTitlesToUnblocked);
   
-  // List management - using notificationHandler methods
   document.getElementById('refreshMutedList')?.addEventListener('click', () => notificationHandler.handleRefreshMutedList());
   document.getElementById('exportMutedListCSV')?.addEventListener('click', () => notificationHandler.handleExportMutedList());
   document.getElementById('refreshBlockedList')?.addEventListener('click', () => notificationHandler.handleRefreshBlockedList());
   document.getElementById('exportBlockedListCSV')?.addEventListener('click', () => notificationHandler.handleExportBlockedList());
   
-  // Help
   document.getElementById('openFaq')?.addEventListener('click', handleOpenFaq);
 }
 
 function initializeRealTimeFeatures() {
   notificationHandler.loadMutedUserCount();
-  notificationHandler.refreshBlockedUserCountDisplay(); // Use the new function to also update export button state
+  notificationHandler.refreshBlockedUserCountDisplay();
   
   chrome.runtime.sendMessage(null, { action: "notificationPageReady" }, (response) => {
     if (chrome.runtime.lastError) {
@@ -153,7 +136,6 @@ function setupSmoothScrolling() {
 
 function setupKeyboardShortcuts() {
   document.addEventListener('keydown', function(e) {
-    // Ctrl/Cmd + S to save/export lists
     if ((e.ctrlKey || e.metaKey) && e.key === 's') {
       e.preventDefault();
       const exportMutedBtn = document.getElementById('exportMutedListCSV');
@@ -166,7 +148,6 @@ function setupKeyboardShortcuts() {
       }
     }
     
-    // Escape to stop operations
     if (e.key === 'Escape') {
       const earlyStopBtn = document.getElementById('earlyStop');
       if (earlyStopBtn && !earlyStopBtn.disabled) {
@@ -176,13 +157,6 @@ function setupKeyboardShortcuts() {
   });
 }
 
-// Utility Functions - moved to notificationHandler.js
-
-// Load functions - moved to notificationHandler.js
-
-// Helper Functions - moved to notificationHandler.js
-
-// Event Handlers
 function handleOpenAuthorListPage() {
   commHandler.sendAnalyticsData({ click_type: enums.ClickType.EXTENSION_MENU_BAN_LIST });
   chrome.tabs.create({ url: chrome.runtime.getURL("assets/html/authorListPage.html") });
@@ -234,8 +208,6 @@ function handleMigrateBlockedTitlesToUnblocked() {
   });
 }
 
-// List management functions - moved to notificationHandler.js
-
 function handleBlockMutedUsers() {
   notificationHandler.updateButtonStatus("Starting 'Block Muted Users' process...", false, 0);
   chrome.runtime.sendMessage({ action: "blockMutedUsers" }, (response) => {
@@ -260,7 +232,6 @@ function handleBlockTitlesOfBlockedMuted() {
   });
 }
 
-// Message Listener
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
   if (message && message.action === "ping") {
     console.log("Received ping from background script");
@@ -271,7 +242,7 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
   if (message && message.action === enums.NotificationType.UPDATE_COUNTS) {
     console.log("Received message to update user counts.");
     notificationHandler.loadMutedUserCount();
-    notificationHandler.refreshBlockedUserCountDisplay(); // Use the new function to also update export button state
+    notificationHandler.refreshBlockedUserCountDisplay();
     sendResponse({ status: "ok" });
     return true;
   }
@@ -389,10 +360,8 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
   if (message && message.action === "blockedListRefreshComplete") {
     console.log(`Blocked list refresh complete: Success=${message.success}, StoppedEarly=${message.stoppedEarly}, Count=${message.count}, Error=${message.error}`);
 
-    // Re-enable refresh button
     if (refreshBlockedListButton) refreshBlockedListButton.disabled = false;
     
-    // Refresh the display to update count and export button state
     notificationHandler.refreshBlockedUserCountDisplay().catch(error => {
       console.error("notification.js: Error updating blocked user count display:", error);
     });
@@ -413,12 +382,11 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
     if (blockedUserCountSpan) {
       blockedUserCountSpan.textContent = message.count;
     }
-    if (exportBlockedListCSVButton) exportBlockedListCSVButton.disabled = true; // Keep disabled during refresh
+    if (exportBlockedListCSVButton) exportBlockedListCSVButton.disabled = true;
     sendResponse({ status: "ok" });
     return true;
   }
 
-  // Handle General Notifications from Background
   if (message && message.notification) {
     const notification = message.notification;
     if (notification.status !== enums.NotificationType.COOLDOWN) {
@@ -444,7 +412,6 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
           statusTextDiv.innerHTML = notification.statusText;
         }
 
-        // Show and update the cooldown timer
         const cooldownTimerDiv = document.getElementById("cooldownTimer");
         if (remainingTimeDiv) {
           remainingTimeDiv.innerHTML = `${notification.remainingTimeInSec} saniye`;
@@ -455,7 +422,6 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
         }
       }
     } else {
-      // Hide the cooldown timer for non-cooldown notifications
       const cooldownTimerDiv = document.getElementById("cooldownTimer");
       if (cooldownTimerDiv) {
         cooldownTimerDiv.style.display = "none";
@@ -478,7 +444,6 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
         if (progressBarText) progressBarText.innerHTML = "%" + percentage;
         if (progressText) progressText.innerHTML = "İşlenen: " + notification.performedAction + "/" + notification.plannedAction + " Başarılı: " + notification.successfulAction;
         
-        // UPDATE THE STATISTICS SECTION: Fix for İşlem Durumu statistics
         const successfulActionElement = document.getElementById("successfulAction");
         const performedActionElement = document.getElementById("performedAction");
         const plannedActionElement = document.getElementById("plannedAction");
@@ -499,7 +464,6 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
           remainingActionElement.textContent = remaining;
         }
         
-        // UPDATE CURRENT OPERATION DESCRIPTION: Show the same description as in planned/completed operations
         if (currentOperationDescriptionElement) {
           const description = notification.statusText && notification.statusText !== "İşlem devam ediyor."
             ? notification.statusText
@@ -512,7 +476,6 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
          if (progressBarText) progressBarText.innerHTML = "%100";
          if (progressText) progressText.innerHTML = "Tamamlandı. Başarılı: " + notification.successfulAction + "/" + notification.performedAction;
          
-         // UPDATE THE STATISTICS SECTION: Fix for İşlem Durumu statistics on finish
          const successfulActionElement = document.getElementById("successfulAction");
          const performedActionElement = document.getElementById("performedAction");
          const plannedActionElement = document.getElementById("plannedAction");
@@ -529,10 +492,9 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
            plannedActionElement.textContent = notification.plannedAction || 0;
          }
          if (remainingActionElement) {
-           remainingActionElement.textContent = 0; // All done
+           remainingActionElement.textContent = 0;
          }
          
-         // UPDATE CURRENT OPERATION DESCRIPTION: Show completion status
          if (currentOperationDescriptionElement) {
            currentOperationDescriptionElement.textContent = "İşlem tamamlandı";
          }
@@ -542,7 +504,6 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
          if (progressBarText) progressBarText.innerHTML = "";
          if (progressText) progressText.innerHTML = "";
          
-         // Reset statistics when not ongoing/finished
          const successfulActionElement = document.getElementById("successfulAction");
          const performedActionElement = document.getElementById("performedAction");
          const plannedActionElement = document.getElementById("plannedAction");
@@ -592,7 +553,6 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
     return true;
   }
 
-  // Handle migration progress updates - moved to notificationHandler.js
   if (message && message.action === "updateMigrationProgress") {
     notificationHandler.handleMigrationProgressUpdate(message);
     sendResponse({ status: "ok" });
@@ -624,7 +584,6 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
   }
 });
 
-// Table Functions
 function insertCompletedProcessesTable(banSource, successfulAction, performedAction, plannedAction, errorStatus, operationMetadata = null) {
   let table = document.getElementById("completedProcesses").getElementsByTagName('tbody')[0];
   let row = table.insertRow(0);
@@ -638,24 +597,19 @@ function insertCompletedProcessesTable(banSource, successfulAction, performedAct
   cell1.innerHTML = d.getHours() + ":" + d.getMinutes();
   cell2.innerHTML = banSource;
   
-  // Use the EXACT same description logic as the planned processes table
   let description = "Toplu işlem";
   
   if (operationMetadata) {
-    // First priority: use actionDescription if available (matches planned processes)
     if (operationMetadata.actionDescription) {
       description = operationMetadata.actionDescription;
     }
-    // Second priority: use operationNotes if available
     else if (operationMetadata.operationNotes) {
       description = operationMetadata.operationNotes;
     }
-    // Third priority: generate from metadata using EXACT same logic as planned processes
     else {
       description = generateDescriptionFromMetadataForCompleted(banSource, operationMetadata);
     }
   } else {
-    // Fallback: generate from banSource only using EXACT same logic as planned processes
     description = generateDescriptionFromMetadataForCompleted(banSource, {});
   }
   
@@ -667,9 +621,7 @@ function insertCompletedProcessesTable(banSource, successfulAction, performedAct
   cell6.innerHTML = errorStatus;
 }
 
-// Helper function to generate description using EXACT same logic as planned processes
 function generateDescriptionFromMetadataForCompleted(banSource, metadata = {}) {
-  // Use EXACT same logic as the planned processes function
   const { targetTypes = [], sourceEntry, sourceAuthor, sourceTitle, sourceList, timeFilter } = metadata;
   
   let baseDescription = "";

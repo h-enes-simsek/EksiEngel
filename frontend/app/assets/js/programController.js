@@ -9,23 +9,18 @@ import { config } from './config.js';
 import { storageHandler } from './storageHandler.js';
 
 
-class ProgramController
-
-{
-  constructor()
-  {
+class ProgramController {
+  constructor() {
     this._earlyStop = false;
     this._migrationInProgress = false;
-    this._isBlockedListRefreshInProgress = false; // New flag for blocked list refresh
-    this._isMutedListRefreshInProgress = false; // New flag for muted list refresh
-    this._blockMutedUsersInProgress = false; // Flag for blocking muted users
-    this._blockTitlesInProgress = false; // Flag for blocking titles of blocked/muted
-
+    this._isBlockedListRefreshInProgress = false;
+    this._isMutedListRefreshInProgress = false;
+    this._blockMutedUsersInProgress = false;
+    this._blockTitlesInProgress = false;
     this._tabId = 0;
   }
 
-  get isActive()
-  {
+  get isActive() {
     return processQueue.isRunning ||
            this._migrationInProgress ||
            this._isMutedListRefreshInProgress ||
@@ -34,53 +29,35 @@ class ProgramController
            this._blockTitlesInProgress;
   }
 
-  set tabId(val)
-  {
-    this._tabId = val;
-  }
+  set tabId(val) { this._tabId = val; }
+  get tabId() { return this._tabId; }
 
-  get tabId()
-  {
-    return this._tabId;
-  }
+  get earlyStop() { return this._earlyStop; }
 
-  get earlyStop()
-  {
-    return this._earlyStop;
-  }
-
-  set earlyStop(val)
-  {
-    // Always set the flag regardless of program state
+  set earlyStop(val) {
     this._earlyStop = val;
-
-    if(val)
-    {
+    if(val) {
       if (this._migrationInProgress) {
         log.info("progctrl", "early stop received during migration process.");
-      } else if (this._isMutedListRefreshInProgress) { // Check for muted list refresh
+      } else if (this._isMutedListRefreshInProgress) {
         log.info("progctrl", "early stop received during muted list refresh process.");
-      } else if (this._isBlockedListRefreshInProgress) { // Check for blocked list refresh
+      } else if (this._isBlockedListRefreshInProgress) {
         log.info("progctrl", "early stop received during blocked list refresh process.");
-      } else if (this._blockMutedUsersInProgress) { // Check for block muted users
+      } else if (this._blockMutedUsersInProgress) {
         log.info("progctrl", "early stop received during block muted users process.");
-      } else if (this._blockTitlesInProgress) { // Check for block titles
+      } else if (this._blockTitlesInProgress) {
         log.info("progctrl", "early stop received during block titles process.");
       } else if (processQueue.isRunning) {
         log.info("progctrl", "early stop received, number of waiting processes in the queue: " + processQueue.size);
       } else {
         log.info("progctrl", "early stop received, but no process is currently running.");
       }
-    }
-    else
-    {
+    } else {
       log.info("progctrl", "early stop flag cleared.");
     }
   }
 
-  get isMutedListRefreshInProgress() {
-    return this._isMutedListRefreshInProgress;
-  }
+  get isMutedListRefreshInProgress() { return this._isMutedListRefreshInProgress; }
 
   set isMutedListRefreshInProgress(val) {
     this._isMutedListRefreshInProgress = val;
@@ -91,13 +68,8 @@ class ProgramController
     }
   }
 
-  get isMigrationInProgress() {
-    return this._migrationInProgress;
-  }
-
-  get isBlockedListRefreshInProgress() {
-    return this._isBlockedListRefreshInProgress;
-  }
+  get isMigrationInProgress() { return this._migrationInProgress; }
+  get isBlockedListRefreshInProgress() { return this._isBlockedListRefreshInProgress; }
 
   set isBlockedListRefreshInProgress(val) {
     this._isBlockedListRefreshInProgress = val;
@@ -108,34 +80,23 @@ class ProgramController
     }
   }
 
-  get isBlockMutedUsersInProgress() {
-    return this._blockMutedUsersInProgress;
-  }
-
-  get isBlockTitlesInProgress() {
-    return this._blockTitlesInProgress;
-  }
-
-  // isMutedListRefreshInProgress getter already exists
+  get isBlockMutedUsersInProgress() { return this._blockMutedUsersInProgress; }
+  get isBlockTitlesInProgress() { return this._blockTitlesInProgress; }
 
 
-  // Private helper method for retrying actions with delay
   async _performActionWithRetry(banMode, id, isTargetUser, isTargetTitle, isTargetMute, retries = 3) {
     let attempt = 0;
     while (attempt < retries) {
-      if (this.earlyStop) { // Access class property
+      if (this.earlyStop) {
         log.info("progctrl", "Migration stopped early during action retry.");
         return { resultType: enums.ResultType.FAIL, earlyStop: true };
       }
 
-      // Use enum keys for logging if available, otherwise use the value
       const banModeStr = Object.keys(enums.BanMode).find(key => enums.BanMode[key] === banMode) || banMode;
-      // Reduced logging frequency for action attempts
       if (attempt === 0) {
         log.debug("progctrl", `Attempt ${attempt + 1} for action: ${banModeStr}, id: ${id}, user: ${isTargetUser}, title: ${isTargetTitle}, mute: ${isTargetMute}`);
       }
 
-      // relationHandler manages its own counters, reset is important if reusing the instance for multiple steps
       relationHandler.reset();
       const result = await relationHandler.performAction(banMode, id, isTargetUser, isTargetTitle, isTargetMute);
 
@@ -143,50 +104,42 @@ class ProgramController
         log.debug("progctrl", `Action successful for id: ${id}`);
         return { resultType: enums.ResultType.SUCCESS };
       } else if (result.resultType === enums.ResultType.FAIL && result.retryAfter) {
-        // Rate limit hit, use the suggested retryAfter value
-        let waitTimeInSec = result.retryAfter > 0 ? result.retryAfter : 65; // Use returned value or default
+        let waitTimeInSec = result.retryAfter > 0 ? result.retryAfter : 65;
         log.warn("progctrl", `Action failed for id: ${id} (Rate limited). Retrying after ${waitTimeInSec} seconds...`);
 
-        // Notify user about cooldown via notification page
         for(let i = 1; i <= waitTimeInSec; i++) {
-            if(this.earlyStop) break; // Check early stop during wait
-            notificationHandler.notifyCooldown(waitTimeInSec - i); // Show countdown
-            await utils.sleep(1000); // Wait 1 second
+            if(this.earlyStop) break;
+            notificationHandler.notifyCooldown(waitTimeInSec - i);
+            await utils.sleep(1000);
         }
 
-        if(this.earlyStop) { // Re-check after loop in case it was triggered during the last second
+        if(this.earlyStop) {
              log.info("progctrl", "Operation stopped early during cooldown wait.");
-
-             // Send a final status update (generic stop message)
              try {
                chrome.tabs.sendMessage(this.tabId, {
-                 action: "operationStopped", // Use a generic action name
+                 action: "operationStopped",
                  message: "Operation stopped by user during cooldown.",
                  cooldown: true
                });
              } catch (e) {
                log.warn("progctrl", `Error sending stop message: ${e}`);
              }
-
              return { resultType: enums.ResultType.FAIL, earlyStop: true };
         }
 
         attempt++;
       } else {
-         // Handle other failures (not rate limit) - no retry needed for these based on current relationHandler logic
         log.err("progctrl", `Action failed for id: ${id} with result type: ${result.resultType}. Not retrying.`);
-        return { resultType: enums.ResultType.FAIL }; // Treat as final failure
+        return { resultType: enums.ResultType.FAIL };
       }
     }
     log.err("progctrl", `Action failed for id: ${id} after ${retries} attempts.`);
-    return { resultType: enums.ResultType.FAIL }; // Failed after retries
+    return { resultType: enums.ResultType.FAIL };
   }
 
-  // Simplified version that only uses alerts and only processes the first page of blocked users
   async migrateBlockedToMuted() {
     log.info("progctrl", "migrateBlockedToMuted function started.");
 
-    // Check if already running
     if (this._migrationInProgress) {
        log.warn("progctrl", "Migration from Blocked to Muted is already in progress.");
        try {
@@ -200,14 +153,11 @@ class ProgramController
        return;
     }
 
-    log.info("progctrl", "Initial checks passed.");
-    this._migrationInProgress = true; // Set flag
-    this.earlyStop = false; // Reset early stop flag
+    this._migrationInProgress = true;
+    this.earlyStop = false;
 
     try {
-      // Fetch all blocked users
       log.info("progctrl", "Fetching all blocked users...");
-      // Send status update: Fetching users
       notificationHandler.notify("Engellenen kullanıcılar getiriliyor...");
       const scrapeResult = await scrapingHandler.scrapeAllBlockedUsers();
 
@@ -224,25 +174,19 @@ class ProgramController
         return;
       }
 
-      const blockedUsers = scrapeResult.usernames.map(username => ({ authorName: username, authorId: null })); // Create objects with placeholder ID
+      const blockedUsers = scrapeResult.usernames.map(username => ({ authorName: username, authorId: null }));
       const totalBlockedUsers = scrapeResult.count;
 
       if (blockedUsers.length === 0) {
-        log.info("progctrl", "No blocked users found - completing with 0 results, queue will continue with next item");
+        log.info("progctrl", "No blocked users found - completing with 0 results");
         this._migrationInProgress = false;
         notificationHandler.notify("Engellenen kullanıcı bulunamadı.");
         return;
       }
 
       log.info("progctrl", `Found ${blockedUsers.length} blocked users.`);
-
-      // No confirmation needed, we'll just proceed
-      log.info("progctrl", `Proceeding with migration of ${blockedUsers.length} blocked users.`);
-      // Send status update: Starting migration
       notificationHandler.notify(`Engellenen ${blockedUsers.length} kullanıcı sessize alınıyor...`);
 
-
-      // Process users
       let migratedCount = 0;
       let failedCount = 0;
       let skippedCount = 0;
@@ -250,40 +194,31 @@ class ProgramController
       for (let i = 0; i < blockedUsers.length; i++) {
         const user = blockedUsers[i];
 
-        // Check for early stop
         if (this.earlyStop) {
           log.info("progctrl", "Migration stopped early by user.");
           notificationHandler.notify(`Taşıma işlemi kullanıcı tarafından durduruldu. İşlenen: ${i}/${blockedUsers.length}`);
           break;
         }
 
-        // Update progress
         const currentProgress = i + 1;
         const totalUsers = blockedUsers.length;
-        const percentage = Math.round((currentProgress / totalUsers) * 100);
 
-        // Update progress bar in notification page using notifyOngoing
-        // Use migratedCount for successful actions, currentProgress for processed, totalUsers for total
         notificationHandler.notifyOngoing(migratedCount, currentProgress, totalUsers, processQueue.currentItemMetadata);
 
-        // Step A: Get the user ID by scraping their profile page
         log.info("progctrl", `Scraping user ID for: ${user.authorName}...`);
         const authorId = await scrapingHandler.scrapeAuthorIdFromAuthorProfilePage(user.authorName);
 
         if (!authorId || authorId === "0") {
           log.err("progctrl", `Could not scrape user ID for ${user.authorName}. Skipping.`);
           failedCount++;
-          // No specific notification here, failure is counted and loop continues
-          continue; // Skip to the next user
+          continue;
         }
 
         log.info("progctrl", `Successfully scraped user ID for ${user.authorName}: ${authorId}`);
 
-        // Step B: Unblock
         log.info("progctrl", `Unblocking user: ${user.authorName} (ID: ${authorId})...`);
         const unblockResult = await this._performActionWithRetry(enums.BanMode.UNDOBAN, authorId, true, false, false);
 
-        // Check if early stop was triggered during the retry
         if (unblockResult.earlyStop) {
           log.info("progctrl", "Migration stopped early by user during unblock operation.");
           break;
@@ -292,18 +227,14 @@ class ProgramController
         if (unblockResult.resultType !== enums.ResultType.SUCCESS) {
           log.err("progctrl", `Failed to unblock user: ${user.authorName} (ID: ${authorId})`);
           failedCount++;
-          // No specific notification here, failure is counted and loop continues
-          continue; // Skip to the next user if unblock fails
+          continue;
         }
 
-        // For this specific feature, we always want to mute regardless of config setting
-        // The whole point of this feature is to migrate from blocked to muted
         log.debug("progctrl", `Proceeding with muting regardless of config.enableMute setting`);
 
         log.info("progctrl", `Muting user: ${user.authorName} (ID: ${authorId})...`);
         const muteResult = await this._performActionWithRetry(enums.BanMode.BAN, authorId, false, false, true);
 
-        // Check if early stop was triggered during the retry
         if (muteResult.earlyStop) {
           log.info("progctrl", "Migration stopped early by user during mute operation.");
           break;
@@ -312,24 +243,15 @@ class ProgramController
         if (muteResult.resultType !== enums.ResultType.SUCCESS) {
           log.err("progctrl", `Failed to mute user: ${user.authorName} (ID: ${authorId})`);
           failedCount++;
-          // No specific notification here, failure is counted
         } else {
           log.info("progctrl", `Successfully migrated user: ${user.authorName} (ID: ${authorId})`);
           migratedCount++;
-          // Success is counted, notifyOngoing will reflect this in the next iteration
         }
 
-        // Small delay between users
         await utils.sleep(500);
       }
 
-      // Note: The migrateBlockedToMuted function does not remove users from a local muted list
-      // because it's migrating *from* blocked *to* muted. The muted list is the destination.
-      // The logic for usersToRemoveFromMuted and updating muted storage was incorrectly
-      // copied from blockMutedUsers. Removing it here.
-
-      // Final status update using finishSuccess or finishErrorEarlyStop
-      const totalProcessed = migratedCount + failedCount + skippedCount; // Calculate total processed
+      const totalProcessed = migratedCount + failedCount + skippedCount;
       if (this.earlyStop) {
           log.info("progctrl", `Migration stopped early. Migrated: ${migratedCount}, Failed: ${failedCount}, Skipped: ${skippedCount}, Total Processed: ${totalProcessed}`);
           notificationHandler.finishErrorEarlyStop(enums.BanSource.MIGRATE_BLOCKED_TO_MUTED, enums.BanMode.BAN, processQueue.currentItemMetadata);
@@ -339,17 +261,13 @@ class ProgramController
           notificationHandler.finishSuccess(enums.BanSource.MIGRATE_BLOCKED_TO_MUTED, enums.BanMode.BAN, migratedCount, totalProcessed, blockedUsers.length, processQueue.currentItemMetadata);
       }
 
-
     } catch (error) {
       log.err("progctrl", `An error occurred during migration: ${error}`, error);
-      // Use notify for general error status before finally block
       notificationHandler.notify(`Taşıma sırasında bir hata oluştu: ${error.message || "Bilinmeyen hata"}`);
-      // Consider adding a finishError call here if appropriate, depending on desired final state display
     } finally {
       log.info("progctrl", "migrateBlockedToMuted function completed.");
-      this.earlyStop = false; // Reset early stop flag in finally
-      this._migrationInProgress = false; // Reset migration flag in finally
-      // Refresh relevant counts if needed
+      this.earlyStop = false;
+      this._migrationInProgress = false;
       notificationHandler.notifyUpdateCounts();
     }
   }

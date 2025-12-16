@@ -6,45 +6,30 @@ import { log } from './log.js';
 
 log.info("popup.js: has been started.");
 
-// --- Element References ---
 let mutedUserCountSpan;
 let refreshMutedListButton;
 let exportMutedListCSVButton;
-let blockedUserCountSpan; // Added
-let refreshBlockedListButton; // Added
-let exportBlockedListCSVButton; // Added
+let blockedUserCountSpan;
+let refreshBlockedListButton;
+let exportBlockedListCSVButton;
 let popupStatusDiv;
 
-// --- Helper Functions ---
-
-/**
- * Updates the status message area.
- * @param {string} message - The message to display.
- * @param {boolean} isError - If true, style as an error.
- * @param {number} clearAfterMs - Milliseconds after which to clear the message (0 = don't clear).
- */
 function updateStatus(message, isError = false, clearAfterMs = 3000) {
   if (!popupStatusDiv) return;
   popupStatusDiv.textContent = message;
-  popupStatusDiv.style.color = isError ? '#dc3545' : '#333'; // Red for error, dark grey otherwise
+  popupStatusDiv.style.color = isError ? '#dc3545' : '#333';
 
-  // Clear the message after a delay
   if (clearAfterMs > 0) {
     setTimeout(() => {
-      if (popupStatusDiv.textContent === message) { // Only clear if it hasn't been overwritten
+      if (popupStatusDiv.textContent === message) {
         popupStatusDiv.textContent = '';
       }
     }, clearAfterMs);
   }
 }
 
-/**
- * Generates a CSV file from the username list and triggers download.
- * @param {string[]} usernames - Array of usernames.
- * @param {'muted' | 'blocked'} listType - The type of list being exported ('muted' or 'blocked').
- */
 function downloadCSV(usernames, listType) {
-  log.info("popup.js", `downloadCSV triggered. Usernames count: ${usernames ? usernames.length : 0}, listType: ${listType}`); // Added detailed logging
+  log.info("popup.js", `downloadCSV triggered. Usernames count: ${usernames ? usernames.length : 0}, listType: ${listType}`);
   if (!Array.isArray(usernames) || usernames.length === 0) {
     updateStatus("No usernames to export.", true);
     return;
@@ -56,7 +41,7 @@ function downloadCSV(usernames, listType) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.setAttribute("href", url);
-  const timestamp = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  const timestamp = new Date().toISOString().slice(0, 10);
   const filenamePrefix = listType === 'blocked' ? 'eksiengel_blocked_users' : 'eksiengel_muted_users';
   link.setAttribute("download", `${filenamePrefix}_${timestamp}.csv`);
   link.style.visibility = 'hidden';
@@ -67,23 +52,18 @@ function downloadCSV(usernames, listType) {
   updateStatus(`${listType === 'blocked' ? 'Blocked' : 'Muted'} user list exported.`, false);
 }
 
-// --- Initialization ---
-
 async function initializePopup() {
   log.info("popup.js: Initializing...");
 
-  // Get element references
   mutedUserCountSpan = document.getElementById('mutedUserCount');
   refreshMutedListButton = document.getElementById('refreshMutedList');
   exportMutedListCSVButton = document.getElementById('exportMutedListCSV');
   popupStatusDiv = document.getElementById('popupStatus');
 
-  // Set initial count to 0
   if (mutedUserCountSpan) {
     mutedUserCountSpan.textContent = '0';
   }
 
-  // Set initial count from storage
   try {
     const count = await storageHandler.getMutedUserCount();
     if (mutedUserCountSpan) {
@@ -95,55 +75,49 @@ async function initializePopup() {
   } catch (error) {
     log.err("popup.js", "Error getting initial muted count:", error);
     if (mutedUserCountSpan) {
-      mutedUserCountSpan.textContent = 'Error'; // Display 'Error' on failure
+      mutedUserCountSpan.textContent = 'Error';
     }
     if (exportMutedListCSVButton) {
       exportMutedListCSVButton.disabled = true;
     }
   }
 
-  // Get element references for blocked users
-  blockedUserCountSpan = document.getElementById('blockedUserCount'); // Added
-  refreshBlockedListButton = document.getElementById('refreshBlockedList'); // Added
-  exportBlockedListCSVButton = document.getElementById('exportBlockedListCSV'); // Added
+  blockedUserCountSpan = document.getElementById('blockedUserCount');
+  refreshBlockedListButton = document.getElementById('refreshBlockedList');
+  exportBlockedListCSVButton = document.getElementById('exportBlockedListCSV');
 
-  // Set initial blocked count to 0
-  if (blockedUserCountSpan) { // Added
-    blockedUserCountSpan.textContent = '0'; // Added
-  } // Added
+  if (blockedUserCountSpan) {
+    blockedUserCountSpan.textContent = '0';
+  }
 
-  // Set initial blocked count from storage
-  try { // Added
-    const count = await storageHandler.getBlockedUserCount(); // Added
-    if (blockedUserCountSpan) { // Added
-      blockedUserCountSpan.textContent = count; // Added
-    } // Added
-    if (exportBlockedListCSVButton) { // Added
-      exportBlockedListCSVButton.disabled = count === 0; // Added
-    } // Added
-  } catch (error) { // Added
-    log.err("popup.js", "Error getting initial blocked count:", error); // Added
-    if (blockedUserCountSpan) { // Added
-      blockedUserCountSpan.textContent = 'Error'; // Added
-    } // Added
-    if (exportBlockedListCSVButton) { // Added
-      exportBlockedListCSVButton.disabled = true; // Added
-    } // Added
-  } // Added
+  try {
+    const count = await storageHandler.getBlockedUserCount();
+    if (blockedUserCountSpan) {
+      blockedUserCountSpan.textContent = count;
+    }
+    if (exportBlockedListCSVButton) {
+      exportBlockedListCSVButton.disabled = count === 0;
+    }
+  } catch (error) {
+    log.err("popup.js", "Error getting initial blocked count:", error);
+    if (blockedUserCountSpan) {
+      blockedUserCountSpan.textContent = 'Error';
+    }
+    if (exportBlockedListCSVButton) {
+      exportBlockedListCSVButton.disabled = true;
+    }
+  }
 
-  // Add event listeners for muted users
   refreshMutedListButton.addEventListener('click', handleRefreshMutedList);
   exportMutedListCSVButton.addEventListener('click', handleExportMutedList);
 
-  // Add event listeners for blocked users // Added
-  if (refreshBlockedListButton) { // Added
-    refreshBlockedListButton.addEventListener('click', handleRefreshBlockedList); // Added
-  } // Added
-  if (exportBlockedListCSVButton) { // Added
-    exportBlockedListCSVButton.addEventListener('click', handleExportBlockedList); // Added
-  } // Added
+  if (refreshBlockedListButton) {
+    refreshBlockedListButton.addEventListener('click', handleRefreshBlockedList);
+  }
+  if (exportBlockedListCSVButton) {
+    exportBlockedListCSVButton.addEventListener('click', handleExportBlockedList);
+  }
 
-  // Add listeners for existing buttons (ensure they are defined in the HTML)
   document.getElementById('openauthorListPage')?.addEventListener('click', handleOpenAuthorListPage);
   document.getElementById('startUndobanAll')?.addEventListener('click', handleStartUndobanAll);
   document.getElementById('openFaq')?.addEventListener('click', handleOpenFaq);
@@ -155,62 +129,52 @@ async function initializePopup() {
   log.info("popup.js: Initialization complete.");
 }
 
-// --- Event Handlers ---
-
-function handleRefreshMutedList() { // Changed to non-async
+function handleRefreshMutedList() {
   log.info("popup.js", "Refresh muted list button clicked.");
-  commHandler.sendAnalyticsData({ click_type: enums.ClickType.EXTENSION_MENU_REFRESH_MUTED }); // Assuming new enum value
+  commHandler.sendAnalyticsData({ click_type: enums.ClickType.EXTENSION_MENU_REFRESH_MUTED });
 
-  updateStatus("Initiating muted list refresh...", false, 0); // Show immediate feedback
+  updateStatus("Initiating muted list refresh...", false, 0);
 
-  // Send message to background script to handle the refresh process
   chrome.runtime.sendMessage({ action: "refreshMutedList" }, (response) => {
     if (chrome.runtime.lastError) {
       log.error("popup.js: Error sending refreshMutedList message:", chrome.runtime.lastError.message);
       updateStatus("Error initiating refresh: " + chrome.runtime.lastError.message, true, 5000);
-      // Re-enable buttons if message sending fails
       refreshMutedListButton.disabled = false;
       const currentCount = parseInt(mutedUserCountSpan.textContent) || 0;
       exportMutedListCSVButton.disabled = currentCount === 0;
     } else {
       log.info("popup.js: refreshMutedList message sent successfully. Waiting for completion message.");
-      // Background script will open notification tab and handle progress
-      // Do NOT close the window immediately, wait for completion message
     }
   });
 }
 
-// Add a listener for messages from the background script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "mutedListRefreshComplete") {
     log.info("popup.js: Received mutedListRefreshComplete message.", request);
-    refreshMutedListButton.disabled = false; // Re-enable the button
+    refreshMutedListButton.disabled = false;
 
     if (request.success) {
       updateStatus(`Muted list refreshed. Found ${request.count} users.`, false, 5000);
-      // Update the displayed count
       if (mutedUserCountSpan) {
         mutedUserCountSpan.textContent = request.count;
       }
-      // Re-enable export button if count > 0
       exportMutedListCSVButton.disabled = request.count === 0;
     } else {
       const errorMessage = request.stoppedEarly ? "Muted list refresh stopped by user." : `Muted list refresh failed: ${request.error}`;
       updateStatus(errorMessage, true, 5000);
-      // Re-enable export button based on current count in case of error
       const currentCount = parseInt(mutedUserCountSpan.textContent) || 0;
       exportMutedListCSVButton.disabled = currentCount === 0;
     }
-    sendResponse({ status: "ok" }); // Acknowledge the message
+    sendResponse({ status: "ok" });
   }
 });
 
 async function handleExportMutedList() {
-  log.info("popup.js", "handleExportMutedList triggered."); // Added logging
+  log.info("popup.js", "handleExportMutedList triggered.");
   log.info("popup.js", "Export muted list button clicked.");
-  commHandler.sendAnalyticsData({ click_type: enums.ClickType.EXTENSION_MENU_EXPORT_MUTED }); // Assuming new enum value
+  commHandler.sendAnalyticsData({ click_type: enums.ClickType.EXTENSION_MENU_EXPORT_MUTED });
 
-  exportMutedListCSVButton.disabled = true; // Disable while processing
+  exportMutedListCSVButton.disabled = true;
   updateStatus("Preparing export...", false, 0);
 
   try {
@@ -224,131 +188,106 @@ async function handleExportMutedList() {
     log.err("popup.js", "Error exporting muted list:", error);
     updateStatus(`Error exporting: ${error.message || 'Unknown error'}`, true);
   } finally {
-    // Re-enable based on current count
     const currentCount = parseInt(mutedUserCountSpan.textContent) || 0;
     exportMutedListCSVButton.disabled = currentCount === 0;
   }
 }
 
-// --- New Blocked User Handlers --- // Added
+function handleRefreshBlockedList() {
+  log.info("popup.js", "Refresh blocked list button clicked.");
 
-function handleRefreshBlockedList() { // Added
-  log.info("popup.js", "Refresh blocked list button clicked."); // Added
-  // TODO: Add Analytics Data Point for blocked list refresh // Added
+  updateStatus("Initiating blocked list refresh...", false, 0);
 
-  updateStatus("Initiating blocked list refresh...", false, 0); // Added
+  chrome.runtime.sendMessage({ action: "refreshBlockedList" }, (response) => {
+    if (chrome.runtime.lastError) {
+      log.error("popup.js: Error sending refreshBlockedList message:", chrome.runtime.lastError.message);
+      updateStatus("Error initiating refresh: " + chrome.runtime.lastError.message, true, 5000);
+      if (refreshBlockedListButton) refreshBlockedListButton.disabled = false;
+      const currentCount = parseInt(blockedUserCountSpan.textContent) || 0;
+      if (exportBlockedListCSVButton) exportBlockedListCSVButton.disabled = currentCount === 0;
+    } else {
+      log.info("popup.js: refreshBlockedList message sent successfully. Waiting for completion message.");
+    }
+  });
+}
 
-  // Send message to background script to handle the refresh process // Added
-  chrome.runtime.sendMessage({ action: "refreshBlockedList" }, (response) => { // Added
-    if (chrome.runtime.lastError) { // Added
-      log.error("popup.js: Error sending refreshBlockedList message:", chrome.runtime.lastError.message); // Added
-      updateStatus("Error initiating refresh: " + chrome.runtime.lastError.message, true, 5000); // Added
-      // Re-enable buttons if message sending fails // Added
-      if (refreshBlockedListButton) refreshBlockedListButton.disabled = false; // Added
-      const currentCount = parseInt(blockedUserCountSpan.textContent) || 0; // Added
-      if (exportBlockedListCSVButton) exportBlockedListCSVButton.disabled = currentCount === 0; // Added
-    } else { // Added
-      log.info("popup.js: refreshBlockedList message sent successfully. Waiting for completion message."); // Added
-      // Background script will open notification tab and handle progress // Added
-      // Do NOT close the window immediately, wait for completion message // Added
-    } // Added
-  }); // Added
-} // Added
+async function handleExportBlockedList() {
+  log.info("popup.js", "handleExportBlockedList triggered.");
+  log.info("popup.js", "Export blocked list button clicked.");
 
-async function handleExportBlockedList() { // Added
-  log.info("popup.js", "handleExportBlockedList triggered."); // Added logging
-  log.info("popup.js", "Export blocked list button clicked."); // Added
-  // TODO: Add Analytics Data Point for blocked list export // Added
+  if (exportBlockedListCSVButton) exportBlockedListCSVButton.disabled = true;
+  updateStatus("Preparing export...", false, 0);
 
-  if (exportBlockedListCSVButton) exportBlockedListCSVButton.disabled = true; // Disable while processing // Added
-  updateStatus("Preparing export...", false, 0); // Added
+  try {
+    const usernames = await storageHandler.getBlockedUserList();
+    log.info("popup.js", `handleExportBlockedList: Retrieved ${usernames ? usernames.length : 0} usernames. Calling downloadCSV with listType 'blocked'.`);
+    if (usernames && usernames.length > 0) {
+      downloadCSV(usernames, 'blocked');
+    } else {
+      updateStatus("No blocked user list found in storage to export.", true);
+    }
+  } catch (error) {
+    log.err("popup.js", "Error exporting blocked list:", error);
+    updateStatus(`Error exporting: ${error.message || 'Unknown error'}`, true);
+  } finally {
+    const currentCount = parseInt(blockedUserCountSpan.textContent) || 0;
+    if (exportBlockedListCSVButton) exportBlockedListCSVButton.disabled = currentCount === 0;
+  }
+}
 
-  try { // Added
-    const usernames = await storageHandler.getBlockedUserList(); // Added
-    log.info("popup.js", `handleExportBlockedList: Retrieved ${usernames ? usernames.length : 0} usernames. Calling downloadCSV with listType 'blocked'.`); // Added detailed logging
-    if (usernames && usernames.length > 0) { // Added
-      downloadCSV(usernames, 'blocked'); // Reuse the existing downloadCSV function // Added
-    } else { // Added
-      updateStatus("No blocked user list found in storage to export.", true); // Added
-    } // Added
-  } catch (error) { // Added
-    log.err("popup.js", "Error exporting blocked list:", error); // Added
-    updateStatus(`Error exporting: ${error.message || 'Unknown error'}`, true); // Added
-  } finally { // Added
-    // Re-enable based on current count // Added
-    const currentCount = parseInt(blockedUserCountSpan.textContent) || 0; // Added
-    if (exportBlockedListCSVButton) exportBlockedListCSVButton.disabled = currentCount === 0; // Added
-  } // Added
-} // Added
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === "mutedListRefreshComplete") {
+    log.info("popup.js: Received mutedListRefreshComplete message.", request);
+    if (refreshMutedListButton) refreshMutedListButton.disabled = false;
 
-// Add a listener for messages from the background script (including new blocked list messages) // Added
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => { // Added
-  // Handle muted list refresh complete (existing logic) // Added
-  if (request.action === "mutedListRefreshComplete") { // Added
-    log.info("popup.js: Received mutedListRefreshComplete message.", request); // Added
-    if (refreshMutedListButton) refreshMutedListButton.disabled = false; // Re-enable the button // Added
+    if (request.success) {
+      updateStatus(`Muted list refreshed. Found ${request.count} users.`, false, 5000);
+      if (mutedUserCountSpan) {
+        mutedUserCountSpan.textContent = request.count;
+      }
+      if (exportMutedListCSVButton) exportMutedListCSVButton.disabled = request.count === 0;
+    } else {
+      const errorMessage = request.stoppedEarly ? "Muted list refresh stopped by user." : `Muted list refresh failed: ${request.error}`;
+      updateStatus(errorMessage, true, 5000);
+      const currentCount = parseInt(mutedUserCountSpan.textContent) || 0;
+      if (exportMutedListCSVButton) exportMutedListCSVButton.disabled = currentCount === 0;
+    }
+    sendResponse({ status: "ok" });
+    return true;
+  }
 
-    if (request.success) { // Added
-      updateStatus(`Muted list refreshed. Found ${request.count} users.`, false, 5000); // Added
-      // Update the displayed count // Added
-      if (mutedUserCountSpan) { // Added
-        mutedUserCountSpan.textContent = request.count; // Added
-      } // Added
-      // Re-enable export button if count > 0 // Added
-      if (exportMutedListCSVButton) exportMutedListCSVButton.disabled = request.count === 0; // Added
-    } else { // Added
-      const errorMessage = request.stoppedEarly ? "Muted list refresh stopped by user." : `Muted list refresh failed: ${request.error}`; // Added
-      updateStatus(errorMessage, true, 5000); // Added
-      // Re-enable export button based on current count in case of error // Added
-      const currentCount = parseInt(mutedUserCountSpan.textContent) || 0; // Added
-      if (exportMutedListCSVButton) exportMutedListCSVButton.disabled = currentCount === 0; // Added
-    } // Added
-    sendResponse({ status: "ok" }); // Acknowledge the message // Added
-    return true; // Keep the message channel open for the async response // Added
-  } // Added
+  if (request.action === "blockedListRefreshComplete") {
+    log.info("popup.js: Received blockedListRefreshComplete message.", request);
+    if (refreshBlockedListButton) refreshBlockedListButton.disabled = false;
 
-  // Handle blocked list refresh complete (new logic) // Added
-  if (request.action === "blockedListRefreshComplete") { // Added
-    log.info("popup.js: Received blockedListRefreshComplete message.", request); // Added
-    if (refreshBlockedListButton) refreshBlockedListButton.disabled = false; // Re-enable the button // Added
+    if (request.success) {
+      updateStatus(`Blocked list refreshed. Found ${request.count} users.`, false, 5000);
+      if (blockedUserCountSpan) {
+        blockedUserCountSpan.textContent = request.count;
+      }
+      if (exportBlockedListCSVButton) exportBlockedListCSVButton.disabled = request.count === 0;
+    } else {
+      const errorMessage = request.stoppedEarly ? "Blocked list refresh stopped by user." : `Blocked list refresh failed: ${request.error}`;
+      updateStatus(errorMessage, true, 5000);
+      const currentCount = parseInt(blockedUserCountSpan.textContent) || 0;
+      if (exportBlockedListCSVButton) exportBlockedListCSVButton.disabled = currentCount === 0;
+    }
+    sendResponse({ status: "ok" });
+    return true;
+  }
 
-    if (request.success) { // Added
-      updateStatus(`Blocked list refreshed. Found ${request.count} users.`, false, 5000); // Added
-      // Update the displayed count // Added
-      if (blockedUserCountSpan) { // Added
-        blockedUserCountSpan.textContent = request.count; // Added
-      } // Added
-      // Re-enable export button if count > 0 // Added
-      if (exportBlockedListCSVButton) exportBlockedListCSVButton.disabled = request.count === 0; // Added
-    } else { // Added
-      const errorMessage = request.stoppedEarly ? "Blocked list refresh stopped by user." : `Blocked list refresh failed: ${request.error}`; // Added
-      updateStatus(errorMessage, true, 5000); // Added
-      // Re-enable export button based on current count in case of error // Added
-      const currentCount = parseInt(blockedUserCountSpan.textContent) || 0; // Added
-      if (exportBlockedListCSVButton) exportBlockedListCSVButton.disabled = currentCount === 0; // Added
-    } // Added
-    sendResponse({ status: "ok" }); // Acknowledge the message // Added
-    return true; // Keep the message channel open for the async response // Added
-  } // Added
+  if (request.action === "blockedListRefreshProgress") {
+    log.info("popup.js: Received blockedListRefreshProgress message.", request);
+    if (blockedUserCountSpan) {
+      blockedUserCountSpan.textContent = request.count;
+    }
+    if (exportBlockedListCSVButton) exportBlockedListCSVButton.disabled = true;
+    sendResponse({ status: "ok" });
+    return true;
+  }
 
-  // Handle blocked list refresh progress (new logic) // Added
-  if (request.action === "blockedListRefreshProgress") { // Added
-    log.info("popup.js: Received blockedListRefreshProgress message.", request); // Added
-    // Update the displayed count // Added
-    if (blockedUserCountSpan) { // Added
-      blockedUserCountSpan.textContent = request.count; // Added
-    } // Added
-    // Keep export button disabled during refresh // Added
-    if (exportBlockedListCSVButton) exportBlockedListCSVButton.disabled = true; // Added
-    sendResponse({ status: "ok" }); // Acknowledge the message // Added
-    return true; // Keep the message channel open for the async response // Added
-  } // Added
-
-  // If the message is not handled by the above, let other listeners handle it // Added
-  return false; // Indicate that the message was not fully handled here // Added
-}); // Added
-
-// --- Existing Button Handlers (Refactored) ---
+  return false;
+});
 
 function handleOpenAuthorListPage() {
   commHandler.sendAnalyticsData({ click_type: enums.ClickType.EXTENSION_MENU_BAN_LIST });
@@ -360,8 +299,7 @@ function handleOpenAuthorListPage() {
 function handleStartUndobanAll() {
   commHandler.sendAnalyticsData({ click_type: enums.ClickType.EXTENSION_MENU_UNDOBANALL });
   chrome.runtime.sendMessage(null, { "banSource": enums.BanSource.UNDOBANALL, "banMode": enums.BanMode.UNDOBAN });
-  updateStatus("Starting 'Undo All Bans'...", false, 2000); // Give feedback before potential close
-  // Consider not closing popup immediately for feedback?
+  updateStatus("Starting 'Undo All Bans'...", false, 2000);
 }
 
 function handleOpenFaq() {
@@ -378,7 +316,7 @@ function handleMigrateBlockedToMuted() {
       updateStatus("Error starting migration: " + chrome.runtime.lastError.message, true, 5000);
     } else {
       log.info("popup.js: Migration start message sent.");
-      window.close(); // Close popup after initiating
+      window.close();
     }
   });
 }
@@ -392,13 +330,12 @@ function handleMigrateBlockedTitlesToUnblocked() {
       updateStatus("Error starting title unblock: " + chrome.runtime.lastError.message, true, 5000);
     } else {
       log.info("popup.js: Title migration start message sent.");
-      window.close(); // Close popup after initiating
+      window.close();
     }
   });
 }
 
 function handleBlockMutedUsers() {
-  // TODO: Add Analytics Data Point
   updateStatus("Starting 'Block Muted Users' process...", false, 0);
   chrome.runtime.sendMessage({ action: "blockMutedUsers" }, (response) => {
     if (chrome.runtime.lastError) {
@@ -406,13 +343,12 @@ function handleBlockMutedUsers() {
       updateStatus("Error starting process: " + chrome.runtime.lastError.message, true, 5000);
     } else {
       log.info("popup.js: blockMutedUsers message sent.");
-      window.close(); // Close popup after initiating
+      window.close();
     }
   });
 }
 
 function handleBlockTitlesOfBlockedMuted() {
-  // TODO: Add Analytics Data Point
   updateStatus("Starting 'Block Titles of Blocked/Muted' process...", false, 0);
   chrome.runtime.sendMessage({ action: "blockTitlesOfBlockedMuted" }, (response) => {
     if (chrome.runtime.lastError) {
@@ -420,16 +356,11 @@ function handleBlockTitlesOfBlockedMuted() {
       updateStatus("Error starting process: " + chrome.runtime.lastError.message, true, 5000);
     } else {
       log.info("popup.js: blockTitlesOfBlockedMuted message sent.");
-      window.close(); // Close popup after initiating
+      window.close();
     }
   });
 }
 
-
-// --- Initial Setup ---
-
-// Send initial analytics event
 commHandler.sendAnalyticsData({ click_type: enums.ClickType.EXTENSION_ICON });
 
-// Initialize when the DOM is ready
 document.addEventListener('DOMContentLoaded', initializePopup);
