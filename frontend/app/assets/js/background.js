@@ -320,8 +320,38 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
     }
     sendResponse({ status: 'ok', message: 'Action received and will be processed if no other operation is active.' });
   } else if (message && message.earlyStop !== undefined) {
-    programController.earlyStop = true;
-    sendResponse({status: 'ok', message: 'Early stop received'});
+    try {
+      log.info("bg", `Early stop request received. Current state: Active=${programController.isActive}, QueueSize=${processQueue.size}, RunningTasks=${programController.hasAnyRunningTasks}`);
+      
+      // Use the improved stopAllOperations method
+      programController.stopAllOperations();
+      
+      // Get state after stopping for acknowledgment
+      const wasActive = programController.isActive;
+      const hadRunningTasks = programController.hasAnyRunningTasks;
+      const queuePreserved = processQueue.size > 0;
+      
+      // Provide detailed acknowledgment
+      const responseMessage = `Early stop completed. Active: ${wasActive}, Queue preserved: ${queuePreserved}, Running tasks stopped: ${hadRunningTasks}`;
+      log.info("bg", responseMessage);
+      
+      sendResponse({
+        status: 'ok',
+        message: responseMessage,
+        details: {
+          wasActive,
+          queuePreserved,
+          hadRunningTasks,
+          queueSize: processQueue.size
+        }
+      });
+    } catch (error) {
+      log.err("bg", `Error handling early stop request: ${error}`, error);
+      sendResponse({
+        status: 'error',
+        message: `Failed to process early stop: ${error.message}`
+      });
+    }
     return true;
   } else {
     const obj = utils.filterMessage(message, "banSource", "banMode");
@@ -768,13 +798,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
   }
   
   if(programController.earlyStop) {
-    log.info("bg", "notification page's queue will be updated.");
-    let remainingProcessesArray = processQueue.itemAttributes;
-    for (const element of remainingProcessesArray) {
-      notificationHandler.finishErrorEarlyStop(element.banSource, element.banMode, processQueue.currentItemMetadata);
-    }
-    processQueue.clear();
-    notificationHandler.updatePlannedProcessesList(processQueue.itemAttributes);
+    log.info("bg", "Current operation stopped by user. Remaining queued tasks will continue automatically.");
   }
   
   log.info("bg", `Program finished: successful=${successfulAction}, performed=${performedAction}, planned=${authorNameList.length}`);

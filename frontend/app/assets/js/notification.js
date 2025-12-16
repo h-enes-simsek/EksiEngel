@@ -44,48 +44,101 @@ function setupEarlyStopButton() {
   }
 }
 
-function handleEarlyStop() {
+async function handleEarlyStop() {
   const earlyStopButton = document.getElementById("earlyStop");
   
   if (!confirm("İşlemi durdurmak istediğinizden emin misiniz?")) {
     return;
   }
   
+  // Update button state immediately
   earlyStopButton.innerHTML = '<span class="btn-icon">⏳</span><span class="btn-text">Durduruluyor...</span>';
   earlyStopButton.disabled = true;
   
-  const sendEarlyStopPromise = new Promise((resolve, reject) => {
-    chrome.runtime.sendMessage(null, {"earlyStop":0}, (response) => {
-      if (chrome.runtime.lastError) {
-        reject(chrome.runtime.lastError);
-      } else {
-        resolve(response);
+  try {
+    // Send early stop message with improved acknowledgment
+    const response = await sendEarlyStopWithRetry();
+    
+    if (response && response.status === 'ok') {
+      console.log("notification.js: earlyStop message sent successfully");
+      notificationHandler.updateStatusIndicator('warning');
+      
+      const statusText = document.getElementById("statusText");
+      if (statusText) {
+        statusText.innerHTML = "İşlem kullanıcı tarafından durduruluyor...";
       }
-    });
+      
+      notificationHandler.showStatusMessage("İşlem durduruluyor...", "info");
+      
+      // Reset button after a short delay to allow for processing
+      setTimeout(() => {
+        const btn = document.getElementById("earlyStop");
+        if (btn) {
+          btn.innerHTML = '<span class="btn-icon">🛑</span><span class="btn-text">Erken Durdur</span>';
+          btn.disabled = false;
+        }
+      }, 3000);
+      
+    } else {
+      throw new Error("Invalid response from background script");
+    }
+  } catch (err) {
+    console.warn("notification.js: Error sending earlyStop message:", err.message);
     
-    setTimeout(() => {
-      reject(new Error("Timeout sending earlyStop message"));
-    }, 2000);
-  });
-  
-  sendEarlyStopPromise.then((response) => {
-    console.log("notification.js: earlyStop message sent successfully");
-    notificationHandler.updateStatusIndicator('warning');
-    
-    const statusText = document.getElementById("statusText");
-    if (statusText) {
-      statusText.innerHTML = "İşlem kullanıcı tarafından durduruluyor...";
+    // Show appropriate message based on error type
+    let errorMessage = "Durdurma işleminde hata oluştu: ";
+    if (err.message.includes("Timeout")) {
+      errorMessage += "İşlem zaman aşımına uğradı. Arka plan betiği yanıt vermiyor.";
+    } else if (err.message.includes("No active operations")) {
+      errorMessage += "Aktif işlem bulunamadı.";
+    } else {
+      errorMessage += err.message;
     }
     
-    notificationHandler.showStatusMessage("İşlem durduruluyor...", "info");
-  }).catch((err) => {
-    console.warn("notification.js: Error sending earlyStop message:", err.message);
-    notificationHandler.showStatusMessage("Durdurma işleminde hata oluştu: " + err.message, "error");
+    notificationHandler.showStatusMessage(errorMessage, "error");
     
+    // Reset button state
     earlyStopButton.innerHTML = '<span class="btn-icon">🛑</span><span class="btn-text">Erken Durdur</span>';
     earlyStopButton.disabled = false;
     notificationHandler.updateStatusIndicator('inactive');
-  });
+  }
+}
+
+async function sendEarlyStopWithRetry(maxRetries = 3, timeoutMs = 5000) {
+  let lastError;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await Promise.race([
+        new Promise((resolve, reject) => {
+          chrome.runtime.sendMessage(null, {"earlyStop": 0}, (response) => {
+            if (chrome.runtime.lastError) {
+              reject(chrome.runtime.lastError);
+            } else {
+              resolve(response);
+            }
+          });
+        }),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error("Timeout")), timeoutMs)
+        )
+      ]);
+      
+      return response;
+    } catch (error) {
+      lastError = error;
+      
+      // If it's the last attempt, throw the error
+      if (attempt === maxRetries) {
+        throw lastError;
+      }
+      
+      // Wait before retrying
+      await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+    }
+  }
+  
+  throw lastError;
 }
 
 function setupActionButtons() {
@@ -150,7 +203,7 @@ function setupKeyboardShortcuts() {
     }
     
     if (e.key === 'Escape') {
-      const earlyStopBtn = document.getElementById('earlyStop');
+      const earlyStopBtn = document.getElementById("earlyStop");
       if (earlyStopBtn && !earlyStopBtn.disabled) {
         earlyStopBtn.click();
       }

@@ -38,23 +38,37 @@ class ProgramController {
     this._earlyStop = val;
     if(val) {
       if (this._migrationInProgress) {
-        log.info("progctrl", "early stop received during migration process.");
+        log.info("progctrl", "early stop received during migration process. Queued tasks will continue after current task stops.");
       } else if (this._isMutedListRefreshInProgress) {
-        log.info("progctrl", "early stop received during muted list refresh process.");
+        log.info("progctrl", "early stop received during muted list refresh process. Queued tasks will continue after current task stops.");
       } else if (this._isBlockedListRefreshInProgress) {
-        log.info("progctrl", "early stop received during blocked list refresh process.");
+        log.info("progctrl", "early stop received during blocked list refresh process. Queued tasks will continue after current task stops.");
       } else if (this._blockMutedUsersInProgress) {
-        log.info("progctrl", "early stop received during block muted users process.");
+        log.info("progctrl", "early stop received during block muted users process. Queued tasks will continue after current task stops.");
       } else if (this._blockTitlesInProgress) {
-        log.info("progctrl", "early stop received during block titles process.");
+        log.info("progctrl", "early stop received during block titles process. Queued tasks will continue after current task stops.");
       } else if (processQueue.isRunning) {
-        log.info("progctrl", "early stop received, number of waiting processes in the queue: " + processQueue.size);
+        log.info("progctrl", "early stop received while queue is processing. Current operation will stop, remaining queued operations will continue.");
       } else {
         log.info("progctrl", "early stop received, but no process is currently running.");
       }
     } else {
       log.info("progctrl", "early stop flag cleared.");
     }
+  }
+
+  stopAllOperations() {
+    this.earlyStop = true;
+    // Note: We don't clear the queue here - queued tasks should continue after current task stops
+    log.info("progctrl", `Early stop triggered - will stop current operation but preserve ${processQueue.size} queued tasks`);
+  }
+
+  get hasAnyRunningTasks() {
+    return this._migrationInProgress ||
+           this._isMutedListRefreshInProgress ||
+           this._isBlockedListRefreshInProgress ||
+           this._blockMutedUsersInProgress ||
+           this._blockTitlesInProgress;
   }
 
   get isMutedListRefreshInProgress() { return this._isMutedListRefreshInProgress; }
