@@ -68,18 +68,19 @@ function estimateDuration(banSource, complexity) {
   return 0;
 }
 
-function getTaskDescription(action) {
-  const { banSource, banMode, metadata = {} } = action;
+// Unified description generator - used by all sections to ensure consistency
+export function generateUnifiedDescription(banSource, metadata = {}) {
+  const { targetTypes = [], sourceEntry, sourceAuthor, sourceTitle, sourceList, timeFilter, banMode } = metadata;
   
   let baseDescription = "";
-  let operationType = banMode === enums.BanMode.BAN ? "Engelle" : "Engel Kaldır";
+  let operationType = banMode === enums.BanMode.UNDOBAN ? "Engel Kaldır" : "Engelle";
   
   switch (banSource) {
     case enums.BanSource.SINGLE:
       baseDescription = `Tek Kullanıcı ${operationType}`;
-      if (metadata.targetTypes && metadata.targetTypes.length > 0) {
-        const targets = metadata.targetTypes.map(t => 
-          t === enums.TargetType.USER ? "Kullanıcı" : 
+      if (targetTypes && targetTypes.length > 0) {
+        const targets = targetTypes.map(t =>
+          t === enums.TargetType.USER ? "Kullanıcı" :
           t === enums.TargetType.TITLE ? "Başlık" : "Sessiz"
         ).join(", ");
         baseDescription += ` (${targets})`;
@@ -87,29 +88,29 @@ function getTaskDescription(action) {
       break;
     case enums.BanSource.FAV:
       baseDescription = `Favori Edenleri ${operationType}`;
-      if (metadata.sourceEntry) {
+      if (sourceEntry) {
         baseDescription += " (Entry)";
       }
       break;
     case enums.BanSource.FOLLOW:
       baseDescription = `Takipçileri ${operationType}`;
-      if (metadata.sourceAuthor) {
-        baseDescription += ` (${metadata.sourceAuthor})`;
+      if (sourceAuthor) {
+        baseDescription += ` (${sourceAuthor})`;
       }
       break;
     case enums.BanSource.LIST:
       baseDescription = `Listeden ${operationType}`;
-      if (metadata.sourceList && metadata.sourceList.length > 0) {
-        baseDescription += ` (${metadata.sourceList.length} kullanıcı)`;
+      if (sourceList && sourceList.length > 0) {
+        baseDescription += ` (${sourceList.length} kullanıcı)`;
       }
       break;
     case enums.BanSource.TITLE:
       baseDescription = `Başlıktaki Yazarları ${operationType}`;
-      if (metadata.sourceTitle) {
-        baseDescription += ` (${metadata.sourceTitle})`;
+      if (sourceTitle) {
+        baseDescription += ` (${sourceTitle})`;
       }
-      if (metadata.timeFilter) {
-        const timeDesc = metadata.timeFilter === enums.TimeSpecifier.LAST_24_H ? "Son 24 saat" : "Tümü";
+      if (timeFilter) {
+        const timeDesc = timeFilter === enums.TimeSpecifier.LAST_24_H ? "Son 24 saat" : "Tümü";
         baseDescription += ` - ${timeDesc}`;
       }
       break;
@@ -158,7 +159,7 @@ class AutoQueue extends Queue {
         banSource: action.banSource,
         banMode: action.banMode,
         creationDateInStr: action.creationDateInStr,
-        actionDescription: action.actionDescription || getTaskDescription(action),
+        actionDescription: action.actionDescription || generateUnifiedDescription(action.banSource, { ...action.metadata, banMode: action.banMode }),
         
         taskCategory: getTaskCategory(action.banSource),
         taskComplexity: complexity,

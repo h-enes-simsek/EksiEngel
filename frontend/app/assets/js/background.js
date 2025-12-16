@@ -7,7 +7,7 @@ import {log} from './log.js';
 import {Action, createEksiSozlukEntry, createEksiSozlukTitle, createEksiSozlukUser, commHandler, ActionConfig} from './commHandler.js';
 import {relationHandler} from './relationHandler.js';
 import {scrapingHandler} from './scrapingHandler.js';
-import {processQueue} from './queue.js';
+import {processQueue, generateUnifiedDescription} from './queue.js';
 import {programController} from './programController.js';
 import {handleEksiSozlukURL} from './urlHandler.js';
 import { notificationHandler } from './notificationHandler.js';
@@ -387,73 +387,8 @@ function getOperationNotes(banSource, obj) {
 }
 
 function getActionDescription(banSource, obj) {
-  const { targetTypes = [], sourceEntry, sourceAuthor, sourceTitle, sourceList, timeFilter } = obj;
-  
-  let baseDescription = "";
-  let operationType = obj.banMode === enums.BanMode.UNDOBAN ? "Engel Kaldır" : "Engelle";
-  
-  switch (banSource) {
-    case enums.BanSource.SINGLE:
-      baseDescription = `Tek Kullanıcı ${operationType}`;
-      if (targetTypes && targetTypes.length > 0) {
-        const targets = targetTypes.map(t =>
-          t === enums.TargetType.USER ? "Kullanıcı" :
-          t === enums.TargetType.TITLE ? "Başlık" : "Sessiz"
-        ).join(", ");
-        baseDescription += ` (${targets})`;
-      }
-      break;
-    case enums.BanSource.FAV:
-      baseDescription = `Favori Edenleri ${operationType}`;
-      if (sourceEntry) {
-        baseDescription += " (Entry)";
-      }
-      break;
-    case enums.BanSource.FOLLOW:
-      baseDescription = `Takipçileri ${operationType}`;
-      if (sourceAuthor) {
-        baseDescription += ` (${sourceAuthor})`;
-      }
-      break;
-    case enums.BanSource.LIST:
-      baseDescription = `Listeden ${operationType}`;
-      if (sourceList && sourceList.length > 0) {
-        baseDescription += ` (${sourceList.length} kullanıcı)`;
-      }
-      break;
-    case enums.BanSource.TITLE:
-      baseDescription = `Başlıktaki Yazarları ${operationType}`;
-      if (sourceTitle) {
-        baseDescription += ` (${sourceTitle})`;
-      }
-      if (timeFilter) {
-        const timeDesc = timeFilter === enums.TimeSpecifier.LAST_24_H ? "Son 24 saat" : "Tümü";
-        baseDescription += ` - ${timeDesc}`;
-      }
-      break;
-    case enums.BanSource.UNDOBANALL:
-      baseDescription = "Tüm Engelleri Kaldır";
-      break;
-    case enums.BanSource.MIGRATE_BLOCKED_TO_MUTED:
-      baseDescription = "Engelli Kullanıcıları Sessize al";
-      break;
-    case enums.BanSource.BLOCK_MUTED_USERS:
-      baseDescription = "Sessiz Kullanıcıları Engelle";
-      break;
-    case enums.BanSource.BLOCKED_MUTED_TITLES:
-      baseDescription = "Engelli/Sessiz Başlıkları Engelle";
-      break;
-    case enums.BanSource.REFRESH_MUTED_LIST:
-      baseDescription = "Sessiz Listesi Yenile";
-      break;
-    case enums.BanSource.REFRESH_BLOCKED_LIST:
-      baseDescription = "Engelli Listesi Yenile";
-      break;
-    default:
-      baseDescription = `${operationType} İşlemi`;
-  }
-  
-  return baseDescription;
+  // Use unified description generator for consistency across all sections
+  return generateUnifiedDescription(banSource, obj);
 }
 
 async function processHandler(banSource, banMode, entryUrl, singleAuthorName, singleAuthorId, targetType, clickSource, titleName, titleId, timeSpecifier) {

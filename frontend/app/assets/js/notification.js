@@ -3,6 +3,7 @@ import * as utils from './utils.js';
 import { commHandler } from './commHandler.js';
 import { storageHandler } from './storageHandler.js';
 import { notificationHandler } from './notificationHandler.js';
+import { generateUnifiedDescription } from './queue.js';
 
 let mutedUserCountSpan;
 let blockedUserCountSpan;
@@ -622,73 +623,13 @@ function insertCompletedProcessesTable(banSource, successfulAction, performedAct
 }
 
 function generateDescriptionFromMetadataForCompleted(banSource, metadata = {}) {
-  const { targetTypes = [], sourceEntry, sourceAuthor, sourceTitle, sourceList, timeFilter } = metadata;
-  
-  let baseDescription = "";
-  let operationType = banSource.includes('UN') ? "Engel Kaldır" : "Engelle";
-  
-  switch (banSource) {
-    case enums.BanSource.SINGLE:
-      baseDescription = `Tek Kullanıcı ${operationType}`;
-      if (targetTypes && targetTypes.length > 0) {
-        const targets = targetTypes.map(t =>
-          t === enums.TargetType.USER ? "Kullanıcı" :
-          t === enums.TargetType.TITLE ? "Başlık" : "Sessiz"
-        ).join(", ");
-        baseDescription += ` (${targets})`;
-      }
-      break;
-    case enums.BanSource.FAV:
-      baseDescription = `Favori Edenleri ${operationType}`;
-      if (sourceEntry) {
-        baseDescription += " (Entry)";
-      }
-      break;
-    case enums.BanSource.FOLLOW:
-      baseDescription = `Takipçileri ${operationType}`;
-      if (sourceAuthor) {
-        baseDescription += ` (${sourceAuthor})`;
-      }
-      break;
-    case enums.BanSource.LIST:
-      baseDescription = `Listeden ${operationType}`;
-      if (sourceList && sourceList.length > 0) {
-        baseDescription += ` (${sourceList.length} kullanıcı)`;
-      }
-      break;
-    case enums.BanSource.TITLE:
-      baseDescription = `Başlıktaki Yazarları ${operationType}`;
-      if (sourceTitle) {
-        baseDescription += ` (${sourceTitle})`;
-      }
-      if (timeFilter) {
-        const timeDesc = timeFilter === enums.TimeSpecifier.LAST_24_H ? "Son 24 saat" : "Tümü";
-        baseDescription += ` - ${timeDesc}`;
-      }
-      break;
-    case enums.BanSource.UNDOBANALL:
-      baseDescription = "Tüm Engelleri Kaldır";
-      break;
-    case enums.BanSource.MIGRATE_BLOCKED_TO_MUTED:
-      baseDescription = "Engelli Kullanıcıları Sessize al";
-      break;
-    case enums.BanSource.BLOCK_MUTED_USERS:
-      baseDescription = "Sessiz Kullanıcıları Engelle";
-      break;
-    case enums.BanSource.BLOCKED_MUTED_TITLES:
-      baseDescription = "Engelli/Sessiz Başlıkları Engelle";
-      break;
-    case enums.BanSource.REFRESH_MUTED_LIST:
-      baseDescription = "Sessiz Listesi Yenile";
-      break;
-    case enums.BanSource.REFRESH_BLOCKED_LIST:
-      baseDescription = "Engelli Listesi Yenile";
-      break;
-    default:
-      baseDescription = `${operationType} İşlemi`;
+  // Use unified description generator for consistency across all sections
+  // Add banMode to metadata if it's missing
+  const updatedMetadata = { ...metadata };
+  if (!updatedMetadata.banMode) {
+    updatedMetadata.banMode = banSource.includes('UN') ? enums.BanMode.UNDOBAN : enums.BanMode.BAN;
   }
-  
-  return baseDescription;
+  return generateUnifiedDescription(banSource, updatedMetadata);
 }
 
 function updatePlannedProcessesTable(plannedProcesses) {

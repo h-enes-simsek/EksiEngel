@@ -2,6 +2,7 @@ import {config} from './config.js';
 import {log} from './log.js';
 import * as enums from './enums.js';
 import { storageHandler } from './storageHandler.js';
+import { generateUnifiedDescription } from './queue.js';
 
 class NotificationHandler
 {
@@ -117,67 +118,8 @@ class NotificationHandler
   }
   
   #generateDescriptionFromMetadata = (metadata = {}) => {
-    const { targetTypes = [], sourceEntry, sourceAuthor, sourceTitle, sourceList, timeFilter } = metadata;
-    
-    let baseDescription = "";
-    let operationType = metadata.banSource && metadata.banSource.includes('UN') ? "Engel Kaldır" : "Engelle";
-    
-    switch (metadata.banSource) {
-      case enums.BanSource.SINGLE:
-        baseDescription = `Tek Kullanıcı ${operationType}`;
-        if (targetTypes && targetTypes.length > 0) {
-          const targets = targetTypes.map(t =>
-            t === enums.TargetType.USER ? "Kullanıcı" :
-            t === enums.TargetType.TITLE ? "Başlık" : "Sessiz"
-          ).join(", ");
-          baseDescription += ` (${targets})`;
-        }
-        break;
-      case enums.BanSource.FAV:
-        baseDescription = `Favori Edenleri ${operationType}`;
-        if (sourceEntry) baseDescription += " (Entry)";
-        break;
-      case enums.BanSource.FOLLOW:
-        baseDescription = `Takipçileri ${operationType}`;
-        if (sourceAuthor) baseDescription += ` (${sourceAuthor})`;
-        break;
-      case enums.BanSource.LIST:
-        baseDescription = `Listeden ${operationType}`;
-        if (sourceList && sourceList.length > 0) {
-          baseDescription += ` (${sourceList.length} kullanıcı)`;
-        }
-        break;
-      case enums.BanSource.TITLE:
-        baseDescription = `Başlıktaki Yazarları ${operationType}`;
-        if (sourceTitle) baseDescription += ` (${sourceTitle})`;
-        if (timeFilter) {
-          const timeDesc = timeFilter === enums.TimeSpecifier.ALL ? "Tümü" : "Son 24 saat";
-          baseDescription += ` - ${timeDesc}`;
-        }
-        break;
-      case enums.BanSource.UNDOBANALL:
-        baseDescription = "Tüm Engelleri Kaldır";
-        break;
-      case enums.BanSource.MIGRATE_BLOCKED_TO_MUTED:
-        baseDescription = "Engelli Kullanıcıları Sessize al";
-        break;
-      case enums.BanSource.BLOCK_MUTED_USERS:
-        baseDescription = "Sessiz Kullanıcıları Engelle";
-        break;
-      case enums.BanSource.BLOCKED_MUTED_TITLES:
-        baseDescription = "Engelli/Sessiz Başlıkları Engelle";
-        break;
-      case enums.BanSource.REFRESH_MUTED_LIST:
-        baseDescription = "Sessiz Listesi Yenile";
-        break;
-      case enums.BanSource.REFRESH_BLOCKED_LIST:
-        baseDescription = "Engelli Listesi Yenile";
-        break;
-      default:
-        baseDescription = `${operationType} İşlemi`;
-    }
-    
-    return baseDescription;
+    // Use unified description generator for consistency across all sections
+    return generateUnifiedDescription(metadata.banSource, metadata);
   }
 
   notifyStatus = (statusText) => {
