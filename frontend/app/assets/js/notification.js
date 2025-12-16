@@ -4,6 +4,7 @@ import { commHandler } from './commHandler.js';
 import { storageHandler } from './storageHandler.js';
 import { notificationHandler } from './notificationHandler.js';
 import { generateUnifiedDescription, processQueue } from './queue.js';
+import { buttonStateManager } from './buttonStateManager.js';
 
 let mutedUserCountSpan;
 let blockedUserCountSpan;
@@ -22,6 +23,9 @@ document.addEventListener('DOMContentLoaded', async function () {
 
 async function initializeNotificationPage() {
   console.log("🚀 Initializing EksiEngel Plus Notification Page");
+  
+  // Initialize button state manager
+  await buttonStateManager.initialize();
   
   notificationHandler.updateStatusIndicator('inactive');
   notificationHandler.updateTableCounts();
@@ -462,7 +466,10 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
     if (refreshButton) {
       refreshButton.disabled = false;
     }
- 
+    
+    // Refresh button states after muted list refresh completion
+    buttonStateManager.refreshAllButtonStates();
+
      sendResponse({ status: "ok" });
      return true;
    }
@@ -506,6 +513,9 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
       const errorMessage = message.stoppedEarly ? "Blocked list refresh stopped by user." : `Blocked list refresh failed: ${message.error}`;
       notificationHandler.updateButtonStatus(errorMessage, true, 5000);
     }
+    
+    // Refresh button states after blocked list refresh completion
+    buttonStateManager.refreshAllButtonStates();
 
     sendResponse({ status: "ok" });
     return true;

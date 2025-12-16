@@ -224,6 +224,10 @@ class NotificationHandler
     try {
       const blockedUserCount = await storageHandler.getBlockedUserCount();
       
+      // Also check temporary storage for early stop scenarios
+      const partialData = await storageHandler.getPartialBlockedUsers();
+      const hasTemporaryData = partialData && partialData.usernames && partialData.usernames.length > 0;
+      
       const blockedUserCountSpan = document.getElementById("blockedUserCount");
       if (blockedUserCountSpan) {
         blockedUserCountSpan.textContent = blockedUserCount;
@@ -231,10 +235,11 @@ class NotificationHandler
       
       const exportBlockedListCSVButton = document.getElementById('exportBlockedListCSV');
       if (exportBlockedListCSVButton) {
-        exportBlockedListCSVButton.disabled = blockedUserCount === 0;
+        // Enable export button if either permanent or temporary data exists
+        exportBlockedListCSVButton.disabled = (blockedUserCount === 0 && !hasTemporaryData);
       }
       
-      console.log(`notificationHandler.js: Updated blocked user count display: ${blockedUserCount}`);
+      console.log(`notificationHandler.js: Updated blocked user count display: ${blockedUserCount} (temporary: ${hasTemporaryData})`);
     } catch (error) {
       console.error("notificationHandler.js: Error refreshing blocked user count display:", error);
       
@@ -293,14 +298,25 @@ class NotificationHandler
 
   handleExportMutedList = async () => {
     console.log("notificationHandler.js", "Export muted list button clicked.");
-
+    
     const exportButton = document.getElementById('exportMutedListCSV');
     if (exportButton) exportButton.disabled = true;
-
+    
     this.updateButtonStatus("Preparing export...", false, 0);
-
+    
     try {
-      const usernames = await storageHandler.getMutedUserList();
+      // First try permanent storage
+      let usernames = await storageHandler.getMutedUserList();
+      
+      // If no data in permanent storage, check temporary storage
+      if (!usernames || usernames.length === 0) {
+        const partialData = await storageHandler.getPartialMutedUsers();
+        if (partialData && partialData.usernames) {
+          usernames = partialData.usernames;
+          this.updateButtonStatus("Exporting partial list from early stop...", false);
+        }
+      }
+      
       if (usernames && usernames.length > 0) {
         this.downloadCSV(usernames, 'muted');
       } else {
@@ -344,7 +360,18 @@ class NotificationHandler
     this.updateButtonStatus("Preparing export...", false, 0);
 
     try {
-      const blockedUsernames = await storageHandler.getBlockedUserList();
+      // First try permanent storage
+      let blockedUsernames = await storageHandler.getBlockedUserList();
+      
+      // If no data in permanent storage, check temporary storage
+      if (!blockedUsernames || blockedUsernames.length === 0) {
+        const partialData = await storageHandler.getPartialBlockedUsers();
+        if (partialData && partialData.usernames) {
+          blockedUsernames = partialData.usernames;
+          this.updateButtonStatus("Exporting partial list from early stop...", false);
+        }
+      }
+      
       if (blockedUsernames && blockedUsernames.length > 0) {
         this.downloadCSV(blockedUsernames, 'blocked');
       } else {

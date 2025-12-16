@@ -537,13 +537,14 @@ class ScrapingHandler
    * Scrapes all pages of muted users from Ekşi Sözlük.
    * Handles pagination and polite delays, reporting progress via callback.
    * @param {function({currentPage: number, currentCount: number}): void} [progressCallback] - Optional callback for progress updates.
-   * @returns {Promise<{success: boolean, count?: number, usernames?: string[], error?: string}>}
+   * @param {number} [resumeFromIndex] - Optional page index to resume from (for resume capability)
+   * @returns {Promise<{success: boolean, count?: number, usernames?: string[], error?: string, stoppedEarly?: boolean}>}
    */
-  async scrapeAllMutedUsers(progressCallback) {
+  async scrapeAllMutedUsers(progressCallback, resumeFromIndex = null) {
     log.info("scraping", "Starting to scrape all muted users...");
     let allMutedUsernames = [];
     let totalCount = 0;
-    let index = 0;
+    let index = resumeFromIndex || 0;
     let isLast = false;
     const politeDelayMs = 500; // Delay between page requests in milliseconds
     const maxRetries = 3; // Max retries for errors (excluding 429)
@@ -555,7 +556,7 @@ class ScrapingHandler
         // Check for early stop request
         if (programController.earlyStop) {
           log.info("scraping", "Muted user scraping stopped by user.");
-          return { success: false, error: 'Process stopped by user', stoppedEarly: true };
+          return { success: false, usernames: allMutedUsernames, count: totalCount, stoppedEarly: true, error: 'Process stopped by user' };
         }
         index++;
         let attempt = 0;
@@ -566,9 +567,6 @@ class ScrapingHandler
           log.info("scraping", `Fetching muted users page ${index}, attempt ${attempt}...`);
 
           try {
-            // Note: #scrapeAuthorNamesFromBannedAuthorPagePartially needs modification
-            // to throw or return specific error on 429 for proper handling here.
-            // Assuming for now it might throw or return an empty/error state.
             const partialListObj = await this.#scrapeAuthorNamesFromBannedAuthorPagePartially(enums.TargetType.MUTE, index);
 
             // Basic check if the response structure is as expected
@@ -599,8 +597,6 @@ class ScrapingHandler
               // Don't throw immediately, allow retry
             }
           } catch (err) {
-            // Check if it's a rate limit error (requires modification in partial func or checking response status if possible)
-            // Example pseudo-code: if (err.status === 429) { ... }
             log.warn("scraping", `Error fetching page ${index}, attempt ${attempt}: ${err.message || err}`);
             // If it was the last attempt, rethrow to exit the main loop
             if (attempt >= maxRetries) {
@@ -626,7 +622,7 @@ class ScrapingHandler
 
     } catch (err) {
       log.err("scraping", `Error scraping all muted users: ${err.message || err}`);
-      return { success: false, error: err.message || 'Unknown error during scraping' };
+      return { success: false, usernames: allMutedUsernames, count: totalCount, error: err.message || 'Unknown error during scraping' };
     }
   }
 

@@ -374,6 +374,174 @@ class StorageHandler {
       });
     });
   }
+
+  // On-demand caching methods for early stop resume capability
+  async savePartialMutedUsers(usernames, isTemporary = true) {
+    return new Promise((resolve, reject) => {
+      chrome.storage.local.set({ 
+        'partialMutedUsers': usernames,
+        'partialMutedUsersTimestamp': Date.now(),
+        'partialMutedUsersTemporary': isTemporary
+      }, () => {
+        if (chrome.runtime.lastError) {
+          log.err('storage', `Error saving partial muted users: ${chrome.runtime.lastError.message}`);
+          reject(this._handleStorageError(chrome.runtime.lastError));
+        } else {
+          log.info('storage', `Saved ${usernames.length} partial muted users (temporary: ${isTemporary}).`);
+          resolve();
+        }
+      });
+    });
+  }
+
+  async getPartialMutedUsers() {
+    return new Promise((resolve) => {
+      chrome.storage.local.get(['partialMutedUsers', 'partialMutedUsersTimestamp', 'partialMutedUsersTemporary'], (result) => {
+        if (chrome.runtime.lastError) {
+          log.err('storage', `Error getting partial muted users: ${chrome.runtime.lastError.message}`);
+          resolve(null);
+        } else {
+          const users = result.partialMutedUsers;
+          if (Array.isArray(users)) {
+            log.info('storage', `Retrieved ${users.length} partial muted users from storage.`);
+            resolve({
+              usernames: users,
+              timestamp: result.partialMutedUsersTimestamp,
+              isTemporary: result.partialMutedUsersTemporary
+            });
+          } else {
+            log.info('storage', 'No partial muted users found in storage.');
+            resolve(null);
+          }
+        }
+      });
+    });
+  }
+
+  async clearPartialMutedUsers() {
+    return new Promise((resolve, reject) => {
+      chrome.storage.local.remove(['partialMutedUsers', 'partialMutedUsersTimestamp', 'partialMutedUsersTemporary'], () => {
+        if (chrome.runtime.lastError) {
+          log.err('storage', `Error clearing partial muted users: ${chrome.runtime.lastError.message}`);
+          reject(this._handleStorageError(chrome.runtime.lastError));
+        } else {
+          log.info('storage', 'Cleared partial muted users from storage.');
+          resolve();
+        }
+      });
+    });
+  }
+
+  async saveMutedRefreshResumeState(pageIndex, count) {
+    return new Promise((resolve, reject) => {
+      chrome.storage.local.set({ 
+        'mutedRefreshResumeState': {
+          pageIndex,
+          count,
+          timestamp: Date.now()
+        }
+      }, () => {
+        if (chrome.runtime.lastError) {
+          log.err('storage', `Error saving muted refresh resume state: ${chrome.runtime.lastError.message}`);
+          reject(this._handleStorageError(chrome.runtime.lastError));
+        } else {
+          log.info('storage', `Saved muted refresh resume state: page ${pageIndex}, count ${count}.`);
+          resolve();
+        }
+      });
+    });
+  }
+
+  async getMutedRefreshResumeState() {
+    return new Promise((resolve) => {
+      chrome.storage.local.get(['mutedRefreshResumeState'], (result) => {
+        if (chrome.runtime.lastError) {
+          log.err('storage', `Error getting muted refresh resume state: ${chrome.runtime.lastError.message}`);
+          resolve(null);
+        } else {
+          const state = result.mutedRefreshResumeState;
+          if (state && typeof state.pageIndex === 'number' && typeof state.count === 'number') {
+            log.info('storage', `Retrieved muted refresh resume state: page ${state.pageIndex}, count ${state.count}.`);
+            resolve(state);
+          } else {
+            log.info('storage', 'No muted refresh resume state found in storage.');
+            resolve(null);
+          }
+        }
+      });
+    });
+  }
+
+  async clearMutedRefreshResumeState() {
+    return new Promise((resolve, reject) => {
+      chrome.storage.local.remove(['mutedRefreshResumeState'], () => {
+        if (chrome.runtime.lastError) {
+          log.err('storage', `Error clearing muted refresh resume state: ${chrome.runtime.lastError.message}`);
+          reject(this._handleStorageError(chrome.runtime.lastError));
+        } else {
+          log.info('storage', 'Cleared muted refresh resume state from storage.');
+          resolve();
+        }
+      });
+    });
+  }
+
+  // On-demand caching methods for blocked users early stop resume capability
+  async savePartialBlockedUsers(usernames, isTemporary = true) {
+    return new Promise((resolve, reject) => {
+      chrome.storage.local.set({
+        'partialBlockedUsers': usernames,
+        'partialBlockedUsersTimestamp': Date.now(),
+        'partialBlockedUsersTemporary': isTemporary
+      }, () => {
+        if (chrome.runtime.lastError) {
+          log.err('storage', `Error saving partial blocked users: ${chrome.runtime.lastError.message}`);
+          reject(this._handleStorageError(chrome.runtime.lastError));
+        } else {
+          log.info('storage', `Saved ${usernames.length} partial blocked users (temporary: ${isTemporary}).`);
+          resolve();
+        }
+      });
+    });
+  }
+
+  async getPartialBlockedUsers() {
+    return new Promise((resolve) => {
+      chrome.storage.local.get(['partialBlockedUsers', 'partialBlockedUsersTimestamp', 'partialBlockedUsersTemporary'], (result) => {
+        if (chrome.runtime.lastError) {
+          log.err('storage', `Error getting partial blocked users: ${chrome.runtime.lastError.message}`);
+          resolve(null);
+        } else {
+          const users = result.partialBlockedUsers;
+          if (Array.isArray(users)) {
+            log.info('storage', `Retrieved ${users.length} partial blocked users from storage.`);
+            resolve({
+              usernames: users,
+              timestamp: result.partialBlockedUsersTimestamp,
+              isTemporary: result.partialBlockedUsersTemporary
+            });
+          } else {
+            log.info('storage', 'No partial blocked users found in storage.');
+            resolve(null);
+          }
+        }
+      });
+    });
+  }
+
+  async clearPartialBlockedUsers() {
+    return new Promise((resolve, reject) => {
+      chrome.storage.local.remove(['partialBlockedUsers', 'partialBlockedUsersTimestamp', 'partialBlockedUsersTemporary'], () => {
+        if (chrome.runtime.lastError) {
+          log.err('storage', `Error clearing partial blocked users: ${chrome.runtime.lastError.message}`);
+          reject(this._handleStorageError(chrome.runtime.lastError));
+        } else {
+          log.info('storage', 'Cleared partial blocked users from storage.');
+          resolve();
+        }
+      });
+    });
+  }
 }
 
 export let storageHandler = new StorageHandler();

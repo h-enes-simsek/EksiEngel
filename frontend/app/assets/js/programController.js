@@ -97,6 +97,149 @@ class ProgramController {
   get isBlockMutedUsersInProgress() { return this._blockMutedUsersInProgress; }
   get isBlockTitlesInProgress() { return this._blockTitlesInProgress; }
 
+  // Resume capability for muted refresh
+  async startMutedRefreshFromIndex(startIndex) {
+    log.info("progctrl", `Starting muted refresh from index ${startIndex}`);
+    if (this._isMutedListRefreshInProgress) {
+      log.warn("progctrl", "Muted refresh already in progress");
+      return false;
+    }
+    
+    this._isMutedListRefreshInProgress = true;
+    this.earlyStop = false;
+    
+    try {
+      const updateProgress = async (progress) => {
+        if (this.tabId) {
+          chrome.tabs.sendMessage(this.tabId, {
+            action: "mutedListRefreshProgress",
+            count: progress.currentCount,
+            resumeMode: true
+          }).catch(e => log.warn("progctrl", `Error sending resume progress message: ${e}`));
+        }
+        await storageHandler.saveMutedUserCount(progress.currentCount);
+        await storageHandler.saveMutedRefreshResumeState(progress.currentPage || 0, progress.currentCount);
+      };
+      
+      const result = await scrapingHandler.scrapeAllMutedUsers(updateProgress, startIndex);
+      
+      if (result.success) {
+        await storageHandler.clearMutedRefreshResumeState();
+        await storageHandler.clearPartialMutedUsers();
+        await storageHandler.saveMutedUserList(result.usernames);
+        await storageHandler.saveMutedUserCount(result.count);
+        
+        if (this.tabId) {
+          chrome.tabs.sendMessage(this.tabId, {
+            action: "mutedListRefreshComplete",
+            success: true,
+            count: result.count,
+            resumeMode: true
+          }).catch(e => log.warn("progctrl", `Error sending resume complete message: ${e}`));
+        }
+        return true;
+      } else if (result.stoppedEarly) {
+        await storageHandler.savePartialMutedUsers(result.usernames || [], true);
+        await storageHandler.clearMutedRefreshResumeState();
+        
+        if (this.tabId) {
+          chrome.tabs.sendMessage(this.tabId, {
+            action: "mutedListRefreshComplete",
+            success: false,
+            stoppedEarly: true,
+            usernames: result.usernames || [],
+            count: result.count || 0,
+            error: result.error || "Process stopped by user",
+            resumeMode: true
+          }).catch(e => log.warn("progctrl", `Error sending resume early stop message: ${e}`));
+        }
+        return false;
+      } else {
+        await storageHandler.clearMutedRefreshResumeState();
+        await storageHandler.clearPartialMutedUsers();
+        
+        if (this.tabId) {
+          chrome.tabs.sendMessage(this.tabId, {
+            action: "mutedListRefreshComplete",
+            success: false,
+            error: result.error,
+            resumeMode: true
+          }).catch(e => log.warn("progctrl", `Error sending resume error message: ${e}`));
+        }
+        return false;
+      }
+    } catch (error) {
+      log.err("progctrl", `Error during resume muted refresh: ${error}`);
+      await storageHandler.clearMutedRefreshResumeState();
+      await storageHandler.clearPartialMutedUsers();
+      
+      if (this.tabId) {
+        chrome.tabs.sendMessage(this.tabId, {
+          action: "mutedListRefreshComplete",
+          success: false,
+          error: error.message || "Unknown error",
+          resumeMode: true
+        }).catch(e => log.warn("progctrl", `Error sending resume error message: ${e}`));
+      }
+      return false;
+    } finally {
+      this._isMutedListRefreshInProgress = false;
+    }
+  }
+
+  async isMutedRefreshResumable() {
+    try {
+      const resumeState = await storageHandler.getMutedRefreshResumeState();
+      const partialUsers = await storageHandler.getPartialMutedUsers();
+      
+      const hasResumeState = resumeState && typeof resumeState.pageIndex === 'number';
+      const hasPartialData = partialUsers && Array.isArray(partialUsers.usernames) && partialUsers.usernames.length > 0;
+      
+      return hasResumeState || hasPartialData;
+    } catch (error) {
+      log.err("progctrl", `Error checking if muted refresh is resumable: ${error}`);
+      return false;
+    }
+  }
+
+  async getMutedRefreshResumeInfo() {
+    try {
+      const resumeState = await storageHandler.getMutedRefreshResumeState();
+      const partialUsers = await storageHandler.getPartialMutedUsers();
+      
+      if (resumeState) {
+        return {
+          type: 'pageResume',
+          pageIndex: resumeState.pageIndex,
+          count: resumeState.count,
+          timestamp: resumeState.timestamp
+        };
+      } else if (partialUsers && partialUsers.usernames.length > 0) {
+        return {
+          type: 'partialData',
+          partialCount: partialUsers.usernames.length,
+          timestamp: partialUsers.timestamp,
+          isTemporary: partialUsers.isTemporary
+        };
+      }
+      
+      return null;
+    } catch (error) {
+      log.err("progctrl", `Error getting muted refresh resume info: ${error}`);
+      return null;
+    }
+  }
+
+  async clearMutedRefreshState() {
+    try {
+      await storageHandler.clearMutedRefreshResumeState();
+      await storageHandler.clearPartialMutedUsers();
+      log.info("progctrl", "Cleared all muted refresh state");
+    } catch (error) {
+      log.err("progctrl", `Error clearing muted refresh state: ${error}`);
+    }
+  }
+
 
   async _performActionWithRetry(banMode, id, isTargetUser, isTargetTitle, isTargetMute, retries = 3) {
     let attempt = 0;

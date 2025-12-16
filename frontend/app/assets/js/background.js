@@ -171,6 +171,7 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
           if (programController.isMutedListRefreshInProgress) return;
           programController.isMutedListRefreshInProgress = true;
           programController.earlyStop = false;
+          
           const updateProgress = async (progress) => {
             if (g_notificationTabId) {
                 chrome.tabs.sendMessage(g_notificationTabId, {
@@ -178,12 +179,31 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
                 }).catch(e => log.warn("bg", `Error sending message to notification tab: ${e}`));
             }
             await storageHandler.saveMutedUserCount(progress.currentCount);
+            // Save resume state for potential resume capability
+            await storageHandler.saveMutedRefreshResumeState(progress.currentPage || 0, progress.currentCount);
           };
+          
           try {
-            const result = await scrapingHandler.scrapeAllMutedUsers(updateProgress);
+            // Check if we have a resume state
+            const resumeState = await storageHandler.getMutedRefreshResumeState();
+            let resumeFromIndex = null;
+            
+            if (resumeState && !programController.earlyStop) {
+              log.info("bg", `Resuming muted list refresh from page ${resumeState.pageIndex + 1}, count: ${resumeState.count}`);
+              resumeFromIndex = resumeState.pageIndex;
+            }
+            
+            const result = await scrapingHandler.scrapeAllMutedUsers(updateProgress, resumeFromIndex);
+            
             if (result.success) {
+              // Clear resume state on successful completion
+              await storageHandler.clearMutedRefreshResumeState();
+              await storageHandler.clearPartialMutedUsers();
+              
+              // Save complete list and count
               await storageHandler.saveMutedUserList(result.usernames);
               await storageHandler.saveMutedUserCount(result.count);
+              
               if (g_notificationTabId) {
                   chrome.tabs.sendMessage(g_notificationTabId, {
                     action: "mutedListRefreshComplete", success: true, count: result.count
@@ -191,13 +211,20 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
               }
             } else {
               if (result.stoppedEarly) {
+                // Cache partial results for resume capability
+                await storageHandler.savePartialMutedUsers(result.usernames || [], true);
+                await storageHandler.clearMutedRefreshResumeState();
+                
                 if (g_notificationTabId) {
                     chrome.tabs.sendMessage(g_notificationTabId, {
-                      action: "mutedListRefreshComplete", success: false, stoppedEarly: true, count: result.count || 0, error: result.error || "Process stopped by user"
+                      action: "mutedListRefreshComplete", success: false, stoppedEarly: true, usernames: result.usernames || [], count: result.count || 0, error: result.error || "Process stopped by user"
                     }).catch(e => log.warn("bg", `Error sending message to notification tab: ${e}`));
                 }
               } else {
                 log.err("bg", "Error scraping muted users:", result.error);
+                await storageHandler.clearMutedRefreshResumeState();
+                await storageHandler.clearPartialMutedUsers();
+                
                 if (g_notificationTabId) {
                     chrome.tabs.sendMessage(g_notificationTabId, {
                       action: "mutedListRefreshComplete", success: false, error: result.error
@@ -207,6 +234,9 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
             }
           } catch (e) {
             log.err("bg", `Unexpected error during refreshMutedList: ${e}`);
+            await storageHandler.clearMutedRefreshResumeState();
+            await storageHandler.clearPartialMutedUsers();
+            
             if (g_notificationTabId) {
                 chrome.tabs.sendMessage(g_notificationTabId, {
                   action: "mutedListRefreshComplete", success: false, error: e.message || "Unknown error"
@@ -218,7 +248,7 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
         };
         
         const metadata = {
-          operationNotes: "Sessiz kullanıcı listesini sunucudan yeniler",
+          operationNotes: "Sessiz kullanıcı listesini sunucudan yeniler (hafif mod + devam etme desteği)",
           requiresUserInteraction: false,
           targetTypes: [enums.TargetType.MUTE],
           sourceTitle: "Sessiz Kullanıcı Listesi"
@@ -244,6 +274,10 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
           try {
             const result = await scrapingHandler.scrapeAllBlockedUsers(updateProgress);
             if (result.success) {
+              // Clear temporary storage on successful completion
+              await storageHandler.clearPartialBlockedUsers();
+              
+              // Save complete list and count
               await storageHandler.saveBlockedUserList(result.usernames);
               await storageHandler.saveBlockedUserCount(result.count);
               if (g_notificationTabId) {
@@ -253,13 +287,19 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
               }
             } else {
               if (result.stoppedEarly) {
+                // Cache partial results for resume capability AND export
+                await storageHandler.savePartialBlockedUsers(result.usernames || [], true);
+                
                 if (g_notificationTabId) {
                     chrome.tabs.sendMessage(g_notificationTabId, {
-                      action: "blockedListRefreshComplete", success: false, stoppedEarly: true, count: result.count || 0, error: result.error || "Process stopped by user"
+                      action: "blockedListRefreshComplete", success: false, stoppedEarly: true, usernames: result.usernames || [], count: result.count || 0, error: result.error || "Process stopped by user"
                     }).catch(e => log.warn("bg", `Error sending message to notification tab: ${e}`));
                 }
               } else {
                 log.err("bg", "Error scraping blocked users:", result.error);
+                // Clear temporary storage on error too
+                await storageHandler.clearPartialBlockedUsers();
+                
                 if (g_notificationTabId) {
                     chrome.tabs.sendMessage(g_notificationTabId, {
                       action: "blockedListRefreshComplete", success: false, error: result.error

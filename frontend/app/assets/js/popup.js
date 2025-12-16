@@ -3,6 +3,7 @@ import { commHandler } from './commHandler.js';
 import { storageHandler } from './storageHandler.js';
 import { scrapingHandler } from './scrapingHandler.js';
 import { log } from './log.js';
+import { buttonStateManager } from './buttonStateManager.js';
 
 log.info("popup.js: has been started.");
 
@@ -54,6 +55,9 @@ function downloadCSV(usernames, listType) {
 
 async function initializePopup() {
   log.info("popup.js: Initializing...");
+
+  // Initialize button state manager
+  await buttonStateManager.initialize();
 
   mutedUserCountSpan = document.getElementById('mutedUserCount');
   refreshMutedListButton = document.getElementById('refreshMutedList');
@@ -165,6 +169,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       const currentCount = parseInt(mutedUserCountSpan.textContent) || 0;
       exportMutedListCSVButton.disabled = currentCount === 0;
     }
+    
+    // Refresh button states after muted list refresh completion
+    buttonStateManager.refreshAllButtonStates();
+    
     sendResponse({ status: "ok" });
   }
 });
@@ -281,6 +289,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       const currentCount = parseInt(blockedUserCountSpan.textContent) || 0;
       if (exportBlockedListCSVButton) exportBlockedListCSVButton.disabled = currentCount === 0;
     }
+    
+    // Refresh button states after blocked list refresh completion
+    buttonStateManager.refreshAllButtonStates();
+    
     sendResponse({ status: "ok" });
     return true;
   }
