@@ -24,7 +24,6 @@ document.addEventListener('DOMContentLoaded', async function () {
 async function initializeNotificationPage() {
   console.log("🚀 Initializing EksiEngel Plus Notification Page");
   
-  // Initialize button state manager
   await buttonStateManager.initialize();
   
   notificationHandler.updateStatusIndicator('inactive');
@@ -467,7 +466,6 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
       refreshButton.disabled = false;
     }
     
-    // Refresh button states after muted list refresh completion
     buttonStateManager.refreshAllButtonStates();
 
      sendResponse({ status: "ok" });
@@ -514,7 +512,6 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
       notificationHandler.updateButtonStatus(errorMessage, true, 5000);
     }
     
-    // Refresh button states after blocked list refresh completion
     buttonStateManager.refreshAllButtonStates();
 
     sendResponse({ status: "ok" });

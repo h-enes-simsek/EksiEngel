@@ -8,7 +8,6 @@ import { scrapingHandler } from './scrapingHandler.js';
 import { config } from './config.js';
 import { storageHandler } from './storageHandler.js';
 
-
 class ProgramController {
   constructor() {
     this._earlyStop = false;
@@ -59,7 +58,6 @@ class ProgramController {
 
   stopAllOperations() {
     this.earlyStop = true;
-    // Note: We don't clear the queue here - queued tasks should continue after current task stops
     log.info("progctrl", `Early stop triggered - will stop current operation but preserve ${processQueue.size} queued tasks`);
   }
 
@@ -97,7 +95,6 @@ class ProgramController {
   get isBlockMutedUsersInProgress() { return this._blockMutedUsersInProgress; }
   get isBlockTitlesInProgress() { return this._blockTitlesInProgress; }
 
-  // Resume capability for muted refresh
   async startMutedRefreshFromIndex(startIndex) {
     log.info("progctrl", `Starting muted refresh from index ${startIndex}`);
     if (this._isMutedListRefreshInProgress) {
@@ -239,7 +236,6 @@ class ProgramController {
       log.err("progctrl", `Error clearing muted refresh state: ${error}`);
     }
   }
-
 
   async _performActionWithRetry(banMode, id, isTargetUser, isTargetTitle, isTargetMute, retries = 3) {
     let attempt = 0;
@@ -445,15 +441,15 @@ class ProgramController {
     let unmutedCount = 0;
     let failedCount = 0;
     let processedCount = 0;
-    const successfullyProcessedUsernames = []; // To track users to remove from storage
-    let totalUsersFound = 0; // Keep track of total users found across all pages
+    const successfullyProcessedUsernames = [];
+    let totalUsersFound = 0;
 
     try {
       notificationHandler.notify("Sessize alınan kullanıcılar sayfa sayfa getiriliyor ve işleniyor...");
 
       let isLastPage = false;
       let pageIndex = 0;
-      const politeDelayMs = 500; // Delay between page requests
+      const politeDelayMs = 500;
 
       while (!isLastPage && !this.earlyStop) {
         pageIndex++;
@@ -462,146 +458,120 @@ class ProgramController {
 
         let partialListObj;
         try {
-          // Fetch a page of muted users using the new public method
           partialListObj = await scrapingHandler.scrapeMutedUsersPage(pageIndex);
 
-          // Check for early stop after fetching a page
           if (this.earlyStop) {
             log.info("progctrl", "Blocking muted users stopped early by user during page fetch.");
             notificationHandler.notify(`Sessize alınan kullanıcıları engelleme işlemi kullanıcı tarafından durduruldu. İşlenen: ${processedCount} kullanıcı.`);
-            break; // Exit the while loop
+            break;
           }
 
-          // Basic check if the response structure is as expected
           if (!partialListObj || typeof partialListObj.isLast !== 'boolean' || !Array.isArray(partialListObj.authorNameList)) {
              throw new Error(`Unexpected result fetching page ${pageIndex}.`);
           }
 
           isLastPage = partialListObj.isLast;
           const pageUsernames = partialListObj.authorNameList;
-          const pageUserIds = partialListObj.authorIdList; // Assuming IDs are also returned
+          const pageUserIds = partialListObj.authorIdList;
 
           if (pageUsernames.length > 0) {
             totalUsersFound += pageUsernames.length;
             log.info("progctrl", `Found ${pageUsernames.length} users on page ${pageIndex}. Total found so far: ${totalUsersFound}`);
             notificationHandler.notify(`Sayfa ${pageIndex}'de ${pageUsernames.length} kullanıcı bulundu. Şu ana kadar toplam: ${totalUsersFound}. İşleniyor...`);
 
-            // Process users on the current page
             for (let i = 0; i < pageUsernames.length; i++) {
               if (this.earlyStop) {
                 log.info("progctrl", "Blocking muted users stopped early by user during page processing.");
                 notificationHandler.notify(`Sessize alınan kullanıcıları engelleme işlemi kullanıcı tarafından durduruldu. İşlenen: ${processedCount} kullanıcı.`);
-                break; // Exit the for loop
+                break;
               }
 
               const username = pageUsernames[i];
-              const authorIdFromPage = pageUserIds[i]; // Get ID from the partial scrape result
+              const authorIdFromPage = pageUserIds[i];
               processedCount++;
 
-              // Update progress bar using notifyOngoing
-              // Use unmutedCount for successful actions, processedCount for processed, totalUsersFound for total
               notificationHandler.notifyOngoing(unmutedCount, processedCount, totalUsersFound, processQueue.currentItemMetadata);
 
               log.info("progctrl", `Processing user: ${username}...`);
 
-              // Step A: Get the user ID (use the one from the partial scrape if available, otherwise scrape profile)
               let authorId = authorIdFromPage;
               if (!authorId || authorId === "0") {
                  log.info("progctrl", `Scraping user ID for: ${username}...`);
                  authorId = await scrapingHandler.scrapeAuthorIdFromAuthorProfilePage(username);
               }
 
-
               if (!authorId || authorId === "0") {
                 log.err("progctrl", `Could not get user ID for ${username}. Skipping.`);
                 failedCount++;
-                // No specific notification, failure counted
-                continue; // Skip to the next user
+                continue;
               }
 
               log.info("progctrl", `Using user ID for ${username}: ${authorId}`);
 
-              // Step B: Block the user
               log.info("progctrl", `Blocking user: ${username} (ID: ${authorId})...`);
               const blockResult = await this._performActionWithRetry(enums.BanMode.BAN, authorId, true, false, false);
 
-              // Check if early stop was triggered during the retry
               if (blockResult.earlyStop) {
                 log.info("progctrl", "Blocking muted users stopped early by user during block operation.");
-                break; // Exit the for loop
+                break;
               }
 
               if (blockResult.resultType !== enums.ResultType.SUCCESS) {
                 log.err("progctrl", `Failed to block user: ${username} (ID: ${authorId})`);
                 failedCount++;
-                // No specific notification, failure counted
-                continue; // Skip to the next user if block fails
+                continue;
               }
 
               log.info("progctrl", `Successfully blocked user: ${username} (ID: ${authorId})`);
               blockedCount++;
-              // No specific notification, success counted
 
-
-              // Step C: Unmute the user
               log.info("progctrl", `Unmuting user: ${username} (ID: ${authorId})...`);
               const unmuteResult = await this._performActionWithRetry(enums.BanMode.UNDOBAN, authorId, false, false, true);
 
-              // Check if early stop was triggered during the retry
               if (unmuteResult.earlyStop) {
                 log.info("progctrl", "Blocking muted users stopped early by user during unmute operation.");
-                break; // Exit the for loop
+                break;
               }
 
               if (unmuteResult.resultType !== enums.ResultType.SUCCESS) {
                 log.err("progctrl", `Failed to unmute user: ${username} (ID: ${authorId})`);
-                failedCount++; // Count as failed if unmute fails, even if block succeeded
-                // No specific notification, failure counted
+                failedCount++;
               } else {
                 log.info("progctrl", `Successfully unmuted user: ${username} (ID: ${authorId})`);
                 unmutedCount++;
-                // Success counted, notifyOngoing will reflect this in the next iteration
-                successfullyProcessedUsernames.push(username); // Add to list for storage update
+                successfullyProcessedUsernames.push(username);
               }
 
-              // Small delay between users
-              await utils.sleep(500); // Assuming a small delay is appropriate
-            } // End for loop for users on current page
+              await utils.sleep(500);
+            }
 
-            // If early stop was triggered during the for loop, break the while loop as well
             if (this.earlyStop) {
                 break;
             }
 
           } else {
             log.info("progctrl", `No users found on page ${pageIndex}. Assuming this is the last page.`);
-            isLastPage = true; // Treat as last page if no users are found
+            isLastPage = true;
           }
 
         } catch (pageError) {
           log.err("progctrl", `Error fetching or processing page ${pageIndex}: ${pageError.message || pageError}`);
-          // Estimate failed count for the page - this is tricky with page-by-page processing.
-          // A simpler approach is to just increment failedCount for the page itself or stop.
-          // Let's just log the error and stop the process for now.
-          failedCount++; // Count the page fetch/process as a failure
+          failedCount++;
           notificationHandler.notify(`Sayfa ${pageIndex} işlenirken hata: ${pageError.message || "Bilinmeyen hata"}. Durduruluyor.`);
-          break; // Exit the while loop on page error
+          break;
         }
 
-        // Add a polite delay between page requests, unless it's the last page or early stop
         if (!isLastPage && !this.earlyStop) {
            await utils.sleep(politeDelayMs);
         }
-      } // End while loop for pages
+      }
 
-      // Update muted user list in storage by removing successfully processed users
       if (successfullyProcessedUsernames.length > 0) {
           log.info("progctrl", `Removing ${successfullyProcessedUsernames.length} users from muted list storage.`);
           await storageHandler.removeMutedUsers(successfullyProcessedUsernames);
       }
 
-      // Final status update using finishSuccess or finishErrorEarlyStop
-      const totalProcessed = processedCount; // Total users processed in the loop
+      const totalProcessed = processedCount;
       if (this.earlyStop) {
           log.info("progctrl", `Blocking muted users stopped early. Successfully processed: ${unmutedCount}, Failed: ${failedCount}, Total Processed: ${totalProcessed}`);
           notificationHandler.finishErrorEarlyStop(enums.BanSource.BLOCK_MUTED_USERS, enums.BanMode.BAN, processQueue.currentItemMetadata);
@@ -611,21 +581,16 @@ class ProgramController {
           notificationHandler.finishSuccess(enums.BanSource.BLOCK_MUTED_USERS, enums.BanMode.BAN, unmutedCount, totalProcessed, totalUsersFound, processQueue.currentItemMetadata);
       }
 
-
     } catch (error) {
       log.err("progctrl", `An unexpected error occurred during blocking muted users: ${error}`, error);
-      // Use notify for general error status before finally block
       notificationHandler.notify(`Sessize alınan kullanıcıları engelleme sırasında beklenmedik bir hata oluştu: ${error.message || "Bilinmeyen hata"}. İşlenen: ${processedCount} kullanıcı.`);
-      // Consider adding a finishError call here if appropriate, depending on desired final state display
     } finally {
       log.info("progctrl", "blockMutedUsers function completed.");
-      this.earlyStop = false; // Reset early stop flag in finally
-      this._blockMutedUsersInProgress = false; // Reset flag in finally
-      // Refresh muted and blocked user count display after the operation
+      this.earlyStop = false;
+      this._blockMutedUsersInProgress = false;
       notificationHandler.notifyUpdateCounts();
     }
   }
-
 
   async blockTitlesOfBlockedMuted() {
     log.info("progctrl", "blockTitlesOfBlockedMuted function started.");
@@ -642,37 +607,31 @@ class ProgramController {
     try {
       notificationHandler.notify("Engellenen ve sessize alınan kullanıcı listeleri getiriliyor...");
 
-      // Get blocked users (assuming scrapingHandler can fetch all blocked users)
       const blockedUsersResult = await scrapingHandler.scrapeAllBlockedUsers();
       if (!blockedUsersResult.success) {
           log.err("progctrl", `Failed to fetch blocked users: ${blockedUsersResult.error}`);
           notificationHandler.notify(`Engellenen kullanıcılar getirilemedi: ${blockedUsersResult.error}`);
-          return; // Stop the process if fetching blocked users fails
+          return;
       }
-      const blockedUsers = blockedUsersResult.usernames.map(username => ({ authorName: username, authorId: null })); // Create objects with placeholder ID
+      const blockedUsers = blockedUsersResult.usernames.map(username => ({ authorName: username, authorId: null }));
       log.info("progctrl", `Found ${blockedUsers.length} blocked users.`);
 
-      // Get muted users (assuming storageHandler.getMutedUserList returns usernames)
       const mutedUsernames = await storageHandler.getMutedUserList();
-      const mutedUsers = mutedUsernames ? mutedUsernames.map(username => ({ authorName: username, authorId: null })) : []; // Create objects with placeholder ID
+      const mutedUsers = mutedUsernames ? mutedUsernames.map(username => ({ authorName: username, authorId: null })) : [];
       log.info("progctrl", `Found ${mutedUsers.length} muted users.`);
 
-      // Combine lists. Need to handle potential duplicates if a user is both blocked and muted.
-      // We'll prioritize blocked users if they have an ID.
       const combinedUsersMap = new Map();
 
       blockedUsers.forEach(user => {
-        if (user.authorId) { // Prefer blocked user entry if ID is available
+        if (user.authorId) {
           combinedUsersMap.set(user.authorName, user);
         } else if (!combinedUsersMap.has(user.authorName)) {
-           // Add if not already added and no ID was available from blocked list
            combinedUsersMap.set(user.authorName, user);
         }
       });
 
       mutedUsers.forEach(user => {
          if (!combinedUsersMap.has(user.authorName)) {
-           // Add muted user only if not already in the map (from blocked list)
            combinedUsersMap.set(user.authorName, user);
          }
       });
@@ -688,15 +647,13 @@ class ProgramController {
       log.info("progctrl", `Found ${usersToProcess.length} unique blocked/muted users to process titles for.`);
       notificationHandler.notify(`${usersToProcess.length} benzersiz engellenmiş/sessize alınmış kullanıcı bulundu. Başlık engelleme işlemi başlatılıyor...`);
 
-      let serverBlockedTitlesCount = 0; // Titles blocked via server API (for blocked users)
-      let simulatedBlockedTitlesCount = 0; // Titles hidden client-side (for muted users)
+      let serverBlockedTitlesCount = 0;
+      let simulatedBlockedTitlesCount = 0;
       let usersProcessedCount = 0;
       let failedUsersCount = 0;
-      let successfulUsersCount = 0; // New counter for users successfully processed
+      let successfulUsersCount = 0;
 
-      // Initial progress notification
       notificationHandler.notifyOngoing(successfulUsersCount, usersProcessedCount, usersToProcess.length, processQueue.currentItemMetadata);
-
 
       for (let i = 0; i < usersToProcess.length; i++) {
         if (this.earlyStop) {
@@ -706,16 +663,12 @@ class ProgramController {
         }
 
         const user = usersToProcess[i];
-        // Determine if the user was originally in the blocked list (to decide on server vs client action)
         const isOriginallyBlocked = blockedUsers.some(blockedUser => blockedUser.authorName === user.authorName);
 
-        // Update progress before processing each user
         notificationHandler.notifyOngoing(successfulUsersCount, usersProcessedCount, usersToProcess.length, processQueue.currentItemMetadata);
-
 
         log.info("progctrl", `Attempting to process titles for user: ${user.authorName} (ID: ${user.authorId || 'N/A'})...`);
 
-        // Ensure user has an ID before attempting any action
         let authorId = user.authorId;
         if (!authorId || authorId === "0") {
             log.info("progctrl", `Scraping user ID for: ${user.authorName}...`);
@@ -725,25 +678,22 @@ class ProgramController {
                 log.warn("progctrl", `Skipping title processing for user ${user.authorName} due to missing or invalid ID after scraping.`);
                 failedUsersCount++;
                 usersProcessedCount++;
-                // Update progress after skipping a user
                 notificationHandler.notifyOngoing(successfulUsersCount, usersProcessedCount, usersToProcess.length, processQueue.currentItemMetadata);
-                continue; // Skip to the next user
+                continue;
             }
              log.info("progctrl", `Successfully scraped user ID for ${user.authorName}: ${authorId}`);
-             user.authorId = authorId; // Update the user object with the scraped ID
+             user.authorId = authorId;
         }
 
-
-        let actionSuccessful = false; // Flag to track if the action for this user was successful
+        let actionSuccessful = false;
 
         if (isOriginallyBlocked) {
-            // User was originally blocked, attempt server-side title block
             log.info("progctrl", `Attempting server-side title block for blocked user: ${user.authorName} (ID: ${user.authorId})...`);
             const blockResult = await this._performActionWithRetry(enums.BanMode.BAN, user.authorId, false, true, false);
 
             if (blockResult.earlyStop) {
               log.info("progctrl", "Blocking titles stopped early by user during server-side action.");
-              break; // Exit the loop if early stop is triggered
+              break;
             }
 
             if (blockResult.resultType !== enums.ResultType.SUCCESS) {
@@ -752,12 +702,10 @@ class ProgramController {
             } else {
               log.info("progctrl", `Successfully blocked titles server-side for user: ${user.authorName}`);
               serverBlockedTitlesCount++;
-              actionSuccessful = true; // Mark action as successful
+              actionSuccessful = true;
             }
         } else {
-            // User is only muted, perform client-side title hiding
             log.info("progctrl", `Attempting client-side title hiding for muted user: ${user.authorName} (ID: ${user.authorId})...`);
-            // Send message to content script to hide titles by this author ID
             try {
                 const response = await chrome.tabs.sendMessage(this.tabId, {
                     action: "hideTitlesByAuthorId",
@@ -766,63 +714,56 @@ class ProgramController {
                 if (response && response.success) {
                     log.info("progctrl", `Successfully requested client-side hiding for user: ${user.authorName}. Hidden titles count: ${response.hiddenCount}`);
                     simulatedBlockedTitlesCount += response.hiddenCount;
-                    actionSuccessful = true; // Mark action as successful
+                    actionSuccessful = true;
                 } else {
                     log.warn("progctrl", `Client-side hiding request failed or returned no count for user: ${user.authorName}`);
-                    failedUsersCount++; // Count as failed if client-side hiding fails
+                    failedUsersCount++;
                 }
             } catch (e) {
                 log.err("progctrl", `Error sending client-side hiding message for user ${user.authorName}: ${e}`);
-                failedUsersCount++; // Count as failed if message sending fails
+                failedUsersCount++;
             }
         }
 
         usersProcessedCount++;
         if (actionSuccessful) {
-            successfulUsersCount++; // Increment successful users count
+            successfulUsersCount++;
         }
 
-        // Update progress after processing each user
         notificationHandler.notifyOngoing(successfulUsersCount, usersProcessedCount, usersToProcess.length, processQueue.currentItemMetadata);
 
-
-        // Small delay between users
-        await utils.sleep(500); // Assuming a small delay is appropriate
+        await utils.sleep(500);
       }
 
-      // Final status update
       const finalMessage = `Blocking titles completed. Successfully processed users: ${successfulUsersCount}, Failed users: ${failedUsersCount}, Total users processed: ${usersProcessedCount}. Simulated titles blocked: ${simulatedBlockedTitlesCount}.`;
       log.info("progctrl", finalMessage);
 
       if (this.earlyStop) {
           notificationHandler.finishErrorEarlyStop(enums.BanSource.BLOCKED_MUTED_TITLES, enums.BanMode.BAN, processQueue.currentItemMetadata);
-          // The notificationHandler.finishErrorEarlyStop function should handle displaying the final counts.
       } else {
           notificationHandler.finishSuccess(enums.BanSource.BLOCKED_MUTED_TITLES, enums.BanMode.BAN, successfulUsersCount, usersProcessedCount, usersToProcess.length, processQueue.currentItemMetadata);
       }
 
     } catch (error) {
       log.err("progctrl", `An error occurred during blocking titles: ${error}`, error);
-      // Use notify for error status, potentially including counts
       notificationHandler.notify(`Başlık engelleme sırasında bir hata oluştu: ${error.message}. İşlenen kullanıcı sayısı: ${usersProcessedCount}.`);
     } finally {
       log.info("progctrl", "blockTitlesOfBlockedMuted function completed.");
       this.earlyStop = false;
-      this._blockTitlesInProgress = false; // Reset flag
-      // No specific display update needed for this operation currently
+      this._blockTitlesInProgress = false;
     }
   }
 
   async migrateBlockedTitlesToUnblocked() {
     log.info("progctrl", "migrateBlockedTitlesToUnblocked function started.");
 
-    if (this._blockTitlesInProgress) { // Reusing this flag for simplicity, could create a new one if needed
+    if (this._blockTitlesInProgress) {
       log.warn("progctrl", "Unblocking blocked titles is already in progress.");
       notificationHandler.notify("Engellenen başlıkların engelini kaldırma işlemi zaten devam ediyor.");
       return;
     }
 
-    this._blockTitlesInProgress = true; // Reusing flag
+    this._blockTitlesInProgress = true;
     this.earlyStop = false;
 
     try {
@@ -830,15 +771,13 @@ class ProgramController {
 
       const scrapeResult = await scrapingHandler.scrapeAllUsersWithBlockedTitles(
         (progress) => {
-          // Optional: Update UI with list fetching progress if needed
-          // notificationHandler.notifyProgress(`Fetching users with blocked titles: Page ${progress.currentPage}, Found ${progress.currentCount}`, progress.currentCount, totalCountPlaceholder); // Need total count
         }
       );
 
       if (!scrapeResult.success) {
         log.err("progctrl", `Failed to fetch list of users with blocked titles: ${scrapeResult.error}`);
         notificationHandler.notify(`Başlıkları engellenen kullanıcıların listesi getirilemedi: ${scrapeResult.error}`);
-        this._blockTitlesInProgress = false; // Reset flag before returning
+        this._blockTitlesInProgress = false;
         return;
       }
 
@@ -848,18 +787,15 @@ class ProgramController {
       if (usersWithBlockedTitles.length === 0) {
         log.info("progctrl", "No users with blocked titles found - completing with 0 results, queue will continue with next item");
         notificationHandler.notify("Başlıkları engellenen kullanıcı bulunamadı.");
-        this._blockTitlesInProgress = false; // Reset flag before returning
+        this._blockTitlesInProgress = false;
         return;
       }
 log.info("progctrl", `Successfully fetched list of ${totalCount} users with blocked titles. Starting unblocking process...`);
 notificationHandler.notify(`${totalCount} adet başlıkları engellenen kullanıcı bulundu. Engel kaldırma işlemi başlatılıyor...`);
 
-
-
       let unblockedCount = 0;
       let failedCount = 0;
 
-      // Process users to unblock their titles
       for (let i = 0; i < usersWithBlockedTitles.length; i++) {
         if (this.earlyStop) {
           log.info("progctrl", "Unblocking titles stopped early by user.");
@@ -871,16 +807,12 @@ notificationHandler.notify(`${totalCount} adet başlıkları engellenen kullanı
          const currentProgress = i + 1;
          const totalUsers = usersWithBlockedTitles.length;
  
-         // Use notifyOngoing for progress updates
          notificationHandler.notifyOngoing(unblockedCount, currentProgress, totalUsers, processQueue.currentItemMetadata);
  
          log.info("progctrl", `Unblocking titles for user: ${user.authorName} (ID: ${user.authorId})...`);
  
-         // Perform the unblocking action for titles associated with this user ID
-         // Note: The API unblocks *all* titles by this user if any were blocked via the relation-list endpoint.
          const unblockResult = await this._performActionWithRetry(enums.BanMode.UNDOBAN, user.authorId, false, true, false);
  
-         // Check if early stop was triggered during the retry
          if (unblockResult.earlyStop) {
            log.info("progctrl", "Unblocking titles stopped early by user during action.");
            break;
@@ -894,11 +826,9 @@ notificationHandler.notify(`${totalCount} adet başlıkları engellenen kullanı
            unblockedCount++;
          }
  
-         // Small delay between users
-         await utils.sleep(500); // Assuming a small delay is appropriate
+         await utils.sleep(500);
        }
   
-       // Final status update using finishSuccess or finishErrorEarlyStop
        const totalProcessed = unblockedCount + failedCount;
        if (this.earlyStop) {
            log.info("progctrl", `Unblocking titles stopped early. Unblocked: ${unblockedCount}, Failed: ${failedCount}, Total Processed: ${totalProcessed}`);
@@ -911,15 +841,11 @@ notificationHandler.notify(`${totalCount} adet başlıkları engellenen kullanı
   
      } catch (error) {
        log.err("progctrl", `An error occurred during unblocking blocked titles: ${error}`, error);
-       // Use notify for general error status before finally block
        notificationHandler.notify(`Engellenen başlıkların engeli kaldırılırken bir hata oluştu: ${error.message}`);
-       // Consider adding a finishError call here if appropriate, depending on desired final state display
      } finally {
        log.info("progctrl", "migrateBlockedTitlesToUnblocked function completed.");
-       this.earlyStop = false; // Reset early stop flag in finally
-       this._blockTitlesInProgress = false; // Reset flag in finally
-       // Refresh relevant counts if needed
-       // notificationHandler.updateBlockedTitleCountDisplay(); // Assuming a function like this exists or is needed
+       this.earlyStop = false;
+       this._blockTitlesInProgress = false;
      }
    }
  

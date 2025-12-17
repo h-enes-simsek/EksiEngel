@@ -5,8 +5,8 @@ import { storageHandler } from './storageHandler.js';
 class Queue {
   constructor() { this._items = []; }
   enqueue(item) { this._items.push(item); }
-  dequeue()     { return this._items.shift(); }
-  get size()    { return this._items.length; }
+  dequeue() { return this._items.shift(); }
+  get size() { return this._items.length; }
 }
 
 function getTaskCategory(banSource) {
@@ -65,51 +65,36 @@ function getTaskPriority(banSource) {
   }
 }
 
-function estimateDuration(banSource, complexity) {
-  return 0;
-}
+function estimateDuration(banSource, complexity) { return 0; }
 
-// Unified description generator - used by all sections to ensure consistency
 export function generateUnifiedDescription(banSource, metadata = {}) {
   const { targetTypes = [], sourceEntry, sourceAuthor, sourceTitle, sourceList, timeFilter, banMode } = metadata;
-  
   let baseDescription = "";
-  let operationType = banMode === enums.BanMode.UNDOBAN ? "Engel Kaldır" : "Engelle";
+  const operationType = banMode === enums.BanMode.UNDOBAN ? "Engel Kaldır" : "Engelle";
   
   switch (banSource) {
     case enums.BanSource.SINGLE:
       baseDescription = `Tek Kullanıcı ${operationType}`;
       if (targetTypes && targetTypes.length > 0) {
-        const targets = targetTypes.map(t =>
-          t === enums.TargetType.USER ? "Kullanıcı" :
-          t === enums.TargetType.TITLE ? "Başlık" : "Sessiz"
-        ).join(", ");
+        const targets = targetTypes.map(t => t === enums.TargetType.USER ? "Kullanıcı" : t === enums.TargetType.TITLE ? "Başlık" : "Sessiz").join(", ");
         baseDescription += ` (${targets})`;
       }
       break;
     case enums.BanSource.FAV:
       baseDescription = `Favori Edenleri ${operationType}`;
-      if (sourceEntry) {
-        baseDescription += " (Entry)";
-      }
+      if (sourceEntry) baseDescription += " (Entry)";
       break;
     case enums.BanSource.FOLLOW:
       baseDescription = `Takipçileri ${operationType}`;
-      if (sourceAuthor) {
-        baseDescription += ` (${sourceAuthor})`;
-      }
+      if (sourceAuthor) baseDescription += ` (${sourceAuthor})`;
       break;
     case enums.BanSource.LIST:
       baseDescription = `Listeden ${operationType}`;
-      if (sourceList && sourceList.length > 0) {
-        baseDescription += ` (${sourceList.length} kullanıcı)`;
-      }
+      if (sourceList && sourceList.length > 0) baseDescription += ` (${sourceList.length} kullanıcı)`;
       break;
     case enums.BanSource.TITLE:
       baseDescription = `Başlıktaki Yazarları ${operationType}`;
-      if (sourceTitle) {
-        baseDescription += ` (${sourceTitle})`;
-      }
+      if (sourceTitle) baseDescription += ` (${sourceTitle})`;
       if (timeFilter) {
         const timeDesc = timeFilter === enums.TimeSpecifier.LAST_24_H ? "Son 24 saat" : "Tümü";
         baseDescription += ` - ${timeDesc}`;
@@ -136,7 +121,6 @@ export function generateUnifiedDescription(banSource, metadata = {}) {
     default:
       baseDescription = `${operationType} İşlemi`;
   }
-  
   return baseDescription;
 }
 
@@ -147,7 +131,7 @@ class AutoQueue extends Queue {
     this._isInitialized = false;
     this._initializePersistedQueue();
   }
-  
+
   async _initializePersistedQueue() {
     try {
       const persistedItems = await storageHandler.getQueueData();
@@ -161,64 +145,51 @@ class AutoQueue extends Queue {
       this._isInitialized = true;
     }
   }
-  
+
   async _saveQueueState() {
     if (!this._isInitialized) return;
-    
     try {
-      const itemsData = this._items.map(item => ({
-        action: item.action,
-        resolve: undefined,
-        reject: undefined
-      }));
+      const itemsData = this._items.map(item => ({ action: item.action, resolve: undefined, reject: undefined }));
       await storageHandler.saveQueueData(itemsData);
     } catch (error) {
       console.warn('Queue: Failed to save queue state:', error);
     }
   }
-  
+
   get item() { return this._items; }
-  
+
   get itemAttributes() {
-    let attrs = [];
+    const attrs = [];
     for(let i = 0; i < this._items.length; i++) {
       const action = this._items[i].action;
       const metadata = action.metadata || {};
-      
       const complexity = getTaskComplexity(action.banSource);
-      
-      let obj = {
+      attrs.push({
         banSource: action.banSource,
         banMode: action.banMode,
         creationDateInStr: action.creationDateInStr,
         actionDescription: action.actionDescription || generateUnifiedDescription(action.banSource, { ...action.metadata, banMode: action.banMode }),
-        
         taskCategory: getTaskCategory(action.banSource),
         taskComplexity: complexity,
         taskPriority: getTaskPriority(action.banSource),
-        
         sourceEntry: metadata.sourceEntry || null,
         sourceAuthor: metadata.sourceAuthor || null,
         sourceTitle: metadata.sourceTitle || null,
         sourceList: metadata.sourceList || null,
         targetTypes: metadata.targetTypes || [],
         timeFilter: metadata.timeFilter || null,
-        
         taskStatus: enums.TaskStatus.QUEUED,
-        
         operationNotes: metadata.operationNotes || "",
         requiresUserInteraction: metadata.requiresUserInteraction || false,
         queuePosition: i + 1,
         totalQueueSize: this._items.length
-      };
-      
-      attrs.push(obj);
+      });
     }
     return attrs;
   }
-  
+
   get isRunning() { return this._pendingPromise; }
-  
+
   async clear() {
     this._items = [];
     await this._saveQueueState();
@@ -242,8 +213,7 @@ class AutoQueue extends Queue {
       return false;
     }
 
-    let item = super.dequeue();
-
+    const item = super.dequeue();
     if (!item) {
       console.log("Queue: No item to dequeue");
       return false;
@@ -253,15 +223,8 @@ class AutoQueue extends Queue {
     
     try {
       this._pendingPromise = true;
-
-      if (item.action && item.action.metadata) {
-        this._currentItemMetadata = item.action.metadata;
-      } else {
-        this._currentItemMetadata = null;
-      }
-
-      let payload = await item.action(this);
-
+      this._currentItemMetadata = (item.action && item.action.metadata) ? item.action.metadata : null;
+      const payload = await item.action(this);
       this._pendingPromise = false;
       item.resolve(payload);
     } catch (e) {
@@ -271,26 +234,14 @@ class AutoQueue extends Queue {
       this._currentItemMetadata = null;
       console.log(`Queue: Finished processing item, queue size after: ${this._items.length}, continuing to next item...`);
       await this._saveQueueState();
-      
-      setTimeout(() => {
-        this.dequeue();
-      }, 0);
+      setTimeout(() => this.dequeue(), 0);
     }
-
     return true;
   }
 
-  get currentItemMetadata() {
-    return this._currentItemMetadata || null;
-  }
-
-  async restoreFromStorage() {
-    await this._initializePersistedQueue();
-  }
-
-  async forceSave() {
-    await this._saveQueueState();
-  }
+  get currentItemMetadata() { return this._currentItemMetadata || null; }
+  async restoreFromStorage() { await this._initializePersistedQueue(); }
+  async forceSave() { await this._saveQueueState(); }
 }
 
 export let processQueue = new AutoQueue();

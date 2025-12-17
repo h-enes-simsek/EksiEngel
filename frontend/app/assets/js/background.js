@@ -179,12 +179,10 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
                 }).catch(e => log.warn("bg", `Error sending message to notification tab: ${e}`));
             }
             await storageHandler.saveMutedUserCount(progress.currentCount);
-            // Save resume state for potential resume capability
             await storageHandler.saveMutedRefreshResumeState(progress.currentPage || 0, progress.currentCount);
           };
           
           try {
-            // Check if we have a resume state
             const resumeState = await storageHandler.getMutedRefreshResumeState();
             let resumeFromIndex = null;
             
@@ -196,11 +194,9 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
             const result = await scrapingHandler.scrapeAllMutedUsers(updateProgress, resumeFromIndex);
             
             if (result.success) {
-              // Clear resume state on successful completion
               await storageHandler.clearMutedRefreshResumeState();
               await storageHandler.clearPartialMutedUsers();
               
-              // Save complete list and count
               await storageHandler.saveMutedUserList(result.usernames);
               await storageHandler.saveMutedUserCount(result.count);
               
@@ -211,7 +207,6 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
               }
             } else {
               if (result.stoppedEarly) {
-                // Cache partial results for resume capability
                 await storageHandler.savePartialMutedUsers(result.usernames || [], true);
                 await storageHandler.clearMutedRefreshResumeState();
                 
@@ -274,10 +269,8 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
           try {
             const result = await scrapingHandler.scrapeAllBlockedUsers(updateProgress);
             if (result.success) {
-              // Clear temporary storage on successful completion
               await storageHandler.clearPartialBlockedUsers();
               
-              // Save complete list and count
               await storageHandler.saveBlockedUserList(result.usernames);
               await storageHandler.saveBlockedUserCount(result.count);
               if (g_notificationTabId) {
@@ -287,7 +280,6 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
               }
             } else {
               if (result.stoppedEarly) {
-                // Cache partial results for resume capability AND export
                 await storageHandler.savePartialBlockedUsers(result.usernames || [], true);
                 
                 if (g_notificationTabId) {
@@ -297,7 +289,6 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
                 }
               } else {
                 log.err("bg", "Error scraping blocked users:", result.error);
-                // Clear temporary storage on error too
                 await storageHandler.clearPartialBlockedUsers();
                 
                 if (g_notificationTabId) {
@@ -363,15 +354,12 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
     try {
       log.info("bg", `Early stop request received. Current state: Active=${programController.isActive}, QueueSize=${processQueue.size}, RunningTasks=${programController.hasAnyRunningTasks}`);
       
-      // Use the improved stopAllOperations method
       programController.stopAllOperations();
       
-      // Get state after stopping for acknowledgment
       const wasActive = programController.isActive;
       const hadRunningTasks = programController.hasAnyRunningTasks;
       const queuePreserved = processQueue.size > 0;
       
-      // Provide detailed acknowledgment
       const responseMessage = `Early stop completed. Active: ${wasActive}, Queue preserved: ${queuePreserved}, Running tasks stopped: ${hadRunningTasks}`;
       log.info("bg", responseMessage);
       
@@ -437,7 +425,6 @@ function getEstimatedUserCount(banSource, obj) {
 }
 
 function getActionDescription(banSource, obj) {
-  // Use unified description generator for consistency across all sections
   return generateUnifiedDescription(banSource, obj);
 }
 
