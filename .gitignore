@@ -24,13 +24,7 @@ context_portal/
 .roo/system-prompt-debug
 .roo/system-prompt-test
 .roomodes
-memory-bank/activeContext.md
-memory-bank/decisionLog.md
-memory-bank/productContext.md
-memory-bank/progress.md
-memory-bank/systemPatterns.md
 .clinerules-default
 .roomodes.json:Zone.Identifier
-memory-bank/
 .clinerules
 AGENTS.md
