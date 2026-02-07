@@ -702,6 +702,144 @@ class ScrapingHandler
       return "0";
     }
   }
+
+  /**
+   * Scrapes the registration date from a user's profile page
+   * @param {string} authorName - The username to look up
+   * @returns {Promise<string|null>} - ISO date string of registration date, or null if not found
+   */
+  scrapeRegistrationDate = async (authorName) => {
+    try {
+      let targetUrl = config.EksiSozlukURL + "/biri/" + authorName;
+      let response = await fetch(targetUrl, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+          'x-requested-with': 'XMLHttpRequest'
+        }
+      });
+      if (!response.ok) {
+        throw new Error(`fetch ok: ${response.ok}, status: ${response.status}`);
+      }
+      let responseText = await response.text();
+      
+      let dom = new JSDOM(responseText);
+      
+      // Try multiple selectors to find the registration date
+      // Common patterns on Ekşi Sözlük profile pages
+      let regDateElement = null;
+      
+      // Try to find by common patterns
+      const possibleSelectors = [
+        '[data-registration-date]',
+        '.registration-date',
+        '.user-registration-date',
+        '.profile-info .date',
+        '.user-info [title*="kayıt"]',
+        '.user-info [title*="katılım"]'
+      ];
+      
+      for (const selector of possibleSelectors) {
+        try {
+          regDateElement = dom.window.document.querySelector(selector);
+          if (regDateElement) break;
+        } catch (e) {
+          // Continue to next selector
+        }
+      }
+      
+      // If not found by attribute, try to find by text content patterns
+      if (!regDateElement) {
+        const allElements = dom.window.document.querySelectorAll('*');
+        for (const el of allElements) {
+          const text = el.textContent?.toLowerCase() || '';
+          if (text.includes('kayıt tarihi') || text.includes('katılım tarihi')) {
+            // Look for a sibling or parent that contains the date
+            const parent = el.parentElement;
+            if (parent) {
+              const dateEl = parent.querySelector('time, .date, [datetime]');
+              if (dateEl) {
+                regDateElement = dateEl;
+                break;
+              }
+            }
+          }
+        }
+      }
+      
+      if (regDateElement) {
+        // Try to get date from datetime attribute or text content
+        const dateStr = regDateElement.getAttribute('datetime') || 
+                       regDateElement.getAttribute('data-date') || 
+                       regDateElement.textContent?.trim();
+        
+        if (dateStr) {
+          // Parse Turkish date format (DD.MM.YYYY or similar)
+          const parsedDate = utils.parseTurkishDate(dateStr);
+          if (parsedDate) {
+            log.info("scraping", `Registration date for ${authorName}: ${parsedDate.toISOString()}`);
+            return parsedDate.toISOString();
+          }
+        }
+      }
+      
+      log.warn("scraping", `Could not find registration date for ${authorName}`);
+      return null;
+    } catch (err) {
+      log.err("scraping", `scrapeRegistrationDate: authorName: ${authorName}, err: ${err}`);
+      return null;
+    }
+  }
+
+  /**
+   * Scrapes registration dates for multiple users in batches
+   * @param {string[]} authorNames - Array of usernames
+   * @param {Function} progressCallback - Optional callback for progress updates
+   * @returns {Promise<Map<string, string|null>>} - Map of username to registration date
+   */
+  scrapeRegistrationDatesBatch = async (authorNames, progressCallback = null) => {
+    const results = new Map();
+    const delayBetweenRequests = 100; // ms to be polite
+    
+    log.info("scraping", `Starting batch registration date scrape for ${authorNames.length} users`);
+    
+    for (let i = 0; i < authorNames.length; i++) {
+      const authorName = authorNames[i];
+      
+      if (programController.earlyStop) {
+        log.info("scraping", "Batch registration date scraping stopped early");
+        break;
+      }
+      
+      try {
+        const regDate = await this.scrapeRegistrationDate(authorName);
+        results.set(authorName, regDate);
+        
+        if (progressCallback && typeof progressCallback === 'function') {
+          progressCallback({
+            current: i + 1,
+            total: authorNames.length,
+            currentUser: authorName,
+            date: regDate
+          });
+        }
+        
+        // Add delay between requests to avoid rate limiting
+        if (i < authorNames.length - 1) {
+          await utils.sleep(delayBetweenRequests);
+        }
+      } catch (err) {
+        log.err("scraping", `Error scraping registration date for ${authorName}: ${err}`);
+        results.set(authorName, null);
+      }
+    }
+    
+    log.info("scraping", `Batch registration date scrape complete. Found dates for ${
+      Array.from(results.values()).filter(d => d !== null).length
+    }/${authorNames.length} users`);
+    
+    return results;
+  }
   
   #scrapeAuthorsFromTitlePartially = async (scrapedRelations, titleName, titleId, timeSpecifier, index) => {
     try {

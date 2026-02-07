@@ -67,3 +67,17 @@ export const TaskMetadata = {
   operationNotes: "",
   requiresUserInteraction: false
 };
+
+// Date-based user filtering enums
+export const DateFilterCriteria = {
+  NEWER_THAN: "NEWER_THAN",      // Account is newer than X days
+  OLDER_THAN: "OLDER_THAN",      // Account is older than X days
+  BEFORE_DATE: "BEFORE_DATE",    // Registered before specific date
+  AFTER_DATE: "AFTER_DATE"       // Registered after specific date
+};
+
+export const DateFilterAction = {
+  BLOCK: "BLOCK",       // Block users matching criteria
+  SKIP: "SKIP",         // Skip/don't block matching users
+  PROTECT: "PROTECT"    // Protect matching users from being blocked
+};

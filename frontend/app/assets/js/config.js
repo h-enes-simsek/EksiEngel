@@ -16,8 +16,28 @@ export let config = {
   "enableAnalysisBeforeOperation": true,
   "enableOnlyRequiredActions": false,
   "enableProtectFollowedUsers": false,
-  "banPremiumIcons": false
+  "banPremiumIcons": false,
+  "enableDateFilter": false,
+  "dateFilterRules": []
 };
+
+// Helper function to create default date filter rules
+export function createDefaultDateFilterRules() {
+  const fiveYearsAgo = new Date();
+  fiveYearsAgo.setFullYear(fiveYearsAgo.getFullYear() - 5);
+  
+  return [
+    {
+      id: "protect-legacy-users",
+      criteria: enums.DateFilterCriteria.OLDER_THAN,
+      value: 1825, // approximately 5 years in days
+      valueType: "days",
+      action: enums.DateFilterAction.PROTECT,
+      description: "Korumalı: 5 yıldan eski hesaplar",
+      isDefault: true
+    }
+  ];
+}
 
 export async function getConfig() {
   return new Promise((resolve) => {
