@@ -481,6 +481,270 @@ class StorageHandler {
       });
     });
   }
+
+  // Registration date cache methods
+  // Cache TTL: 30 days (in milliseconds)
+  static REGISTRATION_DATE_CACHE_TTL = 30 * 24 * 60 * 60 * 1000;
+  static REGISTRATION_DATE_CACHE_KEY = 'registrationDateCache';
+
+  /**
+   * Saves a registration date to the cache
+   * @param {string} username - The username
+   * @param {string} registrationDate - ISO date string
+   * @returns {Promise<void>}
+   */
+  async saveRegistrationDate(username, registrationDate) {
+    return new Promise((resolve, reject) => {
+      // First get existing cache
+      chrome.storage.local.get([StorageHandler.REGISTRATION_DATE_CACHE_KEY], (result) => {
+        if (chrome.runtime.lastError) {
+          log.err('storage', `Error getting registration date cache: ${chrome.runtime.lastError.message}`);
+          reject(this._handleStorageError(chrome.runtime.lastError));
+          return;
+        }
+
+        const cache = result[StorageHandler.REGISTRATION_DATE_CACHE_KEY] || {};
+        
+        // Add/update the entry
+        cache[username] = {
+          date: registrationDate,
+          cachedAt: Date.now()
+        };
+
+        // Save back to storage
+        chrome.storage.local.set({ 
+          [StorageHandler.REGISTRATION_DATE_CACHE_KEY]: cache 
+        }, () => {
+          if (chrome.runtime.lastError) {
+            log.err('storage', `Error saving registration date cache: ${chrome.runtime.lastError.message}`);
+            reject(this._handleStorageError(chrome.runtime.lastError));
+          } else {
+            log.info('storage', `Cached registration date for ${username}`);
+            resolve();
+          }
+        });
+      });
+    });
+  }
+
+  /**
+   * Saves multiple registration dates to the cache in one operation
+   * @param {Map<string, string>} usernameDateMap - Map of username to registration date
+   * @returns {Promise<void>}
+   */
+  async saveRegistrationDatesBatch(usernameDateMap) {
+    return new Promise((resolve, reject) => {
+      chrome.storage.local.get([StorageHandler.REGISTRATION_DATE_CACHE_KEY], (result) => {
+        if (chrome.runtime.lastError) {
+          log.err('storage', `Error getting registration date cache for batch: ${chrome.runtime.lastError.message}`);
+          reject(this._handleStorageError(chrome.runtime.lastError));
+          return;
+        }
+
+        const cache = result[StorageHandler.REGISTRATION_DATE_CACHE_KEY] || {};
+        const now = Date.now();
+
+        // Add all entries
+        for (const [username, registrationDate] of usernameDateMap) {
+          if (registrationDate) { // Only cache valid dates
+            cache[username] = {
+              date: registrationDate,
+              cachedAt: now
+            };
+          }
+        }
+
+        chrome.storage.local.set({ 
+          [StorageHandler.REGISTRATION_DATE_CACHE_KEY]: cache 
+        }, () => {
+          if (chrome.runtime.lastError) {
+            log.err('storage', `Error saving registration date cache batch: ${chrome.runtime.lastError.message}`);
+            reject(this._handleStorageError(chrome.runtime.lastError));
+          } else {
+            log.info('storage', `Cached registration dates for ${usernameDateMap.size} users`);
+            resolve();
+          }
+        });
+      });
+    });
+  }
+
+  /**
+   * Retrieves a cached registration date if it exists and is not expired
+   * @param {string} username - The username to look up
+   * @returns {Promise<string|null>} - Registration date or null if not found/expired
+   */
+  async getRegistrationDate(username) {
+    return new Promise((resolve) => {
+      chrome.storage.local.get([StorageHandler.REGISTRATION_DATE_CACHE_KEY], (result) => {
+        if (chrome.runtime.lastError) {
+          log.err('storage', `Error getting registration date: ${chrome.runtime.lastError.message}`);
+          resolve(null);
+          return;
+        }
+
+        const cache = result[StorageHandler.REGISTRATION_DATE_CACHE_KEY];
+        if (!cache || !cache[username]) {
+          resolve(null);
+          return;
+        }
+
+        const entry = cache[username];
+        const now = Date.now();
+
+        // Check if cache entry is expired
+        if (now - entry.cachedAt > StorageHandler.REGISTRATION_DATE_CACHE_TTL) {
+          log.info('storage', `Registration date cache expired for ${username}`);
+          resolve(null);
+          return;
+        }
+
+        log.info('storage', `Retrieved cached registration date for ${username}`);
+        resolve(entry.date);
+      });
+    });
+  }
+
+  /**
+   * Retrieves multiple cached registration dates, filtering out expired entries
+   * @param {string[]} usernames - Array of usernames to look up
+   * @returns {Promise<Map<string, string>>} - Map of username to registration date (only valid, non-expired entries)
+   */
+  async getRegistrationDatesBatch(usernames) {
+    return new Promise((resolve) => {
+      chrome.storage.local.get([StorageHandler.REGISTRATION_DATE_CACHE_KEY], (result) => {
+        if (chrome.runtime.lastError) {
+          log.err('storage', `Error getting registration dates batch: ${chrome.runtime.lastError.message}`);
+          resolve(new Map());
+          return;
+        }
+
+        const cache = result[StorageHandler.REGISTRATION_DATE_CACHE_KEY] || {};
+        const now = Date.now();
+        const results = new Map();
+        let expiredCount = 0;
+
+        for (const username of usernames) {
+          const entry = cache[username];
+          if (entry) {
+            // Check if expired
+            if (now - entry.cachedAt <= StorageHandler.REGISTRATION_DATE_CACHE_TTL) {
+              results.set(username, entry.date);
+            } else {
+              expiredCount++;
+            }
+          }
+        }
+
+        log.info('storage', `Retrieved ${results.size} cached registration dates (${expiredCount} expired)`);
+        resolve(results);
+      });
+    });
+  }
+
+  /**
+   * Clears expired entries from the registration date cache
+   * @returns {Promise<number>} - Number of entries removed
+   */
+  async cleanupRegistrationDateCache() {
+    return new Promise((resolve) => {
+      chrome.storage.local.get([StorageHandler.REGISTRATION_DATE_CACHE_KEY], (result) => {
+        if (chrome.runtime.lastError) {
+          log.err('storage', `Error cleaning up registration date cache: ${chrome.runtime.lastError.message}`);
+          resolve(0);
+          return;
+        }
+
+        const cache = result[StorageHandler.REGISTRATION_DATE_CACHE_KEY];
+        if (!cache) {
+          resolve(0);
+          return;
+        }
+
+        const now = Date.now();
+        let removedCount = 0;
+
+        // Remove expired entries
+        for (const [username, entry] of Object.entries(cache)) {
+          if (now - entry.cachedAt > StorageHandler.REGISTRATION_DATE_CACHE_TTL) {
+            delete cache[username];
+            removedCount++;
+          }
+        }
+
+        // Save cleaned cache back
+        chrome.storage.local.set({ 
+          [StorageHandler.REGISTRATION_DATE_CACHE_KEY]: cache 
+        }, () => {
+          if (chrome.runtime.lastError) {
+            log.err('storage', `Error saving cleaned registration date cache: ${chrome.runtime.lastError.message}`);
+          } else {
+            log.info('storage', `Cleaned up ${removedCount} expired registration date cache entries`);
+          }
+          resolve(removedCount);
+        });
+      });
+    });
+  }
+
+  /**
+   * Clears all registration date cache
+   * @returns {Promise<void>}
+   */
+  async clearRegistrationDateCache() {
+    return new Promise((resolve, reject) => {
+      chrome.storage.local.remove([StorageHandler.REGISTRATION_DATE_CACHE_KEY], () => {
+        if (chrome.runtime.lastError) {
+          log.err('storage', `Error clearing registration date cache: ${chrome.runtime.lastError.message}`);
+          reject(this._handleStorageError(chrome.runtime.lastError));
+        } else {
+          log.info('storage', 'Cleared all registration date cache');
+          resolve();
+        }
+      });
+    });
+  }
+
+  /**
+   * Gets cache statistics for registration dates
+   * @returns {Promise<Object>} - Stats object with total, valid, and expired counts
+   */
+  async getRegistrationDateCacheStats() {
+    return new Promise((resolve) => {
+      chrome.storage.local.get([StorageHandler.REGISTRATION_DATE_CACHE_KEY], (result) => {
+        if (chrome.runtime.lastError) {
+          log.err('storage', `Error getting registration date cache stats: ${chrome.runtime.lastError.message}`);
+          resolve({ total: 0, valid: 0, expired: 0 });
+          return;
+        }
+
+        const cache = result[StorageHandler.REGISTRATION_DATE_CACHE_KEY];
+        if (!cache) {
+          resolve({ total: 0, valid: 0, expired: 0 });
+          return;
+        }
+
+        const now = Date.now();
+        let valid = 0;
+        let expired = 0;
+
+        for (const entry of Object.values(cache)) {
+          if (now - entry.cachedAt <= StorageHandler.REGISTRATION_DATE_CACHE_TTL) {
+            valid++;
+          } else {
+            expired++;
+          }
+        }
+
+        resolve({ 
+          total: valid + expired, 
+          valid, 
+          expired,
+          ttlDays: 30
+        });
+      });
+    });
+  }
 }
 
 export let storageHandler = new StorageHandler();
