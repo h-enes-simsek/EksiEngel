@@ -428,6 +428,127 @@ function getActionDescription(banSource, obj) {
   return generateUnifiedDescription(banSource, obj);
 }
 
+/**
+ * Fetches registration dates for users, using cache when available
+ * @param {string[]} authorNames - Array of usernames
+ * @param {Map<string, Object>} relations - Map of username to relation data
+ * @returns {Promise<Map<string, Object>>} - Relations with registration dates added
+ */
+async function fetchRegistrationDates(authorNames, relations) {
+  if (!config.enableDateFilter || !config.dateFilterRules || config.dateFilterRules.length === 0) {
+    return relations;
+  }
+
+  log.info("bg", `Fetching registration dates for ${authorNames.length} users...`);
+  notificationHandler.notify("Kayıt tarihleri kontrol ediliyor...");
+
+  // First check cache for existing dates
+  const cachedDates = await storageHandler.getRegistrationDatesBatch(authorNames);
+  
+  // Identify users not in cache
+  const usersToFetch = [];
+  for (const name of authorNames) {
+    if (!cachedDates.has(name)) {
+      usersToFetch.push(name);
+    }
+  }
+
+  log.info("bg", `Found ${cachedDates.size} cached dates, need to fetch ${usersToFetch.length}`);
+
+  // Fetch dates for users not in cache
+  let fetchedCount = 0;
+  const newlyFetchedDates = new Map();
+  
+  for (const username of usersToFetch) {
+    if (programController.earlyStop) break;
+    
+    try {
+      const regDate = await scrapingHandler.scrapeRegistrationDate(username);
+      if (regDate) {
+        newlyFetchedDates.set(username, regDate);
+        
+        // Update the relation object with registration date
+        if (relations.has(username)) {
+          const relation = relations.get(username);
+          relation.registrationDate = regDate;
+          relations.set(username, relation);
+        }
+      }
+      
+      fetchedCount++;
+      if (fetchedCount % 10 === 0) {
+        notificationHandler.notifyStatus(`Kayıt tarihi alınıyor: ${fetchedCount}/${usersToFetch.length}`);
+      }
+      
+      // Small delay to avoid rate limiting
+      await utils.sleep(100);
+    } catch (err) {
+      log.err("bg", `Error fetching registration date for ${username}: ${err}`);
+    }
+  }
+
+  // Cache the newly fetched dates
+  if (newlyFetchedDates.size > 0) {
+    await storageHandler.saveRegistrationDatesBatch(newlyFetchedDates);
+    log.info("bg", `Cached ${newlyFetchedDates.size} new registration dates`);
+  }
+
+  // Add cached dates to relations
+  for (const [username, regDate] of cachedDates) {
+    if (relations.has(username)) {
+      const relation = relations.get(username);
+      relation.registrationDate = regDate;
+      relations.set(username, relation);
+    }
+  }
+
+  return relations;
+}
+
+/**
+ * Applies date filtering to a relations map and returns filtered results
+ * @param {Map<string, Object>} relations - Map of username to relation data
+ * @returns {Object} - Filtered results with block, skip, protect, unknown arrays
+ */
+function applyDateFiltersToRelations(relations) {
+  if (!config.enableDateFilter || !config.dateFilterRules || config.dateFilterRules.length === 0) {
+    // Return all users as "block" if filtering is disabled
+    return {
+      block: Array.from(relations.entries()).map(([name, data]) => ({ username: name, ...data })),
+      skip: [],
+      protect: [],
+      unknown: []
+    };
+  }
+
+  return utils.applyDateFilters(relations, config.dateFilterRules);
+}
+
+/**
+ * Logs date filtering results to notification and console
+ * @param {Object} filterResults - Results from applyDateFiltersToRelations
+ */
+function logDateFilterResults(filterResults) {
+  const total = filterResults.block.length + filterResults.skip.length + 
+                filterResults.protect.length + filterResults.unknown.length;
+  
+  log.info("bg", `Date filtering complete: ${filterResults.block.length} to block, ` +
+           `${filterResults.skip.length} skipped, ${filterResults.protect.length} protected, ` +
+           `${filterResults.unknown.length} unknown (total: ${total})`);
+  
+  if (filterResults.protect.length > 0) {
+    notificationHandler.notify(`${filterResults.protect.length} kullanıcı tarih filtresi nedeniyle korundu`);
+  }
+  
+  if (filterResults.skip.length > 0) {
+    notificationHandler.notify(`${filterResults.skip.length} kullanıcı tarih filtresi nedeniyle atlandı`);
+  }
+  
+  if (filterResults.unknown.length > 0) {
+    notificationHandler.notify(`${filterResults.unknown.length} kullanıcının kayıt tarihi bilinmiyor`);
+  }
+}
+
 async function processHandler(banSource, banMode, entryUrl, singleAuthorName, singleAuthorId, targetType, clickSource, titleName, titleId, timeSpecifier) {
   log.info("bg", `Process started: banSource=${banSource}, banMode=${banMode}, entryUrl=${entryUrl}, singleAuthorName=${singleAuthorName}, singleAuthorId=${singleAuthorId}, targetType=${targetType}, clickSource=${clickSource}, titleName=${titleName}, titleId=${titleId}`);
   
@@ -573,6 +694,22 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
       return;
     }
     
+    // Apply date filtering if enabled
+    if (config.enableDateFilter && config.dateFilterRules && config.dateFilterRules.length > 0) {
+      scrapedRelations = await fetchRegistrationDates(authorNameList, scrapedRelations);
+      const filterResults = applyDateFiltersToRelations(scrapedRelations);
+      logDateFilterResults(filterResults);
+      
+      // Replace scrapedRelations with only those to block
+      scrapedRelations = new Map(filterResults.block.map(u => [u.username, u]));
+      
+      if (scrapedRelations.size === 0) {
+        notificationHandler.finishErrorNoAccount(banSource, banMode, processQueue.currentItemMetadata);
+        log.info("bg", "No users to block after date filtering");
+        return;
+      }
+    }
+    
     notificationHandler.notifyOngoing(0, 0, scrapedRelations.size, processQueue.currentItemMetadata);
     for (const [name, value] of scrapedRelations) {
       if(programController.earlyStop) break;
@@ -620,6 +757,25 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
     
     authorNameList = Array.from(scrapedRelations, ([name, value]) => name);
     authorIdList = Array.from(scrapedRelations, ([name, value]) => value.authorId);
+    
+    // Apply date filtering if enabled
+    if (config.enableDateFilter && config.dateFilterRules && config.dateFilterRules.length > 0) {
+      scrapedRelations = await fetchRegistrationDates(authorNameList, scrapedRelations);
+      const filterResults = applyDateFiltersToRelations(scrapedRelations);
+      logDateFilterResults(filterResults);
+      
+      // Replace scrapedRelations with only those to block
+      scrapedRelations = new Map(filterResults.block.map(u => [u.username, u]));
+      authorNameList = Array.from(scrapedRelations.keys());
+      authorIdList = Array.from(scrapedRelations.values()).map(u => u.authorId);
+      
+      if (scrapedRelations.size === 0) {
+        notificationHandler.finishErrorNoAccount(banSource, banMode, processQueue.currentItemMetadata);
+        log.info("bg", "No users to block after date filtering");
+        return;
+      }
+    }
+    
     notificationHandler.notifyOngoing(0, 0, scrapedRelations.size, processQueue.currentItemMetadata);
     notificationHandler.notifyStatus("Takipçiler engelleniyor...");
     
@@ -673,6 +829,25 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
     
     authorNameList = Array.from(scrapedRelations, ([name, value]) => name);
     authorIdList = Array.from(scrapedRelations, ([name, value]) => value.authorId);
+    
+    // Apply date filtering if enabled
+    if (config.enableDateFilter && config.dateFilterRules && config.dateFilterRules.length > 0) {
+      scrapedRelations = await fetchRegistrationDates(authorNameList, scrapedRelations);
+      const filterResults = applyDateFiltersToRelations(scrapedRelations);
+      logDateFilterResults(filterResults);
+      
+      // Replace scrapedRelations with only those to block
+      scrapedRelations = new Map(filterResults.block.map(u => [u.username, u]));
+      authorNameList = Array.from(scrapedRelations.keys());
+      authorIdList = Array.from(scrapedRelations.values()).map(u => u.authorId);
+      
+      if (scrapedRelations.size === 0) {
+        notificationHandler.finishErrorNoAccount(banSource, banMode, processQueue.currentItemMetadata);
+        log.info("bg", "No users to block after date filtering");
+        return;
+      }
+    }
+    
     notificationHandler.notifyOngoing(0, 0, scrapedRelations.size, processQueue.currentItemMetadata);
     
     for (const [name, value] of scrapedRelations) {
