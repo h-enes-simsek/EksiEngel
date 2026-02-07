@@ -30,6 +30,21 @@
     </div>
   </header>
 
+  <!-- Tab Navigation -->
+  <nav class="tab-navigation">
+    <button class="tab-button active" data-tab="operations-tab">
+      <span class="tab-icon">⚙️</span>
+      İşlemler
+    </button>
+    <button class="tab-button" data-tab="datefilter-tab">
+      <span class="tab-icon">📅</span>
+      Tarih Filtresi
+    </button>
+  </nav>
+
+  <!-- Tab Content: Operations -->
+  <div id="operations-tab" class="tab-content active">
+
   <!-- Status Card Section -->
   <section class="card status-card">
     <div class="card-header">
@@ -251,6 +266,136 @@
       </div>
     </div>
   </section>
+
+  </div><!-- End operations-tab -->
+
+  <!-- Tab Content: Date Filter -->
+  <div id="datefilter-tab" class="tab-content">
+    
+    <!-- Date Filter Master Toggle -->
+    <section class="card datefilter-toggle-card">
+      <div class="card-header">
+        <h2>📅 Tarih Filtresi Ayarları</h2>
+        <div class="toggle-container">
+          <label class="switch-large">
+            <input type="checkbox" id="dateFilterMasterToggle">
+            <span class="slider-large"></span>
+          </label>
+          <span id="dateFilterMasterStatus" class="toggle-status">Devre dışı</span>
+        </div>
+      </div>
+      <p class="card-description">
+        Tarih filtresi etkinleştirildiğinde, kullanıcıların kayıt tarihlerine göre engelleme işlemleri filtrelenecektir.
+      </p>
+    </section>
+
+    <!-- Date Filter Rules List -->
+    <section class="card datefilter-rules-card" id="dateFilterRulesSection" style="display: none;">
+      <div class="card-header">
+        <h2>🎯 Filtre Kuralları</h2>
+        <span class="rules-count" id="rulesCount">0 kural</span>
+      </div>
+      
+      <div class="rules-list" id="rulesList">
+        <!-- Rules will be dynamically populated here -->
+      </div>
+
+      <div class="rules-actions">
+        <button id="addNewRuleBtn" class="btn btn-primary">
+          <span class="btn-icon">➕</span>
+          Yeni Kural Ekle
+        </button>
+      </div>
+    </section>
+
+    <!-- Add/Edit Rule Form -->
+    <section class="card datefilter-form-card" id="ruleFormSection" style="display: none;">
+      <div class="card-header">
+        <h2 id="ruleFormTitle">📝 Yeni Kural Ekle</h2>
+      </div>
+      
+      <div class="form-content">
+        <div class="form-group">
+          <label for="ruleCriteria">Kriter:</label>
+          <select id="ruleCriteria" class="form-select">
+            <option value="NEWER_THAN">Hesap yaşı küçüktür (yeni hesaplar)</option>
+            <option value="OLDER_THAN">Hesap yaşı büyüktür (eski hesaplar)</option>
+            <option value="BEFORE_DATE">Kayıt tarihinden önce</option>
+            <option value="AFTER_DATE">Kayıt tarihinden sonra</option>
+          </select>
+        </div>
+
+        <div class="form-group" id="daysValueGroup">
+          <label for="ruleValueDays">Değer:</label>
+          <div class="input-with-unit">
+            <input type="number" id="ruleValueDays" class="form-input" min="1" value="30">
+            <select id="ruleUnit" class="form-select unit-select">
+              <option value="days">gün</option>
+              <option value="months">ay</option>
+              <option value="years">yıl</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group" id="dateValueGroup" style="display: none;">
+          <label for="ruleValueDate">Tarih:</label>
+          <input type="date" id="ruleValueDate" class="form-input">
+        </div>
+
+        <div class="form-group">
+          <label for="ruleAction">Eylem:</label>
+          <select id="ruleAction" class="form-select">
+            <option value="BLOCK">🚫 Engelle</option>
+            <option value="SKIP">⏭️ Atla (engelleme)</option>
+            <option value="PROTECT">🛡️ Koru (asla engelleme)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="ruleDescription">Açıklama (opsiyonel):</label>
+          <input type="text" id="ruleDescription" class="form-input" placeholder="Örn: 30 günden yeni hesaplar">
+        </div>
+
+        <input type="hidden" id="ruleId">
+        <input type="hidden" id="ruleIsDefault" value="false">
+
+        <div class="form-actions">
+          <button id="saveRuleBtn" class="btn btn-success">Kuralı Kaydet</button>
+          <button id="cancelRuleBtn" class="btn btn-secondary">İptal</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Cache Info Section -->
+    <section class="card datefilter-cache-card" id="dateFilterCacheSection" style="display: none;">
+      <div class="card-header">
+        <h2>💾 Önbellek Bilgisi</h2>
+      </div>
+      <div class="cache-info">
+        <div class="cache-stats">
+          <div class="cache-stat">
+            <span class="cache-label">Toplam kayıt:</span>
+            <span class="cache-value" id="cacheTotalCount">0</span>
+          </div>
+          <div class="cache-stat">
+            <span class="cache-label">Geçerli kayıt:</span>
+            <span class="cache-value" id="cacheValidCount">0</span>
+          </div>
+          <div class="cache-stat">
+            <span class="cache-label">Süresi dolmuş:</span>
+            <span class="cache-value" id="cacheExpiredCount">0</span>
+          </div>
+        </div>
+        <div class="cache-actions">
+          <button id="clearCacheBtn" class="btn btn-danger btn-small">
+            <span class="btn-icon">🗑️</span>
+            Önbelleği Temizle
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </div><!-- End datefilter-tab -->
 
 </div>
 
