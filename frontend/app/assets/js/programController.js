@@ -94,6 +94,207 @@ class ProgramController {
 
   get isBlockMutedUsersInProgress() { return this._blockMutedUsersInProgress; }
   get isBlockTitlesInProgress() { return this._blockTitlesInProgress; }
+  get isDateBasedBulkInProgress() { return this._dateBasedBulkInProgress; }
+
+  async startDateBasedBulkAction(params) {
+    const { source, criteria, value, valueType, bulkAction } = params;
+    
+    log.info("progctrl", `startDateBasedBulkAction started: source=${source}, criteria=${criteria}, value=${value}, bulkAction=${bulkAction}`);
+    
+    if (this._dateBasedBulkInProgress) {
+      log.warn("progctrl", "Date-based bulk action is already in progress.");
+      notificationHandler.notify("Tarih bazlı toplu işlem zaten devam ediyor.");
+      return;
+    }
+    
+    this._dateBasedBulkInProgress = true;
+    this.earlyStop = false;
+    
+    try {
+      // Get user list based on source
+      let userList = [];
+      notificationHandler.notify("Kullanıcı listesi getiriliyor...");
+      
+      if (source === 'BLOCKED_USERS') {
+        const blockedList = await storageHandler.getBlockedUserList();
+        userList = blockedList || [];
+      } else if (source === 'MUTED_USERS') {
+        const mutedList = await storageHandler.getMutedUserList();
+        userList = mutedList || [];
+      } else if (source === 'AUTHOR_LIST') {
+        userList = await utils.getUserList();
+        utils.cleanUserList(userList);
+      }
+      
+      if (userList.length === 0) {
+        log.info("progctrl", "No users found in selected source.");
+        notificationHandler.notify("Seçilen kaynakta kullanıcı bulunamadı.");
+        return;
+      }
+      
+      log.info("progctrl", `Found ${userList.length} users in source list.`);
+      notificationHandler.notify(`${userList.length} kullanıcı bulundu. Kayıt tarihleri kontrol ediliyor...`);
+      
+      // Fetch registration dates for all users
+      const userRelations = new Map();
+      for (const username of userList) {
+        userRelations.set(username, { registrationDate: null });
+      }
+      
+      // Use the same fetchRegistrationDates logic from background.js
+      const cachedDates = await storageHandler.getRegistrationDatesBatch(userList);
+      const usersToFetch = userList.filter(name => !cachedDates.has(name));
+      
+      log.info("progctrl", `Found ${cachedDates.size} cached dates, need to fetch ${usersToFetch.length}`);
+      
+      let fetchedCount = 0;
+      const newlyFetchedDates = new Map();
+      
+      for (const username of usersToFetch) {
+        if (this.earlyStop) break;
+        
+        try {
+          const regDate = await scrapingHandler.scrapeRegistrationDate(username);
+          if (regDate) {
+            newlyFetchedDates.set(username, regDate);
+            const relation = userRelations.get(username);
+            if (relation) {
+              relation.registrationDate = regDate;
+              userRelations.set(username, relation);
+            }
+          }
+          
+          fetchedCount++;
+          if (fetchedCount % 10 === 0) {
+            notificationHandler.notifyStatus(`Kayıt tarihi alınıyor: ${fetchedCount}/${usersToFetch.length}`);
+          }
+          
+          await utils.sleep(100);
+        } catch (err) {
+          log.err("progctrl", `Error fetching registration date for ${username}: ${err}`);
+        }
+      }
+      
+      // Cache newly fetched dates
+      if (newlyFetchedDates.size > 0) {
+        await storageHandler.saveRegistrationDatesBatch(newlyFetchedDates);
+      }
+      
+      // Add cached dates to relations
+      for (const [username, regDate] of cachedDates) {
+        const relation = userRelations.get(username);
+        if (relation) {
+          relation.registrationDate = regDate;
+          userRelations.set(username, relation);
+        }
+      }
+      
+      // Create a filter rule to evaluate users
+      const filterRule = {
+        criteria: criteria,
+        value: value,
+        valueType: valueType,
+        action: 'MATCH' // This is a pseudo-action for filtering
+      };
+      
+      // Filter users based on date criteria
+      const matchingUsers = [];
+      for (const [username, userData] of userRelations) {
+        if (this.earlyStop) break;
+        
+        if (userData.registrationDate && utils.evaluateDateFilter(userData.registrationDate, filterRule)) {
+          matchingUsers.push(username);
+        }
+      }
+      
+      log.info("progctrl", `Found ${matchingUsers.length} users matching the date criteria.`);
+      
+      if (matchingUsers.length === 0) {
+        notificationHandler.notify("Tarih kriterine uyan kullanıcı bulunamadı.");
+        return;
+      }
+      
+      notificationHandler.notify(`${matchingUsers.length} kullanıcı tarih kriterine uyuyor. İşlem başlatılıyor...`);
+      
+      // Perform the bulk action on matching users
+      let successCount = 0;
+      let failCount = 0;
+      
+      for (let i = 0; i < matchingUsers.length; i++) {
+        if (this.earlyStop) {
+          log.info("progctrl", "Date-based bulk action stopped early by user.");
+          notificationHandler.notify(`İşlem erken durduruldu. İşlenen: ${i}/${matchingUsers.length}`);
+          break;
+        }
+        
+        const username = matchingUsers[i];
+        notificationHandler.notifyOngoing(successCount, i + 1, matchingUsers.length, processQueue.currentItemMetadata);
+        
+        // Get user ID
+        const authorId = await scrapingHandler.scrapeAuthorIdFromAuthorProfilePage(username);
+        if (!authorId || authorId === "0") {
+          log.err("progctrl", `Could not get user ID for ${username}`);
+          failCount++;
+          continue;
+        }
+        
+        // Perform the action based on bulkAction
+        let result;
+        switch (bulkAction) {
+          case 'ENGELLE':
+            result = await this._performActionWithRetry(enums.BanMode.BAN, authorId, true, false, false);
+            break;
+          case 'SESSIZE_AL':
+            result = await this._performActionWithRetry(enums.BanMode.BAN, authorId, false, false, true);
+            break;
+          case 'ENGEL_KALDIR':
+            result = await this._performActionWithRetry(enums.BanMode.UNDOBAN, authorId, true, false, false);
+            break;
+          case 'SESSIZDEN_CIKAR':
+            result = await this._performActionWithRetry(enums.BanMode.UNDOBAN, authorId, false, false, true);
+            break;
+          case 'TAKIP_ET':
+            // Note: Following is not implemented in relationHandler, skip for now
+            log.warn("progctrl", "Follow action not yet implemented");
+            failCount++;
+            continue;
+          default:
+            log.err("progctrl", `Unknown bulk action: ${bulkAction}`);
+            failCount++;
+            continue;
+        }
+        
+        if (result.earlyStop) {
+          break;
+        }
+        
+        if (result.resultType === enums.ResultType.SUCCESS) {
+          successCount++;
+        } else {
+          failCount++;
+        }
+        
+        await utils.sleep(500);
+      }
+      
+      const totalProcessed = successCount + failCount;
+      
+      if (this.earlyStop) {
+        notificationHandler.finishErrorEarlyStop(enums.BanSource.DATE_BASED_BULK, enums.BanMode.BAN, processQueue.currentItemMetadata);
+      } else {
+        notificationHandler.finishSuccess(enums.BanSource.DATE_BASED_BULK, enums.BanMode.BAN, successCount, totalProcessed, matchingUsers.length, processQueue.currentItemMetadata);
+      }
+      
+    } catch (error) {
+      log.err("progctrl", `Error during date-based bulk action: ${error}`, error);
+      notificationHandler.notify(`Tarih bazlı toplu işlem sırasında hata: ${error.message}`);
+    } finally {
+      log.info("progctrl", "startDateBasedBulkAction completed.");
+      this.earlyStop = false;
+      this._dateBasedBulkInProgress = false;
+      notificationHandler.notifyUpdateCounts();
+    }
+  }
 
   async startMutedRefreshFromIndex(startIndex) {
     log.info("progctrl", `Starting muted refresh from index ${startIndex}`);

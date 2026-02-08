@@ -9,7 +9,8 @@ export const BanSource = {
   MIGRATE_BLOCKED_TO_MUTED: "8",
   BLOCK_MUTED_USERS: "9",
   REFRESH_MUTED_LIST: "10",
-  REFRESH_BLOCKED_LIST: "11"
+  REFRESH_BLOCKED_LIST: "11",
+  DATE_BASED_BULK: "12"
 };
 
 export const BanMode = { BAN: "1", UNDOBAN: "2" };
@@ -77,7 +78,21 @@ export const DateFilterCriteria = {
 };
 
 export const DateFilterAction = {
-  BLOCK: "BLOCK",       // Block users matching criteria
-  SKIP: "SKIP",         // Skip/don't block matching users
-  PROTECT: "PROTECT"    // Protect matching users from being blocked
+  ENGELLE: "ENGELLE",   // Block users matching criteria
+  KORU: "KORU"          // Protect users from being blocked
+};
+
+// Date-based bulk action enums
+export const DateBulkAction = {
+  ENGELLE: "ENGELLE",           // Block users
+  SESSIZE_AL: "SESSIZE_AL",     // Mute users
+  ENGEL_KALDIR: "ENGEL_KALDIR", // Unblock users
+  SESSIZDEN_CIKAR: "SESSIZDEN_CIKAR", // Unmute users
+  TAKIP_ET: "TAKIP_ET"          // Follow users
+};
+
+export const DateBulkSource = {
+  BLOCKED_USERS: "BLOCKED_USERS",
+  MUTED_USERS: "MUTED_USERS",
+  AUTHOR_LIST: "AUTHOR_LIST"
 };

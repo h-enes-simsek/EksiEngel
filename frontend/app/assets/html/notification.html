@@ -345,9 +345,8 @@
         <div class="form-group">
           <label for="ruleAction">Eylem:</label>
           <select id="ruleAction" class="form-select">
-            <option value="BLOCK">🚫 Engelle</option>
-            <option value="SKIP">⏭️ Atla (engelleme)</option>
-            <option value="PROTECT">🛡️ Koru (asla engelleme)</option>
+            <option value="ENGELLE">🚫 Engelle</option>
+            <option value="KORU">🛡️ Koru (engelleme)</option>
           </select>
         </div>
 
@@ -390,6 +389,89 @@
           <button id="clearCacheBtn" class="btn btn-danger btn-small">
             <span class="btn-icon">🗑️</span>
             Önbelleği Temizle
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Date-Based Bulk Action Section -->
+    <section class="card datebulk-action-card">
+      <div class="card-header">
+        <h2>🎯 Tarih Bazlı Toplu İşlem</h2>
+        <span class="inline-description">Kayıt tarihine göre kullanıcıları bul ve işlem yap</span>
+      </div>
+      <p class="card-description">
+        Bu özellik, engellenen veya sessize alınan kullanıcılar listenizden kayıt tarihine göre seçim yaparak toplu işlem yapmanızı sağlar.
+      </p>
+      
+      <div class="bulk-action-form">
+        <!-- Source Selection -->
+        <div class="form-group">
+          <label for="bulkSource">Kaynak Liste:</label>
+          <select id="bulkSource" class="form-select">
+            <option value="BLOCKED_USERS">🚫 Engellenen Kullanıcılar</option>
+            <option value="MUTED_USERS">🔇 Sessiz Kullanıcılar</option>
+            <option value="AUTHOR_LIST">📝 Yazar Listesi</option>
+          </select>
+        </div>
+
+        <!-- Date Criteria -->
+        <div class="form-group">
+          <label for="bulkCriteria">Tarih Kriteri:</label>
+          <select id="bulkCriteria" class="form-select">
+            <option value="NEWER_THAN">Hesap yaşı küçüktür (yeni hesaplar)</option>
+            <option value="OLDER_THAN">Hesap yaşı büyüktür (eski hesaplar)</option>
+            <option value="BEFORE_DATE">Kayıt tarihinden önce</option>
+            <option value="AFTER_DATE">Kayıt tarihinden sonra</option>
+          </select>
+        </div>
+
+        <div class="form-group" id="bulkDaysValueGroup">
+          <label for="bulkValueDays">Değer:</label>
+          <div class="input-with-unit">
+            <input type="number" id="bulkValueDays" class="form-input" min="1" value="30">
+            <select id="bulkUnit" class="form-select unit-select">
+              <option value="days">gün</option>
+              <option value="months">ay</option>
+              <option value="years">yıl</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group" id="bulkDateValueGroup" style="display: none;">
+          <label for="bulkValueDate">Tarih:</label>
+          <input type="date" id="bulkValueDate" class="form-input">
+        </div>
+
+        <!-- Action Selection -->
+        <div class="form-group">
+          <label for="bulkAction">Yapılacak İşlem:</label>
+          <select id="bulkAction" class="form-select">
+            <option value="ENGELLE">🚫 Engelle</option>
+            <option value="SESSIZE_AL">🔇 Sessize Al</option>
+            <option value="ENGEL_KALDIR">🔓 Engel Kaldır</option>
+            <option value="SESSIZDEN_CIKAR">🔊 Sessizden Çıkar</option>
+            <option value="TAKIP_ET">➕ Takip Et</option>
+          </select>
+        </div>
+
+        <!-- Preview -->
+        <div class="bulk-preview" id="bulkPreview" style="display: none;">
+          <div class="preview-content">
+            <span class="preview-icon">📊</span>
+            <span class="preview-text" id="previewText">Hesaplanıyor...</span>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="bulk-action-buttons">
+          <button id="previewBulkActionBtn" class="btn btn-primary">
+            <span class="btn-icon">👁️</span>
+            Önizleme
+          </button>
+          <button id="startBulkActionBtn" class="btn btn-success">
+            <span class="btn-icon">🚀</span>
+            İşlemi Başlat
           </button>
         </div>
       </div>

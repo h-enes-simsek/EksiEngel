@@ -183,12 +183,11 @@ export function evaluateDateFilter(registrationDate, rule) {
  * Applies date filter rules to a list of users
  * @param {Map<string, Object>} users - Map of username to user data (should include registrationDate)
  * @param {Array} rules - Array of date filter rules
- * @returns {Object} - Object with categorized users: block, skip, protect
+ * @returns {Object} - Object with categorized users: block, protect, unknown
  */
 export function applyDateFilters(users, rules) {
   const result = {
     block: [],      // Users to block
-    skip: [],       // Users to skip (no action)
     protect: [],    // Users protected from blocking
     unknown: []     // Users with unknown registration date
   };
@@ -218,13 +217,10 @@ export function applyDateFilters(users, rules) {
         const userEntry = { username, rule: rule.id, ...userData };
         
         switch (rule.action) {
-          case enums.DateFilterAction.BLOCK:
+          case enums.DateFilterAction.ENGELLE:
             result.block.push(userEntry);
             break;
-          case enums.DateFilterAction.SKIP:
-            result.skip.push(userEntry);
-            break;
-          case enums.DateFilterAction.PROTECT:
+          case enums.DateFilterAction.KORU:
             result.protect.push(userEntry);
             break;
         }

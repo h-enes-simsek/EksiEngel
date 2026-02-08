@@ -1028,7 +1028,7 @@ function createDefaultRule() {
     criteria: 'OLDER_THAN',
     value: 1825,
     valueType: 'days',
-    action: 'PROTECT',
+    action: 'KORU',
     description: '5 yıldan eski hesapları koru',
     isDefault: true
   };
@@ -1061,10 +1061,11 @@ function createRuleElement(rule, index) {
   div.className = 'rule-item';
   div.dataset.ruleId = rule.id;
   
-  // Determine icon based on action
+  // Determine icon based on action (convert old BLOCK/PROTECT/SKIP to new values)
   let icon = '🛡️';
-  if (rule.action === 'BLOCK') icon = '🚫';
-  else if (rule.action === 'SKIP') icon = '⏭️';
+  const action = rule.action === 'BLOCK' || rule.action === 'ENGELLE' ? 'ENGELLE' : 
+                 (rule.action === 'SKIP' || rule.action === 'PROTECT' || rule.action === 'KORU') ? 'KORU' : rule.action;
+  if (action === 'ENGELLE') icon = '🚫';
   
   // Format criteria text
   let criteriaText = formatCriteriaText(rule);
@@ -1072,7 +1073,7 @@ function createRuleElement(rule, index) {
   div.innerHTML = `
     <div class="rule-icon">${icon}</div>
     <div class="rule-content">
-      <div class="rule-title">${getActionText(rule.action)} - ${criteriaText}</div>
+      <div class="rule-title">${getActionText(action)} - ${criteriaText}</div>
       <div class="rule-description">${rule.description || criteriaText}</div>
     </div>
     ${rule.isDefault ? '<span class="rule-badge">Varsayılan</span>' : ''}
@@ -1112,8 +1113,11 @@ function formatCriteriaText(rule) {
 
 function getActionText(action) {
   const actionMap = {
+    'ENGELLE': 'Engelle',
+    'KORU': 'Koru',
+    // Legacy mappings for backward compatibility
     'BLOCK': 'Engelle',
-    'SKIP': 'Atla',
+    'SKIP': 'Koru',
     'PROTECT': 'Koru'
   };
   return actionMap[action] || action;
@@ -1129,7 +1133,7 @@ function showRuleForm() {
   document.getElementById('ruleCriteria').value = 'NEWER_THAN';
   document.getElementById('ruleValueDays').value = '30';
   document.getElementById('ruleUnit').value = 'days';
-  document.getElementById('ruleAction').value = 'BLOCK';
+  document.getElementById('ruleAction').value = 'ENGELLE';
   document.getElementById('ruleDescription').value = '';
   
   handleCriteriaChange();
@@ -1308,8 +1312,193 @@ async function clearDateFilterCache() {
   }
 }
 
+// ============================================
+// DATE-BASED BULK ACTION MANAGEMENT
+// ============================================
+
+function setupDateBulkActionUI() {
+  // Source selection
+  const sourceSelect = document.getElementById('bulkSource');
+  if (sourceSelect) {
+    sourceSelect.addEventListener('change', updateBulkPreviewVisibility);
+  }
+  
+  // Criteria change handler
+  const criteriaSelect = document.getElementById('bulkCriteria');
+  if (criteriaSelect) {
+    criteriaSelect.addEventListener('change', handleBulkCriteriaChange);
+  }
+  
+  // Preview button
+  const previewBtn = document.getElementById('previewBulkActionBtn');
+  if (previewBtn) {
+    previewBtn.addEventListener('click', handleBulkPreview);
+  }
+  
+  // Start button
+  const startBtn = document.getElementById('startBulkActionBtn');
+  if (startBtn) {
+    startBtn.addEventListener('click', handleStartBulkAction);
+  }
+  
+  // Load saved preferences
+  loadDateBulkPreferences();
+}
+
+function handleBulkCriteriaChange() {
+  const criteria = document.getElementById('bulkCriteria').value;
+  const daysGroup = document.getElementById('bulkDaysValueGroup');
+  const dateGroup = document.getElementById('bulkDateValueGroup');
+  
+  if (criteria === 'BEFORE_DATE' || criteria === 'AFTER_DATE') {
+    daysGroup.style.display = 'none';
+    dateGroup.style.display = 'block';
+  } else {
+    daysGroup.style.display = 'block';
+    dateGroup.style.display = 'none';
+  }
+  
+  // Hide preview when criteria changes
+  document.getElementById('bulkPreview').style.display = 'none';
+}
+
+function updateBulkPreviewVisibility() {
+  document.getElementById('bulkPreview').style.display = 'none';
+}
+
+async function loadDateBulkPreferences() {
+  try {
+    const { config } = await import('./config.js');
+    await config.handleConfig();
+    
+    if (config.dateBulkConfig) {
+      const cfg = config.dateBulkConfig;
+      if (cfg.lastSource) document.getElementById('bulkSource').value = cfg.lastSource;
+      if (cfg.lastCriteria) document.getElementById('bulkCriteria').value = cfg.lastCriteria;
+      if (cfg.lastValue) document.getElementById('bulkValueDays').value = cfg.lastValue;
+      if (cfg.lastValueType) document.getElementById('bulkUnit').value = cfg.lastValueType;
+      if (cfg.lastAction) document.getElementById('bulkAction').value = cfg.lastAction;
+      
+      // Trigger criteria change to show correct input
+      handleBulkCriteriaChange();
+    }
+  } catch (error) {
+    console.error('Error loading date bulk preferences:', error);
+  }
+}
+
+async function saveDateBulkPreferences() {
+  try {
+    const { config, saveConfig } = await import('./config.js');
+    
+    config.dateBulkConfig = {
+      lastSource: document.getElementById('bulkSource').value,
+      lastCriteria: document.getElementById('bulkCriteria').value,
+      lastValue: parseInt(document.getElementById('bulkValueDays').value) || 30,
+      lastValueType: document.getElementById('bulkUnit').value,
+      lastAction: document.getElementById('bulkAction').value
+    };
+    
+    await saveConfig(config);
+  } catch (error) {
+    console.error('Error saving date bulk preferences:', error);
+  }
+}
+
+async function handleBulkPreview() {
+  const previewDiv = document.getElementById('bulkPreview');
+  const previewText = document.getElementById('previewText');
+  
+  previewDiv.style.display = 'block';
+  previewText.textContent = 'Hesaplanıyor...';
+  
+  const source = document.getElementById('bulkSource').value;
+  const criteria = document.getElementById('bulkCriteria').value;
+  
+  // Get user list based on source
+  let userList = [];
+  try {
+    if (source === 'BLOCKED_USERS') {
+      const blockedList = await storageHandler.getBlockedUserList();
+      userList = blockedList || [];
+    } else if (source === 'MUTED_USERS') {
+      const mutedList = await storageHandler.getMutedUserList();
+      userList = mutedList || [];
+    } else if (source === 'AUTHOR_LIST') {
+      userList = await utils.getUserList();
+      utils.cleanUserList(userList);
+    }
+  } catch (error) {
+    previewText.textContent = `Hata: ${error.message}`;
+    return;
+  }
+  
+  if (userList.length === 0) {
+    previewText.textContent = 'Seçilen kaynakta kullanıcı bulunamadı.';
+    return;
+  }
+  
+  // For preview, we'll show the total count and indicate that matching will happen
+  // In a real implementation, we'd fetch registration dates and calculate matches
+  previewText.textContent = `${userList.length} kullanıcı incelenecek. İşlem başlatıldığında kayıt tarihlerine göre filtreleme yapılacak.`;
+  
+  // Save preferences
+  await saveDateBulkPreferences();
+}
+
+async function handleStartBulkAction() {
+  const source = document.getElementById('bulkSource').value;
+  const criteria = document.getElementById('bulkCriteria').value;
+  const action = document.getElementById('bulkAction').value;
+  
+  let value;
+  let valueType = 'days';
+  
+  if (criteria === 'BEFORE_DATE' || criteria === 'AFTER_DATE') {
+    value = document.getElementById('bulkValueDate').value;
+    if (!value) {
+      notificationHandler.showStatusMessage('Lütfen bir tarih seçin', 'error');
+      return;
+    }
+  } else {
+    value = parseInt(document.getElementById('bulkValueDays').value);
+    valueType = document.getElementById('bulkUnit').value;
+    
+    if (isNaN(value) || value < 1) {
+      notificationHandler.showStatusMessage('Lütfen geçerli bir değer girin', 'error');
+      return;
+    }
+    
+    // Convert to days for storage
+    if (valueType === 'months') value = value * 30;
+    else if (valueType === 'years') value = value * 365;
+  }
+  
+  // Save preferences before starting
+  await saveDateBulkPreferences();
+  
+  // Send message to background script to start the bulk action
+  chrome.runtime.sendMessage({
+    action: "startDateBasedBulkAction",
+    source: source,
+    criteria: criteria,
+    value: value,
+    valueType: valueType,
+    bulkAction: action
+  }, (response) => {
+    if (chrome.runtime.lastError) {
+      console.error("notification.js: Error starting date-based bulk action:", chrome.runtime.lastError.message);
+      notificationHandler.showStatusMessage("İşlem başlatılırken hata oluştu: " + chrome.runtime.lastError.message, "error");
+    } else {
+      console.log("notification.js: Date-based bulk action started.", response);
+      notificationHandler.showStatusMessage("İşlem başlatıldı!", "success");
+    }
+  });
+}
+
 // Initialize tab navigation and date filter when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
   setupTabNavigation();
   setupDateFilterUI();
+  setupDateBulkActionUI();
 });

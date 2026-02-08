@@ -44,6 +44,13 @@ The project "EksiEngelPlus" is a Chrome browser extension designed to facilitate
   * Mass blocking users who favorited specific entries
   * Mass blocking followers of specific users
   * Title-based blocking (block all titles by specific users)
+* **Date-Based User Filtering:**
+  * Filter users by account registration date before blocking
+  * Protect legacy accounts (configurable, e.g., accounts older than 5 years)
+  * Block newly created accounts (configurable threshold)
+  * Custom filter rules with BLOCK, SKIP, or PROTECT actions
+  * 30-day TTL caching for registration dates to optimize performance
+  * Full tabbed UI for filter configuration in notification page
 * **Advanced Migration System:**
   * Migrate blocked users to muted status (and vice versa)
   * Block all muted users in bulk
@@ -53,6 +60,7 @@ The project "EksiEngelPlus" is a Chrome browser extension designed to facilitate
   * Enable/disable title blocking, mute functionality, analysis options
   * Premium icon hiding (green/yellow badges)
   * Protection of followed users from blocking
+  * Date-based filtering with customizable rules
   * Analysis to avoid redundant actions
   * Configurable logging and data collection
 * **Dynamic UI Integration:**

@@ -139,7 +139,23 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
       return true;
     };
 
-    if (message.action === "startMigration" || message.action === "startTitleMigration") {
+    if (message.action === "startDateBasedBulkAction") {
+      if (!programController.isDateBasedBulkInProgress && !(programController.isActive && processQueue.size === 0 && !processQueue.isRunning)) {
+        const handler = () => programController.startDateBasedBulkAction(message);
+        
+        const metadata = {
+          operationNotes: `Tarih bazlı toplu işlem: ${message.bulkAction}`,
+          requiresUserInteraction: false,
+          targetTypes: [enums.TargetType.USER],
+          sourceList: message.source,
+          dateCriteria: message.criteria,
+          bulkAction: message.bulkAction
+        };
+        
+        const wrapperProcessHandler = createWrapperProcessHandler(handler, enums.BanSource.DATE_BASED_BULK, metadata, "PROCESS");
+        return handleProcessQueue(wrapperProcessHandler, 'Date-based bulk action enqueued.');
+      }
+    } else if (message.action === "startMigration" || message.action === "startTitleMigration") {
       const isTitleMigration = message.action === "startTitleMigration";
       const specificTaskInProgress = isTitleMigration ? programController.isBlockTitlesInProgress : programController.isMigrationInProgress;
       const taskName = isTitleMigration ? "Title Unblock" : "User Migration (Blocked to Muted)";
@@ -508,14 +524,13 @@ async function fetchRegistrationDates(authorNames, relations) {
 /**
  * Applies date filtering to a relations map and returns filtered results
  * @param {Map<string, Object>} relations - Map of username to relation data
- * @returns {Object} - Filtered results with block, skip, protect, unknown arrays
+ * @returns {Object} - Filtered results with block, protect, unknown arrays
  */
 function applyDateFiltersToRelations(relations) {
   if (!config.enableDateFilter || !config.dateFilterRules || config.dateFilterRules.length === 0) {
     // Return all users as "block" if filtering is disabled
     return {
       block: Array.from(relations.entries()).map(([name, data]) => ({ username: name, ...data })),
-      skip: [],
       protect: [],
       unknown: []
     };
@@ -529,19 +544,14 @@ function applyDateFiltersToRelations(relations) {
  * @param {Object} filterResults - Results from applyDateFiltersToRelations
  */
 function logDateFilterResults(filterResults) {
-  const total = filterResults.block.length + filterResults.skip.length + 
-                filterResults.protect.length + filterResults.unknown.length;
+  const total = filterResults.block.length + filterResults.protect.length + filterResults.unknown.length;
   
   log.info("bg", `Date filtering complete: ${filterResults.block.length} to block, ` +
-           `${filterResults.skip.length} skipped, ${filterResults.protect.length} protected, ` +
+           `${filterResults.protect.length} protected, ` +
            `${filterResults.unknown.length} unknown (total: ${total})`);
   
   if (filterResults.protect.length > 0) {
     notificationHandler.notify(`${filterResults.protect.length} kullanıcı tarih filtresi nedeniyle korundu`);
-  }
-  
-  if (filterResults.skip.length > 0) {
-    notificationHandler.notify(`${filterResults.skip.length} kullanıcı tarih filtresi nedeniyle atlandı`);
   }
   
   if (filterResults.unknown.length > 0) {
