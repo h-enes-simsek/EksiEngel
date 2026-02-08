@@ -97,275 +97,326 @@ async function ensureNotificationTabExistsAndIsReady() {
   return g_notificationTabCreationInProgress;
 }
 
-chrome.runtime.onMessage.addListener(async function messageListener_Popup(message, sender, sendResponse) {
+chrome.runtime.onMessage.addListener(function messageListener_Popup(message, sender, sendResponse) {
   const actionsRequiringNotification = [
     "startMigration", "startTitleMigration", "refreshMutedList", "refreshBlockedList",
     "blockMutedUsers", "blockTitlesOfBlockedMuted", "startDateBasedBulkAction"
   ];
 
   if (message && actionsRequiringNotification.includes(message.action)) {
-    const notificationTabReady = await ensureNotificationTabExistsAndIsReady();
-    if (!notificationTabReady) {
-      sendResponse({ status: 'error', message: 'Could not open notification page.' });
-      return;
-    }
-
-    const getDisplayMode = (action) => {
-      switch (action) {
-        case "startMigration": case "blockMutedUsers": case "blockTitlesOfBlockedMuted": case "startTitleMigration":
-          return "PROCESS";
-        case "refreshMutedList": case "refreshBlockedList":
-          return "REFRESH";
-        default:
-          return "UNKNOWN";
+    // Return true immediately to keep the message port open for async response
+    ensureNotificationTabExistsAndIsReady().then(notificationTabReady => {
+      if (!notificationTabReady) {
+        sendResponse({ status: 'error', message: 'Could not open notification page.' });
+        return;
       }
-    };
 
-    const createWrapperProcessHandler = (handler, banSource, metadata, displayMode) => {
-      let wrapperProcessHandler = async () => {
-        await handler();
+      const getDisplayMode = (action) => {
+        switch (action) {
+          case "startMigration": case "blockMutedUsers": case "blockTitlesOfBlockedMuted": case "startTitleMigration":
+            return "PROCESS";
+          case "refreshMutedList": case "refreshBlockedList":
+            return "REFRESH";
+          default:
+            return "UNKNOWN";
+        }
       };
-      wrapperProcessHandler.banSource = banSource;
-      wrapperProcessHandler.banMode = displayMode;
-      wrapperProcessHandler.creationDateInStr = new Date().getHours() + ":" + new Date().getMinutes();
-      wrapperProcessHandler.metadata = metadata;
-      return wrapperProcessHandler;
-    };
 
-    const handleProcessQueue = (wrapperProcessHandler, successMessage) => {
-      processQueue.enqueue(wrapperProcessHandler);
-      notificationHandler.updatePlannedProcessesList(processQueue.itemAttributes);
-      sendResponse({ status: 'ok', message: successMessage });
-      return true;
-    };
-
-    if (message.action === "startDateBasedBulkAction") {
-      if (!programController.isDateBasedBulkInProgress && !(programController.isActive && processQueue.size === 0 && !processQueue.isRunning)) {
-        const handler = () => programController.startDateBasedBulkAction(message);
-        
-        const metadata = {
-          operationNotes: `Tarih bazlı toplu işlem: ${message.bulkAction}`,
-          requiresUserInteraction: false,
-          targetTypes: [enums.TargetType.USER],
-          sourceList: message.source,
-          dateCriteria: message.criteria,
-          bulkAction: message.bulkAction
+      const createWrapperProcessHandler = (handler, banSource, metadata, displayMode) => {
+        let wrapperProcessHandler = async () => {
+          await handler();
         };
-        
-        const wrapperProcessHandler = createWrapperProcessHandler(handler, enums.BanSource.DATE_BASED_BULK, metadata, "PROCESS");
-        return handleProcessQueue(wrapperProcessHandler, 'Date-based bulk action enqueued.');
-      }
-    } else if (message.action === "startMigration" || message.action === "startTitleMigration") {
-      const isTitleMigration = message.action === "startTitleMigration";
-      const specificTaskInProgress = isTitleMigration ? programController.isBlockTitlesInProgress : programController.isMigrationInProgress;
-      const taskName = isTitleMigration ? "Title Unblock" : "User Migration (Blocked to Muted)";
-      const banSource = isTitleMigration ? enums.BanSource.TITLE : enums.BanSource.MIGRATE_BLOCKED_TO_MUTED;
-      const banMode = isTitleMigration ? enums.BanMode.UNDOBAN : "PROCESS";
+        wrapperProcessHandler.banSource = banSource;
+        wrapperProcessHandler.banMode = displayMode;
+        wrapperProcessHandler.creationDateInStr = new Date().getHours() + ":" + new Date().getMinutes();
+        wrapperProcessHandler.metadata = metadata;
+        return wrapperProcessHandler;
+      };
 
-      if (specificTaskInProgress) {
-        notificationHandler.notify(`${taskName} işlemi zaten devam ediyor.`);
-      } else if (programController.isActive && processQueue.size === 0 && !processQueue.isRunning) {
-        notificationHandler.notify(`Başka bir işlem aktifken ${taskName} başlatılamaz. Sıraya eklendi.`);
-      } else {
-        const handler = isTitleMigration ?
-          () => programController.migrateBlockedTitlesToUnblocked() :
-          () => programController.migrateBlockedToMuted();
-        
-        const metadata = {
-          operationNotes: isTitleMigration ? "Başlık engellerini kaldırır" : "Engelli kullanıcıları sessiz listesine taşır",
-          requiresUserInteraction: false,
-          targetTypes: [enums.TargetType.TITLE],
-          sourceTitle: "Mevcut Engelli/Sessiz Başlıklar"
-        };
-        
-        const wrapperProcessHandler = createWrapperProcessHandler(handler, banSource, metadata, banMode);
-        return handleProcessQueue(wrapperProcessHandler, `${taskName} process enqueued.`);
-      }
-    } else if (message.action === "refreshMutedList") {
-      if (!programController.isMutedListRefreshInProgress && !(programController.isActive && processQueue.size === 0 && !processQueue.isRunning)) {
-        const handler = async () => {
-          if (programController.isMutedListRefreshInProgress) return;
-          programController.isMutedListRefreshInProgress = true;
-          programController.earlyStop = false;
+      const handleProcessQueue = (wrapperProcessHandler, successMessage) => {
+        processQueue.enqueue(wrapperProcessHandler);
+        notificationHandler.updatePlannedProcessesList(processQueue.itemAttributes);
+        sendResponse({ status: 'ok', message: successMessage });
+      };
+
+      if (message.action === "startDateBasedBulkAction") {
+        if (!programController.isDateBasedBulkInProgress && !(programController.isActive && processQueue.size === 0 && !processQueue.isRunning)) {
+          const handler = () => programController.startDateBasedBulkAction(message);
           
-          const updateProgress = async (progress) => {
-            if (g_notificationTabId) {
-                chrome.tabs.sendMessage(g_notificationTabId, {
-                  action: "mutedListRefreshProgress", count: progress.currentCount
-                }).catch(e => log.warn("bg", `Error sending message to notification tab: ${e}`));
-            }
-            await storageHandler.saveMutedUserCount(progress.currentCount);
-            await storageHandler.saveMutedRefreshResumeState(progress.currentPage || 0, progress.currentCount);
+          const metadata = {
+            operationNotes: `Tarih bazlı toplu işlem: ${message.bulkAction}`,
+            requiresUserInteraction: false,
+            targetTypes: [enums.TargetType.USER],
+            sourceList: message.source,
+            dateCriteria: message.criteria,
+            bulkAction: message.bulkAction
           };
           
-          try {
-            const resumeState = await storageHandler.getMutedRefreshResumeState();
-            let resumeFromIndex = null;
+          const wrapperProcessHandler = createWrapperProcessHandler(handler, enums.BanSource.DATE_BASED_BULK, metadata, "PROCESS");
+          handleProcessQueue(wrapperProcessHandler, 'Date-based bulk action enqueued.');
+        }
+      } else if (message.action === "startMigration" || message.action === "startTitleMigration") {
+        const isTitleMigration = message.action === "startTitleMigration";
+        const specificTaskInProgress = isTitleMigration ? programController.isBlockTitlesInProgress : programController.isMigrationInProgress;
+        const taskName = isTitleMigration ? "Title Unblock" : "User Migration (Blocked to Muted)";
+        const banSource = isTitleMigration ? enums.BanSource.TITLE : enums.BanSource.MIGRATE_BLOCKED_TO_MUTED;
+        const banMode = isTitleMigration ? enums.BanMode.UNDOBAN : "PROCESS";
+
+        if (specificTaskInProgress) {
+          notificationHandler.notify(`${taskName} işlemi zaten devam ediyor.`);
+        } else if (programController.isActive && processQueue.size === 0 && !processQueue.isRunning) {
+          notificationHandler.notify(`Başka bir işlem aktifken ${taskName} başlatılamaz. Sıraya eklendi.`);
+        } else {
+          const handler = isTitleMigration ?
+            () => programController.migrateBlockedTitlesToUnblocked() :
+            () => programController.migrateBlockedToMuted();
+          
+          const metadata = {
+            operationNotes: isTitleMigration ? "Başlık engellerini kaldırır" : "Engelli kullanıcıları sessiz listesine taşır",
+            requiresUserInteraction: false,
+            targetTypes: [enums.TargetType.TITLE],
+            sourceTitle: "Mevcut Engelli/Sessiz Başlıklar"
+          };
+          
+          const wrapperProcessHandler = createWrapperProcessHandler(handler, banSource, metadata, banMode);
+          handleProcessQueue(wrapperProcessHandler, `${taskName} process enqueued.`);
+        }
+      } else if (message.action === "refreshMutedList") {
+        if (!programController.isMutedListRefreshInProgress && !(programController.isActive && processQueue.size === 0 && !processQueue.isRunning)) {
+          const handler = async () => {
+            if (programController.isMutedListRefreshInProgress) return;
+            programController.isMutedListRefreshInProgress = true;
+            programController.earlyStop = false;
             
-            if (resumeState && !programController.earlyStop) {
-              log.info("bg", `Resuming muted list refresh from page ${resumeState.pageIndex + 1}, count: ${resumeState.count}`);
-              resumeFromIndex = resumeState.pageIndex;
-            }
-            
-            const result = await scrapingHandler.scrapeAllMutedUsers(updateProgress, resumeFromIndex);
-            
-            if (result.success) {
-              await storageHandler.clearMutedRefreshResumeState();
-              await storageHandler.clearPartialMutedUsers();
-              
-              await storageHandler.saveMutedUserList(result.usernames);
-              await storageHandler.saveMutedUserCount(result.count);
-              
+            const updateProgress = async (progress) => {
               if (g_notificationTabId) {
                   chrome.tabs.sendMessage(g_notificationTabId, {
-                    action: "mutedListRefreshComplete", success: true, count: result.count
+                    action: "mutedListRefreshProgress", count: progress.currentCount
                   }).catch(e => log.warn("bg", `Error sending message to notification tab: ${e}`));
               }
-            } else {
-              if (result.stoppedEarly) {
-                await storageHandler.savePartialMutedUsers(result.usernames || [], true);
-                await storageHandler.clearMutedRefreshResumeState();
-                
-                if (g_notificationTabId) {
-                    chrome.tabs.sendMessage(g_notificationTabId, {
-                      action: "mutedListRefreshComplete", success: false, stoppedEarly: true, usernames: result.usernames || [], count: result.count || 0, error: result.error || "Process stopped by user"
-                    }).catch(e => log.warn("bg", `Error sending message to notification tab: ${e}`));
-                }
-              } else {
-                log.err("bg", "Error scraping muted users:", result.error);
+              await storageHandler.saveMutedUserCount(progress.currentCount);
+              await storageHandler.saveMutedRefreshResumeState(progress.currentPage || 0, progress.currentCount);
+            };
+            
+            try {
+              const resumeState = await storageHandler.getMutedRefreshResumeState();
+              let resumeFromIndex = null;
+              
+              if (resumeState && !programController.earlyStop) {
+                log.info("bg", `Resuming muted list refresh from page ${resumeState.pageIndex + 1}, count: ${resumeState.count}`);
+                resumeFromIndex = resumeState.pageIndex;
+              }
+              
+              const result = await scrapingHandler.scrapeAllMutedUsers(updateProgress, resumeFromIndex);
+              
+              if (result.success) {
                 await storageHandler.clearMutedRefreshResumeState();
                 await storageHandler.clearPartialMutedUsers();
                 
-                if (g_notificationTabId) {
-                    chrome.tabs.sendMessage(g_notificationTabId, {
-                      action: "mutedListRefreshComplete", success: false, error: result.error
-                    }).catch(e => log.warn("bg", `Error sending message to notification tab: ${e}`));
-                }
-              }
-            }
-          } catch (e) {
-            log.err("bg", `Unexpected error during refreshMutedList: ${e}`);
-            await storageHandler.clearMutedRefreshResumeState();
-            await storageHandler.clearPartialMutedUsers();
-            
-            if (g_notificationTabId) {
-                chrome.tabs.sendMessage(g_notificationTabId, {
-                  action: "mutedListRefreshComplete", success: false, error: e.message || "Unknown error"
-                }).catch(err => log.warn("bg", `Error sending message to notification tab: ${err}`));
-            }
-          } finally {
-            programController.isMutedListRefreshInProgress = false;
-          }
-        };
-        
-        const metadata = {
-          operationNotes: "Sessiz kullanıcı listesini sunucudan yeniler (hafif mod + devam etme desteği)",
-          requiresUserInteraction: false,
-          targetTypes: [enums.TargetType.MUTE],
-          sourceTitle: "Sessiz Kullanıcı Listesi"
-        };
-        
-        const wrapperProcessHandler = createWrapperProcessHandler(handler, enums.BanSource.REFRESH_MUTED_LIST, metadata, getDisplayMode(message.action));
-        return handleProcessQueue(wrapperProcessHandler, 'Muted list refresh enqueued.');
-      }
-    } else if (message.action === "refreshBlockedList") {
-      if (!programController.isBlockedListRefreshInProgress && !(programController.isActive && processQueue.size === 0 && !processQueue.isRunning)) {
-        const handler = async () => {
-          if (programController.isBlockedListRefreshInProgress) return;
-          programController.isBlockedListRefreshInProgress = true;
-          programController.earlyStop = false;
-          const updateProgress = async (progress) => {
-            if (g_notificationTabId) {
-                chrome.tabs.sendMessage(g_notificationTabId, {
-                  action: "blockedListRefreshProgress", count: progress.currentCount
-                }).catch(e => log.warn("bg", `Error sending message to notification tab: ${e}`));
-            }
-            await storageHandler.saveBlockedUserCount(progress.currentCount);
-          };
-          try {
-            const result = await scrapingHandler.scrapeAllBlockedUsers(updateProgress);
-            if (result.success) {
-              await storageHandler.clearPartialBlockedUsers();
-              
-              await storageHandler.saveBlockedUserList(result.usernames);
-              await storageHandler.saveBlockedUserCount(result.count);
-              if (g_notificationTabId) {
-                  chrome.tabs.sendMessage(g_notificationTabId, {
-                    action: "blockedListRefreshComplete", success: true, count: result.count
-                  }).catch(e => log.warn("bg", `Error sending message to notification tab: ${e}`));
-              }
-            } else {
-              if (result.stoppedEarly) {
-                await storageHandler.savePartialBlockedUsers(result.usernames || [], true);
+                await storageHandler.saveMutedUserList(result.usernames);
+                await storageHandler.saveMutedUserCount(result.count);
                 
                 if (g_notificationTabId) {
                     chrome.tabs.sendMessage(g_notificationTabId, {
-                      action: "blockedListRefreshComplete", success: false, stoppedEarly: true, usernames: result.usernames || [], count: result.count || 0, error: result.error || "Process stopped by user"
+                      action: "mutedListRefreshComplete", success: true, count: result.count
                     }).catch(e => log.warn("bg", `Error sending message to notification tab: ${e}`));
                 }
               } else {
-                log.err("bg", "Error scraping blocked users:", result.error);
-                await storageHandler.clearPartialBlockedUsers();
-                
-                if (g_notificationTabId) {
-                    chrome.tabs.sendMessage(g_notificationTabId, {
-                      action: "blockedListRefreshComplete", success: false, error: result.error
-                    }).catch(e => log.warn("bg", `Error sending message to notification tab: ${e}`));
+                if (result.stoppedEarly) {
+                  await storageHandler.savePartialMutedUsers(result.usernames || [], true);
+                  await storageHandler.clearMutedRefreshResumeState();
+                  
+                  if (g_notificationTabId) {
+                      chrome.tabs.sendMessage(g_notificationTabId, {
+                        action: "mutedListRefreshComplete", success: false, stoppedEarly: true, usernames: result.usernames || [], count: result.count || 0, error: result.error || "Process stopped by user"
+                      }).catch(e => log.warn("bg", `Error sending message to notification tab: ${e}`));
+                  }
+                } else {
+                  log.err("bg", "Error scraping muted users:", result.error);
+                  await storageHandler.clearMutedRefreshResumeState();
+                  await storageHandler.clearPartialMutedUsers();
+                  
+                  if (g_notificationTabId) {
+                      chrome.tabs.sendMessage(g_notificationTabId, {
+                        action: "mutedListRefreshComplete", success: false, error: result.error
+                      }).catch(e => log.warn("bg", `Error sending message to notification tab: ${e}`));
+                  }
                 }
               }
+            } catch (e) {
+              log.err("bg", `Unexpected error during refreshMutedList: ${e}`);
+              await storageHandler.clearMutedRefreshResumeState();
+              await storageHandler.clearPartialMutedUsers();
+              
+              if (g_notificationTabId) {
+                  chrome.tabs.sendMessage(g_notificationTabId, {
+                    action: "mutedListRefreshComplete", success: false, error: e.message || "Unknown error"
+                  }).catch(err => log.warn("bg", `Error sending message to notification tab: ${err}`));
+              }
+            } finally {
+              programController.isMutedListRefreshInProgress = false;
             }
-          } catch (e) {
-            log.err("bg", `Unexpected error during refreshBlockedList: ${e}`);
-            if (g_notificationTabId) {
-                chrome.tabs.sendMessage(g_notificationTabId, {
-                  action: "blockedListRefreshComplete", success: false, error: e.message || "Unknown error"
-                }).catch(err => log.warn("bg", `Error sending message to notification tab: ${err}`));
+          };
+          
+          const metadata = {
+            operationNotes: "Sessiz kullanıcı listesini sunucudan yeniler (hafif mod + devam etme desteği)",
+            requiresUserInteraction: false,
+            targetTypes: [enums.TargetType.MUTE],
+            sourceTitle: "Sessiz Kullanıcı Listesi"
+          };
+          
+          const wrapperProcessHandler = createWrapperProcessHandler(handler, enums.BanSource.REFRESH_MUTED_LIST, metadata, getDisplayMode(message.action));
+          handleProcessQueue(wrapperProcessHandler, 'Muted list refresh enqueued.');
+        }
+      } else if (message.action === "refreshBlockedList") {
+        if (!programController.isBlockedListRefreshInProgress && !(programController.isActive && processQueue.size === 0 && !processQueue.isRunning)) {
+          const handler = async () => {
+            if (programController.isBlockedListRefreshInProgress) return;
+            programController.isBlockedListRefreshInProgress = true;
+            programController.earlyStop = false;
+            const updateProgress = async (progress) => {
+              if (g_notificationTabId) {
+                  chrome.tabs.sendMessage(g_notificationTabId, {
+                    action: "blockedListRefreshProgress", count: progress.currentCount
+                  }).catch(e => log.warn("bg", `Error sending message to notification tab: ${e}`));
+              }
+              await storageHandler.saveBlockedUserCount(progress.currentCount);
+            };
+            try {
+              const result = await scrapingHandler.scrapeAllBlockedUsers(updateProgress);
+              if (result.success) {
+                await storageHandler.clearPartialBlockedUsers();
+                
+                await storageHandler.saveBlockedUserList(result.usernames);
+                await storageHandler.saveBlockedUserCount(result.count);
+                if (g_notificationTabId) {
+                    chrome.tabs.sendMessage(g_notificationTabId, {
+                      action: "blockedListRefreshComplete", success: true, count: result.count
+                    }).catch(e => log.warn("bg", `Error sending message to notification tab: ${e}`));
+                }
+              } else {
+                if (result.stoppedEarly) {
+                  await storageHandler.savePartialBlockedUsers(result.usernames || [], true);
+                  
+                  if (g_notificationTabId) {
+                      chrome.tabs.sendMessage(g_notificationTabId, {
+                        action: "blockedListRefreshComplete", success: false, stoppedEarly: true, usernames: result.usernames || [], count: result.count || 0, error: result.error || "Process stopped by user"
+                      }).catch(e => log.warn("bg", `Error sending message to notification tab: ${e}`));
+                  }
+                } else {
+                  log.err("bg", "Error scraping blocked users:", result.error);
+                  await storageHandler.clearPartialBlockedUsers();
+                  
+                  if (g_notificationTabId) {
+                      chrome.tabs.sendMessage(g_notificationTabId, {
+                        action: "blockedListRefreshComplete", success: false, error: result.error
+                      }).catch(e => log.warn("bg", `Error sending message to notification tab: ${e}`));
+                  }
+                }
+              }
+            } catch (e) {
+              log.err("bg", `Unexpected error during refreshBlockedList: ${e}`);
+              if (g_notificationTabId) {
+                  chrome.tabs.sendMessage(g_notificationTabId, {
+                    action: "blockedListRefreshComplete", success: false, error: e.message || "Unknown error"
+                  }).catch(err => log.warn("bg", `Error sending message to notification tab: ${err}`));
+              }
+            } finally {
+              programController.isBlockedListRefreshInProgress = false;
             }
-          } finally {
-            programController.isBlockedListRefreshInProgress = false;
-          }
-        };
-        
-        const metadata = {
-          operationNotes: "Engelli kullanıcı listesini sunucudan yeniler",
-          requiresUserInteraction: false,
-          targetTypes: [enums.TargetType.USER],
-          sourceTitle: "Engelli Kullanıcı Listesi"
-        };
-        
-        const wrapperProcessHandler = createWrapperProcessHandler(handler, enums.BanSource.REFRESH_BLOCKED_LIST, metadata, getDisplayMode(message.action));
-        return handleProcessQueue(wrapperProcessHandler, 'Blocked list refresh enqueued.');
+          };
+          
+          const metadata = {
+            operationNotes: "Engelli kullanıcı listesini sunucudan yeniler",
+            requiresUserInteraction: false,
+            targetTypes: [enums.TargetType.USER],
+            sourceTitle: "Engelli Kullanıcı Listesi"
+          };
+          
+          const wrapperProcessHandler = createWrapperProcessHandler(handler, enums.BanSource.REFRESH_BLOCKED_LIST, metadata, getDisplayMode(message.action));
+          handleProcessQueue(wrapperProcessHandler, 'Blocked list refresh enqueued.');
+        }
+      } else if (message.action === "blockMutedUsers") {
+        if (!programController.isBlockMutedUsersInProgress && !(programController.isActive && processQueue.size === 0 && !processQueue.isRunning)) {
+          const handler = () => programController.blockMutedUsers();
+          
+          const metadata = {
+            operationNotes: "Sessiz listesindeki kullanıcıları engeller ve sessizliklerini kaldırır",
+            requiresUserInteraction: false,
+            targetTypes: [enums.TargetType.USER, enums.TargetType.MUTE],
+            sourceTitle: "Mevcut Sessiz Kullanıcılar"
+          };
+          
+          const wrapperProcessHandler = createWrapperProcessHandler(handler, enums.BanSource.BLOCK_MUTED_USERS, metadata, getDisplayMode(message.action));
+          handleProcessQueue(wrapperProcessHandler, 'Block Muted Users process enqueued.');
+        }
+      } else if (message.action === "blockTitlesOfBlockedMuted") {
+        if (!programController.isBlockTitlesInProgress && !(programController.isActive && processQueue.size === 0 && !processQueue.isRunning)) {
+          const handler = () => programController.blockTitlesOfBlockedMuted();
+          
+          const metadata = {
+            operationNotes: "Engelli ve sessiz kullanıcıların başlıklarını engeller",
+            requiresUserInteraction: false,
+            targetTypes: [enums.TargetType.TITLE],
+            sourceTitle: "Engelli/Sessiz Kullanıcı Başlıkları"
+          };
+          
+          const wrapperProcessHandler = createWrapperProcessHandler(handler, enums.BanSource.BLOCKED_MUTED_TITLES, metadata, getDisplayMode(message.action));
+          handleProcessQueue(wrapperProcessHandler, 'Block Titles of Blocked/Muted process enqueued.');
+        }
       }
-    } else if (message.action === "blockMutedUsers") {
-      if (!programController.isBlockMutedUsersInProgress && !(programController.isActive && processQueue.size === 0 && !processQueue.isRunning)) {
-        const handler = () => programController.blockMutedUsers();
-        
-        const metadata = {
-          operationNotes: "Sessiz listesindeki kullanıcıları engeller ve sessizliklerini kaldırır",
-          requiresUserInteraction: false,
-          targetTypes: [enums.TargetType.USER, enums.TargetType.MUTE],
-          sourceTitle: "Mevcut Sessiz Kullanıcılar"
-        };
-        
-        const wrapperProcessHandler = createWrapperProcessHandler(handler, enums.BanSource.BLOCK_MUTED_USERS, metadata, getDisplayMode(message.action));
-        return handleProcessQueue(wrapperProcessHandler, 'Block Muted Users process enqueued.');
-      }
-    } else if (message.action === "blockTitlesOfBlockedMuted") {
-      if (!programController.isBlockTitlesInProgress && !(programController.isActive && processQueue.size === 0 && !processQueue.isRunning)) {
-        const handler = () => programController.blockTitlesOfBlockedMuted();
-        
-        const metadata = {
-          operationNotes: "Engelli ve sessiz kullanıcıların başlıklarını engeller",
-          requiresUserInteraction: false,
-          targetTypes: [enums.TargetType.TITLE],
-          sourceTitle: "Engelli/Sessiz Kullanıcı Başlıkları"
-        };
-        
-        const wrapperProcessHandler = createWrapperProcessHandler(handler, enums.BanSource.BLOCKED_MUTED_TITLES, metadata, getDisplayMode(message.action));
-        return handleProcessQueue(wrapperProcessHandler, 'Block Titles of Blocked/Muted process enqueued.');
-      }
+      sendResponse({ status: 'ok', message: 'Action received and will be processed if no other operation is active.' });
+    }).catch(error => {
+      log.err("bg", `Error in message listener: ${error}`);
+      sendResponse({ status: 'error', message: error.message || 'Unknown error' });
+    });
+    return true;
+  } else if (message.action === "pauseOperation") {
+    // Handle async pause operation - return true immediately to keep port open
+    programController.pauseCurrentOperation().then(result => {
+      sendResponse(result);
+    }).catch(error => {
+      log.err("bg", `Error pausing operation: ${error}`);
+      sendResponse({ success: false, error: error.message });
+    });
+    return true;
+  } else if (message.action === "resumeOperation") {
+    // Handle async resume operation - return true immediately to keep port open
+    programController.resumeOperation(message.operationId).then(result => {
+      sendResponse(result);
+    }).catch(error => {
+      log.err("bg", `Error resuming operation: ${error}`);
+      sendResponse({ success: false, error: error.message });
+    });
+    return true;
+  } else if (message.action === "stopOperation") {
+    // Handle async stop operation - return true immediately to keep port open
+    programController.stopCurrentOperation(message.clearState).then(result => {
+      sendResponse(result);
+    }).catch(error => {
+      log.err("bg", `Error stopping operation: ${error}`);
+      sendResponse({ success: false, error: error.message });
+    });
+    return true;
+  } else if (message.action === "getCurrentOperation") {
+    // Handle sync get current operation
+    try {
+      const operation = programController.getCurrentOperation();
+      sendResponse({ success: true, operation });
+    } catch (error) {
+      log.err("bg", `Error getting current operation: ${error}`);
+      sendResponse({ success: false, error: error.message });
     }
-    sendResponse({ status: 'ok', message: 'Action received and will be processed if no other operation is active.' });
+    return true;
+  } else if (message.action === "getPausedOperations") {
+    // Handle async get paused operations - return true immediately to keep port open
+    programController.getPausedOperations().then(operations => {
+      sendResponse({ success: true, operations });
+    }).catch(error => {
+      log.err("bg", `Error getting paused operations: ${error}`);
+      sendResponse({ success: false, error: error.message });
+    });
+    return true;
   } else if (message && message.earlyStop !== undefined) {
     try {
       log.info("bg", `Early stop request received. Current state: Active=${programController.isActive}, QueueSize=${processQueue.size}, RunningTasks=${programController.hasAnyRunningTasks}`);

@@ -1513,13 +1513,66 @@ body {
     color: white;
 }
 
-.btn-success:hover {
+.btn-success:hover:not(:disabled) {
     background: var(--primary-hover);
+    transform: translateY(-1px);
+}
+
+.btn-warning {
+    background: var(--warning-color);
+    color: white;
+    box-shadow: 0 1px 2px rgba(245, 158, 11, 0.2);
+}
+
+.btn-warning:hover:not(:disabled) {
+    background: #d97706;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
+}
+
+.btn-primary {
+    background: #2196F3;
+    color: white;
+    box-shadow: 0 1px 2px rgba(33, 150, 243, 0.2);
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: #1976D2;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(33, 150, 243, 0.3);
 }
 
 .btn-small {
     padding: 6px 12px;
     font-size: 0.75rem;
+}
+
+/* Universal Controls - Pause/Resume/Continue Buttons */
+#universalControls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    padding: 12px 16px;
+}
+
+#universalControls .btn {
+    min-width: 120px;
+    padding: 10px 16px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+#btnPauseOperation,
+#btnResumeOperation {
+    display: inline-flex;
+}
+
+#btnPauseOperation:disabled,
+#btnResumeOperation:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
 }
 
 /* Date-Based Bulk Action Styles */

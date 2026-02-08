@@ -387,7 +387,7 @@ class ScrapingHandler
     }
   }
 
-  async scrapeAllMutedUsers(progressCallback, resumeFromIndex = null) {
+  async scrapeAllMutedUsers(progressCallback, resumeFromIndex = null, shouldStopCallback = null) {
     log.info("scraping", "Starting to scrape all muted users...");
     let allMutedUsernames = [];
     let totalCount = 0;
@@ -404,6 +404,16 @@ class ScrapingHandler
           log.info("scraping", "Muted user scraping stopped by user.");
           return { success: false, usernames: allMutedUsernames, count: totalCount, stoppedEarly: true, error: 'Process stopped by user' };
         }
+        
+        // Check if pause/stop is requested via callback
+        if (shouldStopCallback && typeof shouldStopCallback === 'function') {
+          const shouldStop = await shouldStopCallback();
+          if (shouldStop) {
+            log.info("scraping", "Muted user scraping stopped by pause/stop request.");
+            return { success: false, usernames: allMutedUsernames, count: totalCount, stoppedEarly: true, error: 'Process stopped by user' };
+          }
+        }
+        
         index++;
         let attempt = 0;
         let success = false;
@@ -463,12 +473,12 @@ class ScrapingHandler
     }
   }
 
-  async scrapeAllBlockedUsers(progressCallback) {
+  async scrapeAllBlockedUsers(progressCallback, resumeFromIndex = null, shouldStopCallback = null) {
     log.info("scraping", "Starting to scrape all blocked users...");
     let scrapedUsernames = [];
     let scrapedUserIds = [];
     let isLast = false;
-    let index = 0;
+    let index = resumeFromIndex || 0;
     let totalCount = 0;
 
     try {
@@ -476,6 +486,15 @@ class ScrapingHandler
         if (programController.earlyStop) {
           log.info("scraping", "Blocked user scraping stopped early by user request.");
           return { success: false, usernames: scrapedUsernames, count: totalCount, stoppedEarly: true, error: "Process stopped by user" };
+        }
+        
+        // Check if pause/stop is requested via callback
+        if (shouldStopCallback && typeof shouldStopCallback === 'function') {
+          const shouldStop = await shouldStopCallback();
+          if (shouldStop) {
+            log.info("scraping", "Blocked user scraping stopped by pause/stop request.");
+            return { success: false, usernames: scrapedUsernames, count: totalCount, stoppedEarly: true, error: 'Process stopped by user' };
+          }
         }
 
         index++;

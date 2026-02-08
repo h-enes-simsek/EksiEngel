@@ -95,6 +95,265 @@ function setupEarlyStopButton() {
   if (earlyStopButton) {
     earlyStopButton.addEventListener("click", handleEarlyStop);
   }
+  
+  // Setup new pause/resume/continue buttons
+  setupUniversalControlButtons();
+}
+
+function setupUniversalControlButtons() {
+  const pauseBtn = document.getElementById('btnPauseOperation');
+  const resumeBtn = document.getElementById('btnResumeOperation');
+  
+  if (pauseBtn) {
+    pauseBtn.addEventListener('click', handlePauseOperation);
+  }
+  
+  if (resumeBtn) {
+    resumeBtn.addEventListener('click', handleResumeOperation);
+  }
+  
+  // Check for saved paused operations on startup
+  checkForPausedOperations();
+}
+
+async function handlePauseOperation() {
+  const pauseBtn = document.getElementById('btnPauseOperation');
+  
+  let currentOp = null;
+  
+  try {
+    // Check if there's actually an operation running first
+    const currentOpResponse = await sendMessageWithPromise({ action: "getCurrentOperation" });
+    currentOp = currentOpResponse?.operation || currentOpResponse;
+    
+    // If no operation is running, reset UI immediately
+    if (!currentOp || currentOp.state !== 'RUNNING') {
+      notificationHandler.showStatusMessage('Duraklatılacak aktif bir işlem bulunamadı.', 'info');
+      updateUniversalControls(currentOp);
+      return;
+    }
+    
+    // Check if this operation type supports pausing BEFORE disabling the button
+    if (currentOp.canPause === false) {
+      notificationHandler.showStatusMessage(currentOp.message || 'Bu işlem türü duraklatmayı desteklemiyor. Erken durdurmayı kullanın.', 'warning');
+      // Reset button state since we haven't started pausing
+      pauseBtn.disabled = false;
+      pauseBtn.innerHTML = '<span class="btn-icon">⏸️</span><span class="btn-text">Duraklat</span>';
+      // Also clear the status message and ensure UI is in running state
+      setTimeout(() => {
+        notificationHandler.showStatusMessage('', 'info');
+        updateUniversalControls({ state: 'RUNNING', type: currentOp.type });
+      }, 3000);
+      return;
+    }
+    
+    // Now disable the button and update UI
+    pauseBtn.disabled = true;
+    pauseBtn.innerHTML = '<span class="btn-icon">⏳</span><span class="btn-text">Duraklatılıyor...</span>';
+    
+    const response = await sendMessageWithPromise({ action: "pauseOperation" });
+    if (response && response.success) {
+      notificationHandler.showStatusMessage('İşlem duraklatılıyor... Son kontrol noktasında duracak.', 'info');
+      updateUniversalControls({ state: 'PAUSING', type: currentOp.type });
+    } else {
+      notificationHandler.showStatusMessage('Duraklatma başarısız: ' + (response?.error || 'Bilinmeyen hata'), 'error');
+      // Re-sync UI with actual operation state
+      const freshOpResponse = await sendMessageWithPromise({ action: "getCurrentOperation" });
+      updateUniversalControls(freshOpResponse?.operation || freshOpResponse);
+    }
+  } catch (error) {
+    console.error('Error pausing operation:', error);
+    notificationHandler.showStatusMessage('Duraklatma hatası: ' + error.message, 'error');
+    // Re-sync UI with actual operation state after error
+    try {
+      const freshOpResponse = await sendMessageWithPromise({ action: "getCurrentOperation" });
+      updateUniversalControls(freshOpResponse?.operation || freshOpResponse);
+    } catch (e) {
+      // If we can't get operation state, reset to idle
+      updateUniversalControls(null);
+    }
+  }
+}
+
+async function handleResumeOperation() {
+  const resumeBtn = document.getElementById('btnResumeOperation');
+  resumeBtn.disabled = true;
+  resumeBtn.innerHTML = '<span class="btn-icon">⏳</span><span class="btn-text">Devam Ediliyor...</span>';
+  
+  try {
+    // First check if there's a currently paused operation in memory
+    const currentOp = await sendMessageWithPromise({ action: "getCurrentOperation" });
+    if (currentOp && currentOp.operation && currentOp.operation.id) {
+      const response = await sendMessageWithPromise({ 
+        action: "resumeOperation", 
+        operationId: currentOp.operation.id 
+      });
+      if (response && response.success) {
+        notificationHandler.showStatusMessage('İşlem devam ediyor...', 'success');
+        updateUniversalControls({ state: 'RUNNING' });
+      } else {
+        notificationHandler.showStatusMessage('Devam ettirme başarısız: ' + (response?.error || 'Bilinmeyen hata'), 'error');
+        resumeBtn.disabled = false;
+        resumeBtn.innerHTML = '<span class="btn-icon">▶️</span><span class="btn-text">Devam Et</span>';
+      }
+      return;
+    }
+    
+    // If no current operation, check for saved paused operations in storage
+    const savedOpsResponse = await sendMessageWithPromise({ action: "getPausedOperations" });
+    if (savedOpsResponse && savedOpsResponse.operations && savedOpsResponse.operations.length > 0) {
+      // Resume the most recent paused operation
+      const operation = savedOpsResponse.operations[0];
+      const response = await sendMessageWithPromise({ 
+        action: "resumeOperation", 
+        operationId: operation.operationId 
+      });
+      if (response && response.success) {
+        notificationHandler.showStatusMessage('İşlem kaldığı yerden devam ediyor...', 'success');
+        updateUniversalControls({ state: 'RUNNING' });
+      } else {
+        notificationHandler.showStatusMessage('Devam ettirme başarısız: ' + (response?.error || 'Bilinmeyen hata'), 'error');
+        resumeBtn.disabled = false;
+        resumeBtn.innerHTML = '<span class="btn-icon">▶️</span><span class="btn-text">Devam Et</span>';
+      }
+    } else {
+      notificationHandler.showStatusMessage('Devam ettirilecek işlem bulunamadı', 'info');
+      resumeBtn.style.display = 'none';
+    }
+  } catch (error) {
+    console.error('Error resuming operation:', error);
+    notificationHandler.showStatusMessage('Devam ettirme hatası: ' + error.message, 'error');
+    resumeBtn.disabled = false;
+    resumeBtn.innerHTML = '<span class="btn-icon">▶️</span><span class="btn-text">Devam Et</span>';
+  }
+}
+
+async function checkForPausedOperations() {
+  try {
+    // Check if there's a currently paused operation
+    const currentOp = await sendMessageWithPromise({ action: "getCurrentOperation" });
+    if (currentOp && currentOp.operation && currentOp.operation.state === 'PAUSED') {
+      // Show resume button
+      const resumeBtn = document.getElementById('btnResumeOperation');
+      if (resumeBtn) {
+        resumeBtn.style.display = 'inline-block';
+        resumeBtn.disabled = false;
+      }
+      return;
+    }
+    
+    // Check for saved paused operations in storage
+    const savedOpsResponse = await sendMessageWithPromise({ action: "getPausedOperations" });
+    if (savedOpsResponse && savedOpsResponse.operations && savedOpsResponse.operations.length > 0) {
+      // Show resume button for saved operations
+      const resumeBtn = document.getElementById('btnResumeOperation');
+      if (resumeBtn) {
+        resumeBtn.style.display = 'inline-block';
+        resumeBtn.disabled = false;
+      }
+    }
+  } catch (error) {
+    console.warn('Failed to check for paused operations:', error);
+  }
+}
+
+function updateUniversalControls(operation) {
+  const pauseBtn = document.getElementById('btnPauseOperation');
+  const resumeBtn = document.getElementById('btnResumeOperation');
+  const earlyStopBtn = document.getElementById('earlyStop');
+  const statusDisplay = document.getElementById('operationStatusDisplay');
+  const opTypeSpan = document.getElementById('currentOperationType');
+  const opStateSpan = document.getElementById('currentOperationState');
+  
+  // Always show both buttons
+  if (pauseBtn) pauseBtn.style.display = 'inline-block';
+  if (resumeBtn) resumeBtn.style.display = 'inline-block';
+  
+  if (!operation || !operation.state || operation.state === 'COMPLETED' || operation.state === 'IDLE') {
+    // No active operation - both buttons disabled
+    if (pauseBtn) {
+      pauseBtn.disabled = true;
+      pauseBtn.innerHTML = '<span class="btn-icon">⏸️</span><span class="btn-text">Duraklat</span>';
+    }
+    if (resumeBtn) {
+      resumeBtn.disabled = true;
+      resumeBtn.innerHTML = '<span class="btn-icon">▶️</span><span class="btn-text">Devam Et</span>';
+    }
+    if (earlyStopBtn) {
+      earlyStopBtn.disabled = true;
+      earlyStopBtn.innerHTML = '<span class="btn-icon">🛑</span><span class="btn-text">Erken Durdur</span>';
+    }
+    if (statusDisplay) statusDisplay.style.display = 'none';
+  } else if (operation.state === 'RUNNING') {
+    if (pauseBtn) {
+      pauseBtn.disabled = false;
+      pauseBtn.innerHTML = '<span class="btn-icon">⏸️</span><span class="btn-text">Duraklat</span>';
+    }
+    if (resumeBtn) {
+      resumeBtn.disabled = true;
+      resumeBtn.innerHTML = '<span class="btn-icon">▶️</span><span class="btn-text">Devam Et</span>';
+    }
+    if (earlyStopBtn) earlyStopBtn.disabled = false;
+    if (statusDisplay) {
+      statusDisplay.style.display = 'block';
+      if (opTypeSpan) opTypeSpan.textContent = getOperationTypeDisplay(operation.type);
+      if (opStateSpan) opStateSpan.textContent = '(Çalışıyor)';
+    }
+  } else if (operation.state === 'PAUSING') {
+    if (pauseBtn) {
+      pauseBtn.disabled = true;
+      pauseBtn.innerHTML = '<span class="btn-icon">⏳</span><span class="btn-text">Duraklatılıyor...</span>';
+    }
+    if (resumeBtn) {
+      resumeBtn.disabled = true;
+      resumeBtn.innerHTML = '<span class="btn-icon">▶️</span><span class="btn-text">Devam Et</span>';
+    }
+    if (earlyStopBtn) earlyStopBtn.disabled = false;
+    if (statusDisplay) {
+      statusDisplay.style.display = 'block';
+      if (opTypeSpan) opTypeSpan.textContent = getOperationTypeDisplay(operation.type);
+      if (opStateSpan) opStateSpan.textContent = '(Duraklatılıyor...)';
+    }
+  } else if (operation.state === 'PAUSED') {
+    if (pauseBtn) {
+      pauseBtn.disabled = true;
+      pauseBtn.innerHTML = '<span class="btn-icon">⏸️</span><span class="btn-text">Duraklat</span>';
+    }
+    if (resumeBtn) {
+      resumeBtn.disabled = false;
+      resumeBtn.innerHTML = '<span class="btn-icon">▶️</span><span class="btn-text">Devam Et</span>';
+    }
+    if (earlyStopBtn) earlyStopBtn.disabled = false;
+    if (statusDisplay) {
+      statusDisplay.style.display = 'block';
+      if (opTypeSpan) opTypeSpan.textContent = getOperationTypeDisplay(operation.type);
+      if (opStateSpan) opStateSpan.textContent = '(Duraklatıldı)';
+    }
+  }
+}
+
+function getOperationTypeDisplay(type) {
+  const typeMap = {
+    'DATE_BASED_BULK': 'Tarih Bazlı Toplu İşlem',
+    'MIGRATE_BLOCKED_TO_MUTED': 'Engelli → Sessiz Taşıma',
+    'BLOCK_MUTED_USERS': 'Sessizleri Engelleme',
+    'BLOCK_TITLES': 'Başlık Engelleme',
+    'REFRESH_MUTED_LIST': 'Sessiz Liste Yenileme',
+    'REFRESH_BLOCKED_LIST': 'Engelli Liste Yenileme'
+  };
+  return typeMap[type] || type || 'Bilinmeyen İşlem';
+}
+
+function sendMessageWithPromise(message) {
+  return new Promise((resolve, reject) => {
+    chrome.runtime.sendMessage(null, message, (response) => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+      } else {
+        resolve(response);
+      }
+    });
+  });
 }
 
 async function handleEarlyStop() {
@@ -720,6 +979,12 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
 
   if (message && message.action === "migrationStopped") {
     notificationHandler.handleMigrationStopped(message);
+    sendResponse({ status: "ok" });
+    return true;
+  }
+
+  if (message && message.action === "operationStateChanged") {
+    updateUniversalControls(message.operation);
     sendResponse({ status: "ok" });
     return true;
   }

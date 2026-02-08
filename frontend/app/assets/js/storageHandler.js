@@ -745,6 +745,150 @@ class StorageHandler {
       });
     });
   }
+
+  // ============================
+  // RESUMABLE OPERATION STATE
+  // ============================
+
+  static RESUMABLE_OPERATION_KEY_PREFIX = 'resumableOp_';
+
+  /**
+   * Saves operation state for resumable operations
+   * @param {string} operationId - Unique operation identifier
+   * @param {Object} stateData - Operation state data
+   * @returns {Promise<void>}
+   */
+  async saveOperationState(operationId, stateData) {
+    return new Promise((resolve, reject) => {
+      const key = StorageHandler.RESUMABLE_OPERATION_KEY_PREFIX + operationId;
+      chrome.storage.local.set({
+        [key]: {
+          ...stateData,
+          savedAt: Date.now()
+        }
+      }, () => {
+        if (chrome.runtime.lastError) {
+          log.err('storage', `Error saving operation state: ${chrome.runtime.lastError.message}`);
+          reject(this._handleStorageError(chrome.runtime.lastError));
+        } else {
+          log.info('storage', `Saved operation state for ${operationId}`);
+          resolve();
+        }
+      });
+    });
+  }
+
+  /**
+   * Retrieves saved operation state
+   * @param {string} operationId - Operation identifier
+   * @returns {Promise<Object|null>} - Operation state or null if not found
+   */
+  async getOperationState(operationId) {
+    return new Promise((resolve) => {
+      const key = StorageHandler.RESUMABLE_OPERATION_KEY_PREFIX + operationId;
+      chrome.storage.local.get([key], (result) => {
+        if (chrome.runtime.lastError) {
+          log.err('storage', `Error getting operation state: ${chrome.runtime.lastError.message}`);
+          resolve(null);
+          return;
+        }
+
+        const state = result[key];
+        if (state) {
+          log.info('storage', `Retrieved operation state for ${operationId}`);
+          resolve(state);
+        } else {
+          resolve(null);
+        }
+      });
+    });
+  }
+
+  /**
+   * Clears saved operation state
+   * @param {string} operationId - Operation identifier
+   * @returns {Promise<void>}
+   */
+  async clearOperationState(operationId) {
+    return new Promise((resolve, reject) => {
+      const key = StorageHandler.RESUMABLE_OPERATION_KEY_PREFIX + operationId;
+      chrome.storage.local.remove([key], () => {
+        if (chrome.runtime.lastError) {
+          log.err('storage', `Error clearing operation state: ${chrome.runtime.lastError.message}`);
+          reject(this._handleStorageError(chrome.runtime.lastError));
+        } else {
+          log.info('storage', `Cleared operation state for ${operationId}`);
+          resolve();
+        }
+      });
+    });
+  }
+
+  /**
+   * Lists all resumable operations
+   * @returns {Promise<Array>} - Array of operation states
+   */
+  async listResumableOperations() {
+    return new Promise((resolve) => {
+      chrome.storage.local.get(null, (result) => {
+        if (chrome.runtime.lastError) {
+          log.err('storage', `Error listing resumable operations: ${chrome.runtime.lastError.message}`);
+          resolve([]);
+          return;
+        }
+
+        const operations = [];
+        for (const [key, value] of Object.entries(result)) {
+          if (key.startsWith(StorageHandler.RESUMABLE_OPERATION_KEY_PREFIX)) {
+            operations.push({
+              operationId: key.replace(StorageHandler.RESUMABLE_OPERATION_KEY_PREFIX, ''),
+              ...value
+            });
+          }
+        }
+
+        // Sort by timestamp (newest first)
+        operations.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+        log.info('storage', `Listed ${operations.length} resumable operations`);
+        resolve(operations);
+      });
+    });
+  }
+
+  /**
+   * Clears all resumable operation states
+   * @returns {Promise<number>} - Number of states cleared
+   */
+  async clearAllOperationStates() {
+    return new Promise((resolve) => {
+      chrome.storage.local.get(null, (result) => {
+        if (chrome.runtime.lastError) {
+          log.err('storage', `Error clearing operation states: ${chrome.runtime.lastError.message}`);
+          resolve(0);
+          return;
+        }
+
+        const keysToRemove = Object.keys(result).filter(key =>
+          key.startsWith(StorageHandler.RESUMABLE_OPERATION_KEY_PREFIX)
+        );
+
+        if (keysToRemove.length === 0) {
+          resolve(0);
+          return;
+        }
+
+        chrome.storage.local.remove(keysToRemove, () => {
+          if (chrome.runtime.lastError) {
+            log.err('storage', `Error clearing operation states: ${chrome.runtime.lastError.message}`);
+          } else {
+            log.info('storage', `Cleared ${keysToRemove.length} operation states`);
+          }
+          resolve(keysToRemove.length);
+        });
+      });
+    });
+  }
 }
 
 export let storageHandler = new StorageHandler();
