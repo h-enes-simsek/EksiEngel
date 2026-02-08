@@ -100,7 +100,7 @@ async function ensureNotificationTabExistsAndIsReady() {
 chrome.runtime.onMessage.addListener(async function messageListener_Popup(message, sender, sendResponse) {
   const actionsRequiringNotification = [
     "startMigration", "startTitleMigration", "refreshMutedList", "refreshBlockedList",
-    "blockMutedUsers", "blockTitlesOfBlockedMuted"
+    "blockMutedUsers", "blockTitlesOfBlockedMuted", "startDateBasedBulkAction"
   ];
 
   if (message && actionsRequiringNotification.includes(message.action)) {
