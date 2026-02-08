@@ -1415,16 +1415,19 @@ async function handleBulkPreview() {
   const source = document.getElementById('bulkSource').value;
   const criteria = document.getElementById('bulkCriteria').value;
   
-  // Get user list based on source
+  // For BLOCKED_USERS and MUTED_USERS, we fetch from server during the actual operation
+  // Preview just shows a message about what will happen
+  if (source === 'BLOCKED_USERS' || source === 'MUTED_USERS') {
+    const sourceName = source === 'BLOCKED_USERS' ? 'engellenen' : 'sessize alınan';
+    previewText.textContent = `İşlem başlatıldığında ${sourceName} kullanıcılar sunucudan getirilecek ve tarih kriterine göre filtrelenerek işlem yapılacak.`;
+    await saveDateBulkPreferences();
+    return;
+  }
+  
+  // For AUTHOR_LIST, we can show the actual count from the list
   let userList = [];
   try {
-    if (source === 'BLOCKED_USERS') {
-      const blockedList = await storageHandler.getBlockedUserList();
-      userList = blockedList || [];
-    } else if (source === 'MUTED_USERS') {
-      const mutedList = await storageHandler.getMutedUserList();
-      userList = mutedList || [];
-    } else if (source === 'AUTHOR_LIST') {
+    if (source === 'AUTHOR_LIST') {
       userList = await utils.getUserList();
       utils.cleanUserList(userList);
     }
@@ -1438,8 +1441,6 @@ async function handleBulkPreview() {
     return;
   }
   
-  // For preview, we'll show the total count and indicate that matching will happen
-  // In a real implementation, we'd fetch registration dates and calculate matches
   previewText.textContent = `${userList.length} kullanıcı incelenecek. İşlem başlatıldığında kayıt tarihlerine göre filtreleme yapılacak.`;
   
   // Save preferences

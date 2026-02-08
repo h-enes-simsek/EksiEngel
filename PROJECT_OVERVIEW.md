@@ -48,9 +48,16 @@ The project "EksiEngelPlus" is a Chrome browser extension designed to facilitate
   * Filter users by account registration date before blocking
   * Protect legacy accounts (configurable, e.g., accounts older than 5 years)
   * Block newly created accounts (configurable threshold)
-  * Custom filter rules with BLOCK, SKIP, or PROTECT actions
+  * Custom filter rules with ENGELLE (Block) or KORU (Protect) actions
   * 30-day TTL caching for registration dates to optimize performance
   * Full tabbed UI for filter configuration in notification page
+* **Date-Based Bulk Actions:**
+  * Direct bulk operations on users filtered by registration date
+  * Source options: Blocked users list, Muted users list, or Author list
+  * Date criteria: Account age (newer/older than) or specific dates (before/after)
+  * Actions: Block, Mute, Unblock, Unmute, or Follow matching users
+  * Preview functionality showing count of matching users
+  * Preferences persistence for user convenience
 * **Advanced Migration System:**
   * Migrate blocked users to muted status (and vice versa)
   * Block all muted users in bulk

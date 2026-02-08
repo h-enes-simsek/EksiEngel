@@ -116,11 +116,57 @@ class ProgramController {
       notificationHandler.notify("Kullanıcı listesi getiriliyor...");
       
       if (source === 'BLOCKED_USERS') {
-        const blockedList = await storageHandler.getBlockedUserList();
-        userList = blockedList || [];
+        // Fetch fresh data from server instead of using cached list
+        notificationHandler.notify("Engellenen kullanıcılar sunucudan getiriliyor...");
+        const scrapeResult = await scrapingHandler.scrapeAllBlockedUsers((progress) => {
+          notificationHandler.notify('Engellenen kullanıcılar getiriliyor: ' + progress.currentCount + ' kullanıcı...');
+        });
+        
+        if (this.earlyStop) {
+          log.info("progctrl", "Date-based bulk action stopped during blocked users fetch.");
+          notificationHandler.notify("İşlem kullanıcı tarafından durduruldu.");
+          return;
+        }
+        
+        if (!scrapeResult.success) {
+          log.err("progctrl", 'Failed to fetch blocked users: ' + scrapeResult.error);
+          notificationHandler.notify('Engellenen kullanıcılar getirilemedi: ' + (scrapeResult.error || 'Bilinmeyen hata'));
+          return;
+        }
+        
+        userList = scrapeResult.usernames || [];
+        
+        // Save to storage for future reference
+        if (userList.length > 0) {
+          await storageHandler.saveBlockedUserList(userList);
+          await storageHandler.saveBlockedUserCount(userList.length);
+        }
       } else if (source === 'MUTED_USERS') {
-        const mutedList = await storageHandler.getMutedUserList();
-        userList = mutedList || [];
+        // Fetch fresh data from server instead of using cached list
+        notificationHandler.notify("Sessize alınan kullanıcılar sunucudan getiriliyor...");
+        const scrapeResult = await scrapingHandler.scrapeAllMutedUsers((progress) => {
+          notificationHandler.notify('Sessize alınan kullanıcılar getiriliyor: Sayfa ' + progress.currentPage + ', ' + progress.currentCount + ' kullanıcı...');
+        });
+        
+        if (this.earlyStop) {
+          log.info("progctrl", "Date-based bulk action stopped during muted users fetch.");
+          notificationHandler.notify("İşlem kullanıcı tarafından durduruldu.");
+          return;
+        }
+        
+        if (!scrapeResult.success) {
+          log.err("progctrl", 'Failed to fetch muted users: ' + scrapeResult.error);
+          notificationHandler.notify('Sessize alınan kullanıcılar getirilemedi: ' + (scrapeResult.error || 'Bilinmeyen hata'));
+          return;
+        }
+        
+        userList = scrapeResult.usernames || [];
+        
+        // Save to storage for future reference
+        if (userList.length > 0) {
+          await storageHandler.saveMutedUserList(userList);
+          await storageHandler.saveMutedUserCount(userList.length);
+        }
       } else if (source === 'AUTHOR_LIST') {
         userList = await utils.getUserList();
         utils.cleanUserList(userList);
