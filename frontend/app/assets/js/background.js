@@ -107,6 +107,7 @@ chrome.runtime.onMessage.addListener(function messageListener_Popup(message, sen
     // Return true immediately to keep the message port open for async response
     ensureNotificationTabExistsAndIsReady().then(notificationTabReady => {
       if (!notificationTabReady) {
+        log.warn("bg", `Notification tab not ready for action: ${message.action}`);
         sendResponse({ status: 'error', message: 'Could not open notification page.' });
         return;
       }
@@ -416,6 +417,31 @@ chrome.runtime.onMessage.addListener(function messageListener_Popup(message, sen
       log.err("bg", `Error getting paused operations: ${error}`);
       sendResponse({ success: false, error: error.message });
     });
+    return true;
+  } else if (message.action === "operationStateChanged") {
+    // Handle operation state change notifications
+    try {
+      // Forward operation state changes to notification page
+      if (g_notificationTabId) {
+        chrome.tabs.sendMessage(g_notificationTabId, message).catch(e => {
+          log.warn("bg", `Error forwarding operation state change to notification tab: ${e}`);
+        });
+      }
+      sendResponse({ success: true });
+    } catch (error) {
+      log.err("bg", `Error handling operation state change: ${error}`);
+      sendResponse({ success: false, error: error.message });
+    }
+    return true;
+  } else if (message.action === "syncOperationState") {
+    // Handle operation state sync requests
+    try {
+      const operation = programController.getCurrentOperation();
+      sendResponse({ success: true, operation });
+    } catch (error) {
+      log.err("bg", `Error syncing operation state: ${error}`);
+      sendResponse({ success: false, error: error.message });
+    }
     return true;
   } else if (message && message.earlyStop !== undefined) {
     try {

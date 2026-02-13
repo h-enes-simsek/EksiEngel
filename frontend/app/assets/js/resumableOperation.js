@@ -81,13 +81,13 @@ export class ResumableOperationRegistry {
       return { success: false, error: 'Operation not running' };
     }
 
-    op.state = OperationState.PAUSING;
-    log.info('resumableOp', `Pause requested for operation ${this._currentOperationId}`);
-
-    // Create a promise that will be resolved when operation reaches checkpoint
+    // Create promise FIRST, then change state (fixes race condition)
     this._pausePromise = new Promise((resolve) => {
       this._pauseResolve = resolve;
     });
+    
+    op.state = OperationState.PAUSING;
+    log.info('resumableOp', `Pause requested for operation ${this._currentOperationId}`);
 
     this._notifyUIStateChanged();
     return { success: true };
@@ -121,11 +121,20 @@ export class ResumableOperationRegistry {
       op.state = OperationState.PAUSED;
       await this._persistPausedState(op, checkpointData);
 
-      // Resolve the pause promise
+      // Resolve the pause promise with proper error handling and cleanup
       if (this._pauseResolve) {
-        this._pauseResolve();
+        try {
+          this._pauseResolve();
+        } catch (e) {
+          log.err('resumableOp', `Error resolving pause promise: ${e}`);
+        }
         this._pauseResolve = null;
+      } else {
+        log.warn('resumableOp', 'checkpointReached in PAUSING state but no _pauseResolve available');
       }
+      
+      // Always clear the pause promise to prevent memory leaks
+      this._pausePromise = null;
 
       log.info('resumableOp', `Operation ${this._currentOperationId} paused at checkpoint ${checkpointData.stage}`);
       this._notifyUIStateChanged();
@@ -171,17 +180,21 @@ export class ResumableOperationRegistry {
 
   /**
    * Mark operation as completed
+   * FIX: Don't clear storage when operation was paused (to allow resume)
    */
   async completeOperation() {
     if (!this._currentOperationId) return;
 
     const op = this._activeOperations.get(this._currentOperationId);
     if (op) {
+      const wasPaused = op.state === OperationState.PAUSED;
       op.state = OperationState.COMPLETED;
-      log.info('resumableOp', `Operation ${this._currentOperationId} completed`);
+      log.info('resumableOp', `Operation ${this._currentOperationId} completed (wasPaused: ${wasPaused})`);
       
-      // Clear saved state on successful completion
-      await storageHandler.clearOperationState(this._currentOperationId);
+      // Only clear saved state if NOT paused - paused operations should retain state for resume
+      if (!wasPaused) {
+        await storageHandler.clearOperationState(this._currentOperationId);
+      }
       
       this._notifyUIStateChanged();
     }
@@ -224,11 +237,78 @@ export class ResumableOperationRegistry {
 
   /**
    * Wait for pause to complete
-   * @returns {Promise<void>}
+   * @param {number} timeoutMs - Timeout in milliseconds (default: 30000)
+   * @returns {Promise<{paused: boolean, timeout: boolean}>} - Result indicating if pause completed or timed out
    */
-  async waitForPause() {
-    if (this._pausePromise) {
-      await this._pausePromise;
+  async waitForPause(timeoutMs = 30000) {
+    if (!this._pausePromise) {
+      log.warn('resumableOp', 'waitForPause called but no pause promise exists');
+      return { paused: false, timeout: false };
+    }
+    
+    // Set up timeout with proper cleanup
+    let timeoutId = null;
+    const timeoutPromise = new Promise((_, reject) => {
+      timeoutId = setTimeout(() => {
+        timeoutId = null; // Clear the timeout ID
+        reject(new Error('Pause timeout'));
+      }, timeoutMs);
+    });
+    
+    try {
+      await Promise.race([
+        this._pausePromise,
+        timeoutPromise
+      ]);
+      
+      log.info('resumableOp', 'Pause completed successfully at checkpoint');
+      return { paused: true, timeout: false };
+    } catch (error) {
+      // Always clear the timeout if it was set
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+      
+      if (error.message === 'Pause timeout') {
+        log.warn('resumableOp', `Pause timed out after ${timeoutMs}ms - operation will continue`);
+        // Reset state to avoid getting stuck
+        const op = this.getCurrentOperation();
+        if (op && op.state === OperationState.PAUSING) {
+          op.state = OperationState.RUNNING;
+          log.info('resumableOp', 'Reset operation state from PAUSING to RUNNING after timeout');
+          this._notifyUIStateChanged();
+        }
+        // Clear the pause promise since we're giving up on this pause request
+        this._pausePromise = null;
+        this._pauseResolve = null;
+        return { paused: false, timeout: true };
+      } else {
+        log.err('resumableOp', `waitForPause error: ${error.message}`);
+        // For other errors, also reset state and cleanup
+        const op = this.getCurrentOperation();
+        if (op && op.state === OperationState.PAUSING) {
+          op.state = OperationState.RUNNING;
+          this._notifyUIStateChanged();
+        }
+        this._pausePromise = null;
+        this._pauseResolve = null;
+        return { paused: false, timeout: false };
+      }
+    } finally {
+      // Always clear timeout if it exists
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+      
+      // Ensure cleanup happens in all cases to prevent memory leaks
+      if (this._pausePromise) {
+        // If we reach here, it means the promise wasn't resolved/rejected properly
+        // This should not happen with proper checkpoint handling, but we clean up just in case
+        this._pausePromise = null;
+        this._pauseResolve = null;
+      }
     }
   }
 
@@ -299,11 +379,42 @@ export class ResumableOperationRegistry {
   _notifyUIStateChanged() {
     const op = this.getCurrentOperation();
     
-    // Send message to notification page
+    // Map operation state to UI state for buttonStateManager
+    let newState = 'INACTIVE';
+    if (op) {
+      switch (op.state) {
+        case OperationState.RUNNING:
+          newState = 'ACTIVE';
+          break;
+        case OperationState.PAUSING:
+          newState = 'PAUSING';
+          break;
+        case OperationState.PAUSED:
+          newState = 'PAUSED';
+          break;
+        case OperationState.STOPPING:
+          newState = 'STOPPING';
+          break;
+        case OperationState.STOPPED:
+          newState = 'STOPPED';
+          break;
+        case OperationState.COMPLETED:
+          newState = 'INACTIVE';
+          break;
+        default:
+          newState = 'INACTIVE';
+      }
+    }
+    
+    // Send message to notification page with both formats for compatibility
+    // - newState/operationData for buttonStateManager.js
+    // - operation for notification.js
     try {
       chrome.runtime.sendMessage({
         action: "operationStateChanged",
-        operation: op
+        newState: newState,
+        operationData: op,
+        operation: op  // Keep for backward compatibility with notification.js
       }).catch(() => {
         // Ignore errors if notification page is not open
       });

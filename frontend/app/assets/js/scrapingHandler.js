@@ -4,6 +4,7 @@ import {JSDOM} from './jsdom.js';
 import {config} from './config.js';
 import * as utils from './utils.js';
 import { programController } from './programController.js';
+import { resumableOperationRegistry } from './resumableOperation.js';
 
 function Relation(authorName, authorId, isBannedUser, isBannedTitle, isBannedMute, doIFollow, doTheyFollowMe) {
   this.authorId = authorId;
@@ -387,11 +388,21 @@ class ScrapingHandler
     }
   }
 
-  async scrapeAllMutedUsers(progressCallback, resumeFromIndex = null, shouldStopCallback = null) {
+  /**
+   * Scrapes all muted users with checkpoint support for pause/resume
+   * @param {Function} progressCallback - Callback for progress updates
+   * @param {number} resumeFromIndex - Page index to resume from (deprecated, use initialState)
+   * @param {Function} shouldStopCallback - Callback to check if should stop
+   * @param {Function} checkpointCallback - Callback to save checkpoint state periodically
+   * @param {Object} initialState - Initial state for resume (scrapedUsers, currentPage, totalCount)
+   * @returns {Promise<Object>} - Result with usernames, count, and state
+   */
+  async scrapeAllMutedUsers(progressCallback, resumeFromIndex = null, shouldStopCallback = null, checkpointCallback = null, initialState = null) {
     log.info("scraping", "Starting to scrape all muted users...");
-    let allMutedUsernames = [];
-    let totalCount = 0;
-    let index = resumeFromIndex || 0;
+    // Support both legacy resumeFromIndex and new initialState
+    let allMutedUsernames = initialState?.scrapedUsers || [];
+    let totalCount = initialState?.totalCount || 0;
+    let index = initialState?.currentPage || (resumeFromIndex || 0);
     let isLast = false;
     const politeDelayMs = 500;
     const maxRetries = 3;
@@ -402,7 +413,7 @@ class ScrapingHandler
       while (!isLast) {
         if (programController.earlyStop) {
           log.info("scraping", "Muted user scraping stopped by user.");
-          return { success: false, usernames: allMutedUsernames, count: totalCount, stoppedEarly: true, error: 'Process stopped by user' };
+          return { success: false, usernames: allMutedUsernames, count: totalCount, stoppedEarly: true, paused: false, error: 'Process stopped by user' };
         }
         
         // Check if pause/stop is requested via callback
@@ -410,7 +421,35 @@ class ScrapingHandler
           const shouldStop = await shouldStopCallback();
           if (shouldStop) {
             log.info("scraping", "Muted user scraping stopped by pause/stop request.");
-            return { success: false, usernames: allMutedUsernames, count: totalCount, stoppedEarly: true, error: 'Process stopped by user' };
+            // Distinguish between pause and early stop
+            // If earlyStop is true, it's an early stop. Otherwise, it's a pause.
+            const isPaused = !programController.earlyStop;
+            
+            // If paused, call checkpointReached to resolve the pause promise
+            if (isPaused) {
+              await resumableOperationRegistry.checkpointReached({
+                stage: 'FETCH_USERS',
+                collectedUsers: allMutedUsernames,
+                userCount: totalCount,
+                currentPage: index,
+                source: 'MUTED_USERS'
+              });
+            }
+            
+            return { 
+              success: false, 
+              usernames: allMutedUsernames, 
+              count: totalCount, 
+              stoppedEarly: !isPaused, 
+              paused: isPaused, 
+              error: isPaused ? 'Process paused by user' : 'Process stopped by user',
+              // Return state for resume
+              state: {
+                scrapedUsers: allMutedUsernames,
+                currentPage: index,
+                totalCount: totalCount
+              }
+            };
           }
         }
         
@@ -443,6 +482,19 @@ class ScrapingHandler
                   log.err("scraping", `Progress callback error: ${cbError}`);
                 }
               }
+              
+              // Call checkpoint callback after each page for periodic state saving
+              if (checkpointCallback && typeof checkpointCallback === 'function') {
+                try {
+                  await checkpointCallback({
+                    scrapedUsers: allMutedUsernames,
+                    currentPage: index,
+                    totalCount: totalCount
+                  });
+                } catch (cpError) {
+                  log.warn("scraping", `Checkpoint callback error: ${cpError}`);
+                }
+              }
             } else {
               log.warn("scraping", `Unexpected result fetching page ${index}, attempt ${attempt}.`);
             }
@@ -473,19 +525,29 @@ class ScrapingHandler
     }
   }
 
-  async scrapeAllBlockedUsers(progressCallback, resumeFromIndex = null, shouldStopCallback = null) {
+  /**
+   * Scrapes all blocked users with checkpoint support for pause/resume
+   * @param {Function} progressCallback - Callback for progress updates
+   * @param {number} resumeFromIndex - Page index to resume from (deprecated, use initialState)
+   * @param {Function} shouldStopCallback - Callback to check if should stop
+   * @param {Function} checkpointCallback - Callback to save checkpoint state periodically
+   * @param {Object} initialState - Initial state for resume (scrapedUsers, currentPage, totalCount)
+   * @returns {Promise<Object>} - Result with usernames, count, and state
+   */
+  async scrapeAllBlockedUsers(progressCallback, resumeFromIndex = null, shouldStopCallback = null, checkpointCallback = null, initialState = null) {
     log.info("scraping", "Starting to scrape all blocked users...");
-    let scrapedUsernames = [];
+    // Support both legacy resumeFromIndex and new initialState
+    let scrapedUsernames = initialState?.scrapedUsers || [];
     let scrapedUserIds = [];
     let isLast = false;
-    let index = resumeFromIndex || 0;
-    let totalCount = 0;
+    let index = initialState?.currentPage || (resumeFromIndex || 0);
+    let totalCount = initialState?.totalCount || 0;
 
     try {
       while (!isLast) {
         if (programController.earlyStop) {
           log.info("scraping", "Blocked user scraping stopped early by user request.");
-          return { success: false, usernames: scrapedUsernames, count: totalCount, stoppedEarly: true, error: "Process stopped by user" };
+          return { success: false, usernames: scrapedUsernames, count: totalCount, stoppedEarly: true, paused: false, error: "Process stopped by user" };
         }
         
         // Check if pause/stop is requested via callback
@@ -493,7 +555,35 @@ class ScrapingHandler
           const shouldStop = await shouldStopCallback();
           if (shouldStop) {
             log.info("scraping", "Blocked user scraping stopped by pause/stop request.");
-            return { success: false, usernames: scrapedUsernames, count: totalCount, stoppedEarly: true, error: 'Process stopped by user' };
+            // Distinguish between pause and early stop
+            // If earlyStop is true, it's an early stop. Otherwise, it's a pause.
+            const isPaused = !programController.earlyStop;
+            
+            // If paused, call checkpointReached to resolve the pause promise
+            if (isPaused) {
+              await resumableOperationRegistry.checkpointReached({
+                stage: 'FETCH_USERS',
+                collectedUsers: scrapedUsernames,
+                userCount: totalCount,
+                currentPage: index,
+                source: 'BLOCKED_USERS'
+              });
+            }
+            
+            return { 
+              success: false, 
+              usernames: scrapedUsernames, 
+              count: totalCount, 
+              stoppedEarly: !isPaused, 
+              paused: isPaused, 
+              error: isPaused ? 'Process paused by user' : 'Process stopped by user',
+              // Return state for resume
+              state: {
+                scrapedUsers: scrapedUsernames,
+                currentPage: index,
+                totalCount: totalCount
+              }
+            };
           }
         }
 
@@ -522,6 +612,19 @@ class ScrapingHandler
             await progressCallback({ currentCount: totalCount });
           } catch (callbackError) {
             log.warn("scraping", `Error in progress callback for blocked users: ${callbackError}`);
+          }
+        }
+        
+        // Call checkpoint callback after each page for periodic state saving
+        if (checkpointCallback && typeof checkpointCallback === 'function') {
+          try {
+            await checkpointCallback({
+              scrapedUsers: scrapedUsernames,
+              currentPage: index,
+              totalCount: totalCount
+            });
+          } catch (cpError) {
+            log.warn("scraping", `Checkpoint callback error: ${cpError}`);
           }
         }
       }

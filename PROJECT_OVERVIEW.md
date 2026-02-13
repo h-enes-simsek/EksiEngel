@@ -239,6 +239,14 @@ The extension provides 15+ configurable options:
 - Concurrent operation prevention
 - Progress state persistence
 - Early stop capability with cleanup
+- Pause/Resume support for compatible operations
+
+**Operation Control System:**
+- Checkpoint-based pause/resume for supported operations
+- Legacy operation compatibility layer
+- Operation state tracking (RUNNING, PAUSING, PAUSED, STOPPING, STOPPED, COMPLETED)
+- Intelligent pause support detection (non-pausable operations: DATE_BASED_BULK, MIGRATE_BLOCKED_TO_MUTED, BLOCK_MUTED_USERS, BLOCK_TITLES)
+- Graceful handling of operations that don't support checkpoint-based pausing
 
 **Storage Management:**
 - Persistent user lists (blocked/muted)

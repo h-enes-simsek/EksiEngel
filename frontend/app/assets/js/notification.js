@@ -96,11 +96,90 @@ function setupEarlyStopButton() {
     earlyStopButton.addEventListener("click", handleEarlyStop);
   }
   
-  // Setup new pause/resume/continue buttons
+// Setup new pause/resume/continue buttons
   setupUniversalControlButtons();
+  
+  // Start polling for operation state to keep UI in sync
+  startOperationStatePolling();
 }
 
-function setupUniversalControlButtons() {
+// Polling interval for operation state sync
+let _operationStatePollInterval = null;
+const OPERATION_STATE_POLL_INTERVAL_MS = 5000; // Poll every 5 seconds
+
+// Cleanup functions for pause operations
+let _cleanupFunctions = new Map();
+
+/**
+ * Start polling for operation state to keep UI synchronized
+ * This handles cases where messages are missed or page is reloaded
+ */
+function startOperationStatePolling() {
+  // Clear any existing interval first
+  if (_operationStatePollInterval) {
+    clearInterval(_operationStatePollInterval);
+  }
+  
+  // Initial check
+  syncOperationState();
+  
+  // Set up periodic polling
+  _operationStatePollInterval = setInterval(async () => {
+    await syncOperationState();
+  }, OPERATION_STATE_POLL_INTERVAL_MS);
+  
+  // Stop polling when page is hidden to save resources
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      if (_operationStatePollInterval) {
+        clearInterval(_operationStatePollInterval);
+        _operationStatePollInterval = null;
+      }
+    } else {
+      // Resume polling when page becomes visible
+      if (!_operationStatePollInterval) {
+        syncOperationState();
+        _operationStatePollInterval = setInterval(syncOperationState, OPERATION_STATE_POLL_INTERVAL_MS);
+      }
+    }
+  });
+}
+
+/**
+ * Synchronize UI with actual operation state from background script
+ */
+async function syncOperationState() {
+  try {
+    const response = await sendMessageWithPromise({ action: "getCurrentOperation" });
+    const operation = response?.operation || response;
+    
+    if (operation) {
+      // Update UI to match actual state
+      updateUniversalControls(operation);
+      
+      // Handle specific state cases
+      if (operation.state === 'PAUSING') {
+        // If we've been in PAUSING state for too long, it might have timed out
+        // The background will handle the timeout, but we should show appropriate UI
+        const pauseBtn = document.getElementById('btnPauseOperation');
+        if (pauseBtn && !pauseBtn.disabled) {
+          pauseBtn.disabled = true;
+          pauseBtn.innerHTML = '<span class="btn-icon">⏳</span><span class="btn-text">Duraklatılıyor...</span>';
+        }
+      }
+    } else {
+      // No operation running - ensure UI shows idle state
+      updateUniversalControls(null);
+    }
+  } catch (error) {
+    // If we can't get operation state, assume no operation is running
+    // This prevents UI from being stuck in a non-idle state
+    console.warn('Failed to sync operation state:', error);
+    updateUniversalControls(null);
+  }
+}
+
+async function setupUniversalControlButtons() {
   const pauseBtn = document.getElementById('btnPauseOperation');
   const resumeBtn = document.getElementById('btnResumeOperation');
   
@@ -118,6 +197,9 @@ function setupUniversalControlButtons() {
 
 async function handlePauseOperation() {
   const pauseBtn = document.getElementById('btnPauseOperation');
+  
+  // Clean up any existing pause state first
+  cleanupPauseOperation();
   
   let currentOp = null;
   
@@ -155,15 +237,83 @@ async function handlePauseOperation() {
     if (response && response.success) {
       notificationHandler.showStatusMessage('İşlem duraklatılıyor... Son kontrol noktasında duracak.', 'info');
       updateUniversalControls({ state: 'PAUSING', type: currentOp.type });
+      
+      // Set up timeout to handle cases where pause never reaches checkpoint
+      const timeoutId = setTimeout(async () => {
+        try {
+          const finalOpResponse = await sendMessageWithPromise({ action: "getCurrentOperation" });
+          const finalOp = finalOpResponse?.operation || finalOpResponse;
+          
+          // If operation is still in PAUSING state after timeout, reset button state
+          if (finalOp && finalOp.state === 'PAUSING') {
+            notificationHandler.showStatusMessage('Duraklatma zaman aşımına uğradı. İşlem devam ediyor.', 'warning');
+            pauseBtn.disabled = false;
+            pauseBtn.innerHTML = '<span class="btn-icon">⏸️</span><span class="btn-text">Duraklat</span>';
+            updateUniversalControls({ state: 'RUNNING', type: finalOp.type });
+          }
+        } catch (e) {
+          console.warn('Error checking operation state after pause timeout:', e);
+        } finally {
+          // Always clean up timeout
+          if (pauseBtn._pauseTimeoutId) {
+            clearTimeout(pauseBtn._pauseTimeoutId);
+            pauseBtn._pauseTimeoutId = null;
+          }
+        }
+      }, 30000); // 30 second timeout
+      
+      // Also listen for operation state changes to clear timeout if pause completes
+      const messageListener = (message) => {
+        if (message && message.action === "operationStateChanged" && message.operation) {
+          const op = message.operation;
+          if (op.state === 'PAUSED' || op.state === 'RUNNING' || op.state === 'STOPPED') {
+            // Pause completed or operation stopped, clear timeout
+            if (pauseBtn._pauseTimeoutId) {
+              clearTimeout(pauseBtn._pauseTimeoutId);
+              pauseBtn._pauseTimeoutId = null;
+            }
+            // Clean up the listener
+            chrome.runtime.onMessage.removeListener(messageListener);
+            pauseBtn._pauseMessageListener = null;
+            
+            // Update UI based on final state
+            if (op.state === 'PAUSED') {
+              notificationHandler.showStatusMessage('İşlem duraklatıldı.', 'success');
+              updateUniversalControls({ state: 'PAUSED', type: op.type });
+            } else {
+              // Operation resumed or stopped, reset button
+              pauseBtn.disabled = false;
+              pauseBtn.innerHTML = '<span class="btn-icon">⏸️</span><span class="btn-text">Duraklat</span>';
+              updateUniversalControls(op);
+            }
+          }
+        }
+      };
+      
+      chrome.runtime.onMessage.addListener(messageListener);
+      
+      // Store the timeout ID and listener for cleanup
+      pauseBtn._pauseTimeoutId = timeoutId;
+      pauseBtn._pauseMessageListener = messageListener;
+      
     } else {
       notificationHandler.showStatusMessage('Duraklatma başarısız: ' + (response?.error || 'Bilinmeyen hata'), 'error');
       // Re-sync UI with actual operation state
       const freshOpResponse = await sendMessageWithPromise({ action: "getCurrentOperation" });
       updateUniversalControls(freshOpResponse?.operation || freshOpResponse);
+      
+      // Reset button state on failure
+      pauseBtn.disabled = false;
+      pauseBtn.innerHTML = '<span class="btn-icon">⏸️</span><span class="btn-text">Duraklat</span>';
     }
   } catch (error) {
     console.error('Error pausing operation:', error);
     notificationHandler.showStatusMessage('Duraklatma hatası: ' + error.message, 'error');
+    
+    // Reset button state on error
+    pauseBtn.disabled = false;
+    pauseBtn.innerHTML = '<span class="btn-icon">⏸️</span><span class="btn-text">Duraklat</span>';
+    
     // Re-sync UI with actual operation state after error
     try {
       const freshOpResponse = await sendMessageWithPromise({ action: "getCurrentOperation" });
@@ -239,6 +389,9 @@ async function checkForPausedOperations() {
         resumeBtn.style.display = 'inline-block';
         resumeBtn.disabled = false;
       }
+      
+      // Show prominent notification banner
+      showPausedOperationBanner(currentOp.operation);
       return;
     }
     
@@ -251,9 +404,88 @@ async function checkForPausedOperations() {
         resumeBtn.style.display = 'inline-block';
         resumeBtn.disabled = false;
       }
+      
+      // Show prominent notification banner for the first saved operation
+      showPausedOperationBanner(savedOpsResponse.operations[0]);
     }
   } catch (error) {
     console.warn('Failed to check for paused operations:', error);
+  }
+}
+
+/**
+ * Show a prominent banner notification for a paused operation
+ * @param {Object} operation - The paused operation details
+ */
+function showPausedOperationBanner(operation) {
+  if (!operation) return;
+  
+  // Remove any existing banner first
+  hidePausedOperationBanner();
+  
+  // Create banner element
+  const banner = document.createElement('div');
+  banner.id = 'pausedOperationBanner';
+  banner.className = 'paused-operation-banner';
+  
+  const operationType = getOperationTypeDisplay(operation.type || operation.operationType);
+  const timestamp = operation.timestamp ? new Date(operation.timestamp).toLocaleString('tr-TR') : '';
+  
+  banner.innerHTML = `
+    <div class="banner-content">
+      <div class="banner-icon">⏸️</div>
+      <div class="banner-text">
+        <div class="banner-title">Duraklatılmış İşlem Bulundu</div>
+        <div class="banner-details">
+          <strong>${operationType}</strong> işlemi duraklatılmış durumda.
+          ${timestamp ? `<br><small>Duraklatılma zamanı: ${timestamp}</small>` : ''}
+        </div>
+      </div>
+      <div class="banner-actions">
+        <button id="bannerResumeBtn" class="banner-btn banner-btn-resume">
+          ▶️ Devam Et
+        </button>
+        <button id="bannerDismissBtn" class="banner-btn banner-btn-dismiss">
+          ✕ Kapat
+        </button>
+      </div>
+    </div>
+  `;
+  
+  // Insert banner at the top of the main content
+  const mainContent = document.querySelector('.main-content') || document.body;
+  mainContent.insertBefore(banner, mainContent.firstChild);
+  
+  // Add event listeners
+  const resumeBtn = banner.querySelector('#bannerResumeBtn');
+  const dismissBtn = banner.querySelector('#bannerDismissBtn');
+  
+  if (resumeBtn) {
+    resumeBtn.addEventListener('click', async () => {
+      resumeBtn.disabled = true;
+      resumeBtn.innerHTML = '⏳ Devam ediliyor...';
+      await handleResumeOperation();
+      hidePausedOperationBanner();
+    });
+  }
+  
+  if (dismissBtn) {
+    dismissBtn.addEventListener('click', () => {
+      hidePausedOperationBanner();
+    });
+  }
+  
+  // Auto-show the resume button in the controls as well
+  updateUniversalControls({ state: 'PAUSED', type: operation.type || operation.operationType });
+}
+
+/**
+ * Hide the paused operation banner
+ */
+function hidePausedOperationBanner() {
+  const existingBanner = document.getElementById('pausedOperationBanner');
+  if (existingBanner) {
+    existingBanner.remove();
   }
 }
 
@@ -1767,4 +1999,47 @@ document.addEventListener('DOMContentLoaded', () => {
   setupTabNavigation();
   setupDateFilterUI();
   setupDateBulkActionUI();
+});
+
+// Cleanup functions for page unload
+window.addEventListener('beforeunload', () => {
+  // Clear any pending timeouts
+  if (_operationStatePollInterval) {
+    clearInterval(_operationStatePollInterval);
+  }
+  
+  // Clean up pause operation timeouts and listeners
+  const pauseBtn = document.getElementById('btnPauseOperation');
+  if (pauseBtn && pauseBtn._pauseTimeoutId) {
+    clearTimeout(pauseBtn._pauseTimeoutId);
+  }
+  if (pauseBtn && pauseBtn._pauseMessageListener) {
+    chrome.runtime.onMessage.removeListener(pauseBtn._pauseMessageListener);
+  }
+});
+
+// Add a cleanup function for operations
+function cleanupPauseOperation() {
+  const pauseBtn = document.getElementById('btnPauseOperation');
+  if (pauseBtn) {
+    if (pauseBtn._pauseTimeoutId) {
+      clearTimeout(pauseBtn._pauseTimeoutId);
+      pauseBtn._pauseTimeoutId = null;
+    }
+    if (pauseBtn._pauseMessageListener) {
+      chrome.runtime.onMessage.removeListener(pauseBtn._pauseMessageListener);
+      pauseBtn._pauseMessageListener = null;
+    }
+  }
+}
+
+// Listen for operation state changes to trigger cleanup
+chrome.runtime.onMessage.addListener((message) => {
+  if (message && message.action === "operationStateChanged" && message.operation) {
+    const op = message.operation;
+    // If operation completed, stopped, or resumed, clean up pause state
+    if (op.state === 'COMPLETED' || op.state === 'STOPPED' || op.state === 'RUNNING') {
+      cleanupPauseOperation();
+    }
+  }
 });

@@ -1679,6 +1679,110 @@ body {
     line-height: 1.5;
 }
 
+/* ============================================
+   PAUSED OPERATION BANNER STYLES
+   ============================================ */
+
+.paused-operation-banner {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border: 2px solid #f59e0b;
+    border-radius: var(--radius-md);
+    margin-bottom: 16px;
+    box-shadow: var(--shadow-md);
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.paused-operation-banner .banner-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+}
+
+.paused-operation-banner .banner-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.paused-operation-banner .banner-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.paused-operation-banner .banner-title {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: #92400e;
+    margin-bottom: 2px;
+}
+
+.paused-operation-banner .banner-details {
+    font-size: 0.75rem;
+    color: #b45309;
+}
+
+.paused-operation-banner .banner-details small {
+    color: #d97706;
+}
+
+.paused-operation-banner .banner-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.paused-operation-banner .banner-btn {
+    padding: 8px 14px;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.paused-operation-banner .banner-btn-resume {
+    background: var(--success-color);
+    color: white;
+    box-shadow: 0 1px 2px rgba(76, 175, 80, 0.3);
+}
+
+.paused-operation-banner .banner-btn-resume:hover:not(:disabled) {
+    background: var(--primary-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(76, 175, 80, 0.4);
+}
+
+.paused-operation-banner .banner-btn-resume:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.paused-operation-banner .banner-btn-dismiss {
+    background: rgba(0, 0, 0, 0.1);
+    color: #92400e;
+}
+
+.paused-operation-banner .banner-btn-dismiss:hover {
+    background: rgba(0, 0, 0, 0.2);
+}
+
 /* Responsive for Tabs */
 @media (max-width: 768px) {
     .tab-navigation {
@@ -1715,5 +1819,33 @@ body {
     
     .unit-select {
         width: 100%;
+    }
+    
+    /* Paused Operation Banner Responsive */
+    .paused-operation-banner .banner-content {
+        flex-wrap: wrap;
+        padding: 10px 12px;
+    }
+    
+    .paused-operation-banner .banner-text {
+        width: 100%;
+        order: 2;
+        margin-top: 8px;
+    }
+    
+    .paused-operation-banner .banner-icon {
+        order: 1;
+    }
+    
+    .paused-operation-banner .banner-actions {
+        width: 100%;
+        order: 3;
+        margin-top: 10px;
+        justify-content: stretch;
+    }
+    
+    .paused-operation-banner .banner-btn {
+        flex: 1;
+        justify-content: center;
     }
 }

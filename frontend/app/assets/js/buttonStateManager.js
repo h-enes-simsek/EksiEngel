@@ -71,6 +71,14 @@ class ButtonStateManager {
 
   async checkCurrentOperationState() {
     try {
+      // First check resumable operation registry for current operations
+      const resumableOp = await this.getResumableOperationState();
+      if (resumableOp) {
+        this.operationState = resumableOp.state;
+        return;
+      }
+      
+      // Fall back to legacy storage-based operations
       const activeOperation = await storageHandler.getActiveOperation();
       this.operationState = activeOperation ? (activeOperation.state || 'ACTIVE') : 'INACTIVE';
     } catch (error) {
@@ -79,14 +87,83 @@ class ButtonStateManager {
     }
   }
 
+  async getResumableOperationState() {
+    try {
+      // Get current operation from background script
+      const response = await new Promise((resolve, reject) => {
+        chrome.runtime.sendMessage({ action: "getCurrentOperation" }, (response) => {
+          if (chrome.runtime.lastError) {
+            reject(chrome.runtime.lastError);
+          } else {
+            resolve(response);
+          }
+        });
+      });
+      
+      if (response && response.operation) {
+        const op = response.operation;
+        // Map resumable operation states to UI states
+        switch (op.state) {
+          case 'RUNNING':
+            return { state: 'ACTIVE' };
+          case 'PAUSING':
+            return { state: 'PAUSING' };
+          case 'PAUSED':
+            return { state: 'PAUSED' };
+          case 'STOPPING':
+            return { state: 'STOPPING' };
+          case 'STOPPED':
+            return { state: 'STOPPED' };
+          case 'COMPLETED':
+            return { state: 'INACTIVE' };
+          default:
+            return { state: 'INACTIVE' };
+        }
+      }
+      return null;
+    } catch (error) {
+      console.warn('Failed to get resumable operation state:', error);
+      return null;
+    }
+  }
+
   setupMessageListeners() {
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       if (message && message.action === 'operationStateChanged') {
-        this.handleOperationStateChange(message.newState, message.operationData);
+        // Handle both new format (newState/operationData) and legacy format (operation)
+        const newState = message.newState || this._mapOperationStateToUIState(message.operation?.state);
+        const operationData = message.operationData || message.operation;
+        this.handleOperationStateChange(newState, operationData);
         sendResponse({ status: 'ok' });
       }
       return true;
     });
+  }
+
+  /**
+   * Map operation state from resumableOperation to UI state
+   * @param {string} operationState - State from resumableOperation (RUNNING, PAUSED, etc.)
+   * @returns {string} - UI state (ACTIVE, PAUSED, etc.)
+   */
+  _mapOperationStateToUIState(operationState) {
+    if (!operationState) return 'INACTIVE';
+    
+    switch (operationState) {
+      case 'RUNNING':
+        return 'ACTIVE';
+      case 'PAUSING':
+        return 'PAUSING';
+      case 'PAUSED':
+        return 'PAUSED';
+      case 'STOPPING':
+        return 'STOPPING';
+      case 'STOPPED':
+        return 'STOPPED';
+      case 'COMPLETED':
+        return 'INACTIVE';
+      default:
+        return 'INACTIVE';
+    }
   }
 
   async handleOperationStateChange(newState, operationData) {
@@ -138,6 +215,8 @@ class ButtonStateManager {
 
   async calculateButtonState(buttonId, buttonElement) {
     const isOperationActive = this.operationState === 'ACTIVE';
+    const isOperationPaused = this.operationState === 'PAUSED';
+    const isOperationPausinng = this.operationState === 'PAUSING';
     const isOperationStopped = this.operationState === 'STOPPED';
     const isOperationCooldown = this.operationState === 'COOLDOWN';
     const isProcessing = this.isProcessing;
@@ -145,9 +224,11 @@ class ButtonStateManager {
 
     switch (buttonId) {
       case 'earlyStop':
+        // Early stop should be enabled when any operation is running, paused, or in cooldown
+        const canStopOperation = isOperationActive || isOperationPaused || isOperationPausinng || isOperationCooldown;
         return {
-          disabled: !isOperationActive || isProcessing,
-          title: !isOperationActive ? 'No active operation to stop' : isProcessing ? 'Stopping operation...' : 'Stop the current operation',
+          disabled: !canStopOperation || isProcessing,
+          title: !canStopOperation ? 'No active operation to stop' : isProcessing ? 'Stopping operation...' : 'Stop the current operation',
           innerHTML: isProcessing ? '<span class="btn-icon">⏳</span><span class="btn-text">Durduruluyor...</span>' : '<span class="btn-icon">🛑</span><span class="btn-text">Erken Durdur</span>'
         };
 

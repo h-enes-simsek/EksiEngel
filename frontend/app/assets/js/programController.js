@@ -10,28 +10,36 @@ import { storageHandler } from './storageHandler.js';
 import { resumableOperationRegistry, OperationState } from './resumableOperation.js';
 
 /**
- * Helper function to check if pause is requested and wait if so
- * @returns {Promise<{ paused: boolean, stopped: boolean }>}
+ * Helper function to check if pause or stop is requested
+ * This function only checks flags and does NOT block waiting for pause.
+ * The actual pause waiting is handled by checkpointReached() in the scraping functions.
+ * @param {Object} options - Options for the check
+ * @param {boolean} options.immediate - If true, only check flags without waiting for pause
+ * @returns {Promise<{ paused: boolean, stopped: boolean, timeout: boolean }>}
  */
-async function checkPauseOrStop() {
+async function checkPauseOrStop(options = {}) {
+  const { immediate = false } = options;
+  
   // Check early stop flag first - this is set by the user clicking "Early Stop"
   if (programController.earlyStop) {
     log.info('progctrl', 'Early stop flag is set, stopping operation...');
-    return { paused: false, stopped: true };
+    return { paused: false, stopped: true, timeout: false };
   }
   
-  if (resumableOperationRegistry.isPauseRequested()) {
-    log.info('progctrl', 'Pause requested, waiting...');
-    await resumableOperationRegistry.waitForPause();
-    return { paused: true, stopped: false };
-  }
-  
+  // Check if stop was requested through registry
   const op = resumableOperationRegistry.getCurrentOperation();
   if (op && op.state === OperationState.STOPPING) {
-    return { paused: false, stopped: true };
+    return { paused: false, stopped: true, timeout: false };
   }
   
-  return { paused: false, stopped: false };
+  // Check if pause is requested - just return the status, don't wait
+  // The scraping function will call checkpointReached() to resolve the pause
+  if (resumableOperationRegistry.isPauseRequested()) {
+    log.info('progctrl', 'Pause requested, returning paused status');
+    return { paused: true, stopped: false, timeout: false };
+  }
+  
+  return { paused: false, stopped: false, timeout: false };
 }
 
 class ProgramController {
@@ -173,20 +181,15 @@ class ProgramController {
           pauseCheckCallback // shouldStopCallback
         );
         
-        // Check for pause or stop request
-        const pauseStatus = await checkPauseOrStop();
-        if (pauseStatus.paused) {
+        // Check if scraping function returned due to pause
+        // Note: checkpointReached is already called by the scraping function when paused
+        if (scrapeResult.paused) {
           log.info("progctrl", "Date-based bulk action paused during blocked users fetch.");
-          await resumableOperationRegistry.checkpointReached({
-            stage: 'FETCH_USERS',
-            source: source,
-            collectedUsers: scrapeResult.usernames || [],
-            userCount: scrapeResult.count || 0
-          });
           return;
         }
         
-        if (pauseStatus.stopped || this.earlyStop) {
+        // Check for stop request
+        if (scrapeResult.stoppedEarly && !scrapeResult.paused) {
           log.info("progctrl", "Date-based bulk action stopped during blocked users fetch.");
           notificationHandler.finishErrorEarlyStop(enums.BanSource.DATE_BASED_BULK, enums.BanMode.BAN, processQueue.currentItemMetadata);
           return;
@@ -223,20 +226,15 @@ class ProgramController {
           pauseCheckCallback // shouldStopCallback
         );
         
-        // Check for pause or stop request
-        const pauseStatusMuted = await checkPauseOrStop();
-        if (pauseStatusMuted.paused) {
+        // Check if scraping function returned due to pause
+        // Note: checkpointReached is already called by the scraping function when paused
+        if (scrapeResult.paused) {
           log.info("progctrl", "Date-based bulk action paused during muted users fetch.");
-          await resumableOperationRegistry.checkpointReached({
-            stage: 'FETCH_USERS',
-            source: source,
-            collectedUsers: scrapeResult.usernames || [],
-            userCount: scrapeResult.count || 0
-          });
           return;
         }
         
-        if (pauseStatusMuted.stopped || this.earlyStop) {
+        // Check for stop request
+        if (scrapeResult.stoppedEarly && !scrapeResult.paused) {
           log.info("progctrl", "Date-based bulk action stopped during muted users fetch.");
           notificationHandler.finishErrorEarlyStop(enums.BanSource.DATE_BASED_BULK, enums.BanMode.BAN, processQueue.currentItemMetadata);
           return;
@@ -284,8 +282,41 @@ class ProgramController {
       let fetchedCount = 0;
       const newlyFetchedDates = new Map();
       
-      for (const username of usersToFetch) {
+      // Save checkpoint before starting date fetching
+      await resumableOperationRegistry.checkpointReached({
+        stage: 'FETCH_DATES',
+        userList: userList,
+        fetchedCount: 0,
+        processedCount: 0
+      });
+      
+      for (let i = 0; i < usersToFetch.length; i++) {
+        const username = usersToFetch[i];
+        
         if (this.earlyStop) break;
+        
+        // Check for pause/stop more frequently - every 5 users
+        if (i % 5 === 0 && i > 0) {
+          const status = await checkPauseOrStop();
+          if (status.paused) {
+            // Save checkpoint with current progress
+            await resumableOperationRegistry.checkpointReached({
+              stage: 'FETCH_DATES',
+              userList: userList,
+              fetchedCount: i,
+              processedCount: 0,
+              newlyFetchedDates: Array.from(newlyFetchedDates.entries())
+            });
+            return;
+          }
+          if (status.stopped) {
+            notificationHandler.finishErrorEarlyStop(enums.BanSource.DATE_BASED_BULK, enums.BanMode.BAN, processQueue.currentItemMetadata);
+            return;
+          }
+          if (status.timeout) {
+            log.info("progctrl", "Pause timed out during date fetching, continuing...");
+          }
+        }
         
         try {
           const regDate = await scrapingHandler.scrapeRegistrationDate(username);
@@ -357,9 +388,29 @@ class ProgramController {
       for (let i = 0; i < matchingUsers.length; i++) {
         // Check for pause/stop request
         const status = await checkPauseOrStop();
+        if (status.paused) {
+          // Save checkpoint for resume
+          await resumableOperationRegistry.checkpointReached({
+            stage: 'PERFORM_ACTIONS',
+            matchingUsers: matchingUsers,
+            processedCount: i,
+            successCount: successCount,
+            failCount: failCount
+          });
+          return;
+        }
+
         if (status.stopped || this.earlyStop) {
           log.info("progctrl", "Date-based bulk action stopped early by user.");
           notificationHandler.notify(`İşlem erken durduruldu. İşlenen: ${i}/${matchingUsers.length}`);
+          // Save checkpoint for potential resume
+          await resumableOperationRegistry.checkpointReached({
+            stage: 'PERFORM_ACTIONS',
+            matchingUsers: matchingUsers,
+            processedCount: i,
+            successCount: successCount,
+            failCount: failCount
+          });
           break;
         }
         
@@ -428,6 +479,13 @@ class ProgramController {
       log.info("progctrl", "startDateBasedBulkAction completed.");
       this.earlyStop = false;
       this._dateBasedBulkInProgress = false;
+      
+      // Only call completeOperation if not paused
+      const currentOp = resumableOperationRegistry.getCurrentOperation();
+      if (!currentOp || currentOp.state !== OperationState.PAUSED) {
+        resumableOperationRegistry.completeOperation();
+      }
+      
       notificationHandler.notifyUpdateCounts();
     }
   }
@@ -646,6 +704,15 @@ class ProgramController {
     this._migrationInProgress = true;
     this.earlyStop = false;
 
+    // Register with resumable operation registry for pause/resume support
+    const operationId = 'migrate-' + Date.now();
+    resumableOperationRegistry.registerOperation(
+      operationId,
+      'MIGRATE_BLOCKED_TO_MUTED',
+      {},
+      ['FETCH_USERS', 'PROCESS_USERS']
+    );
+
     try {
       log.info("progctrl", "Fetching all blocked users...");
       notificationHandler.notify("Engellenen kullanıcılar getiriliyor...");
@@ -660,6 +727,7 @@ class ProgramController {
           message: `Failed to fetch blocked users: ${scrapeResult.error}`
         });
         this._migrationInProgress = false;
+        resumableOperationRegistry.completeOperation();
         notificationHandler.notify(`Engellenen kullanıcılar getirilemedi: ${scrapeResult.error}`);
         return;
       }
@@ -670,6 +738,7 @@ class ProgramController {
       if (blockedUsers.length === 0) {
         log.info("progctrl", "No blocked users found - completing with 0 results");
         this._migrationInProgress = false;
+        resumableOperationRegistry.completeOperation();
         notificationHandler.notify("Engellenen kullanıcı bulunamadı.");
         return;
       }
@@ -677,12 +746,40 @@ class ProgramController {
       log.info("progctrl", `Found ${blockedUsers.length} blocked users.`);
       notificationHandler.notify(`Engellenen ${blockedUsers.length} kullanıcı sessize alınıyor...`);
 
+      // Save checkpoint after fetching users
+      await resumableOperationRegistry.checkpointReached({
+        stage: 'FETCH_USERS',
+        blockedUsers: blockedUsers,
+        totalCount: blockedUsers.length,
+        processedCount: 0
+      });
+
       let migratedCount = 0;
       let failedCount = 0;
       let skippedCount = 0;
 
       for (let i = 0; i < blockedUsers.length; i++) {
         const user = blockedUsers[i];
+
+        // Check for pause/stop request every 10 users
+        if (i % 10 === 0) {
+          const status = await checkPauseOrStop();
+          if (status.paused) {
+            await resumableOperationRegistry.checkpointReached({
+              stage: 'PROCESS_USERS',
+              blockedUsers: blockedUsers,
+              processedCount: i,
+              migratedCount: migratedCount,
+              failedCount: failedCount
+            });
+            return;
+          }
+          if (status.stopped || this.earlyStop) {
+            log.info("progctrl", "Migration stopped early by user.");
+            notificationHandler.notify(`Taşıma işlemi kullanıcı tarafından durduruldu. İşlenen: ${i}/${blockedUsers.length}`);
+            break;
+          }
+        }
 
         if (this.earlyStop) {
           log.info("progctrl", "Migration stopped early by user.");
@@ -758,10 +855,16 @@ class ProgramController {
       log.info("progctrl", "migrateBlockedToMuted function completed.");
       this.earlyStop = false;
       this._migrationInProgress = false;
+      
+      // Only call completeOperation if not paused
+      const currentOp = resumableOperationRegistry.getCurrentOperation();
+      if (!currentOp || currentOp.state !== OperationState.PAUSED) {
+        resumableOperationRegistry.completeOperation();
+      }
+      
       notificationHandler.notifyUpdateCounts();
     }
   }
-
   async blockMutedUsers() {
     log.info("progctrl", "blockMutedUsers function started.");
 
@@ -773,6 +876,15 @@ class ProgramController {
 
     this._blockMutedUsersInProgress = true;
     this.earlyStop = false;
+
+    // Register with resumable operation registry for pause/resume support
+    const operationId = 'block-muted-' + Date.now();
+    resumableOperationRegistry.registerOperation(
+      operationId,
+      'BLOCK_MUTED_USERS',
+      {},
+      ['FETCH_PAGES', 'PROCESS_USERS']
+    );
 
     let blockedCount = 0;
     let unmutedCount = 0;
@@ -816,6 +928,14 @@ class ProgramController {
             log.info("progctrl", `Found ${pageUsernames.length} users on page ${pageIndex}. Total found so far: ${totalUsersFound}`);
             notificationHandler.notify(`Sayfa ${pageIndex}'de ${pageUsernames.length} kullanıcı bulundu. Şu ana kadar toplam: ${totalUsersFound}. İşleniyor...`);
 
+            // Save checkpoint before processing page
+            await resumableOperationRegistry.checkpointReached({
+              stage: 'FETCH_PAGES',
+              pageIndex: pageIndex,
+              totalUsersFound: totalUsersFound,
+              processedCount: processedCount
+            });
+
             for (let i = 0; i < pageUsernames.length; i++) {
               if (this.earlyStop) {
                 log.info("progctrl", "Blocking muted users stopped early by user during page processing.");
@@ -826,6 +946,26 @@ class ProgramController {
               const username = pageUsernames[i];
               const authorIdFromPage = pageUserIds[i];
               processedCount++;
+
+              // Check for pause every 10 users
+              if (processedCount % 10 === 0) {
+                const status = await checkPauseOrStop();
+                if (status.paused) {
+                  await resumableOperationRegistry.checkpointReached({
+                    stage: 'PROCESS_USERS',
+                    pageIndex: pageIndex,
+                    processedCount: processedCount,
+                    totalUsersFound: totalUsersFound,
+                    blockedCount: blockedCount,
+                    unmutedCount: unmutedCount,
+                    failedCount: failedCount
+                  });
+                  return;
+                }
+                if (status.stopped) {
+                  break;
+                }
+              }
 
               notificationHandler.notifyOngoing(unmutedCount, processedCount, totalUsersFound, processQueue.currentItemMetadata);
 
@@ -925,10 +1065,16 @@ class ProgramController {
       log.info("progctrl", "blockMutedUsers function completed.");
       this.earlyStop = false;
       this._blockMutedUsersInProgress = false;
+      
+      // Only call completeOperation if not paused
+      const currentOp = resumableOperationRegistry.getCurrentOperation();
+      if (!currentOp || currentOp.state !== OperationState.PAUSED) {
+        resumableOperationRegistry.completeOperation();
+      }
+      
       notificationHandler.notifyUpdateCounts();
     }
   }
-
   async blockTitlesOfBlockedMuted() {
     log.info("progctrl", "blockTitlesOfBlockedMuted function started.");
 
@@ -940,6 +1086,15 @@ class ProgramController {
 
     this._blockTitlesInProgress = true;
     this.earlyStop = false;
+
+    // Register with resumable operation registry for pause/resume support
+    const operationId = 'block-titles-' + Date.now();
+    resumableOperationRegistry.registerOperation(
+      operationId,
+      'BLOCK_TITLES',
+      {},
+      ['FETCH_USERS', 'PROCESS_USERS']
+    );
 
     try {
       notificationHandler.notify("Engellenen ve sessize alınan kullanıcı listeleri getiriliyor...");
@@ -984,6 +1139,14 @@ class ProgramController {
       log.info("progctrl", `Found ${usersToProcess.length} unique blocked/muted users to process titles for.`);
       notificationHandler.notify(`${usersToProcess.length} benzersiz engellenmiş/sessize alınmış kullanıcı bulundu. Başlık engelleme işlemi başlatılıyor...`);
 
+      // Save checkpoint after fetching users
+      await resumableOperationRegistry.checkpointReached({
+        stage: 'FETCH_USERS',
+        usersToProcess: usersToProcess,
+        totalCount: usersToProcess.length,
+        processedCount: 0
+      });
+
       let serverBlockedTitlesCount = 0;
       let simulatedBlockedTitlesCount = 0;
       let usersProcessedCount = 0;
@@ -993,6 +1156,26 @@ class ProgramController {
       notificationHandler.notifyOngoing(successfulUsersCount, usersProcessedCount, usersToProcess.length, processQueue.currentItemMetadata);
 
       for (let i = 0; i < usersToProcess.length; i++) {
+        // Check for pause/stop every 10 users
+        if (i % 10 === 0) {
+          const status = await checkPauseOrStop();
+          if (status.paused) {
+            await resumableOperationRegistry.checkpointReached({
+              stage: 'PROCESS_USERS',
+              usersToProcess: usersToProcess,
+              processedCount: i,
+              serverBlockedTitlesCount: serverBlockedTitlesCount,
+              simulatedBlockedTitlesCount: simulatedBlockedTitlesCount
+            });
+            return;
+          }
+          if (status.stopped || this.earlyStop) {
+            log.info("progctrl", "Blocking titles stopped early by user.");
+            notificationHandler.notify(`Başlık engelleme erken durduruldu. İşlenen kullanıcı: ${i}/${usersToProcess.length}.`);
+            break;
+          }
+        }
+
         if (this.earlyStop) {
           log.info("progctrl", "Blocking titles stopped early by user.");
           notificationHandler.notify(`Başlık engelleme erken durduruldu. İşlenen kullanıcı: ${i}/${usersToProcess.length}.`);
@@ -1088,9 +1271,14 @@ class ProgramController {
       log.info("progctrl", "blockTitlesOfBlockedMuted function completed.");
       this.earlyStop = false;
       this._blockTitlesInProgress = false;
+      
+      // Only call completeOperation if not paused
+      const currentOp = resumableOperationRegistry.getCurrentOperation();
+      if (!currentOp || currentOp.state !== OperationState.PAUSED) {
+        resumableOperationRegistry.completeOperation();
+      }
     }
   }
-
   async migrateBlockedTitlesToUnblocked() {
     log.info("progctrl", "migrateBlockedTitlesToUnblocked function started.");
 
@@ -1239,6 +1427,19 @@ notificationHandler.notify(`${totalCount} adet başlıkları engellenen kullanı
       return { success: false, error: 'No saved state found for operation' };
     }
 
+    // Check if operation is already running
+    if (this._dateBasedBulkInProgress || 
+        this._migrationInProgress ||
+        this._blockMutedUsersInProgress ||
+        this._blockTitlesInProgress) {
+      return { success: false, error: 'Another operation is already running' };
+    }
+
+    // Validate that the saved state has the required data for resume
+    if (!savedState.checkpointData || !savedState.operationType) {
+      return { success: false, error: 'Invalid saved state - missing checkpoint data or operation type' };
+    }
+
     // Dispatch to appropriate handler based on operation type
     switch (savedState.operationType) {
       case 'DATE_BASED_BULK':
@@ -1277,15 +1478,7 @@ notificationHandler.notify(`${totalCount} adet başlıkları engellenen kullanı
     // First check for resumable operations
     const resumableOp = resumableOperationRegistry.getCurrentOperation();
     if (resumableOp) {
-      // Operations that don't support checkpoint-based pausing
-      const nonPausableTypes = ['DATE_BASED_BULK', 'MIGRATE_BLOCKED_TO_MUTED', 'BLOCK_MUTED_USERS', 'BLOCK_TITLES'];
-      if (nonPausableTypes.includes(resumableOp.type)) {
-        return {
-          ...resumableOp,
-          canPause: false,
-          message: 'Bu işlem türü duraklatmayı desteklemiyor. Erken durdurmayı kullanın.'
-        };
-      }
+      // All operations registered with the registry now support checkpoint-based pausing
       return { ...resumableOp, canPause: true };
     }
     
@@ -1312,13 +1505,17 @@ notificationHandler.notify(`${totalCount} adet başlıkları engellenen kullanı
       };
     }
     
+    // Note: Migration, blockMutedUsers, blockTitles, and dateBasedBulk are now registered 
+    // with the resumable registry, so they should appear as resumable operations above.
+    // The legacy checks below are kept for backward compatibility but should not be reached.
+    
     if (this._migrationInProgress) {
       return {
         id: 'legacy-migration',
         type: 'MIGRATE_BLOCKED_TO_MUTED',
         state: OperationState.RUNNING,
         canPause: false,
-        message: 'Taşıma işlemi duraklatmayı desteklemiyor. Erken durdurmayı kullanın.'
+        message: 'Bu işlem türü duraklatmayı desteklemiyor. Erken durdurmayı kullanın.'
       };
     }
     
@@ -1328,7 +1525,7 @@ notificationHandler.notify(`${totalCount} adet başlıkları engellenen kullanı
         type: 'BLOCK_MUTED_USERS',
         state: OperationState.RUNNING,
         canPause: false,
-        message: 'Sessizleri engelleme işlemi duraklatmayı desteklemiyor. Erken durdurmayı kullanın.'
+        message: 'Bu işlem türü duraklatmayı desteklemiyor. Erken durdurmayı kullanın.'
       };
     }
     
@@ -1338,7 +1535,7 @@ notificationHandler.notify(`${totalCount} adet başlıkları engellenen kullanı
         type: 'BLOCK_TITLES',
         state: OperationState.RUNNING,
         canPause: false,
-        message: 'Başlık engelleme işlemi duraklatmayı desteklemiyor. Erken durdurmayı kullanın.'
+        message: 'Bu işlem türü duraklatmayı desteklemiyor. Erken durdurmayı kullanın.'
       };
     }
     
@@ -1348,12 +1545,13 @@ notificationHandler.notify(`${totalCount} adet başlıkları engellenen kullanı
         type: 'DATE_BASED_BULK',
         state: OperationState.RUNNING,
         canPause: false,
-        message: 'Tarih bazlı toplu işlem duraklatmayı desteklemiyor. Erken durdurmayı kullanın.'
+        message: 'Bu işlem türü duraklatmayı desteklemiyor. Erken durdurmayı kullanın.'
       };
     }
     
     return null;
   }
+
 
   /**
    * Check if there's a running operation
@@ -1380,6 +1578,7 @@ notificationHandler.notify(`${totalCount} adet başlıkları engellenen kullanı
     const { params, checkpointData } = savedState;
     
     log.info("progctrl", `Resuming date-based bulk action from checkpoint: ${savedState.currentCheckpoint}`);
+    log.info("progctrl", `Checkpoint data: ${JSON.stringify(checkpointData)}`);
     
     // Re-register the operation with RUNNING state
     const operationId = savedState.operationId;
@@ -1404,116 +1603,144 @@ notificationHandler.notify(`${totalCount} adet başlıkları engellenen kullanı
 
     try {
       let userList = [];
-      let startFromIndex = 0;
+      let matchingUsers = [];
+      let successCount = 0;
+      let failCount = 0;
       
       // Restore state based on the checkpoint stage
       if (checkpointData) {
         switch (checkpointData.stage) {
           case 'FETCH_USERS':
             // We have already collected some users but not all
-            log.info("progctrl", `Resuming from FETCH_USERS checkpoint with ${checkpointData.collectedUsers?.length || 0} users collected`);
-            if (checkpointData.source === 'BLOCKED_USERS') {
-              // Continue fetching blocked users from where we left off
-              const resumeFromIndex = checkpointData.userCount || 0;
-              notificationHandler.notify(`Engellenen kullanıcılar getirilmeye devam ediliyor... (${resumeFromIndex} kayıttan)`);
+            log.info("progctrl", `Resuming from FETCH_USERS checkpoint with ${checkpointData.collectedUsers?.length || 0} users collected, currentPage: ${checkpointData.currentPage}`);
+            
+            // Start with already collected users
+            userList = checkpointData.collectedUsers || [];
+            
+            if (params.source === 'BLOCKED_USERS') {
+              notificationHandler.notify(`Engellenen kullanıcılar getirilmeye devam ediliyor... (${userList.length} kullanıcı zaten alındı)`);
               
               const pauseCheckCallback = async () => {
                 const status = await checkPauseOrStop();
                 return status.paused || status.stopped;
+              };
+              
+              // Pass initialState to continue from where we left off
+              const initialState = {
+                scrapedUsers: userList,
+                currentPage: checkpointData.currentPage || 0,
+                totalCount: checkpointData.userCount || userList.length
               };
               
               const scrapeResult = await scrapingHandler.scrapeAllBlockedUsers(
                 (progress) => {
                   notificationHandler.notify('Engellenen kullanıcılar getiriliyor: ' + progress.currentCount + ' kullanıcı...');
                 },
-                resumeFromIndex,
-                pauseCheckCallback
+                null, // resumeFromIndex - deprecated, use initialState
+                pauseCheckCallback,
+                null, // checkpointCallback - not needed for resume
+                initialState
               );
               
-              if (resumableOperationRegistry.isPauseRequested()) {
-                await resumableOperationRegistry.checkpointReached({
-                  stage: 'FETCH_USERS',
-                  source: params.source,
-                  collectedUsers: [...(checkpointData.collectedUsers || []), ...(scrapeResult.usernames || [])],
-                  userCount: (checkpointData.userCount || 0) + (scrapeResult.usernames?.length || 0)
-                });
+              if (scrapeResult.paused) {
+                log.info("progctrl", "Date-based bulk action paused during blocked users fetch resume.");
                 this._dateBasedBulkInProgress = false;
                 return { success: true, paused: true };
               }
               
-              if (this.earlyStop) {
+              if (scrapeResult.stoppedEarly && !scrapeResult.paused) {
+                log.info("progctrl", "Date-based bulk action stopped during blocked users fetch resume.");
+                notificationHandler.finishErrorEarlyStop(enums.BanSource.DATE_BASED_BULK, enums.BanMode.BAN, processQueue.currentItemMetadata);
                 this._dateBasedBulkInProgress = false;
                 return { success: true, stopped: true };
               }
               
-              userList = [...(checkpointData.collectedUsers || []), ...(scrapeResult.usernames || [])];
+              if (!scrapeResult.success && !scrapeResult.usernames?.length) {
+                log.err("progctrl", 'Failed to fetch remaining blocked users: ' + scrapeResult.error);
+                notificationHandler.notify('Engellenen kullanıcılar getirilemedi: ' + (scrapeResult.error || 'Bilinmeyen hata'));
+                this._dateBasedBulkInProgress = false;
+                return { success: false, error: scrapeResult.error };
+              }
+              
+              userList = scrapeResult.usernames || userList;
               if (userList.length > 0) {
                 await storageHandler.saveBlockedUserList(userList);
                 await storageHandler.saveBlockedUserCount(userList.length);
               }
-            } else if (checkpointData.source === 'MUTED_USERS') {
-              // Continue fetching muted users from where we left off
-              const resumeFromIndex = checkpointData.userCount || 0;
-              notificationHandler.notify(`Sessize alınan kullanıcılar getirilmeye devam ediliyor... (${resumeFromIndex} kayıttan)`);
+            } else if (params.source === 'MUTED_USERS') {
+              notificationHandler.notify(`Sessize alınan kullanıcılar getirilmeye devam ediliyor... (${userList.length} kullanıcı zaten alındı)`);
               
               const pauseCheckCallback = async () => {
                 const status = await checkPauseOrStop();
                 return status.paused || status.stopped;
               };
               
+              // Pass initialState to continue from where we left off
+              const initialState = {
+                scrapedUsers: userList,
+                currentPage: checkpointData.currentPage || 0,
+                totalCount: checkpointData.userCount || userList.length
+              };
+              
               const scrapeResult = await scrapingHandler.scrapeAllMutedUsers(
                 (progress) => {
                   notificationHandler.notify('Sessize alınan kullanıcılar getiriliyor: Sayfa ' + progress.currentPage + ', ' + progress.currentCount + ' kullanıcı...');
                 },
-                resumeFromIndex,
-                pauseCheckCallback
+                null, // resumeFromIndex - deprecated, use initialState
+                pauseCheckCallback,
+                null, // checkpointCallback - not needed for resume
+                initialState
               );
               
-              if (resumableOperationRegistry.isPauseRequested()) {
-                await resumableOperationRegistry.checkpointReached({
-                  stage: 'FETCH_USERS',
-                  source: params.source,
-                  collectedUsers: [...(checkpointData.collectedUsers || []), ...(scrapeResult.usernames || [])],
-                  userCount: (checkpointData.userCount || 0) + (scrapeResult.usernames?.length || 0)
-                });
+              if (scrapeResult.paused) {
+                log.info("progctrl", "Date-based bulk action paused during muted users fetch resume.");
                 this._dateBasedBulkInProgress = false;
                 return { success: true, paused: true };
               }
               
-              if (this.earlyStop) {
+              if (scrapeResult.stoppedEarly && !scrapeResult.paused) {
+                log.info("progctrl", "Date-based bulk action stopped during muted users fetch resume.");
+                notificationHandler.finishErrorEarlyStop(enums.BanSource.DATE_BASED_BULK, enums.BanMode.BAN, processQueue.currentItemMetadata);
                 this._dateBasedBulkInProgress = false;
                 return { success: true, stopped: true };
               }
               
-              userList = [...(checkpointData.collectedUsers || []), ...(scrapeResult.usernames || [])];
+              if (!scrapeResult.success && !scrapeResult.usernames?.length) {
+                log.err("progctrl", 'Failed to fetch remaining muted users: ' + scrapeResult.error);
+                notificationHandler.notify('Sessize alınan kullanıcılar getirilemedi: ' + (scrapeResult.error || 'Bilinmeyen hata'));
+                this._dateBasedBulkInProgress = false;
+                return { success: false, error: scrapeResult.error };
+              }
+              
+              userList = scrapeResult.usernames || userList;
               if (userList.length > 0) {
                 await storageHandler.saveMutedUserList(userList);
                 await storageHandler.saveMutedUserCount(userList.length);
               }
-            } else {
+            } else if (params.source === 'AUTHOR_LIST') {
+              // Author list doesn't have incremental fetching, just use the collected users
               userList = checkpointData.collectedUsers || [];
             }
             break;
             
-          case 'FILTER_USERS':
           case 'FETCH_DATES':
-            // We have all users but need to continue fetching dates
+            // We have all users and need to continue fetching registration dates
             userList = checkpointData.userList || [];
-            startFromIndex = checkpointData.processedCount || 0;
-            log.info("progctrl", `Resuming from FILTER_USERS/FETCH_DATES checkpoint, starting from user ${startFromIndex}`);
+            log.info("progctrl", `Resuming from FETCH_DATES checkpoint with ${userList.length} users, fetchedCount: ${checkpointData.fetchedCount}`);
             break;
             
           case 'PERFORM_ACTIONS':
             // We have filtered users and need to continue performing actions
-            userList = checkpointData.matchingUsers || [];
-            startFromIndex = checkpointData.processedCount || 0;
-            log.info("progctrl", `Resuming from PERFORM_ACTIONS checkpoint, starting from user ${startFromIndex}`);
+            matchingUsers = checkpointData.matchingUsers || [];
+            successCount = checkpointData.successCount || 0;
+            failCount = checkpointData.failCount || 0;
+            userList = checkpointData.userList || [];
+            log.info("progctrl", `Resuming from PERFORM_ACTIONS checkpoint with ${matchingUsers.length} matching users, processedCount: ${checkpointData.processedCount}, successCount: ${successCount}`);
             break;
             
           default:
             // Unknown checkpoint, restart from beginning
-            log.warn("progctrl", `Unknown checkpoint stage: ${checkpointData.stage}, restarting from beginning`);
-            // Fall through to fetch users normally
+            log.warn("progctrl", `Unknown checkpoint stage: ${checkpointData.stage}, will fetch users from scratch`);
         }
       }
       
@@ -1548,7 +1775,7 @@ notificationHandler.notify(`${totalCount} adet başlıkları engellenen kullanı
         return { success: false, error: 'No users to process' };
       }
       
-      log.info("progctrl", `Resuming with ${userList.length} users, starting from index ${startFromIndex}`);
+      log.info("progctrl", `Resuming with ${userList.length} users`);
       
       // Now continue with the date filtering and action phase
       // Build user relations map
@@ -1581,7 +1808,7 @@ notificationHandler.notify(`${totalCount} adet başlıkları engellenen kullanı
             stage: 'FETCH_DATES',
             userList: userList,
             fetchedCount: i,
-            processedCount: startFromIndex
+            processedCount: 0
           });
           this._dateBasedBulkInProgress = false;
           return { success: true, paused: true };
@@ -1636,13 +1863,14 @@ notificationHandler.notify(`${totalCount} adet başlıkları engellenen kullanı
         action: 'MATCH'
       };
       
-      // Filter users based on date criteria
-      const matchingUsers = [];
-      for (const [username, userData] of userRelations) {
-        if (this.earlyStop) break;
-        
-        if (userData.registrationDate && utils.evaluateDateFilter(userData.registrationDate, filterRule)) {
-          matchingUsers.push(username);
+      // Filter users based on date criteria (only if not already restored from checkpoint)
+      if (matchingUsers.length === 0) {
+        for (const [username, userData] of userRelations) {
+          if (this.earlyStop) break;
+          
+          if (userData.registrationDate && utils.evaluateDateFilter(userData.registrationDate, filterRule)) {
+            matchingUsers.push(username);
+          }
         }
       }
       
@@ -1658,13 +1886,24 @@ notificationHandler.notify(`${totalCount} adet başlıkları engellenen kullanı
       notificationHandler.notify(`${matchingUsers.length} kullanıcı tarih kriterine uyuyor. İşlem devam ediyor...`);
       
       // Perform the bulk action on matching users
-      let successCount = checkpointData?.successCount || 0;
-      let failCount = checkpointData?.failCount || 0;
+      // Use already restored successCount/failCount from checkpoint, or start from 0
       const resumeIndex = checkpointData?.stage === 'PERFORM_ACTIONS' ? (checkpointData.processedCount || 0) : 0;
       
       for (let i = resumeIndex; i < matchingUsers.length; i++) {
         // Check for pause/stop request
         const status = await checkPauseOrStop();
+        if (status.paused) {
+          // Save checkpoint for resume
+          await resumableOperationRegistry.checkpointReached({
+            stage: 'PERFORM_ACTIONS',
+            matchingUsers: matchingUsers,
+            processedCount: i,
+            successCount: successCount,
+            failCount: failCount
+          });
+          return;
+        }
+
         if (status.stopped || this.earlyStop) {
           log.info("progctrl", "Date-based bulk action stopped early by user during resume.");
           notificationHandler.notify(`İşlem erken durduruldu. İşlenen: ${i}/${matchingUsers.length}`);
