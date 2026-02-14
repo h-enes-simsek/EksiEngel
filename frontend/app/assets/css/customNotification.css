@@ -1952,6 +1952,8 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
     margin-bottom: 12px;
     padding-bottom: 8px;
     border-bottom: 1px solid var(--border-color);
@@ -1965,6 +1967,7 @@ body {
     display: flex;
     align-items: center;
     gap: 6px;
+    flex: 1;
 }
 
 .sub-section-description {
