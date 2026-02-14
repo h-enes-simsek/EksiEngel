@@ -7,7 +7,7 @@ The project "EksiEngelPlus" is a Chrome browser extension designed to facilitate
 *   **Frontend (Chrome Extension - Manifest V3):**
     *   **Main UI Components:**
         *   **Popup Interface (`popup.html`/`popup.js`)** - Main extension configuration menu with settings for various blocking options
-        *   **Notification Page (`notification.html`/`notification.js`)** - Dedicated status tracking page showing real-time progress, queue status, and operation results
+        *   **Notification Page (`notification.html`/`notification.js`)** - Compact single-page interface showing real-time progress, queue status, and operation results with collapsible sections
         *   **Content Script (`script.js`)** - Injects blocking buttons and menus directly into Ekşi Sözlük pages using MutationObserver for dynamic content handling
         *   **Background Service Worker (`background.js`)** - Central orchestrator managing all blocking operations, queue processing, and coordination
     *   **Core Processing Modules:**

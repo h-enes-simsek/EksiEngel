@@ -1330,10 +1330,10 @@ function setupCollapsibleQueue() {
   const queueContent = document.getElementById('queueContent');
   
   if (queueToggle && queueContent) {
-    const isCollapsed = localStorage.getItem('queueCollapsed') === 'true';
-    if (isCollapsed) {
-      queueToggle.classList.add('collapsed');
-      queueContent.classList.add('collapsed');
+    const savedState = localStorage.getItem('queueCollapsed');
+    if (savedState === 'false') {
+      queueToggle.classList.remove('collapsed');
+      queueContent.classList.remove('collapsed');
     }
     
     queueToggle.addEventListener('click', () => {

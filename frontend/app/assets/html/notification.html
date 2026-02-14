@@ -12,32 +12,33 @@
 <body>
 
 <div class="container">
-  <!-- Header Section -->
+  <!-- Header Section - DO NOT MODIFY -->
   <header class="main-header">
     <div class="header-content">
       <div class="header-text">
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 4px;">
-          <img src="../img/eksiengel128.png" style="height: 32px; width: 32px; border: 2px solid rgba(255,255,255,0.8); border-radius: 4px; background: rgba(255,255,255,0.1);">
-          <h1 style="margin: 0;">EksiEngel Plus</h1>
+        <div class="logo-section">
+          <img src="../img/eksiengel128.png" style="height: 24px; width: 24px; border: 2px solid rgba(255,255,255,0.8); border-radius: 4px; background: rgba(255,255,255,0.1);">
+          <h1>EksiEngel Plus</h1>
+          <span class="subtitle">· Ekşi Sözlük Toplu İşlem Yöneticisi</span>
         </div>
-        <p class="subtitle">Ekşi Sözlük Toplu İşlem Yöneticisi</p>
       </div>
       <div class="header-actions">
-        <button id="openFaq" class="btn-green-candy">
-          Yardım - Ayarlar ve destek
+        <button id="openFaq" class="help-btn-compact">
+          <span class="btn-icon">❓</span>
+          <span class="btn-text">Yardım - Ayarlar</span>
         </button>
       </div>
     </div>
   </header>
 
-  <!-- Status Card Section -->
+  <!-- Status Card Section - Ultra Compact -->
   <section class="card status-card">
     <div class="card-header">
-      <h2>📊 İşlem Durumu</h2>
+      <h2>📊 Durum</h2>
       <div class="status-indicator" id="statusIndicator">
         <span class="indicator-dot" id="statusDot"></span>
         <span id="statusText">Beklemede.</span>
-        <div id="cooldownTimer" style="display: none; color: #ff6b35; font-weight: bold; margin-left: 10px;">
+        <div id="cooldownTimer" style="display: none; color: #ff6b35; font-weight: bold; margin-left: 6px;">
           <span id="remainingTimeInSec"></span>
         </div>
       </div>
@@ -53,33 +54,12 @@
       <p id="progressText" class="progress-detail"></p>
     </div>
 
-      <div class="stat-item">
-        <div class="stat-icon">📝</div>
-        <div class="stat-content">
-          <div class="stat-label">Açıklama</div>
-          <div class="stat-value" id="currentOperationDescription">-</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-icon">⚡</div>
-        <div class="stat-content">
-          <div class="stat-label">İşlenen</div>
-          <div class="stat-value" id="performedAction">0</div>
-        </div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-icon">✅</div>
-        <div class="stat-content">
-          <div class="stat-label">Başarılı</div>
-          <div class="stat-value" id="successfulAction">0</div>
-        </div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-icon">⏱️</div>
-        <div class="stat-content">
-          <div class="stat-label">Kalan</div>
-          <div class="stat-value" id="remainingAction">0</div>
-        </div>
-      </div>
+    <!-- Ultra Compact Stats Row -->
+    <div class="status-stats-row">
+      <span class="stat-mini" title="İşlenen">⚡<b id="performedAction">0</b></span>
+      <span class="stat-mini" title="Başarılı">✅<b id="successfulAction">0</b></span>
+      <span class="stat-mini" title="Kalan">⏱️<b id="remainingAction">0</b></span>
+      <span id="currentOperationDescription" class="op-desc" style="display: none;">-</span>
     </div>
 
     <div class="error-section" id="errorSection" style="display: none;">
@@ -90,347 +70,258 @@
     </div>
 
     <div class="action-section" id="universalControls">
-      <button id="btnPauseOperation" class="btn btn-warning" title="İşlemi duraklat">
-        <span class="btn-icon">⏸️</span>
-        <span class="btn-text">Duraklat</span>
-      </button>
-      <button id="btnResumeOperation" class="btn btn-success" title="İşlemi devam ettir">
-        <span class="btn-icon">▶️</span>
-        <span class="btn-text">Devam Et</span>
-      </button>
-      <button id="earlyStop" class="btn btn-danger">
-        <span class="btn-icon">🛑</span>
-        <span class="btn-text">Erken Durdur</span>
-      </button>
+      <button id="btnPauseOperation" class="btn btn-warning btn-tiny" title="Duraklat">⏸️</button>
+      <button id="btnResumeOperation" class="btn btn-success btn-tiny" title="Devam Et">▶️</button>
+      <button id="earlyStop" class="btn btn-danger btn-tiny" title="Durdur">🛑</button>
+      <button id="openauthorListPage" class="btn btn-primary btn-tiny">📝 Yazar Listesi</button>
     </div>
     
-    <div class="operation-status-display" id="operationStatusDisplay" style="display: none; margin-top: 10px; padding: 8px; background: rgba(0,0,0,0.05); border-radius: 6px;">
-      <span id="currentOperationType" style="font-weight: 600;">-</span>
-      <span id="currentOperationState" style="color: #666; margin-left: 10px;">-</span>
+    <div class="operation-status-display" id="operationStatusDisplay" style="display: none;">
+      <span id="currentOperationType">-</span>
+      <span id="currentOperationState">-</span>
     </div>
   </section>
 
-  <!-- Statistics Section -->
+  <!-- Statistics Section - Ultra Compact -->
   <section class="card stats-section-card">
     <div class="card-header">
-      <h2>📊 Listeler <span class="inline-description">Mevcut liste durumları ve dışa aktarma</span></h2>
+      <h2>📊 Listeler</h2>
     </div>
     
     <div class="stats-cards">
       <div class="stats-card">
         <div class="stats-card-header">
-          <h3>🔇 Sessiz Kullanıcılar</h3>
-          <span class="count-badge" id="mutedUserCount">Yükleniyor...</span>
+          <h3>🔇 Sessiz</h3>
+          <span class="count-badge" id="mutedUserCount">...</span>
         </div>
         <div class="stats-card-actions">
-          <button id="refreshMutedList" class="stats-btn">Yenile</button>
-          <button id="exportMutedListCSV" class="stats-btn" disabled>Listeyi CSV olarak kaydet</button>
+          <button id="refreshMutedList" class="stats-btn">Y</button>
+          <button id="exportMutedListCSV" class="stats-btn" disabled>C</button>
         </div>
       </div>
       
       <div class="stats-card">
         <div class="stats-card-header">
-          <h3>🚫 Engellenmiş Kullanıcılar</h3>
-          <span class="count-badge" id="blockedUserCount">Yükleniyor...</span>
+          <h3>🚫 Engellenen</h3>
+          <span class="count-badge" id="blockedUserCount">...</span>
         </div>
         <div class="stats-card-actions">
-          <button id="refreshBlockedList" class="stats-btn">Yenile</button>
-          <button id="exportBlockedListCSV" class="stats-btn" disabled>Listeyi CSV olarak kaydet</button>
+          <button id="refreshBlockedList" class="stats-btn">Y</button>
+          <button id="exportBlockedListCSV" class="stats-btn" disabled>C</button>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Actions Section -->
-  <section class="card actions-card">
-    <div class="card-header">
-      <h2>🎯 Engelleme ve Sessize Alma <span class="inline-description">Temel engelleme ve yönetim işlemleri</span></h2>
-    </div>
-    
-    <div class="actions-grid">
-      <button id="openauthorListPage" class="btn-green-candy">
-        Yazar Listesi Yönetimi - Listeden toplu engelleme/engeli kaldırma
-      </button>
-    </div>
-  </section>
-
-  <!-- Date-Based Operations Section - Combined -->
+  <!-- Date-Based Operations Section - Ultra Compact -->
   <section class="card tarih-card" id="dateOperationsSection">
     <div class="card-header">
-      <h2>📅 Tarih Bazlı İşlemler <span class="inline-description">Kayıt tarihine göre filtreleme ve toplu işlemler</span></h2>
+      <h2>📅 Tarih İşlemleri</h2>
       <div class="toggle-container">
         <label class="switch-large">
           <input type="checkbox" id="dateFilterMasterToggle">
           <span class="slider-large"></span>
         </label>
-        <span id="dateFilterMasterStatus" class="toggle-status">Devre dışı</span>
+        <span id="dateFilterMasterStatus" class="toggle-status">Kapalı</span>
       </div>
     </div>
     
-    <p class="card-description">
-      Kayıt tarihine göre iki farklı işlem yapabilirsiniz:
-    </p>
-    <ul class="card-description-list">
-      <li><strong>Filtre Kuralları:</strong> Engelleme işlemleri sırasında belirli tarih kriterlerine uyan hesapları otomatik engelleyin.</li>
-      <li><strong>Toplu İşlem:</strong> Mevcut listenizdeki (engelli/sessiz) kullanıcıları tarih kriterine göre toplu işleme tabi tutun.</li>
-    </ul>
+    <div class="card-desc-inline">Filtre: engellerken tarih kriteri uygula • Toplu: listedekileri tarihle işle</div>
     
     <div class="date-operations-content collapsible-content" id="dateOperationsContent" style="display: none;">
       
       <div class="sub-section" id="dateFilterRulesSection">
         <div class="sub-section-header">
           <h3>🎯 Filtre Kuralları</h3>
-          <small class="sub-section-help">Favori, takipçi veya başlık engeli sırasında bu kurallar uygulanır.</small>
-          <span class="rules-count" id="rulesCount">0 kural</span>
+          <span class="rules-count" id="rulesCount">0</span>
         </div>
         <div class="rules-list" id="rulesList"></div>
         <div class="rules-actions">
-          <button id="addNewRuleBtn" class="btn btn-primary">
-            <span class="btn-icon">➕</span>
-            Yeni Kural Ekle
-          </button>
+          <button id="addNewRuleBtn" class="btn btn-primary btn-tiny">+ Kural</button>
         </div>
       </div>
       
       <div class="sub-section rule-form-section" id="ruleFormSection" style="display: none;">
         <div class="sub-section-header">
-          <h3 id="ruleFormTitle">📝 Yeni Kural Ekle</h3>
+          <h3 id="ruleFormTitle">📝 Yeni Kural</h3>
         </div>
         <div class="form-content">
-          <div class="form-group">
-            <label for="ruleCriteria">Kriter:</label>
-            <select id="ruleCriteria" class="form-select">
-              <option value="NEWER_THAN">Hesap yaşı küçüktür (yeni hesaplar)</option>
-              <option value="OLDER_THAN">Hesap yaşı büyüktür (eski hesaplar)</option>
-              <option value="BEFORE_DATE">Kayıt tarihinden önce</option>
-              <option value="AFTER_DATE">Kayıt tarihinden sonra</option>
-            </select>
-          </div>
-
-          <div class="form-group" id="daysValueGroup">
-            <label for="ruleValueDays">Değer:</label>
-            <div class="input-with-unit">
-              <input type="number" id="ruleValueDays" class="form-input" min="1" value="3650">
-              <select id="ruleUnit" class="form-select unit-select">
-                <option value="days">gün</option>
-                <option value="months">ay</option>
-                <option value="years">yıl</option>
+          <div class="form-row-compact">
+            <label>Kriter:
+              <select id="ruleCriteria" class="form-select">
+                <option value="NEWER_THAN">Yaş küçüktür</option>
+                <option value="OLDER_THAN">Yaş büyüktür</option>
+                <option value="BEFORE_DATE">Tarihten önce</option>
+                <option value="AFTER_DATE">Tarihten sonra</option>
               </select>
-            </div>
+            </label>
+            <label id="daysValueGroup">Değer:
+              <span class="input-group">
+                <input type="number" id="ruleValueDays" class="form-input" min="1" value="3650">
+                <select id="ruleUnit" class="form-select unit-select">
+                  <option value="days">gün</option>
+                  <option value="months">ay</option>
+                  <option value="years">yıl</option>
+                </select>
+              </span>
+            </label>
           </div>
 
           <div class="form-group" id="dateValueGroup" style="display: none;">
-            <label for="ruleValueDate">Tarih:</label>
-            <input type="date" id="ruleValueDate" class="form-input">
+            <label>Tarih: <input type="date" id="ruleValueDate" class="form-input"></label>
           </div>
 
           <input type="hidden" id="ruleAction" value="ENGELLE">
-
-          <div class="form-group">
-            <label for="ruleDescription">Açıklama (opsiyonel):</label>
-            <input type="text" id="ruleDescription" class="form-input" placeholder="Örn: 10 yıldan yeni hesaplar">
-          </div>
-
           <input type="hidden" id="ruleId">
           <input type="hidden" id="ruleIsDefault" value="false">
 
+          <div class="form-group">
+            <label>Açıklama: <input type="text" id="ruleDescription" class="form-input" placeholder="Opsiyonel"></label>
+          </div>
+
           <div class="form-actions">
-            <button id="saveRuleBtn" class="btn btn-success">Kuralı Kaydet</button>
-            <button id="cancelRuleBtn" class="btn btn-secondary">İptal</button>
+            <button id="saveRuleBtn" class="btn btn-success btn-tiny">Kaydet</button>
+            <button id="cancelRuleBtn" class="btn btn-secondary btn-tiny">İptal</button>
           </div>
         </div>
       </div>
       
       <div class="sub-section">
         <div class="sub-section-header">
-          <h3>🚀 Tarih Bazlı Toplu İşlem</h3>
-          <small class="sub-section-help">Mevcut listenizdeki kullanıcıları tarih kriterine göre seçip işlem yapın.</small>
+          <h3>🚀 Toplu İşlem</h3>
         </div>
-        <p class="sub-section-description">
-          Varsayılan: 10 yıldan eski sessiz kullanıcıları sessizden çıkarır.
-        </p>
         <div class="bulk-action-form">
-          <div class="form-group">
-            <label for="bulkSource">Kaynak Liste:</label>
-            <select id="bulkSource" class="form-select">
-              <option value="BLOCKED_USERS">🚫 Engellenen Kullanıcılar</option>
-              <option value="MUTED_USERS" selected>🔇 Sessiz Kullanıcılar</option>
-              <option value="AUTHOR_LIST">📝 Yazar Listesi</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="bulkCriteria">Tarih Kriteri:</label>
-            <select id="bulkCriteria" class="form-select">
-              <option value="NEWER_THAN">Hesap yaşı küçüktür (yeni hesaplar)</option>
-              <option value="OLDER_THAN" selected>Hesap yaşı büyüktür (eski hesaplar)</option>
-              <option value="BEFORE_DATE">Kayıt tarihinden önce</option>
-              <option value="AFTER_DATE">Kayıt tarihinden sonra</option>
-            </select>
-          </div>
-
-          <div class="form-group" id="bulkDaysValueGroup">
-            <label for="bulkValueDays">Değer:</label>
-            <div class="input-with-unit">
-              <input type="number" id="bulkValueDays" class="form-input" min="1" value="3650">
-              <select id="bulkUnit" class="form-select unit-select">
-                <option value="days">gün</option>
-                <option value="months">ay</option>
-                <option value="years">yıl</option>
+          <div class="form-row-compact">
+            <label>Kaynak:
+              <select id="bulkSource" class="form-select">
+                <option value="BLOCKED_USERS">🚫 Engellenenler</option>
+                <option value="MUTED_USERS" selected>🔇 Sessizler</option>
+                <option value="AUTHOR_LIST">📝 Yazar Listesi</option>
               </select>
-            </div>
+            </label>
+            <label>Kriter:
+              <select id="bulkCriteria" class="form-select">
+                <option value="NEWER_THAN">Yaş küçüktür</option>
+                <option value="OLDER_THAN" selected>Yaş büyüktür</option>
+                <option value="BEFORE_DATE">Tarihten önce</option>
+                <option value="AFTER_DATE">Tarihten sonra</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="form-row-compact">
+            <label id="bulkDaysValueGroup">Değer:
+              <span class="input-group">
+                <input type="number" id="bulkValueDays" class="form-input" min="1" value="3650">
+                <select id="bulkUnit" class="form-select unit-select">
+                  <option value="days">gün</option>
+                  <option value="months">ay</option>
+                  <option value="years">yıl</option>
+                </select>
+              </span>
+            </label>
+            <label>Eylem:
+              <select id="bulkAction" class="form-select">
+                <option value="ENGELLE">🚫 Engelle</option>
+                <option value="SESSIZE_AL">🔇 Sessize Al</option>
+                <option value="ENGEL_KALDIR">🔓 Engel Kaldır</option>
+                <option value="SESSIZDEN_CIKAR" selected>🔊 Sessizden Çıkar</option>
+                <option value="TAKIP_ET">➕ Takip Et</option>
+              </select>
+            </label>
           </div>
 
           <div class="form-group" id="bulkDateValueGroup" style="display: none;">
-            <label for="bulkValueDate">Tarih:</label>
-            <input type="date" id="bulkValueDate" class="form-input">
-          </div>
-
-          <div class="form-group">
-            <label for="bulkAction">Yapılacak İşlem:</label>
-            <select id="bulkAction" class="form-select">
-              <option value="ENGELLE">🚫 Engelle</option>
-              <option value="SESSIZE_AL">🔇 Sessize Al</option>
-              <option value="ENGEL_KALDIR">🔓 Engel Kaldır</option>
-              <option value="SESSIZDEN_CIKAR" selected>🔊 Sessizden Çıkar</option>
-              <option value="TAKIP_ET">➕ Takip Et</option>
-            </select>
+            <label>Tarih: <input type="date" id="bulkValueDate" class="form-input"></label>
           </div>
 
           <div class="bulk-action-buttons">
-            <button id="startBulkActionBtn" class="btn btn-success">
-              <span class="btn-icon">🚀</span>
-              İşlemi Başlat
-            </button>
+            <button id="startBulkActionBtn" class="btn btn-success btn-tiny">🚀 Başlat</button>
           </div>
         </div>
       </div>
       
       <div class="sub-section" id="dateFilterCacheSection">
         <div class="sub-section-header">
-          <h3>💾 Önbellek Bilgisi</h3>
+          <h3>💾 Önbellek</h3>
+          <button id="clearCacheBtn" class="btn btn-danger btn-tiny">🗑️</button>
         </div>
-        <div class="cache-info">
-          <div class="cache-stats">
-            <div class="cache-stat">
-              <span class="cache-label">Toplam kayıt:</span>
-              <span class="cache-value" id="cacheTotalCount">0</span>
-            </div>
-            <div class="cache-stat">
-              <span class="cache-label">Geçerli kayıt:</span>
-              <span class="cache-value" id="cacheValidCount">0</span>
-            </div>
-            <div class="cache-stat">
-              <span class="cache-label">Süresi dolmuş:</span>
-              <span class="cache-value" id="cacheExpiredCount">0</span>
-            </div>
-          </div>
-          <div class="cache-actions">
-            <button id="clearCacheBtn" class="btn btn-danger btn-small">
-              <span class="btn-icon">🗑️</span>
-              Önbelleği Temizle
-            </button>
-          </div>
+        <div class="cache-stats-inline">
+          <span class="cache-mini">Toplam: <b id="cacheTotalCount">0</b></span>
+          <span class="cache-mini">Geçerli: <b id="cacheValidCount">0</b></span>
+          <span class="cache-mini">Süresi Dolmuş: <b id="cacheExpiredCount">0</b></span>
         </div>
       </div>
       
     </div>
   </section>
 
-  <!-- Migration Section -->
-  <section class="card migration-card">
+  <!-- İşlemler Section - Ultra Compact -->
+  <section class="card islemler-card">
     <div class="card-header">
-      <h2>🔄 Ek İşlemler <span class="inline-description">Ek taşıma ve dönüştürme işlemleri</span></h2>
+      <h2>⚡ İşlemler</h2>
     </div>
     
-    <div class="actions-grid">
-      <button id="migrateBlockedToMuted" class="btn-green-candy">
-        Engelli kullanıcıları sessize al
-      </button>
-      
-      <button id="btnBlockMutedUsers" class="btn-green-candy">
-        Sessiz kullanıcıları engelle
-      </button>
-      
-      <button id="btnBlockTitlesOfBlockedMuted" class="btn-green-candy">
-        Engellilerin başlıklarını da engelle
-      </button>
-      
-      <button id="migrateBlockedTitlesToUnblocked" class="btn-green-candy">
-        Engellenen başlıkları kaldır
-      </button>
-    </div>
-  </section>
-
-  <!-- Unblock All Section -->
-  <section class="card unblock-all-card">
-    <div class="card-header">
-      <h2>🔓 Tüm Engelleri Kaldır <span class="inline-description">Toplu temizleme işlemleri</span></h2>
-    </div>
-    
-    <div class="actions-grid">
-      <button id="startUndobanAll" class="btn-green-candy">
-        Tüm Engelleri Kaldır - Mevcut tüm engelleri temizle
-      </button>
-      
-      <button id="startUnmuteAll" class="btn-green-candy">
-        Tüm Sessizleri Kaldır - Mevcut tüm sessizleri temizle
-      </button>
+    <div class="islemler-grid">
+      <button id="migrateBlockedToMuted" class="btn-green-candy">Engelli → Sessiz</button>
+      <button id="btnBlockMutedUsers" class="btn-green-candy">Sessiz → Engelli</button>
+      <button id="btnBlockTitlesOfBlockedMuted" class="btn-green-candy">Engellilerin Başlıkları</button>
+      <button id="migrateBlockedTitlesToUnblocked" class="btn-green-candy">Engelli Başlıkları Kaldır</button>
+      <button id="startUndobanAll" class="btn-green-candy">Tüm Engelleri Kaldır</button>
+      <button id="startUnmuteAll" class="btn-green-candy">Tüm Sessizleri Kaldır</button>
     </div>
   </section>
 
   <!-- Status Messages -->
   <div id="buttonStatus" class="status-message"></div>
 
-  <!-- Queue Section -->
+  <!-- Queue Section - Default Collapsed -->
   <section class="card queue-card" id="queueSection">
-    <div class="card-header collapsible-header" id="queueToggle">
-      <h2>📋 İşlem Geçmişi <span class="inline-description">Planlanan ve tamamlanan işlemler</span></h2>
+    <div class="card-header collapsible-header collapsed" id="queueToggle">
+      <h2>📋 İşlem Geçmişi</h2>
       <span class="collapse-icon">▼</span>
       <span class="table-badge" id="totalQueueCount">0</span>
     </div>
-    <div class="tables-container collapsible-content" id="queueContent">
+    <div class="tables-container collapsible-content collapsed" id="queueContent">
       <div class="table-section">
         <div class="table-header">
-          <h3>⏳ Sıradaki İşlemler</h3>
+          <h3>⏳ Sıradaki</h3>
           <span class="table-badge" id="plannedCount">0</span>
         </div>
         <div class="table-wrapper">
           <table id="plannedProcesses" class="modern-table">
             <thead>
               <tr>
-                <th>⏰ Saat</th>
-                <th>📂 Kaynak</th>
-                <th>📝 Açıklama</th>
-                <th>🎯 Hedef</th>
-                <th>📊 Durum</th>
+                <th>⏰</th>
+                <th>📂</th>
+                <th>📝</th>
+                <th>🎯</th>
+                <th>📊</th>
               </tr>
             </thead>
-            <tbody>
-            </tbody>
+            <tbody></tbody>
           </table>
         </div>
       </div>
 
       <div class="table-section">
         <div class="table-header">
-          <h3>✅ Tamamlanan İşlemler</h3>
+          <h3>✅ Tamamlanan</h3>
           <span class="table-badge" id="completedCount">0</span>
         </div>
         <div class="table-wrapper">
           <table id="completedProcesses" class="modern-table">
             <thead>
               <tr>
-                <th>⏰ Saat</th>
-                <th>📂 Kaynak</th>
-                <th>📝 Açıklama</th>
-                <th>⚡ İşlenen</th>
-                <th>✅ Başarılı</th>
-                <th>📊 Durum</th>
+                <th>⏰</th>
+                <th>📂</th>
+                <th>📝</th>
+                <th>⚡</th>
+                <th>✅</th>
+                <th>📊</th>
               </tr>
             </thead>
-            <tbody>
-            </tbody>
+            <tbody></tbody>
           </table>
         </div>
       </div>
