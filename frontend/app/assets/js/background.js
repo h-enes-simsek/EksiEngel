@@ -615,15 +615,10 @@ function applyDateFiltersToRelations(relations) {
  * @param {Object} filterResults - Results from applyDateFiltersToRelations
  */
 function logDateFilterResults(filterResults) {
-  const total = filterResults.block.length + filterResults.protect.length + filterResults.unknown.length;
+  const total = filterResults.block.length + filterResults.unknown.length;
   
   log.info("bg", `Date filtering complete: ${filterResults.block.length} to block, ` +
-           `${filterResults.protect.length} protected, ` +
            `${filterResults.unknown.length} unknown (total: ${total})`);
-  
-  if (filterResults.protect.length > 0) {
-    notificationHandler.notify(`${filterResults.protect.length} kullanıcı tarih filtresi nedeniyle korundu`);
-  }
   
   if (filterResults.unknown.length > 0) {
     notificationHandler.notify(`${filterResults.unknown.length} kullanıcının kayıt tarihi bilinmiyor`);
@@ -1032,6 +1027,10 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
       }
       await storageHandler.saveBlockedUserList([]);
       await storageHandler.saveBlockedUserCount(0);
+  } else if (banSource === enums.BanSource.UNMUTEALL && banMode === enums.BanMode.UNDOBAN) {
+      log.info("bg", "Handling UNMUTEALL request.");
+      console.log("background.js: Starting unMuteAll operation");
+      await programController.startUnmuteAll();
   }
 
   let successfulAction = relationHandler.successfulAction;

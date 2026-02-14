@@ -5,7 +5,7 @@
   <title>EksiEngelPlus Bildirim</title>
   <link rel="stylesheet" href="../css/buttons.css">
   <link rel="stylesheet" href="../css/footer.css">
-  <link rel="stylesheet" href="../css/customNotification.css"> <!-- New CSS file for notification page specific styles -->
+  <link rel="stylesheet" href="../css/customNotification.css">
   <script type="module" src="../js/notification.js"></script>
   <script type="module" src="../js/notificationHandler.js"></script>
 </head>
@@ -29,21 +29,6 @@
       </div>
     </div>
   </header>
-
-  <!-- Tab Navigation -->
-  <nav class="tab-navigation">
-    <button class="tab-button active" data-tab="operations-tab">
-      <span class="tab-icon">⚙️</span>
-      İşlemler
-    </button>
-    <button class="tab-button" data-tab="datefilter-tab">
-      <span class="tab-icon">📅</span>
-      Tarih Filtresi
-    </button>
-  </nav>
-
-  <!-- Tab Content: Operations -->
-  <div id="operations-tab" class="tab-content active">
 
   <!-- Status Card Section -->
   <section class="card status-card">
@@ -125,48 +110,6 @@
     </div>
   </section>
 
-  <!-- Actions Section -->
-  <section class="card actions-card">
-    <div class="card-header">
-      <h2>🎯 Ana İşlemler <span class="inline-description">Temel engelleme ve yönetim işlemleri</span></h2>
-    </div>
-    
-    <div class="actions-grid">
-      <button id="openauthorListPage" class="btn-green-candy">
-        Yazar Listesi Yönetimi - Listeden toplu engelleme/engeli kaldırma
-      </button>
-      
-      <button id="startUndobanAll" class="btn-green-candy">
-        Tüm Engelleri Kaldır - Mevcut tüm engelleri temizle
-      </button>
-    </div>
-  </section>
-
-  <!-- Migration Section -->
-  <section class="card migration-card">
-    <div class="card-header">
-      <h2>🔄 Taşıma İşlemleri <span class="inline-description">Deneysel özellikler - dikkatli kullanın</span> <span class="experimental-badge">Beta</span></h2>
-    </div>
-    
-    <div class="actions-grid">
-      <button id="migrateBlockedToMuted" class="btn-green-candy">
-        Engelli kullanıcıları sessize al
-      </button>
-      
-      <button id="btnBlockMutedUsers" class="btn-green-candy">
-        Sessiz kullanıcıları engelle
-      </button>
-      
-      <button id="btnBlockTitlesOfBlockedMuted" class="btn-green-candy">
-        Engellilerin başlıklarını da engelle
-      </button>
-      
-      <button id="migrateBlockedTitlesToUnblocked" class="btn-green-candy">
-        Engellenen başlıkları kaldır
-      </button>
-    </div>
-  </section>
-
   <!-- Statistics Section -->
   <section class="card stats-section-card">
     <div class="card-header">
@@ -198,16 +141,255 @@
     </div>
   </section>
 
+  <!-- Actions Section -->
+  <section class="card actions-card">
+    <div class="card-header">
+      <h2>🎯 Engelleme ve Sessize Alma <span class="inline-description">Temel engelleme ve yönetim işlemleri</span></h2>
+    </div>
+    
+    <div class="actions-grid">
+      <button id="openauthorListPage" class="btn-green-candy">
+        Yazar Listesi Yönetimi - Listeden toplu engelleme/engeli kaldırma
+      </button>
+    </div>
+  </section>
+
+  <!-- Date-Based Operations Section - Combined -->
+  <section class="card tarih-card" id="dateOperationsSection">
+    <div class="card-header">
+      <h2>📅 Tarih Bazlı İşlemler <span class="inline-description">Kayıt tarihine göre filtreleme ve toplu işlemler</span></h2>
+      <div class="toggle-container">
+        <label class="switch-large">
+          <input type="checkbox" id="dateFilterMasterToggle">
+          <span class="slider-large"></span>
+        </label>
+        <span id="dateFilterMasterStatus" class="toggle-status">Devre dışı</span>
+      </div>
+    </div>
+    
+    <p class="card-description">
+      Kayıt tarihine göre iki farklı işlem yapabilirsiniz:
+    </p>
+    <ul class="card-description-list">
+      <li><strong>Filtre Kuralları:</strong> Engelleme işlemleri sırasında belirli tarih kriterlerine uyan hesapları otomatik engelleyin.</li>
+      <li><strong>Toplu İşlem:</strong> Mevcut listenizdeki (engelli/sessiz) kullanıcıları tarih kriterine göre toplu işleme tabi tutun.</li>
+    </ul>
+    
+    <div class="date-operations-content collapsible-content" id="dateOperationsContent" style="display: none;">
+      
+      <div class="sub-section" id="dateFilterRulesSection">
+        <div class="sub-section-header">
+          <h3>🎯 Filtre Kuralları</h3>
+          <small class="sub-section-help">Favori, takipçi veya başlık engeli sırasında bu kurallar uygulanır.</small>
+          <span class="rules-count" id="rulesCount">0 kural</span>
+        </div>
+        <div class="rules-list" id="rulesList"></div>
+        <div class="rules-actions">
+          <button id="addNewRuleBtn" class="btn btn-primary">
+            <span class="btn-icon">➕</span>
+            Yeni Kural Ekle
+          </button>
+        </div>
+      </div>
+      
+      <div class="sub-section rule-form-section" id="ruleFormSection" style="display: none;">
+        <div class="sub-section-header">
+          <h3 id="ruleFormTitle">📝 Yeni Kural Ekle</h3>
+        </div>
+        <div class="form-content">
+          <div class="form-group">
+            <label for="ruleCriteria">Kriter:</label>
+            <select id="ruleCriteria" class="form-select">
+              <option value="NEWER_THAN">Hesap yaşı küçüktür (yeni hesaplar)</option>
+              <option value="OLDER_THAN">Hesap yaşı büyüktür (eski hesaplar)</option>
+              <option value="BEFORE_DATE">Kayıt tarihinden önce</option>
+              <option value="AFTER_DATE">Kayıt tarihinden sonra</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="daysValueGroup">
+            <label for="ruleValueDays">Değer:</label>
+            <div class="input-with-unit">
+              <input type="number" id="ruleValueDays" class="form-input" min="1" value="30">
+              <select id="ruleUnit" class="form-select unit-select">
+                <option value="days">gün</option>
+                <option value="months">ay</option>
+                <option value="years">yıl</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group" id="dateValueGroup" style="display: none;">
+            <label for="ruleValueDate">Tarih:</label>
+            <input type="date" id="ruleValueDate" class="form-input">
+          </div>
+
+          <input type="hidden" id="ruleAction" value="ENGELLE">
+
+          <div class="form-group">
+            <label for="ruleDescription">Açıklama (opsiyonel):</label>
+            <input type="text" id="ruleDescription" class="form-input" placeholder="Örn: 10 yıldan yeni hesaplar">
+          </div>
+
+          <input type="hidden" id="ruleId">
+          <input type="hidden" id="ruleIsDefault" value="false">
+
+          <div class="form-actions">
+            <button id="saveRuleBtn" class="btn btn-success">Kuralı Kaydet</button>
+            <button id="cancelRuleBtn" class="btn btn-secondary">İptal</button>
+          </div>
+        </div>
+      </div>
+      
+      <div class="sub-section" id="dateFilterCacheSection">
+        <div class="sub-section-header">
+          <h3>💾 Önbellek Bilgisi</h3>
+        </div>
+        <div class="cache-info">
+          <div class="cache-stats">
+            <div class="cache-stat">
+              <span class="cache-label">Toplam kayıt:</span>
+              <span class="cache-value" id="cacheTotalCount">0</span>
+            </div>
+            <div class="cache-stat">
+              <span class="cache-label">Geçerli kayıt:</span>
+              <span class="cache-value" id="cacheValidCount">0</span>
+            </div>
+            <div class="cache-stat">
+              <span class="cache-label">Süresi dolmuş:</span>
+              <span class="cache-value" id="cacheExpiredCount">0</span>
+            </div>
+          </div>
+          <div class="cache-actions">
+            <button id="clearCacheBtn" class="btn btn-danger btn-small">
+              <span class="btn-icon">🗑️</span>
+              Önbelleği Temizle
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <div class="sub-section">
+        <div class="sub-section-header">
+          <h3>🚀 Tarih Bazlı Toplu İşlem</h3>
+          <small class="sub-section-help">Mevcut listenizdeki kullanıcıları tarih kriterine göre seçip işlem yapın.</small>
+        </div>
+        <p class="sub-section-description">
+          Varsayılan: 10 yıldan eski sessiz kullanıcıları sessizden çıkarır.
+        </p>
+        <div class="bulk-action-form">
+          <div class="form-group">
+            <label for="bulkSource">Kaynak Liste:</label>
+            <select id="bulkSource" class="form-select">
+              <option value="BLOCKED_USERS">🚫 Engellenen Kullanıcılar</option>
+              <option value="MUTED_USERS">🔇 Sessiz Kullanıcılar</option>
+              <option value="AUTHOR_LIST">📝 Yazar Listesi</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="bulkCriteria">Tarih Kriteri:</label>
+            <select id="bulkCriteria" class="form-select">
+              <option value="NEWER_THAN">Hesap yaşı küçüktür (yeni hesaplar)</option>
+              <option value="OLDER_THAN">Hesap yaşı büyüktür (eski hesaplar)</option>
+              <option value="BEFORE_DATE">Kayıt tarihinden önce</option>
+              <option value="AFTER_DATE">Kayıt tarihinden sonra</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="bulkDaysValueGroup">
+            <label for="bulkValueDays">Değer:</label>
+            <div class="input-with-unit">
+              <input type="number" id="bulkValueDays" class="form-input" min="1" value="30">
+              <select id="bulkUnit" class="form-select unit-select">
+                <option value="days">gün</option>
+                <option value="months">ay</option>
+                <option value="years">yıl</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group" id="bulkDateValueGroup" style="display: none;">
+            <label for="bulkValueDate">Tarih:</label>
+            <input type="date" id="bulkValueDate" class="form-input">
+          </div>
+
+          <div class="form-group">
+            <label for="bulkAction">Yapılacak İşlem:</label>
+            <select id="bulkAction" class="form-select">
+              <option value="ENGELLE">🚫 Engelle</option>
+              <option value="SESSIZE_AL">🔇 Sessize Al</option>
+              <option value="ENGEL_KALDIR">🔓 Engel Kaldır</option>
+              <option value="SESSIZDEN_CIKAR">🔊 Sessizden Çıkar</option>
+              <option value="TAKIP_ET">➕ Takip Et</option>
+            </select>
+          </div>
+
+          <div class="bulk-action-buttons">
+            <button id="startBulkActionBtn" class="btn btn-success">
+              <span class="btn-icon">🚀</span>
+              İşlemi Başlat
+            </button>
+          </div>
+        </div>
+      </div>
+      
+    </div>
+  </section>
+
+  <!-- Migration Section -->
+  <section class="card migration-card">
+    <div class="card-header">
+      <h2>🔄 Ek İşlemler <span class="inline-description">Ek taşıma ve dönüştürme işlemleri</span></h2>
+    </div>
+    
+    <div class="actions-grid">
+      <button id="migrateBlockedToMuted" class="btn-green-candy">
+        Engelli kullanıcıları sessize al
+      </button>
+      
+      <button id="btnBlockMutedUsers" class="btn-green-candy">
+        Sessiz kullanıcıları engelle
+      </button>
+      
+      <button id="btnBlockTitlesOfBlockedMuted" class="btn-green-candy">
+        Engellilerin başlıklarını da engelle
+      </button>
+      
+      <button id="migrateBlockedTitlesToUnblocked" class="btn-green-candy">
+        Engellenen başlıkları kaldır
+      </button>
+    </div>
+  </section>
+
+  <!-- Unblock All Section -->
+  <section class="card unblock-all-card">
+    <div class="card-header">
+      <h2>🔓 Tüm Engelleri Kaldır <span class="inline-description">Toplu temizleme işlemleri</span></h2>
+    </div>
+    
+    <div class="actions-grid">
+      <button id="startUndobanAll" class="btn-green-candy">
+        Tüm Engelleri Kaldır - Mevcut tüm engelleri temizle
+      </button>
+      
+      <button id="startUnmuteAll" class="btn-green-candy">
+        Tüm Sessizleri Kaldır - Mevcut tüm sessizleri temizle
+      </button>
+    </div>
+  </section>
+
   <!-- Status Messages -->
   <div id="buttonStatus" class="status-message"></div>
 
   <!-- Queue Section -->
-  <section class="card queue-card">
-    <div class="card-header">
-      <h2>📋 İşlem Kuyruğu <span class="inline-description">Planlanan ve tamamlanan işlemler</span></h2>
+  <section class="card queue-card" id="queueSection">
+    <div class="card-header collapsible-header" id="queueToggle">
+      <h2>📋 İşlem Geçmişi <span class="inline-description">Planlanan ve tamamlanan işlemler</span></h2>
+      <span class="collapse-icon">▼</span>
+      <span class="table-badge" id="totalQueueCount">0</span>
     </div>
-    
-    <div class="tables-container">
+    <div class="tables-container collapsible-content" id="queueContent">
       <div class="table-section">
         <div class="table-header">
           <h3>⏳ Sıradaki İşlemler</h3>
@@ -254,206 +436,6 @@
       </div>
     </div>
   </section>
-
-  </div><!-- End operations-tab -->
-
-  <!-- Tab Content: Date Filter -->
-  <div id="datefilter-tab" class="tab-content">
-    
-    <!-- Date Filter Master Toggle -->
-    <section class="card datefilter-toggle-card">
-      <div class="card-header">
-        <h2>📅 Tarih Filtresi Ayarları</h2>
-        <div class="toggle-container">
-          <label class="switch-large">
-            <input type="checkbox" id="dateFilterMasterToggle">
-            <span class="slider-large"></span>
-          </label>
-          <span id="dateFilterMasterStatus" class="toggle-status">Devre dışı</span>
-        </div>
-      </div>
-      <p class="card-description">
-        Tarih filtresi etkinleştirildiğinde, kullanıcıların kayıt tarihlerine göre engelleme işlemleri filtrelenecektir.
-      </p>
-    </section>
-
-    <!-- Date Filter Rules List -->
-    <section class="card datefilter-rules-card" id="dateFilterRulesSection" style="display: none;">
-      <div class="card-header">
-        <h2>🎯 Filtre Kuralları</h2>
-        <span class="rules-count" id="rulesCount">0 kural</span>
-      </div>
-      
-      <div class="rules-list" id="rulesList">
-        <!-- Rules will be dynamically populated here -->
-      </div>
-
-      <div class="rules-actions">
-        <button id="addNewRuleBtn" class="btn btn-primary">
-          <span class="btn-icon">➕</span>
-          Yeni Kural Ekle
-        </button>
-      </div>
-    </section>
-
-    <!-- Add/Edit Rule Form -->
-    <section class="card datefilter-form-card" id="ruleFormSection" style="display: none;">
-      <div class="card-header">
-        <h2 id="ruleFormTitle">📝 Yeni Kural Ekle</h2>
-      </div>
-      
-      <div class="form-content">
-        <div class="form-group">
-          <label for="ruleCriteria">Kriter:</label>
-          <select id="ruleCriteria" class="form-select">
-            <option value="NEWER_THAN">Hesap yaşı küçüktür (yeni hesaplar)</option>
-            <option value="OLDER_THAN">Hesap yaşı büyüktür (eski hesaplar)</option>
-            <option value="BEFORE_DATE">Kayıt tarihinden önce</option>
-            <option value="AFTER_DATE">Kayıt tarihinden sonra</option>
-          </select>
-        </div>
-
-        <div class="form-group" id="daysValueGroup">
-          <label for="ruleValueDays">Değer:</label>
-          <div class="input-with-unit">
-            <input type="number" id="ruleValueDays" class="form-input" min="1" value="30">
-            <select id="ruleUnit" class="form-select unit-select">
-              <option value="days">gün</option>
-              <option value="months">ay</option>
-              <option value="years">yıl</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="form-group" id="dateValueGroup" style="display: none;">
-          <label for="ruleValueDate">Tarih:</label>
-          <input type="date" id="ruleValueDate" class="form-input">
-        </div>
-
-        <div class="form-group">
-          <label for="ruleAction">Eylem:</label>
-          <select id="ruleAction" class="form-select">
-            <option value="ENGELLE">🚫 Engelle</option>
-            <option value="KORU">🛡️ Koru (engelleme)</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label for="ruleDescription">Açıklama (opsiyonel):</label>
-          <input type="text" id="ruleDescription" class="form-input" placeholder="Örn: 30 günden yeni hesaplar">
-        </div>
-
-        <input type="hidden" id="ruleId">
-        <input type="hidden" id="ruleIsDefault" value="false">
-
-        <div class="form-actions">
-          <button id="saveRuleBtn" class="btn btn-success">Kuralı Kaydet</button>
-          <button id="cancelRuleBtn" class="btn btn-secondary">İptal</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- Cache Info Section -->
-    <section class="card datefilter-cache-card" id="dateFilterCacheSection" style="display: none;">
-      <div class="card-header">
-        <h2>💾 Önbellek Bilgisi</h2>
-      </div>
-      <div class="cache-info">
-        <div class="cache-stats">
-          <div class="cache-stat">
-            <span class="cache-label">Toplam kayıt:</span>
-            <span class="cache-value" id="cacheTotalCount">0</span>
-          </div>
-          <div class="cache-stat">
-            <span class="cache-label">Geçerli kayıt:</span>
-            <span class="cache-value" id="cacheValidCount">0</span>
-          </div>
-          <div class="cache-stat">
-            <span class="cache-label">Süresi dolmuş:</span>
-            <span class="cache-value" id="cacheExpiredCount">0</span>
-          </div>
-        </div>
-        <div class="cache-actions">
-          <button id="clearCacheBtn" class="btn btn-danger btn-small">
-            <span class="btn-icon">🗑️</span>
-            Önbelleği Temizle
-          </button>
-        </div>
-      </div>
-    </section>
-
-    <!-- Date-Based Bulk Action Section -->
-    <section class="card datebulk-action-card">
-      <div class="card-header">
-        <h2>🎯 Tarih Bazlı Toplu İşlem</h2>
-        <span class="inline-description">Kayıt tarihine göre kullanıcıları bul ve işlem yap</span>
-      </div>
-      <p class="card-description">
-        Bu özellik, engellenen veya sessize alınan kullanıcılar listenizden kayıt tarihine göre seçim yaparak toplu işlem yapmanızı sağlar.
-      </p>
-      
-      <div class="bulk-action-form">
-        <!-- Source Selection -->
-        <div class="form-group">
-          <label for="bulkSource">Kaynak Liste:</label>
-          <select id="bulkSource" class="form-select">
-            <option value="BLOCKED_USERS">🚫 Engellenen Kullanıcılar</option>
-            <option value="MUTED_USERS">🔇 Sessiz Kullanıcılar</option>
-            <option value="AUTHOR_LIST">📝 Yazar Listesi</option>
-          </select>
-        </div>
-
-        <!-- Date Criteria -->
-        <div class="form-group">
-          <label for="bulkCriteria">Tarih Kriteri:</label>
-          <select id="bulkCriteria" class="form-select">
-            <option value="NEWER_THAN">Hesap yaşı küçüktür (yeni hesaplar)</option>
-            <option value="OLDER_THAN">Hesap yaşı büyüktür (eski hesaplar)</option>
-            <option value="BEFORE_DATE">Kayıt tarihinden önce</option>
-            <option value="AFTER_DATE">Kayıt tarihinden sonra</option>
-          </select>
-        </div>
-
-        <div class="form-group" id="bulkDaysValueGroup">
-          <label for="bulkValueDays">Değer:</label>
-          <div class="input-with-unit">
-            <input type="number" id="bulkValueDays" class="form-input" min="1" value="30">
-            <select id="bulkUnit" class="form-select unit-select">
-              <option value="days">gün</option>
-              <option value="months">ay</option>
-              <option value="years">yıl</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="form-group" id="bulkDateValueGroup" style="display: none;">
-          <label for="bulkValueDate">Tarih:</label>
-          <input type="date" id="bulkValueDate" class="form-input">
-        </div>
-
-        <!-- Action Selection -->
-        <div class="form-group">
-          <label for="bulkAction">Yapılacak İşlem:</label>
-          <select id="bulkAction" class="form-select">
-            <option value="ENGELLE">🚫 Engelle</option>
-            <option value="SESSIZE_AL">🔇 Sessize Al</option>
-            <option value="ENGEL_KALDIR">🔓 Engel Kaldır</option>
-            <option value="SESSIZDEN_CIKAR">🔊 Sessizden Çıkar</option>
-            <option value="TAKIP_ET">➕ Takip Et</option>
-          </select>
-        </div>
-
-        <!-- Action Buttons -->
-        <div class="bulk-action-buttons">
-          <button id="startBulkActionBtn" class="btn btn-success">
-            <span class="btn-icon">🚀</span>
-            İşlemi Başlat
-          </button>
-        </div>
-      </div>
-    </section>
-
-  </div><!-- End datefilter-tab -->
 
 </div>
 

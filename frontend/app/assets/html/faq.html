@@ -66,6 +66,46 @@ margin-bottom: 8px;
   font-family: 'Montserrat', sans-serif;
   font-size: 15px;
 }
+
+/* Theme toggle buttons */
+.theme-btn {
+  transition: all 0.2s ease;
+}
+.theme-btn.active {
+  background-color: #4CAF50 !important;
+  border-color: #4CAF50 !important;
+  color: white !important;
+}
+.theme-btn:hover:not(.active) {
+  background-color: #f0f0f0;
+}
+
+/* Dark mode styles for faq page */
+[data-theme="dark"] body {
+  background-color: #0f172a;
+  color: #f1f5f9;
+}
+
+[data-theme="dark"] .content {
+  background-color: #1e293b;
+}
+
+[data-theme="dark"] a {
+  color: #60a5fa;
+}
+
+[data-theme="dark"] .footer > hr {
+  background-color: #475569;
+  border-color: #475569;
+}
+
+[data-theme="dark"] .footerText {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] small {
+  color: #94a3b8 !important;
+}
 </style>
 </head>
 <body>
@@ -192,6 +232,24 @@ margin-bottom: 8px;
     Böylece en çok engellenen yazarları belirleyip yayınlayabiliriz." 
     style="text-align: left;" id="sendData">Toplanan verileri EksiEngelPlus sunucularına gönder.</a>
     
+  </div>
+
+  <!-- Dark Mode Toggle Section -->
+  <h3 style="text-align: center; margin-top: 30px;">
+    Görünüm
+  </h3>
+
+  <div style="text-align: center; margin-bottom: 20px;">
+    <div style="display: inline-flex; gap: 10px;">
+      <button id="themeLight" class="btn btn-dark theme-btn active" style="min-width: 100px;">
+        ☀️ Açık
+      </button>
+      <button id="themeDark" class="btn btn-dark theme-btn" style="min-width: 100px;">
+        🌙 Koyu
+      </button>
+    </div>
+    <br>
+    <small style="color: #666;">Arayüz temasını değiştir</small>
   </div>
 
   <!-- Veri Yönetimi ve Depolama Section -->

@@ -46,9 +46,9 @@ The project "EksiEngelPlus" is a Chrome browser extension designed to facilitate
   * Title-based blocking (block all titles by specific users)
 * **Date-Based User Filtering:**
   * Filter users by account registration date before blocking
-  * Protect legacy accounts (configurable, e.g., accounts older than 5 years)
+  * Protect legacy accounts (use bulk action with ENGEL_KALDIR for older accounts)
   * Block newly created accounts (configurable threshold)
-  * Custom filter rules with ENGELLE (Block) or KORU (Protect) actions
+  * Custom filter rules with ENGELLE (Block) action
   * 30-day TTL caching for registration dates to optimize performance
   * Full tabbed UI for filter configuration in notification page
 * **Date-Based Bulk Actions:**

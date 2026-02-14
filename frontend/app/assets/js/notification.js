@@ -28,6 +28,8 @@ async function initializeNotificationPage() {
   
   notificationHandler.updateStatusIndicator('inactive');
   notificationHandler.updateTableCounts();
+  initTheme();
+  setupThemeListener();
   setupSmoothScrolling();
   setupKeyboardShortcuts();
   
@@ -662,6 +664,7 @@ async function sendEarlyStopWithRetry(maxRetries = 3, timeoutMs = 5000) {
 function setupActionButtons() {
   document.getElementById('openauthorListPage')?.addEventListener('click', handleOpenAuthorListPage);
   document.getElementById('startUndobanAll')?.addEventListener('click', handleStartUndobanAll);
+  document.getElementById('startUnmuteAll')?.addEventListener('click', handleStartUnmuteAll);
   
   document.getElementById('migrateBlockedToMuted')?.addEventListener('click', handleMigrateBlockedToMuted);
   document.getElementById('btnBlockMutedUsers')?.addEventListener('click', handleBlockMutedUsers);
@@ -746,6 +749,19 @@ function handleStartUndobanAll() {
     }
   });
   notificationHandler.updateButtonStatus("Starting 'Undo All Bans'...", false, 2000);
+}
+
+function handleStartUnmuteAll() {
+  commHandler.sendAnalyticsData({ click_type: enums.ClickType.EXTENSION_MENU_UNMUTEALL });
+  chrome.runtime.sendMessage(null, { "banSource": enums.BanSource.UNMUTEALL, "banMode": enums.BanMode.UNDOBAN }, (response) => {
+    if (chrome.runtime.lastError) {
+      console.error("notification.js: Error sending startUnmuteAll message:", chrome.runtime.lastError.message);
+      notificationHandler.updateButtonStatus("Sessizleri kaldırma başlatılamadı: " + chrome.runtime.lastError.message, true, 5000);
+    } else {
+      console.log("notification.js: startUnmuteAll message sent.");
+    }
+  });
+  notificationHandler.updateButtonStatus("Tüm sessizleri kaldırma başlatılıyor...", false, 2000);
 }
 
 function handleOpenFaq() {
@@ -1306,31 +1322,28 @@ function updatePlannedProcessesTable(plannedProcesses) {
 }
 
 // ============================================
-// TAB NAVIGATION
+// COLLAPSIBLE QUEUE SECTION
 // ============================================
 
-function setupTabNavigation() {
-  const tabButtons = document.querySelectorAll('.tab-button');
-  const tabContents = document.querySelectorAll('.tab-content');
+function setupCollapsibleQueue() {
+  const queueToggle = document.getElementById('queueToggle');
+  const queueContent = document.getElementById('queueContent');
   
-  tabButtons.forEach(button => {
-    button.addEventListener('click', () => {
-      const targetTab = button.dataset.tab;
+  if (queueToggle && queueContent) {
+    const isCollapsed = localStorage.getItem('queueCollapsed') === 'true';
+    if (isCollapsed) {
+      queueToggle.classList.add('collapsed');
+      queueContent.classList.add('collapsed');
+    }
+    
+    queueToggle.addEventListener('click', () => {
+      queueToggle.classList.toggle('collapsed');
+      queueContent.classList.toggle('collapsed');
       
-      // Remove active class from all buttons and contents
-      tabButtons.forEach(btn => btn.classList.remove('active'));
-      tabContents.forEach(content => content.classList.remove('active'));
-      
-      // Add active class to clicked button and target content
-      button.classList.add('active');
-      document.getElementById(targetTab).classList.add('active');
-      
-      // If switching to date filter tab, refresh the cache stats
-      if (targetTab === 'datefilter-tab') {
-        loadDateFilterCacheStats();
-      }
+      const nowCollapsed = queueContent.classList.contains('collapsed');
+      localStorage.setItem('queueCollapsed', nowCollapsed);
     });
-  });
+  }
 }
 
 // ============================================
@@ -1411,9 +1424,6 @@ async function loadDateFilterState() {
     currentRules = config.dateFilterRules || [];
     renderRulesList();
     
-    // Load cache stats
-    await loadDateFilterCacheStats();
-    
   } catch (error) {
     console.error('Error loading date filter state:', error);
   }
@@ -1461,25 +1471,33 @@ async function handleMasterToggleChange() {
 }
 
 function toggleDateFilterSections(enabled) {
-  const rulesSection = document.getElementById('dateFilterRulesSection');
-  const cacheSection = document.getElementById('dateFilterCacheSection');
+  const contentSection = document.getElementById('dateOperationsContent');
   
-  if (rulesSection) {
-    rulesSection.style.display = enabled ? 'block' : 'none';
+  if (contentSection) {
+    if (enabled) {
+      contentSection.style.display = 'block';
+      contentSection.style.maxHeight = contentSection.scrollHeight + 'px';
+      contentSection.style.opacity = '1';
+    } else {
+      contentSection.style.display = 'none';
+      contentSection.style.maxHeight = '0';
+      contentSection.style.opacity = '0';
+    }
   }
-  if (cacheSection) {
-    cacheSection.style.display = enabled ? 'block' : 'none';
+  
+  if (enabled) {
+    loadDateFilterCacheStats();
   }
 }
 
 function createDefaultRule() {
   return {
-    id: 'protect-legacy-users',
-    criteria: 'OLDER_THAN',
-    value: 1825,
+    id: 'block-new-users',
+    criteria: 'NEWER_THAN',
+    value: 3650,
     valueType: 'days',
-    action: 'KORU',
-    description: '5 yıldan eski hesapları koru',
+    action: 'ENGELLE',
+    description: '10 yıldan yeni hesapları engelle',
     isDefault: true
   };
 }
@@ -1511,11 +1529,9 @@ function createRuleElement(rule, index) {
   div.className = 'rule-item';
   div.dataset.ruleId = rule.id;
   
-  // Determine icon based on action (convert old BLOCK/PROTECT/SKIP to new values)
-  let icon = '🛡️';
-  const action = rule.action === 'BLOCK' || rule.action === 'ENGELLE' ? 'ENGELLE' : 
-                 (rule.action === 'SKIP' || rule.action === 'PROTECT' || rule.action === 'KORU') ? 'KORU' : rule.action;
-  if (action === 'ENGELLE') icon = '🚫';
+  // Determine icon based on action (convert old BLOCK to new value)
+  const action = rule.action === 'BLOCK' ? 'ENGELLE' : rule.action;
+  const icon = '🚫';
   
   // Format criteria text
   let criteriaText = formatCriteriaText(rule);
@@ -1564,11 +1580,7 @@ function formatCriteriaText(rule) {
 function getActionText(action) {
   const actionMap = {
     'ENGELLE': 'Engelle',
-    'KORU': 'Koru',
-    // Legacy mappings for backward compatibility
-    'BLOCK': 'Engelle',
-    'SKIP': 'Koru',
-    'PROTECT': 'Koru'
+    'BLOCK': 'Engelle'
   };
   return actionMap[action] || action;
 }
@@ -1799,17 +1811,30 @@ async function loadDateBulkPreferences() {
     const { config } = await import('./config.js');
     await config.handleConfig();
     
+    const defaults = {
+      source: 'MUTED_USERS',
+      criteria: 'OLDER_THAN',
+      value: 3650,
+      valueType: 'days',
+      action: 'SESSIZDEN_CIKAR'
+    };
+    
     if (config.dateBulkConfig) {
       const cfg = config.dateBulkConfig;
-      if (cfg.lastSource) document.getElementById('bulkSource').value = cfg.lastSource;
-      if (cfg.lastCriteria) document.getElementById('bulkCriteria').value = cfg.lastCriteria;
-      if (cfg.lastValue) document.getElementById('bulkValueDays').value = cfg.lastValue;
-      if (cfg.lastValueType) document.getElementById('bulkUnit').value = cfg.lastValueType;
-      if (cfg.lastAction) document.getElementById('bulkAction').value = cfg.lastAction;
-      
-      // Trigger criteria change to show correct input
-      handleBulkCriteriaChange();
+      document.getElementById('bulkSource').value = cfg.lastSource || defaults.source;
+      document.getElementById('bulkCriteria').value = cfg.lastCriteria || defaults.criteria;
+      document.getElementById('bulkValueDays').value = cfg.lastValue || defaults.value;
+      document.getElementById('bulkUnit').value = cfg.lastValueType || defaults.valueType;
+      document.getElementById('bulkAction').value = cfg.lastAction || defaults.action;
+    } else {
+      document.getElementById('bulkSource').value = defaults.source;
+      document.getElementById('bulkCriteria').value = defaults.criteria;
+      document.getElementById('bulkValueDays').value = defaults.value;
+      document.getElementById('bulkUnit').value = defaults.valueType;
+      document.getElementById('bulkAction').value = defaults.action;
     }
+    
+    handleBulkCriteriaChange();
   } catch (error) {
     console.error('Error loading date bulk preferences:', error);
   }
@@ -1883,11 +1908,12 @@ async function handleStartBulkAction() {
   });
 }
 
-// Initialize tab navigation and date filter when DOM is loaded
+// Initialize UI components when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-  setupTabNavigation();
+  // setupTabNavigation(); // REMOVED - tabs are gone
   setupDateFilterUI();
   setupDateBulkActionUI();
+  setupCollapsibleQueue(); // NEW
 });
 
 // Cleanup functions for page unload
@@ -1906,6 +1932,24 @@ window.addEventListener('beforeunload', () => {
     chrome.runtime.onMessage.removeListener(pauseBtn._pauseMessageListener);
   }
 });
+
+// ============================================
+// DARK MODE THEME
+// ============================================
+
+function initTheme() {
+  const savedTheme = localStorage.getItem('theme') || 'light';
+  document.documentElement.setAttribute('data-theme', savedTheme);
+}
+
+function setupThemeListener() {
+  window.addEventListener('storage', (event) => {
+    if (event.key === 'theme') {
+      const newTheme = event.newValue || 'light';
+      document.documentElement.setAttribute('data-theme', newTheme);
+    }
+  });
+}
 
 // Add a cleanup function for operations
 function cleanupPauseOperation() {

@@ -25,12 +25,12 @@ export let config = {
 export function createDefaultDateFilterRules() {
   return [
     {
-      id: "protect-legacy-users",
-      criteria: enums.DateFilterCriteria.OLDER_THAN,
-      value: 1825, // approximately 5 years in days
+      id: "block-new-users",
+      criteria: enums.DateFilterCriteria.NEWER_THAN,
+      value: 3650,
       valueType: "days",
-      action: enums.DateFilterAction.KORU,
-      description: "Korumalı: 5 yıldan eski hesaplar",
+      action: enums.DateFilterAction.ENGELLE,
+      description: "10 yıldan yeni hesapları engelle",
       isDefault: true
     }
   ];
@@ -39,11 +39,11 @@ export function createDefaultDateFilterRules() {
 // Helper function to get default date bulk action config
 export function createDefaultDateBulkConfig() {
   return {
-    lastSource: enums.DateBulkSource.BLOCKED_USERS,
-    lastCriteria: enums.DateFilterCriteria.NEWER_THAN,
-    lastValue: 30,
+    lastSource: enums.DateBulkSource.MUTED_USERS,
+    lastCriteria: enums.DateFilterCriteria.OLDER_THAN,
+    lastValue: 3650,
     lastValueType: "days",
-    lastAction: enums.DateBulkAction.ENGELLE
+    lastAction: enums.DateBulkAction.SESSIZDEN_CIKAR
   };
 }
 

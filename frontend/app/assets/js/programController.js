@@ -51,6 +51,7 @@ class ProgramController {
     this._blockMutedUsersInProgress = false;
     this._blockTitlesInProgress = false;
     this._dateBasedBulkInProgress = false;
+    this._unmuteAllInProgress = false;
     this._tabId = 0;
   }
 
@@ -61,7 +62,8 @@ class ProgramController {
            this._isBlockedListRefreshInProgress ||
            this._blockMutedUsersInProgress ||
            this._blockTitlesInProgress ||
-           this._dateBasedBulkInProgress;
+           this._dateBasedBulkInProgress ||
+           this._unmuteAllInProgress;
   }
 
   set tabId(val) { this._tabId = val; }
@@ -84,6 +86,8 @@ class ProgramController {
         log.info("progctrl", "early stop received during block titles process. Queued tasks will continue after current task stops.");
       } else if (this._dateBasedBulkInProgress) {
         log.info("progctrl", "early stop received during date-based bulk action process. Current operation will stop.");
+      } else if (this._unmuteAllInProgress) {
+        log.info("progctrl", "early stop received during unmute all process. Current operation will stop.");
       } else if (processQueue.isRunning) {
         log.info("progctrl", "early stop received while queue is processing. Current operation will stop, remaining queued operations will continue.");
       } else {
@@ -105,7 +109,8 @@ class ProgramController {
            this._isBlockedListRefreshInProgress ||
            this._blockMutedUsersInProgress ||
            this._blockTitlesInProgress ||
-           this._dateBasedBulkInProgress;
+           this._dateBasedBulkInProgress ||
+           this._unmuteAllInProgress;
   }
 
   get isMutedListRefreshInProgress() { return this._isMutedListRefreshInProgress; }
@@ -134,6 +139,7 @@ class ProgramController {
   get isBlockMutedUsersInProgress() { return this._blockMutedUsersInProgress; }
   get isBlockTitlesInProgress() { return this._blockTitlesInProgress; }
   get isDateBasedBulkInProgress() { return this._dateBasedBulkInProgress; }
+  get isUnmuteAllInProgress() { return this._unmuteAllInProgress; }
 
   async startDateBasedBulkAction(params) {
     const { source, criteria, value, valueType, bulkAction } = params;
@@ -1279,6 +1285,101 @@ class ProgramController {
       }
     }
   }
+
+  async startUnmuteAll() {
+    log.info("progctrl", "startUnmuteAll function started.");
+
+    if (this._unmuteAllInProgress) {
+      log.warn("progctrl", "Unmute all operation is already in progress.");
+      notificationHandler.notify("Tüm sessizleri kaldırma işlemi zaten devam ediyor.");
+      return;
+    }
+
+    this._unmuteAllInProgress = true;
+    this.earlyStop = false;
+
+    try {
+      const mutedUsers = await storageHandler.getMutedUserList();
+
+      if (!mutedUsers || mutedUsers.length === 0) {
+        log.info("progctrl", "No muted users found.");
+        notificationHandler.notify("Sessiz listede kullanıcı bulunamadı.");
+        this._unmuteAllInProgress = false;
+        return;
+      }
+
+      const plannedAction = mutedUsers.length;
+      log.info("progctrl", `Found ${plannedAction} muted users to unmute.`);
+      notificationHandler.notify(`Sessiz listede ${plannedAction} kullanıcı bulundu. Sessizleri kaldırma başlatılıyor...`);
+
+      let performedAction = 0;
+      let successfulAction = 0;
+      let failedCount = 0;
+
+      for (let i = 0; i < mutedUsers.length; i++) {
+        if (this.earlyStop) {
+          log.info("progctrl", "Unmute all stopped early by user.");
+          notificationHandler.notify(`Tüm sessizleri kaldırma işlemi kullanıcı tarafından durduruldu. İşlenen: ${i}/${mutedUsers.length}.`);
+          break;
+        }
+
+        const username = mutedUsers[i];
+        performedAction = i + 1;
+
+        notificationHandler.notifyOngoing(successfulAction, performedAction, plannedAction, processQueue.currentItemMetadata);
+
+        log.info("progctrl", `Unmuting user: ${username}...`);
+
+        const authorId = await scrapingHandler.scrapeAuthorIdFromAuthorProfilePage(username);
+        if (!authorId || authorId === "0") {
+          log.err("progctrl", `Could not get user ID for ${username}. Skipping.`);
+          failedCount++;
+          continue;
+        }
+
+        const unmuteResult = await this._performActionWithRetry(enums.BanMode.UNDOBAN, authorId, false, false, true);
+
+        if (unmuteResult.earlyStop) {
+          log.info("progctrl", "Unmute all stopped early by user during unmute operation.");
+          break;
+        }
+
+        if (unmuteResult.resultType !== enums.ResultType.SUCCESS) {
+          log.err("progctrl", `Failed to unmute user: ${username} (ID: ${authorId})`);
+          failedCount++;
+        } else {
+          log.info("progctrl", `Successfully unmuted user: ${username} (ID: ${authorId})`);
+          successfulAction++;
+        }
+
+        await utils.sleep(500);
+      }
+
+      const totalProcessed = successfulAction + failedCount;
+      
+      if (this.earlyStop) {
+        log.info("progctrl", `Unmute all stopped early. Unmuted: ${successfulAction}, Failed: ${failedCount}, Total Processed: ${totalProcessed}`);
+        notificationHandler.finishErrorEarlyStop(enums.BanSource.UNMUTEALL, enums.BanMode.UNDOBAN, processQueue.currentItemMetadata);
+      } else {
+        log.info("progctrl", `Unmute all completed. Unmuted: ${successfulAction}, Failed: ${failedCount}, Total Processed: ${totalProcessed}`);
+        notificationHandler.finishSuccess(enums.BanSource.UNMUTEALL, enums.BanMode.UNDOBAN, successfulAction, totalProcessed, plannedAction, processQueue.currentItemMetadata);
+      }
+
+      // Clear the muted list storage
+      await storageHandler.saveMutedUserList([]);
+      await storageHandler.saveMutedUserCount(0);
+      notificationHandler.notifyUpdateCounts();
+
+    } catch (error) {
+      log.err("progctrl", `An error occurred during unmute all: ${error}`, error);
+      notificationHandler.notify(`Tüm sessizleri kaldırma sırasında bir hata oluştu: ${error.message || "Bilinmeyen hata"}`);
+    } finally {
+      log.info("progctrl", "startUnmuteAll function completed.");
+      this.earlyStop = false;
+      this._unmuteAllInProgress = false;
+    }
+  }
+
   async migrateBlockedTitlesToUnblocked() {
     log.info("progctrl", "migrateBlockedTitlesToUnblocked function started.");
 

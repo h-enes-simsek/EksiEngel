@@ -183,17 +183,15 @@ export function evaluateDateFilter(registrationDate, rule) {
  * Applies date filter rules to a list of users
  * @param {Map<string, Object>} users - Map of username to user data (should include registrationDate)
  * @param {Array} rules - Array of date filter rules
- * @returns {Object} - Object with categorized users: block, protect, unknown
+ * @returns {Object} - Object with categorized users: block, unknown
  */
 export function applyDateFilters(users, rules) {
   const result = {
     block: [],      // Users to block
-    protect: [],    // Users protected from blocking
     unknown: []     // Users with unknown registration date
   };
   
   if (!rules || rules.length === 0 || !users || users.size === 0) {
-    // No rules enabled, all users should be blocked by default
     for (const [username, userData] of users) {
       result.block.push({ username, ...userData });
     }
@@ -203,13 +201,11 @@ export function applyDateFilters(users, rules) {
   for (const [username, userData] of users) {
     const regDate = userData.registrationDate;
     
-    // If no registration date, add to unknown
     if (!regDate) {
       result.unknown.push({ username, ...userData });
       continue;
     }
     
-    // Evaluate against all rules (first matching rule wins)
     let matched = false;
     for (const rule of rules) {
       if (evaluateDateFilter(regDate, rule)) {
@@ -220,15 +216,11 @@ export function applyDateFilters(users, rules) {
           case enums.DateFilterAction.ENGELLE:
             result.block.push(userEntry);
             break;
-          case enums.DateFilterAction.KORU:
-            result.protect.push(userEntry);
-            break;
         }
-        break; // Stop at first matching rule
+        break;
       }
     }
     
-    // If no rules matched, default to block
     if (!matched) {
       result.block.push({ username, ...userData });
     }

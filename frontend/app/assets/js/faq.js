@@ -95,6 +95,10 @@ document.addEventListener('DOMContentLoaded', async function () {
   // Storage management
   await updateStorageUsageDisplay();
   document.getElementById('clearStoredData')?.addEventListener('click', handleClearStoredData);
+
+  // Initialize theme on load
+  initTheme();
+  setupThemeToggle();
 });
 
 function sendDataSwitchOnClick()
@@ -188,6 +192,52 @@ async function handleClearStoredData() {
       clearButton.disabled = false;
       clearButton.textContent = '🗑️ Saklanan Verileri Temizle';
     }
+  }
+}
+
+// Dark Mode Theme Management
+function initTheme() {
+  const savedTheme = localStorage.getItem('theme') || 'light';
+  applyTheme(savedTheme);
+  updateThemeButtons(savedTheme);
+}
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('theme', theme);
+}
+
+function updateThemeButtons(activeTheme) {
+  const lightBtn = document.getElementById('themeLight');
+  const darkBtn = document.getElementById('themeDark');
+  
+  if (lightBtn && darkBtn) {
+    if (activeTheme === 'light') {
+      lightBtn.classList.add('active');
+      darkBtn.classList.remove('active');
+    } else {
+      lightBtn.classList.remove('active');
+      darkBtn.classList.add('active');
+    }
+  }
+}
+
+function setupThemeToggle() {
+  const lightBtn = document.getElementById('themeLight');
+  const darkBtn = document.getElementById('themeDark');
+  
+  if (lightBtn) {
+    lightBtn.addEventListener('click', () => {
+      applyTheme('light');
+      updateThemeButtons('light');
+    });
+  }
+  
+  if (darkBtn) {
+    darkBtn.addEventListener('click', () => {
+      applyTheme('dark');
+      updateThemeButtons('dark');
+    });
   }
 }
 

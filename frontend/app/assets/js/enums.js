@@ -10,7 +10,8 @@ export const BanSource = {
   BLOCK_MUTED_USERS: "9",
   REFRESH_MUTED_LIST: "10",
   REFRESH_BLOCKED_LIST: "11",
-  DATE_BASED_BULK: "12"
+  DATE_BASED_BULK: "12",
+  UNMUTEALL: "13"
 };
 
 export const BanMode = { BAN: "1", UNDOBAN: "2" };
@@ -38,7 +39,8 @@ export const ClickType = {
   INSTALL_OR_UPDATE: "INSTALL_OR_UPDATE",
   WELCOME_PAGE: "WELCOME_PAGE",
   EXTENSION_MENU_MIGRATE: "EXTENSION_MENU_MIGRATE",
-  EXTENSION_MENU_MIGRATE_TITLES: "EXTENSION_MENU_MIGRATE_TITLES"
+  EXTENSION_MENU_MIGRATE_TITLES: "EXTENSION_MENU_MIGRATE_TITLES",
+  EXTENSION_MENU_UNMUTEALL: "EXTENSION_MENU_UNMUTEALL"
 };
 
 export const NotificationType = {
@@ -67,8 +69,7 @@ export const DateFilterCriteria = {
 };
 
 export const DateFilterAction = {
-  ENGELLE: "ENGELLE",   // Block users matching criteria
-  KORU: "KORU"          // Protect users from being blocked
+  ENGELLE: "ENGELLE"   // Block users matching criteria
 };
 
 // Date-based bulk action enums
