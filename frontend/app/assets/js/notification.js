@@ -40,7 +40,6 @@ async function initializeNotificationPage() {
   exportBlockedListCSVButton = document.getElementById('exportBlockedListCSV');
   
   await restorePersistedData();
-  await updateStorageUsageDisplay();
 }
 
 async function restorePersistedData() {
@@ -68,25 +67,6 @@ async function restorePersistedData() {
   } catch (error) {
     console.warn('Failed to restore persisted data:', error);
     notificationHandler.updateButtonStatus("Failed to restore some data", false, 3000);
-  }
-}
-
-async function updateStorageUsageDisplay() {
-  try {
-    const bytesInUse = await storageHandler.getStorageUsage();
-    const kbInUse = Math.round(bytesInUse / 1024);
-    const mbInUse = (bytesInUse / (1024 * 1024)).toFixed(2);
-    
-    const storageUsageSpan = document.getElementById('storageUsage');
-    if (storageUsageSpan) {
-      storageUsageSpan.textContent = `${mbInUse} MB (${kbInUse} KB)`;
-    }
-  } catch (error) {
-    console.warn('Failed to get storage usage:', error);
-    const storageUsageSpan = document.getElementById('storageUsage');
-    if (storageUsageSpan) {
-      storageUsageSpan.textContent = "Hata";
-    }
   }
 }
 
@@ -694,7 +674,6 @@ function setupActionButtons() {
   document.getElementById('exportBlockedListCSV')?.addEventListener('click', () => notificationHandler.handleExportBlockedList());
   
   document.getElementById('openFaq')?.addEventListener('click', handleOpenFaq);
-  document.getElementById('clearStoredData')?.addEventListener('click', handleClearStoredData);
 }
 
 function initializeRealTimeFeatures() {
@@ -710,42 +689,6 @@ function initializeRealTimeFeatures() {
   });
   
   notificationHandler.updateRemainingAction();
-}
-
-async function handleClearStoredData() {
-  if (!confirm("Saklanan kuyruk ve tamamlanan işlem verilerini temizlemek istediğinizden emin misiniz? Bu işlem geri alınamaz.")) {
-    return;
-  }
-  
-  const clearButton = document.getElementById('clearStoredData');
-  if (clearButton) {
-    clearButton.disabled = true;
-    clearButton.innerHTML = '<span class="btn-icon">⏳</span><span class="btn-text">Temizleniyor...</span>';
-  }
-  
-  try {
-    await storageHandler.clearPersistedData();
-    
-    await processQueue.restoreFromStorage();
-    
-    const completedTable = document.getElementById("completedProcesses").getElementsByTagName('tbody')[0];
-    while (completedTable.firstChild) {
-      completedTable.removeChild(completedTable.firstChild);
-    }
-    
-    notificationHandler.updateTableCounts();
-    await updateStorageUsageDisplay();
-    
-    notificationHandler.updateButtonStatus("Saklanan veriler temizlendi", false, 3000);
-  } catch (error) {
-    console.error('Failed to clear stored data:', error);
-    notificationHandler.updateButtonStatus("Veriler temizlenirken hata oluştu: " + error.message, true, 5000);
-  } finally {
-    if (clearButton) {
-      clearButton.disabled = false;
-      clearButton.innerHTML = '<span class="btn-icon">🗑️</span><span class="btn-text">Saklanan Verileri Temizle</span>';
-    }
-  }
 }
 
 function setupSmoothScrolling() {

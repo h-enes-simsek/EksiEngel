@@ -1,6 +1,7 @@
 import * as enums from './enums.js';
 import {commHandler} from './commHandler.js';
 import {config, handleConfig, saveConfig} from './config.js';
+import { storageHandler } from './storageHandler.js';
 
 document.addEventListener('DOMContentLoaded', async function () {
 
@@ -90,6 +91,10 @@ document.addEventListener('DOMContentLoaded', async function () {
   document.getElementById("banPremiumIconsDisabled").addEventListener("click", function(element) {
     banPremiumIconsSwitchOnClick();
   });
+
+  // Storage management
+  await updateStorageUsageDisplay();
+  document.getElementById('clearStoredData')?.addEventListener('click', handleClearStoredData);
 });
 
 function sendDataSwitchOnClick()
@@ -139,5 +144,50 @@ function banPremiumIconsSwitchOnClick()
 	config.banPremiumIcons = document.getElementById("banPremiumIconsEnabled").checked;
 	console.log("banPremiumIcons:" + config.banPremiumIcons);
 	saveConfig(config);
+}
+
+async function updateStorageUsageDisplay() {
+  try {
+    const bytesInUse = await storageHandler.getStorageUsage();
+    const kbInUse = Math.round(bytesInUse / 1024);
+    const mbInUse = (bytesInUse / (1024 * 1024)).toFixed(2);
+    
+    const storageUsageSpan = document.getElementById('storageUsage');
+    if (storageUsageSpan) {
+      storageUsageSpan.textContent = `${mbInUse} MB (${kbInUse} KB)`;
+    }
+  } catch (error) {
+    console.warn('Failed to get storage usage:', error);
+    const storageUsageSpan = document.getElementById('storageUsage');
+    if (storageUsageSpan) {
+      storageUsageSpan.textContent = "Hata";
+    }
+  }
+}
+
+async function handleClearStoredData() {
+  if (!confirm("Saklanan kuyruk ve tamamlanan işlem verilerini temizlemek istediğinizden emin misiniz? Bu işlem geri alınamaz.")) {
+    return;
+  }
+  
+  const clearButton = document.getElementById('clearStoredData');
+  if (clearButton) {
+    clearButton.disabled = true;
+    clearButton.textContent = '⏳ Temizleniyor...';
+  }
+  
+  try {
+    await storageHandler.clearPersistedData();
+    await updateStorageUsageDisplay();
+    alert("Saklanan veriler temizlendi.");
+  } catch (error) {
+    console.error('Failed to clear stored data:', error);
+    alert("Veriler temizlenirken hata oluştu: " + error.message);
+  } finally {
+    if (clearButton) {
+      clearButton.disabled = false;
+      clearButton.textContent = '🗑️ Saklanan Verileri Temizle';
+    }
+  }
 }
 

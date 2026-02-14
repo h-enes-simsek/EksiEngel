@@ -1,6 +1,5 @@
 import { storageHandler } from './storageHandler.js';
 import { processQueue } from './queue.js';
-
 class ButtonStateManager {
   constructor() {
     this.buttonStates = new Map();
@@ -9,7 +8,6 @@ class ButtonStateManager {
     this.initialized = false;
     this.listCounts = { muted: 0, blocked: 0, mutedTotal: 0, blockedTotal: 0 };
   }
-
   async getQueueSize() {
     try {
       return processQueue.size;
@@ -18,7 +16,6 @@ class ButtonStateManager {
       return 0;
     }
   }
-
   async canContinueOperation(operationState, activeOperation) {
     if (!(operationState === 'STOPPED' || operationState === 'COOLDOWN')) return false;
     if (operationState === 'COOLDOWN' && activeOperation?.canContinueAfterCooldown) return true;
@@ -28,7 +25,6 @@ class ButtonStateManager {
     }
     return false;
   }
-
   async checkEnhancedOperationState() {
     try {
       const activeOperation = await storageHandler.getActiveOperation();
@@ -41,7 +37,6 @@ class ButtonStateManager {
       this.operationState = 'INACTIVE';
     }
   }
-
   async initialize() {
     if (this.initialized) {
       console.log('ButtonStateManager already initialized');
@@ -53,7 +48,6 @@ class ButtonStateManager {
     this.initialized = true;
     console.log('ButtonStateManager initialized with state:', this.operationState);
   }
-
   async updateListCounts() {
     try {
       this.listCounts.muted = await storageHandler.getMutedUserCount();
@@ -68,7 +62,6 @@ class ButtonStateManager {
       this.listCounts = { muted: 0, blocked: 0, mutedTotal: 0, blockedTotal: 0 };
     }
   }
-
   async checkCurrentOperationState() {
     try {
       // First check resumable operation registry for current operations
@@ -86,7 +79,6 @@ class ButtonStateManager {
       this.operationState = 'INACTIVE';
     }
   }
-
   async getResumableOperationState() {
     try {
       // Get current operation from background script
@@ -126,7 +118,6 @@ class ButtonStateManager {
       return null;
     }
   }
-
   setupMessageListeners() {
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       if (message && message.action === 'operationStateChanged') {
@@ -139,7 +130,6 @@ class ButtonStateManager {
       return true;
     });
   }
-
   /**
    * Map operation state from resumableOperation to UI state
    * @param {string} operationState - State from resumableOperation (RUNNING, PAUSED, etc.)
@@ -165,7 +155,6 @@ class ButtonStateManager {
         return 'INACTIVE';
     }
   }
-
   async handleOperationStateChange(newState, operationData) {
     console.log('ButtonStateManager: Operation state changed from', this.operationState, 'to', newState);
     const previousState = this.operationState;
@@ -173,13 +162,11 @@ class ButtonStateManager {
     await this.updateAllButtonStates();
     this.notifyUIOfStateChange(previousState, newState);
   }
-
   async updateAllButtonStates() {
     await this.updateListCounts();
     const buttons = this.getAllManagedButtons();
     for (const button of buttons) await this.updateButtonState(button.id, button.element);
   }
-
   getAllManagedButtons() {
     return [
       { id: 'earlyStop', element: document.getElementById('earlyStop') },
@@ -196,12 +183,10 @@ class ButtonStateManager {
       { id: 'refreshBlockedList', element: document.getElementById('refreshBlockedList') },
       { id: 'exportMutedListCSV', element: document.getElementById('exportMutedListCSV') },
       { id: 'exportBlockedListCSV', element: document.getElementById('exportBlockedListCSV') },
-      { id: 'clearStoredData', element: document.getElementById('clearStoredData') },
       { id: 'openauthorListPage', element: document.getElementById('openauthorListPage') },
       { id: 'openFaq', element: document.getElementById('openFaq') }
     ].filter(button => button.element !== null);
   }
-
   async updateButtonState(buttonId, buttonElement) {
     if (!buttonElement) return;
     const currentState = this.buttonStates.get(buttonId) || {};
@@ -212,7 +197,6 @@ class ButtonStateManager {
       console.log(`Button ${buttonId} state updated:`, newState);
     }
   }
-
   async calculateButtonState(buttonId, buttonElement) {
     const isOperationActive = this.operationState === 'ACTIVE';
     const isOperationPaused = this.operationState === 'PAUSED';
@@ -221,7 +205,6 @@ class ButtonStateManager {
     const isOperationCooldown = this.operationState === 'COOLDOWN';
     const isProcessing = this.isProcessing;
     const originalInnerHTML = buttonElement ? buttonElement.innerHTML : '';
-
     switch (buttonId) {
       case 'earlyStop':
         // Early stop should be enabled when any operation is running, paused, or in cooldown
@@ -231,7 +214,6 @@ class ButtonStateManager {
           title: !canStopOperation ? 'No active operation to stop' : isProcessing ? 'Stopping operation...' : 'Stop the current operation',
           innerHTML: isProcessing ? '<span class="btn-icon">⏳</span><span class="btn-text">Durduruluyor...</span>' : '<span class="btn-icon">🛑</span><span class="btn-text">Erken Durdur</span>'
         };
-
       case 'continueOperationButton':
         const activeOperation = await storageHandler.getActiveOperation();
         const canContinue = await this.canContinueOperation(this.operationState, activeOperation);
@@ -240,7 +222,6 @@ class ButtonStateManager {
           title: !canContinue ? (this.operationState === 'INACTIVE' ? 'No operation to continue' : 'Operation cannot be continued') : isProcessing ? 'Continuing operation...' : 'Continue the stopped operation',
           innerHTML: isProcessing ? '<span class="btn-icon">⏳</span><span class="btn-text">İşlem devam ettiriliyor...</span>' : '<span class="btn-icon">▶️</span><span class="btn-text">İşlemi Devam Ettir</span>'
         };
-
       case 'discardOperationButton':
         const activeOp = await storageHandler.getActiveOperation();
         const canDiscard = activeOp && (this.operationState === 'STOPPED' || this.operationState === 'COOLDOWN');
@@ -249,7 +230,6 @@ class ButtonStateManager {
           title: !canDiscard ? 'No operation to discard' : isProcessing ? 'Discarding operation...' : 'Discard the operation',
           innerHTML: isProcessing ? '<span class="btn-icon">⏳</span><span class="btn-text">İptal ediliyor...</span>' : '<span class="btn-icon">🗑️</span><span class="btn-text">İşlemi İptal Et</span>'
         };
-
       case 'startMigration':
       case 'startTitleMigration':
       case 'migrateBlockedToMuted':
@@ -262,7 +242,6 @@ class ButtonStateManager {
           title: isOperationActive || isOperationCooldown ? 'Action blocked: Another operation is currently running' : isProcessing ? 'Processing...' : 'Start this action',
           innerHTML: originalInnerHTML
         };
-
       case 'refreshMutedList':
       case 'refreshBlockedList':
         return {
@@ -270,7 +249,6 @@ class ButtonStateManager {
           title: isOperationActive || isOperationCooldown ? 'Refresh blocked: Another operation is currently running' : isProcessing ? 'Refreshing...' : 'Refresh the list',
           innerHTML: originalInnerHTML
         };
-
       case 'exportMutedListCSV':
         const mutedTotal = this.listCounts.mutedTotal || this.listCounts.muted;
         return {
@@ -278,7 +256,6 @@ class ButtonStateManager {
           title: isOperationActive || isOperationCooldown ? 'Export blocked: Another operation is currently running' : mutedTotal === 0 ? 'No muted users to export' : 'Export muted users list to CSV',
           innerHTML: originalInnerHTML
         };
-
       case 'exportBlockedListCSV':
         const blockedTotal = this.listCounts.blockedTotal || this.listCounts.blocked;
         return {
@@ -286,14 +263,11 @@ class ButtonStateManager {
           title: isOperationActive || isOperationCooldown ? 'Export blocked: Another operation is currently running' : blockedTotal === 0 ? 'No blocked users to export' : 'Export blocked users list to CSV',
           innerHTML: originalInnerHTML
         };
-
-      case 'clearStoredData':
         return {
           disabled: isOperationActive || isOperationCooldown || isProcessing,
           title: isOperationActive || isOperationCooldown ? 'Clear blocked: Another operation is currently running' : isProcessing ? 'Clearing data...' : 'Clear all stored data',
           innerHTML: isProcessing ? '<span class="btn-icon">⏳</span><span class="btn-text">Temizleniyor...</span>' : '<span class="btn-icon">🗑️</span><span class="btn-text">Saklanan Verileri Temizle</span>'
         };
-
       case 'openauthorListPage':
       case 'openFaq':
         return {
@@ -301,12 +275,10 @@ class ButtonStateManager {
           title: isProcessing ? 'Please wait for current operation to complete' : 'Open this page',
           innerHTML: originalInnerHTML
         };
-
       default:
         return { disabled: false, title: 'Button', innerHTML: originalInnerHTML };
     }
   }
-
   applyButtonState(buttonElement, state) {
     if (!buttonElement) return;
     buttonElement.disabled = state.disabled;
@@ -315,44 +287,32 @@ class ButtonStateManager {
       buttonElement.innerHTML = state.innerHTML;
     }
   }
-
   setProcessingState(isProcessing, operationType = '') {
     this.isProcessing = isProcessing;
     console.log(`ButtonStateManager: Processing state set to ${isProcessing} for ${operationType}`);
     if (isProcessing) this.updateProcessingVisualStates(operationType);
     else setTimeout(() => this.updateAllButtonStates(), 100);
   }
-
   updateProcessingVisualStates(operationType) {
     const earlyStopBtn = document.getElementById('earlyStop');
-    const clearDataBtn = document.getElementById('clearStoredData');
     if (operationType === 'earlyStop' && earlyStopBtn) {
       earlyStopBtn.disabled = true;
       earlyStopBtn.innerHTML = '<span class="btn-icon">⏳</span><span class="btn-text">Durduruluyor...</span>';
       earlyStopBtn.title = 'Stopping operation...';
     }
-    if (operationType === 'clearStoredData' && clearDataBtn) {
-      clearDataBtn.disabled = true;
-      clearDataBtn.innerHTML = '<span class="btn-icon">⏳</span><span class="btn-text">Temizleniyor...</span>';
-      clearDataBtn.title = 'Clearing data...';
-    }
   }
-
   notifyUIOfStateChange(previousState, newState) {
     const event = new CustomEvent('operationStateChanged', { detail: { previousState, newState, timestamp: Date.now() } });
     document.dispatchEvent(event);
   }
-
   getOperationState() { return this.operationState; }
   getProcessingState() { return this.isProcessing; }
-
   async refreshAllButtonStates() {
     await this.checkCurrentOperationState();
     await this.updateListCounts();
     await this.updateAllButtonStates();
     console.log('ButtonStateManager: All button states refreshed');
   }
-
   reset() {
     this.buttonStates.clear();
     this.operationState = 'INACTIVE';
@@ -362,5 +322,4 @@ class ButtonStateManager {
     console.log('ButtonStateManager: Reset to initial state');
   }
 }
-
 export let buttonStateManager = new ButtonStateManager();
