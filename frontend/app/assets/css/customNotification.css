@@ -1597,32 +1597,6 @@ body {
     margin-bottom: 4px;
 }
 
-.bulk-preview {
-    margin: 16px 0;
-    padding: 12px 16px;
-    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-    border: 1px solid #86efac;
-    border-radius: var(--radius-sm);
-    text-align: center;
-}
-
-.preview-content {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-}
-
-.preview-icon {
-    font-size: 1.2rem;
-}
-
-.preview-text {
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--success-color);
-}
-
 .bulk-action-buttons {
     display: flex;
     gap: 8px;
