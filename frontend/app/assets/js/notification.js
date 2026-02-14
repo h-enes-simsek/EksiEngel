@@ -1128,11 +1128,24 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
            remainingActionElement.textContent = 0;
          }
          
-         if (currentOperationDescriptionElement) {
+if (currentOperationDescriptionElement) {
            currentOperationDescriptionElement.textContent = "İşlem tamamlandı";
          }
          
-      } else {
+         const statusText = document.getElementById("statusText");
+         if (statusText) {
+           if (notification.errorText && notification.errorText !== "Tamamlandı") {
+             if (notification.errorText === "İptal edildi") {
+               statusText.innerHTML = "İşlem kullanıcı tarafından durduruldu.";
+             } else {
+               statusText.innerHTML = `İşlem sonlandı: ${notification.errorText}`;
+             }
+           } else {
+             statusText.innerHTML = "İşlem tamamlandı.";
+           }
+         }
+         
+       } else {
          if (progressBar) progressBar.style.width = "0%";
          if (progressBarText) progressBarText.innerHTML = "";
          if (progressText) progressText.innerHTML = "";
@@ -1150,25 +1163,21 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
          if (currentOperationDescriptionElement) currentOperationDescriptionElement.textContent = "-";
       }
 
-      if (notification.status === enums.NotificationType.FINISH && notification.completedProcess) {
-        insertCompletedProcessesTable(
-          notification.completedProcess.banSource,
-          notification.successfulAction,
-          notification.performedAction,
-          notification.plannedAction,
-          notification.errorText || "Başarılı",
-          notification.completedProcess.operationMetadata || null
-        );
-        if (notification.errorText && notification.errorText !== "Tamamlandı" && errorTextDiv) {
-           errorTextDiv.innerHTML = `Hata: ${notification.errorText}`;
-           errorTextDiv.style.display = "block";
-        }
-         const earlyStopButton = document.getElementById("earlyStop");
-         if (earlyStopButton) {
-             earlyStopButton.innerHTML = '<span class="btn-icon">🛑</span><span class="btn-text">Erken Durdur</span>';
-             earlyStopButton.disabled = false;
+       if (notification.status === enums.NotificationType.FINISH && notification.completedProcess) {
+         insertCompletedProcessesTable(
+           notification.completedProcess.banSource,
+           notification.successfulAction,
+           notification.performedAction,
+           notification.plannedAction,
+           notification.errorText || "Başarılı",
+           notification.completedProcess.operationMetadata || null
+         );
+         if (notification.errorText && notification.errorText !== "Tamamlandı" && errorTextDiv) {
+            errorTextDiv.innerHTML = `Hata: ${notification.errorText}`;
+            errorTextDiv.style.display = "block";
          }
-      }
+         updateUniversalControls(null);
+       }
 
       if (notification.status === enums.NotificationType.UPDATE_PLANNED_PROCESSES && notification.plannedProcesses) {
         console.log("Updating planned processes table with", notification.plannedProcesses.length, "items");
