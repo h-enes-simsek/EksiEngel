@@ -444,9 +444,7 @@ chrome.runtime.onMessage.addListener(function messageListener_Popup(message, sen
     }
     return true;
   } else if (message && message.earlyStop !== undefined) {
-    try {
-      log.info("bg", `Early stop request received. Current state: Active=${programController.isActive}, QueueSize=${processQueue.size}, RunningTasks=${programController.hasAnyRunningTasks}`);
-      
+    programController.stopCurrentOperation(true).then(result => {
       programController.stopAllOperations();
       
       const wasActive = programController.isActive;
@@ -466,13 +464,13 @@ chrome.runtime.onMessage.addListener(function messageListener_Popup(message, sen
           queueSize: processQueue.size
         }
       });
-    } catch (error) {
+    }).catch(error => {
       log.err("bg", `Error handling early stop request: ${error}`, error);
       sendResponse({
         status: 'error',
         message: `Failed to process early stop: ${error.message}`
       });
-    }
+    });
     return true;
   } else {
     const obj = utils.filterMessage(message, "banSource", "banMode");

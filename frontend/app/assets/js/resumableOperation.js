@@ -24,6 +24,7 @@ export class ResumableOperationRegistry {
     this._currentOperationId = null;
     this._pausePromise = null;
     this._pauseResolve = null;
+    this._clearStateOnStop = false;
   }
 
   /**
@@ -60,6 +61,7 @@ export class ResumableOperationRegistry {
     this._activeOperations.delete(operationId);
     if (this._currentOperationId === operationId) {
       this._currentOperationId = null;
+      this._clearStateOnStop = false;
     }
     log.info('resumableOp', `Unregistered operation ${operationId}`);
     this._notifyUIStateChanged();
@@ -143,7 +145,11 @@ export class ResumableOperationRegistry {
 
     if (op.state === OperationState.STOPPING) {
       op.state = OperationState.STOPPED;
-      await this._persistStoppedState(op, checkpointData);
+      // Only persist stopped state if clearState was NOT requested
+      if (!this._clearStateOnStop) {
+        await this._persistStoppedState(op, checkpointData);
+      }
+      this._clearStateOnStop = false; // Reset the flag
       log.info('resumableOp', `Operation ${this._currentOperationId} stopped at checkpoint ${checkpointData.stage}`);
       this._notifyUIStateChanged();
       return { shouldContinue: false, stopped: true };
@@ -167,8 +173,20 @@ export class ResumableOperationRegistry {
       return { success: false, error: 'Operation not found' };
     }
 
+    // If operation is already paused, immediately clear and unregister
+    if (op.state === OperationState.PAUSED) {
+      log.info('resumableOp', `Operation ${this._currentOperationId} was paused, clearing state on stop request`);
+      if (clearState) {
+        await storageHandler.clearOperationState(this._currentOperationId);
+      }
+      this._clearStateOnStop = false;
+      this.unregisterOperation(this._currentOperationId);
+      return { success: true, wasPaused: true };
+    }
+
     op.state = OperationState.STOPPING;
-    log.info('resumableOp', `Stop requested for operation ${this._currentOperationId}`);
+    this._clearStateOnStop = clearState;
+    log.info('resumableOp', `Stop requested for operation ${this._currentOperationId} (clearState: ${clearState})`);
 
     if (clearState) {
       await storageHandler.clearOperationState(this._currentOperationId);
@@ -189,9 +207,9 @@ export class ResumableOperationRegistry {
     if (op) {
       const wasPaused = op.state === OperationState.PAUSED;
       op.state = OperationState.COMPLETED;
+      this._clearStateOnStop = false;
       log.info('resumableOp', `Operation ${this._currentOperationId} completed (wasPaused: ${wasPaused})`);
       
-      // Only clear saved state if NOT paused - paused operations should retain state for resume
       if (!wasPaused) {
         await storageHandler.clearOperationState(this._currentOperationId);
       }
