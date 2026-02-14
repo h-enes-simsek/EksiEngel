@@ -56,7 +56,6 @@ The project "EksiEngelPlus" is a Chrome browser extension designed to facilitate
   * Source options: Blocked users list, Muted users list, or Author list
   * Date criteria: Account age (newer/older than) or specific dates (before/after)
   * Actions: Block, Mute, Unblock, Unmute, or Follow matching users
-  * Preview functionality showing count of matching users
   * Preferences persistence for user convenience
 * **Advanced Migration System:**
   * Migrate blocked users to muted status (and vice versa)
