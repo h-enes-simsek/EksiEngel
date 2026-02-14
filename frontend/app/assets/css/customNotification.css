@@ -1981,13 +1981,19 @@ body {
 .date-operations-content {
     padding: 16px;
     margin: 0 16px 16px 16px;
-    overflow: hidden;
+    overflow: visible;
     transition: max-height 0.3s ease-out, opacity 0.2s ease-out, display 0.3s;
 }
 
 .date-operations-content[style*="display: none"] {
+    overflow: hidden;
     padding: 0;
     margin: 0;
+}
+
+/* Last sub-section in date operations should have no extra margin */
+.date-operations-content > .sub-section:last-child {
+    margin-bottom: 0;
 }
 
 /* Rule Form Section - Special styling */
