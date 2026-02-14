@@ -480,7 +480,7 @@ class ProgramController {
       this.earlyStop = false;
       this._dateBasedBulkInProgress = false;
       
-      // Only call completeOperation if not paused
+      // Only call completeOperation if not paused (paused operations should persist for resume)
       const currentOp = resumableOperationRegistry.getCurrentOperation();
       if (!currentOp || currentOp.state !== OperationState.PAUSED) {
         resumableOperationRegistry.completeOperation();
@@ -541,7 +541,7 @@ class ProgramController {
             stoppedEarly: true,
             usernames: result.usernames || [],
             count: result.count || 0,
-            error: result.error || "Process stopped by user",
+            error: result.error || "İşlem kullanıcı tarafından durduruldu",
             resumeMode: true
           }).catch(e => log.warn("progctrl", `Error sending resume early stop message: ${e}`));
         }
@@ -569,7 +569,7 @@ class ProgramController {
         chrome.tabs.sendMessage(this.tabId, {
           action: "mutedListRefreshComplete",
           success: false,
-          error: error.message || "Unknown error",
+          error: error.message || "Bilinmeyen hata",
           resumeMode: true
         }).catch(e => log.warn("progctrl", `Error sending resume error message: ${e}`));
       }
@@ -666,7 +666,7 @@ class ProgramController {
              try {
                chrome.tabs.sendMessage(this.tabId, {
                  action: "operationStopped",
-                 message: "Operation stopped by user during cooldown.",
+                 message: "Bekleme süresinde işlem kullanıcı tarafından durduruldu.",
                  cooldown: true
                });
              } catch (e) {
@@ -693,7 +693,7 @@ class ProgramController {
        try {
          chrome.tabs.sendMessage(this.tabId, {
            action: "updateMigrationStatus",
-           statusText: "Migration already in progress."
+           statusText: "Taşıma işlemi zaten devam ediyor."
          });
        } catch (e) {
          log.warn("progctrl", `Error sending status update: ${e}`);
@@ -1424,7 +1424,7 @@ notificationHandler.notify(`${totalCount} adet başlıkları engellenen kullanı
     // Get saved state
     const savedState = await storageHandler.getOperationState(operationId);
     if (!savedState) {
-      return { success: false, error: 'No saved state found for operation' };
+      return { success: false, error: 'İşlem için kayıtlı durum bulunamadı' };
     }
 
     // Check if operation is already running
@@ -1432,12 +1432,12 @@ notificationHandler.notify(`${totalCount} adet başlıkları engellenen kullanı
         this._migrationInProgress ||
         this._blockMutedUsersInProgress ||
         this._blockTitlesInProgress) {
-      return { success: false, error: 'Another operation is already running' };
+      return { success: false, error: 'Başka bir işlem zaten devam ediyor' };
     }
 
     // Validate that the saved state has the required data for resume
     if (!savedState.checkpointData || !savedState.operationType) {
-      return { success: false, error: 'Invalid saved state - missing checkpoint data or operation type' };
+      return { success: false, error: 'Geçersiz işlem - kontrol noktası verisi veya işlem türü eksik' };
     }
 
     // Dispatch to appropriate handler based on operation type
@@ -1451,7 +1451,7 @@ notificationHandler.notify(`${totalCount} adet başlıkları engellenen kullanı
       case 'BLOCK_TITLES':
         return await this._resumeBlockTitles(savedState);
       default:
-        return { success: false, error: `Unknown operation type: ${savedState.operationType}` };
+        return { success: false, error: `Bilinmeyen işlem türü: ${savedState.operationType}` };
     }
   }
 
@@ -1772,7 +1772,7 @@ notificationHandler.notify(`${totalCount} adet başlıkları engellenen kullanı
         log.info("progctrl", "No users found to resume operation.");
         notificationHandler.notify("Devam ettirilecek kullanıcı bulunamadı.");
         this._dateBasedBulkInProgress = false;
-        return { success: false, error: 'No users to process' };
+        return { success: false, error: 'İşlenecek kullanıcı yok' };
       }
       
       log.info("progctrl", `Resuming with ${userList.length} users`);
