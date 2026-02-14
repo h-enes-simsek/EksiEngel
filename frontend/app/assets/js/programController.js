@@ -1505,50 +1505,6 @@ notificationHandler.notify(`${totalCount} adet başlıkları engellenen kullanı
       };
     }
     
-    // Note: Migration, blockMutedUsers, blockTitles, and dateBasedBulk are now registered 
-    // with the resumable registry, so they should appear as resumable operations above.
-    // The legacy checks below are kept for backward compatibility but should not be reached.
-    
-    if (this._migrationInProgress) {
-      return {
-        id: 'legacy-migration',
-        type: 'MIGRATE_BLOCKED_TO_MUTED',
-        state: OperationState.RUNNING,
-        canPause: false,
-        message: 'Bu işlem türü duraklatmayı desteklemiyor. Erken durdurmayı kullanın.'
-      };
-    }
-    
-    if (this._blockMutedUsersInProgress) {
-      return {
-        id: 'legacy-block-muted',
-        type: 'BLOCK_MUTED_USERS',
-        state: OperationState.RUNNING,
-        canPause: false,
-        message: 'Bu işlem türü duraklatmayı desteklemiyor. Erken durdurmayı kullanın.'
-      };
-    }
-    
-    if (this._blockTitlesInProgress) {
-      return {
-        id: 'legacy-block-titles',
-        type: 'BLOCK_TITLES',
-        state: OperationState.RUNNING,
-        canPause: false,
-        message: 'Bu işlem türü duraklatmayı desteklemiyor. Erken durdurmayı kullanın.'
-      };
-    }
-    
-    if (this._dateBasedBulkInProgress) {
-      return {
-        id: 'legacy-date-bulk',
-        type: 'DATE_BASED_BULK',
-        state: OperationState.RUNNING,
-        canPause: false,
-        message: 'Bu işlem türü duraklatmayı desteklemiyor. Erken durdurmayı kullanın.'
-      };
-    }
-    
     return null;
   }
 

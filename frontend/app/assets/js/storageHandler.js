@@ -889,6 +889,19 @@ class StorageHandler {
       });
     });
   }
+
+  async getActiveOperation() {
+    return new Promise((resolve) => {
+      chrome.storage.local.get(['activeOperation'], (result) => {
+        if (chrome.runtime.lastError) {
+          log.err('storage', `Error getting active operation: ${chrome.runtime.lastError.message}`);
+          resolve(null);
+        } else {
+          resolve(result.activeOperation || null);
+        }
+      });
+    });
+  }
 }
 
 export let storageHandler = new StorageHandler();

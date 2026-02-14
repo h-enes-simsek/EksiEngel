@@ -65,8 +65,6 @@ function getTaskPriority(banSource) {
   }
 }
 
-function estimateDuration(banSource, complexity) { return 0; }
-
 export function generateUnifiedDescription(banSource, metadata = {}) {
   const { targetTypes = [], sourceEntry, sourceAuthor, sourceTitle, sourceList, timeFilter, banMode } = metadata;
   let baseDescription = "";

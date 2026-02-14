@@ -17,7 +17,7 @@ class Log {
   }
 
   getData = () => this.g_LoggedData;
-  resetData = () => { this.g_LoggedData = 0; this.g_LoggedData = []; }
+  resetData = () => { this.g_LoggedData = []; }
 
   getDateString = () => {
     const padZero = (num, length = 2) => String(num).padStart(length, '0');

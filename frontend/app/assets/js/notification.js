@@ -145,6 +145,7 @@ function startOperationStatePolling() {
   });
 }
 
+
 /**
  * Synchronize UI with actual operation state from background script
  */

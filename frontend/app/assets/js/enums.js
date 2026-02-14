@@ -58,17 +58,6 @@ export const TaskComplexity = { SIMPLE: "SIMPLE", MODERATE: "MODERATE", COMPLEX:
 export const TaskPriority = { LOW: "LOW", NORMAL: "NORMAL", HIGH: "HIGH", URGENT: "URGENT" };
 export const TaskStatus = { QUEUED: "QUEUED", PROCESSING: "PROCESSING", COMPLETED: "COMPLETED", FAILED: "FAILED", CANCELLED: "CANCELLED", PAUSED: "PAUSED" };
 
-export const TaskMetadata = {
-  sourceEntry: null,
-  sourceAuthor: null,
-  sourceTitle: null,
-  sourceList: null,
-  targetTypes: [],
-  timeFilter: null,
-  operationNotes: "",
-  requiresUserInteraction: false
-};
-
 // Date-based user filtering enums
 export const DateFilterCriteria = {
   NEWER_THAN: "NEWER_THAN",      // Account is newer than X days

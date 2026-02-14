@@ -511,10 +511,6 @@ chrome.runtime.onMessage.addListener(function messageListener_Popup(message, sen
   }
 });
 
-function getEstimatedUserCount(banSource, obj) {
-  return 0;
-}
-
 function getActionDescription(banSource, obj) {
   return generateUnifiedDescription(banSource, obj);
 }

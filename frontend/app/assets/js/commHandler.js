@@ -137,6 +137,7 @@ class CommHandler
 	}
 
   sendAnalyticsData = async (data) => {
+    // Analytics disabled - no-op
     return;
   }
 }

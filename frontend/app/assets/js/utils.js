@@ -71,7 +71,7 @@ export function filterMessage(message, ...keys)
 	{
 		if(key in message)
 		{
-			;
+			// Key exists, continue checking
 		}
 		else
 		{
