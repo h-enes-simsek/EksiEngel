@@ -254,7 +254,7 @@
             <label for="bulkSource">Kaynak Liste:</label>
             <select id="bulkSource" class="form-select">
               <option value="BLOCKED_USERS">🚫 Engellenen Kullanıcılar</option>
-              <option value="MUTED_USERS">🔇 Sessiz Kullanıcılar</option>
+              <option value="MUTED_USERS" selected>🔇 Sessiz Kullanıcılar</option>
               <option value="AUTHOR_LIST">📝 Yazar Listesi</option>
             </select>
           </div>
@@ -263,7 +263,7 @@
             <label for="bulkCriteria">Tarih Kriteri:</label>
             <select id="bulkCriteria" class="form-select">
               <option value="NEWER_THAN">Hesap yaşı küçüktür (yeni hesaplar)</option>
-              <option value="OLDER_THAN">Hesap yaşı büyüktür (eski hesaplar)</option>
+              <option value="OLDER_THAN" selected>Hesap yaşı büyüktür (eski hesaplar)</option>
               <option value="BEFORE_DATE">Kayıt tarihinden önce</option>
               <option value="AFTER_DATE">Kayıt tarihinden sonra</option>
             </select>
@@ -272,7 +272,7 @@
           <div class="form-group" id="bulkDaysValueGroup">
             <label for="bulkValueDays">Değer:</label>
             <div class="input-with-unit">
-              <input type="number" id="bulkValueDays" class="form-input" min="1" value="30">
+              <input type="number" id="bulkValueDays" class="form-input" min="1" value="3650">
               <select id="bulkUnit" class="form-select unit-select">
                 <option value="days">gün</option>
                 <option value="months">ay</option>
@@ -292,7 +292,7 @@
               <option value="ENGELLE">🚫 Engelle</option>
               <option value="SESSIZE_AL">🔇 Sessize Al</option>
               <option value="ENGEL_KALDIR">🔓 Engel Kaldır</option>
-              <option value="SESSIZDEN_CIKAR">🔊 Sessizden Çıkar</option>
+              <option value="SESSIZDEN_CIKAR" selected>🔊 Sessizden Çıkar</option>
               <option value="TAKIP_ET">➕ Takip Et</option>
             </select>
           </div>
