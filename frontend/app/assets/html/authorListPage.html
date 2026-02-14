@@ -2,82 +2,55 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>EksiEngelPlus</title>
+  <title>EksiEngelPlus - Yazar Listesi</title>
   <link rel="stylesheet" href="../css/buttons.css">
   <link rel="stylesheet" href="../css/footer.css">
-
-<style>
-.content {
-  width: 80vw;
-  line-height: 1.4;
-  background-color: #000;
-  color: #fff;
-  text-align: center;
-  margin-left: auto; 
-  margin-right: auto; 
-  margin-top: 5vh; 
-}
-@media screen and (min-width: 32em) {
-  .content {
-    width: 50vw;
-  }
-}
-textarea {
-  width: 100%;
-  height: 30vh;
-  padding: 1em;
-  font-size: 1.5em;
-  text-align: left;
-  border: 1px solid #000;
-  resize: none;
-}
-.boxSizing-borderBox {
-  box-sizing: border-box;
-}
-
-#inputContainer {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-}
-#howToUse {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  text-decoration: none;
-  margin-left: 5px;
-}
-
-#startBan, #startUndoban {
-  font-family: 'Montserrat', sans-serif;
-  margin: 2px;
-  font-size: 100%;
-}
-#status {
-  text-align: center;
-}
-body {
-  font-size: 100%;
-}
-</style>
+  <link rel="stylesheet" href="../css/customNotification.css">
 </head>
 <body>
 
-<section class="content">
-  Engellenecek veya Engeli Kaldırılacak Yazar Listesi
-   <textarea class="boxSizing-borderBox" placeholder="ornek_yazar_1&#10;ornek_yazar_2&#10;ornek_yazar_3&#10;" id="userList"></textarea>
-</section>
+<div class="container">
+  <!-- Header Section -->
+  <header class="main-header">
+    <div class="header-content">
+      <div class="header-text">
+        <div class="logo-section">
+          <img src="../img/eksiengel128.png" style="height: 32px; width: 32px; border: 2px solid rgba(255,255,255,0.8); border-radius: 4px; background: rgba(255,255,255,0.1);">
+          <h1>EksiEngel Plus</h1>
+          <span class="subtitle">· Yazar Listesi İşlemleri</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <a href="faq.html" class="help-btn-compact">
+          <span class="btn-icon">❓</span>
+          <span class="btn-text">Yardım</span>
+        </a>
+      </div>
+    </div>
+  </header>
 
-<br><br>
-
-<div id="inputContainer">
-<input type="button" id="startBan" value="Engelle" class="btn btn-dark">
-<input type="button" id="startUndoban" value="Engeli Kaldır" class="btn btn-dark">
-<a href="faq.html" id="howToUse"><img src="../img/questionicon.svg" style="width:35px" id="questionMark"></img></a>
-
+  <!-- Main Content Card -->
+  <section class="card">
+    <div class="card-header">
+      <h2>📝 Yazar Listesi</h2>
+    </div>
+    <p class="card-desc">Listeye yazdığınız yazarları toplu olarak engelleyin veya engellerini kaldırın.</p>
+    
+    <div class="card-body">
+      <textarea 
+        id="userList" 
+        placeholder="ornek_yazar_1&#10;ornek_yazar_2&#10;ornek_yazar_3&#10;"
+        style="width: 100%; height: 200px; padding: 12px; font-size: 14px; border: 2px solid var(--border-color); border-radius: 8px; background: var(--bg-color); color: var(--text-primary); resize: vertical; box-sizing: border-box;"></textarea>
+    </div>
+    
+    <div class="action-section">
+      <button id="startBan" class="btn btn-success">🚫 Engelle</button>
+      <button id="startUndoban" class="btn btn-danger">🔓 Engel Kaldır</button>
+    </div>
+    
+    <p id="status" style="text-align: center; margin-top: 12px; color: var(--text-muted);"></p>
+  </section>
 </div>
-<p id="status"></p>
 
 <script type="module" src="../js/authorListPage.js"></script>
 </body>
