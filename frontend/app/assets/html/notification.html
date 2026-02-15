@@ -34,7 +34,7 @@
   <!-- Status Card Section - Ultra Compact -->
   <section class="card status-card">
     <div class="card-header">
-      <h2>📊 Durum</h2>
+      <h2>📊 İşlem Durumu</h2>
       <div class="status-indicator" id="statusIndicator">
         <span class="indicator-dot" id="statusDot"></span>
         <span id="statusText">Beklemede.</span>
@@ -85,29 +85,29 @@
   <!-- Statistics Section - Ultra Compact -->
   <section class="card stats-section-card">
     <div class="card-header">
-      <h2>📊 Listeler</h2>
+      <h2>📊 Listeler <span class="inline-description">Mevcut liste durumları ve dışa aktarma</span></h2>
     </div>
     
     <div class="stats-cards">
       <div class="stats-card">
         <div class="stats-card-header">
-          <h3>🔇 Sessiz</h3>
-          <span class="count-badge" id="mutedUserCount">...</span>
+          <h3>🔇 Sessiz Kullanıcılar</h3>
+          <span class="count-badge" id="mutedUserCount">Yükleniyor...</span>
         </div>
         <div class="stats-card-actions">
-          <button id="refreshMutedList" class="stats-btn">Y</button>
-          <button id="exportMutedListCSV" class="stats-btn" disabled>C</button>
+          <button id="refreshMutedList" class="stats-btn">Yenile</button>
+          <button id="exportMutedListCSV" class="stats-btn" disabled>Listeyi CSV olarak kaydet</button>
         </div>
       </div>
       
       <div class="stats-card">
         <div class="stats-card-header">
-          <h3>🚫 Engellenen</h3>
-          <span class="count-badge" id="blockedUserCount">...</span>
+          <h3>🚫 Engellenmiş Kullanıcılar</h3>
+          <span class="count-badge" id="blockedUserCount">Yükleniyor...</span>
         </div>
         <div class="stats-card-actions">
-          <button id="refreshBlockedList" class="stats-btn">Y</button>
-          <button id="exportBlockedListCSV" class="stats-btn" disabled>C</button>
+          <button id="refreshBlockedList" class="stats-btn">Yenile</button>
+          <button id="exportBlockedListCSV" class="stats-btn" disabled>Listeyi CSV olarak kaydet</button>
         </div>
       </div>
     </div>
@@ -116,17 +116,23 @@
   <!-- Date-Based Operations Section - Ultra Compact -->
   <section class="card tarih-card" id="dateOperationsSection">
     <div class="card-header">
-      <h2>📅 Tarih İşlemleri</h2>
+      <h2>📅 Tarih Bazlı İşlemler <span class="inline-description">Kayıt tarihine göre filtreleme ve toplu işlemler</span></h2>
       <div class="toggle-container">
         <label class="switch-large">
           <input type="checkbox" id="dateFilterMasterToggle">
           <span class="slider-large"></span>
         </label>
-        <span id="dateFilterMasterStatus" class="toggle-status">Kapalı</span>
+        <span id="dateFilterMasterStatus" class="toggle-status">Devre dışı</span>
       </div>
     </div>
     
-    <div class="card-desc-inline">Filtre: engellerken tarih kriteri uygula • Toplu: listedekileri tarihle işle</div>
+    <p class="card-description">
+      Kayıt tarihine göre iki farklı işlem yapabilirsiniz:
+    </p>
+    <ul class="card-description-list">
+      <li><strong>Filtre Kuralları:</strong> Engelleme işlemleri sırasında belirli tarih kriterlerine uyan hesapları otomatik engelleyin.</li>
+      <li><strong>Toplu İşlem:</strong> Mevcut listenizdeki (engelli/sessiz) kullanıcıları tarih kriterine göre toplu işleme tabi tutun.</li>
+    </ul>
     
     <div class="date-operations-content collapsible-content" id="dateOperationsContent" style="display: none;">
       
@@ -259,16 +265,16 @@
   <!-- İşlemler Section - Ultra Compact -->
   <section class="card islemler-card">
     <div class="card-header">
-      <h2>⚡ İşlemler</h2>
+      <h2>⚡ İşlemler <span class="inline-description">Toplu taşıma ve temizleme işlemleri</span></h2>
     </div>
     
     <div class="islemler-grid">
-      <button id="migrateBlockedToMuted" class="btn-green-candy">Engelli → Sessiz</button>
-      <button id="btnBlockMutedUsers" class="btn-green-candy">Sessiz → Engelli</button>
-      <button id="btnBlockTitlesOfBlockedMuted" class="btn-green-candy">Engellilerin Başlıkları</button>
-      <button id="migrateBlockedTitlesToUnblocked" class="btn-green-candy">Engelli Başlıkları Kaldır</button>
-      <button id="startUndobanAll" class="btn-green-candy">Tüm Engelleri Kaldır</button>
-      <button id="startUnmuteAll" class="btn-green-candy">Tüm Sessizleri Kaldır</button>
+      <button id="migrateBlockedToMuted" class="btn-green-candy">Engelli kullanıcıları sessize al</button>
+      <button id="btnBlockMutedUsers" class="btn-green-candy">Sessiz kullanıcıları engelle</button>
+      <button id="btnBlockTitlesOfBlockedMuted" class="btn-green-candy">Engellilerin başlıklarını da engelle</button>
+      <button id="migrateBlockedTitlesToUnblocked" class="btn-green-candy">Engellenen başlıkları kaldır</button>
+      <button id="startUndobanAll" class="btn-green-candy">Tüm Engelleri Kaldır - Mevcut tüm engelleri temizle</button>
+      <button id="startUnmuteAll" class="btn-green-candy">Tüm Sessizleri Kaldır - Mevcut tüm sessizleri temizle</button>
     </div>
   </section>
 
@@ -277,26 +283,26 @@
 
   <!-- Queue Section - Default Collapsed -->
   <section class="card queue-card" id="queueSection">
-    <div class="card-header collapsible-header collapsed" id="queueToggle">
-      <h2>📋 İşlem Geçmişi</h2>
+    <div class="card-header collapsible-header" id="queueToggle">
+      <h2>📋 İşlem Geçmişi <span class="inline-description">Planlanan ve tamamlanan işlemler</span></h2>
       <span class="collapse-icon">▼</span>
       <span class="table-badge" id="totalQueueCount">0</span>
     </div>
-    <div class="tables-container collapsible-content collapsed" id="queueContent">
+    <div class="tables-container collapsible-content" id="queueContent">
       <div class="table-section">
         <div class="table-header">
-          <h3>⏳ Sıradaki</h3>
+          <h3>⏳ Sıradaki İşlemler</h3>
           <span class="table-badge" id="plannedCount">0</span>
         </div>
         <div class="table-wrapper">
           <table id="plannedProcesses" class="modern-table">
             <thead>
               <tr>
-                <th>⏰</th>
-                <th>📂</th>
-                <th>📝</th>
-                <th>🎯</th>
-                <th>📊</th>
+                <th>⏰ Saat</th>
+                <th>📂 Kaynak</th>
+                <th>📝 Açıklama</th>
+                <th>🎯 Hedef</th>
+                <th>📊 Durum</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -306,19 +312,19 @@
 
       <div class="table-section">
         <div class="table-header">
-          <h3>✅ Tamamlanan</h3>
+          <h3>✅ Tamamlanan İşlemler</h3>
           <span class="table-badge" id="completedCount">0</span>
         </div>
         <div class="table-wrapper">
           <table id="completedProcesses" class="modern-table">
             <thead>
               <tr>
-                <th>⏰</th>
-                <th>📂</th>
-                <th>📝</th>
-                <th>⚡</th>
-                <th>✅</th>
-                <th>📊</th>
+                <th>⏰ Saat</th>
+                <th>📂 Kaynak</th>
+                <th>📝 Açıklama</th>
+                <th>⚡ İşlenen</th>
+                <th>✅ Başarılı</th>
+                <th>📊 Durum</th>
               </tr>
             </thead>
             <tbody></tbody>
