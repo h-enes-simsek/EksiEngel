@@ -124,6 +124,17 @@ body {
     font-weight: 400;
 }
 
+.title-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.title-section .subtitle {
+    font-size: 0.75rem;
+    opacity: 0.9;
+}
+
 .header-actions { flex-shrink: 0; }
 
 .help-btn-compact {
