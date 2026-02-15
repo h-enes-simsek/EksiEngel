@@ -31,7 +31,7 @@
     </div>
   </header>
 
-  <!-- Status Card Section - Ultra Compact -->
+  <!-- 1. Status Card Section -->
   <section class="card status-card">
     <div class="card-header">
       <h2>📊 İşlem Durumu</h2>
@@ -82,38 +82,23 @@
     </div>
   </section>
 
-  <!-- Statistics Section - Ultra Compact -->
-  <section class="card stats-section-card">
+  <!-- 2. İşlemler Section -->
+  <section class="card islemler-card">
     <div class="card-header">
-      <h2>📊 Listeler <span class="inline-description">Mevcut liste durumları ve dışa aktarma</span></h2>
+      <h2>⚡ İşlemler <span class="inline-description">Toplu taşıma ve temizleme işlemleri</span></h2>
     </div>
     
-    <div class="stats-cards">
-      <div class="stats-card">
-        <div class="stats-card-header">
-          <h3>🔇 Sessiz Kullanıcılar</h3>
-          <span class="count-badge" id="mutedUserCount">Yükleniyor...</span>
-        </div>
-        <div class="stats-card-actions">
-          <button id="refreshMutedList" class="stats-btn">Yenile</button>
-          <button id="exportMutedListCSV" class="stats-btn" disabled>Listeyi CSV olarak kaydet</button>
-        </div>
-      </div>
-      
-      <div class="stats-card">
-        <div class="stats-card-header">
-          <h3>🚫 Engellenmiş Kullanıcılar</h3>
-          <span class="count-badge" id="blockedUserCount">Yükleniyor...</span>
-        </div>
-        <div class="stats-card-actions">
-          <button id="refreshBlockedList" class="stats-btn">Yenile</button>
-          <button id="exportBlockedListCSV" class="stats-btn" disabled>Listeyi CSV olarak kaydet</button>
-        </div>
-      </div>
+    <div class="islemler-grid">
+      <button id="migrateBlockedToMuted" class="btn-green-candy">Engelli kullanıcıları sessize al</button>
+      <button id="btnBlockMutedUsers" class="btn-green-candy">Sessiz kullanıcıları engelle</button>
+      <button id="btnBlockTitlesOfBlockedMuted" class="btn-green-candy">Engellilerin başlıklarını da engelle</button>
+      <button id="migrateBlockedTitlesToUnblocked" class="btn-green-candy">Engellenen başlıkları kaldır</button>
+      <button id="startUndobanAll" class="btn-green-candy">Tüm Engelleri Kaldır - Mevcut tüm engelleri temizle</button>
+      <button id="startUnmuteAll" class="btn-green-candy">Tüm Sessizleri Kaldır - Mevcut tüm sessizleri temizle</button>
     </div>
   </section>
 
-  <!-- Date-Based Operations Section - Ultra Compact -->
+  <!-- 3. Date-Based Operations Section -->
   <section class="card tarih-card" id="dateOperationsSection">
     <div class="card-header">
       <h2>📅 Tarih Bazlı İşlemler <span class="inline-description">Kayıt tarihine göre filtreleme ve toplu işlemler</span></h2>
@@ -194,26 +179,41 @@
     </div>
   </section>
 
-  <!-- İşlemler Section - Ultra Compact -->
-  <section class="card islemler-card">
+  <!-- 4. Statistics Section - Listeler -->
+  <section class="card stats-section-card">
     <div class="card-header">
-      <h2>⚡ İşlemler <span class="inline-description">Toplu taşıma ve temizleme işlemleri</span></h2>
+      <h2>📊 Listeler <span class="inline-description">Mevcut liste durumları ve dışa aktarma</span></h2>
     </div>
     
-    <div class="islemler-grid">
-      <button id="migrateBlockedToMuted" class="btn-green-candy">Engelli kullanıcıları sessize al</button>
-      <button id="btnBlockMutedUsers" class="btn-green-candy">Sessiz kullanıcıları engelle</button>
-      <button id="btnBlockTitlesOfBlockedMuted" class="btn-green-candy">Engellilerin başlıklarını da engelle</button>
-      <button id="migrateBlockedTitlesToUnblocked" class="btn-green-candy">Engellenen başlıkları kaldır</button>
-      <button id="startUndobanAll" class="btn-green-candy">Tüm Engelleri Kaldır - Mevcut tüm engelleri temizle</button>
-      <button id="startUnmuteAll" class="btn-green-candy">Tüm Sessizleri Kaldır - Mevcut tüm sessizleri temizle</button>
+    <div class="stats-cards">
+      <div class="stats-card">
+        <div class="stats-card-header">
+          <h3>🔇 Sessiz Kullanıcılar</h3>
+          <span class="count-badge" id="mutedUserCount">Yükleniyor...</span>
+        </div>
+        <div class="stats-card-actions">
+          <button id="refreshMutedList" class="stats-btn">Yenile</button>
+          <button id="exportMutedListCSV" class="stats-btn" disabled>Listeyi CSV olarak kaydet</button>
+        </div>
+      </div>
+      
+      <div class="stats-card">
+        <div class="stats-card-header">
+          <h3>🚫 Engellenmiş Kullanıcılar</h3>
+          <span class="count-badge" id="blockedUserCount">Yükleniyor...</span>
+        </div>
+        <div class="stats-card-actions">
+          <button id="refreshBlockedList" class="stats-btn">Yenile</button>
+          <button id="exportBlockedListCSV" class="stats-btn" disabled>Listeyi CSV olarak kaydet</button>
+        </div>
+      </div>
     </div>
   </section>
 
   <!-- Status Messages -->
   <div id="buttonStatus" class="status-message"></div>
 
-  <!-- Queue Section - Default Collapsed -->
+  <!-- 5. Queue Section - Default Collapsed -->
   <section class="card queue-card" id="queueSection">
     <div class="card-header collapsible-header" id="queueToggle">
       <h2>📋 İşlem Geçmişi <span class="inline-description">Planlanan ve tamamlanan işlemler</span></h2>

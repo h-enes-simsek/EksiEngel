@@ -422,11 +422,11 @@ ButtonStateManager: Operation state changed from undefined to undefined
 ```
 notification.html (Operations Page):
 ├── 📊 İşlem Durumu
-├── 📊 Listeler
+├── ⚡ İşlemler
 ├── 📅 Tarih Bazlı İşlemler
 │   ├── Master toggle (enable/disable)
 │   └── 🚀 Toplu İşlem (bulk actions)
-├── ⚡ İşlemler
+├── 📊 Listeler
 └── 📋 İşlem Geçmişi
 
 faq.html (Settings Page):
@@ -450,3 +450,32 @@ faq.html (Settings Page):
 - Operation-focused UI stays in notification.html
 - Separates concerns: configure rules in settings, execute operations in main page
 - Cleaner, more intuitive GUI organization
+
+### Commit 13: Reorder UI Sections (2026-02-15)
+**Purpose:** Improve UI flow by reorganizing sections in notification.html
+
+**Changes:**
+- Reordered sections to prioritize frequently-used actions
+- New order: İşlem Durumu → İşlemler → Tarih Bazlı İşlemler → Listeler → İşlem Geçmişi
+
+**Rationale:**
+- İşlemler (Actions) moved up for quick access to common bulk operations
+- Tarih Bazlı İşlemler placed after İşlemler as it's also action-focused
+- Listeler (Lists) moved down as it's primarily for viewing/exporting data
+- İşlem Geçmişi (History) remains at bottom as reference information
+
+**Files Modified:**
+- `notification.html` - Reordered section elements
+- `AGENTS.md` - Updated documentation
+
+**Updated Structure:**
+```
+notification.html (Operations Page):
+├── 📊 İşlem Durumu
+├── ⚡ İşlemler
+├── 📅 Tarih Bazlı İşlemler
+│   ├── Master toggle (enable/disable)
+│   └── 🚀 Toplu İşlem (bulk actions)
+├── 📊 Listeler
+└── 📋 İşlem Geçmişi
+```
