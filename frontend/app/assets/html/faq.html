@@ -150,12 +150,12 @@ margin-bottom: 8px;
 
   <p>Versiyon notları için <a style="color:black" target="_blank" href="welcome.html">tıklayın</a></p>
 
-  <h3 style="text-align: center;">
-    Ayarlar
-  </h3>
-  
-  
-  <div class="grid-container two-column">
+  <div class="card" style="margin-bottom: 20px;">
+    <div class="card-header">
+      <h2>⚙️ Ayarlar</h2>
+    </div>
+    <div class="card-body">
+      <div class="grid-container two-column">
   
     <div class="grid-item">
       <div id="muteSwitch" class="switch-toggle switch-3 switch-candy" style="display:inline-flex;width:132px;">
@@ -264,15 +264,17 @@ margin-bottom: 8px;
     Böylece en çok engellenen yazarları belirleyip yayınlayabiliriz." 
     style="text-align: left;" id="sendData">Toplanan verileri EksiEngelPlus sunucularına gönder.</a>
     
+      </div>
+    </div>
   </div>
 
   <!-- Date Filter Section -->
-  <h3 style="text-align: center; margin-top: 30px;">
-    📅 Tarih Filtresi
-  </h3>
-
   <div class="card" style="margin-bottom: 20px;">
-    <div class="sub-section" id="dateFilterRulesSection">
+    <div class="card-header">
+      <h2>📅 Tarih Filtresi</h2>
+    </div>
+    <div class="card-body" style="padding: 0;">
+      <div class="sub-section" id="dateFilterRulesSection">
       <div class="sub-section-header">
         <h3>🎯 Filtre Kuralları</h3>
         <span class="rules-count" id="rulesCount">0</span>
@@ -328,9 +330,7 @@ margin-bottom: 8px;
         </div>
       </div>
     </div>
-  </div>
 
-  <div class="card" style="margin-bottom: 20px;">
     <div class="sub-section" id="dateFilterCacheSection">
       <div class="sub-section-header">
         <h3>💾 Önbellek</h3>
@@ -343,9 +343,7 @@ margin-bottom: 8px;
         <span class="cache-mini">Süresi Dolmuş: <b id="cacheExpiredCount">0</b></span>
       </div>
     </div>
-  </div>
 
-  <div class="card" style="margin-bottom: 20px;">
     <div class="sub-section" id="storageSection">
       <div class="sub-section-header">
         <h3>💾 Depolama Kullanımı</h3>
@@ -356,27 +354,27 @@ margin-bottom: 8px;
         <span class="cache-mini">Kullanım: <b id="storageUsage">Yükleniyor...</b> / 5MB</span>
       </div>
     </div>
+    </div>
   </div>
 
   <!-- Dark Mode Toggle Section -->
-  <h3 style="text-align: center; margin-top: 30px;">
-    Görünüm
-  </h3>
-
-  <div style="text-align: center; margin-bottom: 20px;">
-    <div style="display: inline-flex; gap: 10px;">
-      <button id="themeLight" class="btn btn-dark theme-btn active" style="min-width: 100px;">
-        ☀️ Açık
-      </button>
-      <button id="themeDark" class="btn btn-dark theme-btn" style="min-width: 100px;">
-        🌙 Koyu
-      </button>
+  <div class="card" style="margin-bottom: 20px;">
+    <div class="card-header">
+      <h2>🎨 Görünüm</h2>
     </div>
-    <br>
-    <small style="color: #666;">Arayüz temasını değiştir</small>
+    <div class="card-body" style="text-align: center;">
+      <div style="display: inline-flex; gap: 10px;">
+        <button id="themeLight" class="btn btn-dark theme-btn active" style="min-width: 100px;">
+          ☀️ Açık
+        </button>
+        <button id="themeDark" class="btn btn-dark theme-btn" style="min-width: 100px;">
+          🌙 Koyu
+        </button>
+      </div>
+      <br>
+      <small style="color: #666;">Arayüz temasını değiştir</small>
+    </div>
   </div>
-  
-  <img src="../img/semsiye.png" id="semsiye">
 
   <div id="howToUse">
   <h3 style="text-align: center;">
