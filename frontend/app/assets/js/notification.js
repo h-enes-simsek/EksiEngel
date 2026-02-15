@@ -1140,6 +1140,12 @@ if (currentOperationDescriptionElement) {
            notification.errorText || "Başarılı",
            notification.completedProcess.operationMetadata || null
          );
+         // Remove completed item from planned processes table
+         const plannedTableBody = document.getElementById("plannedProcesses").getElementsByTagName('tbody')[0];
+         if (plannedTableBody && plannedTableBody.rows.length > 0) {
+            plannedTableBody.deleteRow(0);
+         }
+         notificationHandler.updateTableCounts();
          if (notification.errorText && notification.errorText !== "Tamamlandı" && errorTextDiv) {
             errorTextDiv.innerHTML = `Hata: ${notification.errorText}`;
             errorTextDiv.style.display = "block";

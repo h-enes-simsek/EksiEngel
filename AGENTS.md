@@ -640,3 +640,39 @@ faq.html (Settings Page):
 - Consistent visual hierarchy across all sections
 - Better separation of settings vs documentation
 - Dark mode support preserved for all cards
+
+### Commit 18: Fix Queue Item Stuck in "Sıradaki İşlemler" (2026-02-15)
+**Purpose:** Fix the top item in "⏳ Sıradaki İşlemler" table staying stuck until page refresh after task completion
+
+**Root Cause:**
+When a task finished, the `notificationHandler.finishSuccess()` and other finish methods sent a FINISH notification with `plannedProcesses: []` (empty array). In `notification.js`, the FINISH handler added the completed item to the "✅ Tamamlanan İşlemler" table, but the planned processes table update only ran if:
+- `status === UPDATE_PLANNED_PROCESSES` (not true for FINISH)
+- OR `plannedProcesses.length > 0` (false because it was empty)
+
+Result: The completed item remained visible in "⏳ Sıradaki İşlemler" until page refresh.
+
+**Fix Applied:**
+In `notification.js`, when a FINISH notification with `completedProcess` is received:
+1. Remove the first row from the planned processes table
+2. Update the count badges
+
+**Scenarios Handled:**
+All task completion scenarios are now handled:
+- ✅ Successful completion (`finishSuccess`)
+- 🛑 User interrupted (`finishErrorEarlyStop`)
+- ❌ Access error (`finishErrorAccess`)
+- ❌ Login error (`finishErrorLogin`)
+- ❌ Empty list error (`finishErrorNoAccount`)
+
+**Files Modified:**
+- `notification.js` - Added row removal and count update in FINISH handler
+
+**Code Change:**
+```javascript
+// Remove completed item from planned processes table
+const plannedTableBody = document.getElementById("plannedProcesses").getElementsByTagName('tbody')[0];
+if (plannedTableBody && plannedTableBody.rows.length > 0) {
+   plannedTableBody.deleteRow(0);
+}
+notificationHandler.updateTableCounts();
+```
