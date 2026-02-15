@@ -543,3 +543,100 @@ notification.html (Operations Page):
 **Files Modified:**
 - `notification.html` - Restructured status card header
 - `customNotification.css` - Added status-indicator-row styling
+
+### Commit 15: Update Default Settings Selections (2026-02-15)
+**Purpose:** Update default values for Ayarlar settings to more sensible defaults
+
+**Changes:**
+
+| Setting | Old Default | New Default |
+|---------|-------------|-------------|
+| Engelle veya sessize al | Engel | **Sessiz** |
+| Başlıklarını da engelle | Açık | **Kapalı** |
+| Çaylak yazarları da engelle | Kapalı | **Açık** |
+| Takip ettiğim yazarları engelleme | Kapalı | **Açık** |
+| Sadece gerekli işlemleri yap | Kapalı | Kapalı (unchanged) |
+| Yeşil ve sarı tikleri gizle | Kapalı | Kapalı (unchanged) |
+| Toplanan verileri gönder | Açık | Açık (unchanged) |
+
+**Config Values Changed:**
+- `enableMute`: false → true
+- `enableTitleBan`: true → false
+- `enableNoobBan`: false → true
+- `enableProtectFollowedUsers`: false → true
+
+**Files Modified:**
+- `config.js` - Updated default values
+- `faq.html` - Updated radio button checked attributes
+
+**Rationale:**
+- Sessiz (mute) is less aggressive than blocking
+- Title banning disabled by default to avoid over-blocking
+- Protecting followed users prevents accidental blocking of known authors
+- Blocking çaylak (novice) users enabled by default
+
+### Commit 16: Move Depolama Kullanımı Section (2026-02-15)
+**Purpose:** Improve organization by grouping storage-related sections together
+
+**Changes:**
+- Moved "Depolama Kullanımı" section from after "Görünüm" to directly below "Önbellek"
+- Converted to card-based styling matching Önbellek section
+- Removed standalone "Veri Yönetimi ve Depolama" header
+- Button and span IDs preserved for JS functionality
+
+**New Section Order in Tarih Filtresi:**
+```
+📅 Tarih Filtresi
+├── 🎯 Filtre Kuralları
+├── 💾 Önbellek
+└── 💾 Depolama Kullanımı  ← MOVED HERE
+```
+
+**Files Modified:**
+- `faq.html` - Restructured storage section placement and styling
+
+**Rationale:**
+- Storage sections logically grouped with date filter cache
+- Both deal with data persistence and clearing
+- Cleaner, more organized UI
+
+### Commit 17: Unify Section Styles (2026-02-15)
+**Purpose:** Create consistent visual hierarchy with card-based layout
+
+**Changes:**
+
+1. **Ayarlar Section**
+   - Wrapped in `.card` with `.card-header` and `.card-body`
+   - Header: ⚙️ Ayarlar
+
+2. **Tarih Filtresi Section**
+   - Wrapped in `.card` with `.card-header` and `.card-body`
+   - Sub-sections (Filtre Kuralları, Önbellek, Depolama) merged inside
+   - Header: 📅 Tarih Filtresi
+
+3. **Görünüm Section**
+   - Wrapped in `.card` with `.card-header` and `.card-body`
+   - Header: 🎨 Görünüm
+
+4. **Kullanım Kılavuzu**
+   - Unchanged (documentation content, different from settings)
+
+**Files Modified:**
+- `faq.html` - Restructured all sections with card layout
+
+**Result:**
+```
+faq.html (Settings Page):
+├── ⚙️ Ayarlar (card with switches)
+├── 📅 Tarih Filtresi (card with sub-sections)
+│   ├── 🎯 Filtre Kuralları
+│   ├── 💾 Önbellek
+│   └── 💾 Depolama Kullanımı
+├── 🎨 Görünüm (card with theme toggle)
+└── Kullanım Kılavuzu (documentation)
+```
+
+**Benefits:**
+- Consistent visual hierarchy across all sections
+- Better separation of settings vs documentation
+- Dark mode support preserved for all cards
