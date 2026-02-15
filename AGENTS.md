@@ -479,3 +479,21 @@ notification.html (Operations Page):
 ├── 📊 Listeler
 └── 📋 İşlem Geçmişi
 ```
+
+### Commit 14: Status Message Row Layout (2026-02-15)
+**Purpose:** Improve UI clarity by moving progress bar status message to a separate row under the title
+
+**Changes:**
+- Moved status indicator ("Beklemede.", etc.) from card-header to a new dedicated row
+- Status message now appears centered below "İşlem Durumu" title
+- Added new `.status-indicator-row` CSS class with subtle background
+- Card header now only contains the section title
+
+**Rationale:**
+- Separates section title from status message for better visual hierarchy
+- Status message gets more prominence in its own row
+- Cleaner, more readable layout
+
+**Files Modified:**
+- `notification.html` - Restructured status card header
+- `customNotification.css` - Added status-indicator-row styling

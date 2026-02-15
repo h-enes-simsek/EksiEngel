@@ -213,6 +213,16 @@ body {
 .indicator-dot.error { background: var(--danger-color); animation: pulse 2s infinite; }
 .indicator-dot.warning { background: var(--warning-color); animation: pulse 2s infinite; }
 
+/* Status Indicator Row */
+.status-indicator-row {
+    padding: 8px 10px;
+    background: var(--bg-color);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 /* Progress Section */
 .progress-section { padding: 8px 10px; }
 .progress-container { margin-bottom: 3px; }
