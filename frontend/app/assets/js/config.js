@@ -68,8 +68,14 @@ export async function handleConfig() {
   if (c) {
     log.info("config", "Config restored from storage");
     Object.assign(config, c);
+    if (!config.dateFilterRules || config.dateFilterRules.length === 0) {
+      log.info("config", "Applying default date filter rules");
+      config.dateFilterRules = createDefaultDateFilterRules();
+      saveConfig(config);
+    }
   } else {
     log.info("config", "No config in storage, hardcoded config will be saved into storage");
+    config.dateFilterRules = createDefaultDateFilterRules();
     saveConfig(config);
   }
 }

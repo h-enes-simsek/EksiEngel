@@ -117,7 +117,7 @@ Comprehensive date-based filtering system to filter users by account registratio
 - `customNotification.css` - Toggle switches, forms, rule lists
 
 ### Default Behavior
-- **Date Filter Rule**: Block accounts NEWER_THAN 10 years (3650 days)
+- **Date Filter Rule**: Default rule pre-populated - Block accounts NEWER_THAN 10 years (3650 days)
 - **Date Bulk Action**: Unmute accounts OLDER_THAN 10 years from muted list
 - Feature disabled by default (opt-in)
 
@@ -676,3 +676,24 @@ if (plannedTableBody && plannedTableBody.rows.length > 0) {
 }
 notificationHandler.updateTableCounts();
 ```
+
+### Commit 19: Default Date Filter Rule (2026-02-15)
+**Purpose:** Ensure users have a default date filter rule pre-populated on first use
+
+**Changes:**
+- Modified `handleConfig()` in config.js to apply default date filter rules if empty or missing
+- Default rule: Block accounts NEWER_THAN 3650 days (10 years)
+- Applies to both new installations and existing users with empty rules
+
+**Technical Details:**
+- When config is loaded from storage, checks if `dateFilterRules` is empty or undefined
+- If so, calls `createDefaultDateFilterRules()` and saves the updated config
+- This ensures the default rule is always present unless user explicitly removes it
+
+**Files Modified:**
+- `config.js` - Updated `handleConfig()` to apply default rules
+
+**Rationale:**
+- Provides sensible defaults for new users
+- Date filter feature is more discoverable with a pre-populated rule
+- Users can still delete or modify the default rule
