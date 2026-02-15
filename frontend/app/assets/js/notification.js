@@ -677,6 +677,15 @@ function setupActionButtons() {
   document.getElementById('exportBlockedListCSV')?.addEventListener('click', () => notificationHandler.handleExportBlockedList());
   
   document.getElementById('openFaq')?.addEventListener('click', handleOpenFaq);
+  
+  // Setup link to open faq.html for date filter rules
+  const openFaqLink = document.getElementById('openFaqFromDates');
+  if (openFaqLink) {
+    openFaqLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      chrome.tabs.create({ url: chrome.runtime.getURL("assets/html/faq.html") });
+    });
+  }
 }
 
 function initializeRealTimeFeatures() {
@@ -1347,47 +1356,14 @@ function setupCollapsibleQueue() {
 }
 
 // ============================================
-// DATE FILTER MANAGEMENT
+// DATE FILTER MANAGEMENT (Master Toggle Only)
 // ============================================
-
-let currentRules = [];
-let editingRuleId = null;
 
 function setupDateFilterUI() {
   // Master toggle
   const masterToggle = document.getElementById('dateFilterMasterToggle');
   if (masterToggle) {
     masterToggle.addEventListener('change', handleMasterToggleChange);
-  }
-  
-  // Add new rule button
-  const addRuleBtn = document.getElementById('addNewRuleBtn');
-  if (addRuleBtn) {
-    addRuleBtn.addEventListener('click', showRuleForm);
-  }
-  
-  // Save rule button
-  const saveRuleBtn = document.getElementById('saveRuleBtn');
-  if (saveRuleBtn) {
-    saveRuleBtn.addEventListener('click', saveRule);
-  }
-  
-  // Cancel rule button
-  const cancelRuleBtn = document.getElementById('cancelRuleBtn');
-  if (cancelRuleBtn) {
-    cancelRuleBtn.addEventListener('click', hideRuleForm);
-  }
-  
-  // Criteria change handler
-  const criteriaSelect = document.getElementById('ruleCriteria');
-  if (criteriaSelect) {
-    criteriaSelect.addEventListener('change', handleCriteriaChange);
-  }
-  
-  // Clear cache button
-  const clearCacheBtn = document.getElementById('clearCacheBtn');
-  if (clearCacheBtn) {
-    clearCacheBtn.addEventListener('click', clearDateFilterCache);
   }
   
   // Load initial state
@@ -1420,10 +1396,6 @@ async function loadDateFilterState() {
     // Show/hide rule sections based on toggle
     toggleDateFilterSections(config.enableDateFilter);
     
-    // Load and display rules
-    currentRules = config.dateFilterRules || [];
-    renderRulesList();
-    
   } catch (error) {
     console.error('Error loading date filter state:', error);
   }
@@ -1437,13 +1409,7 @@ async function handleMasterToggleChange() {
   try {
     const { config, saveConfig } = await import('./config.js');
     
-    // If enabling and no rules exist, add default rule
-    if (enabled && (!currentRules || currentRules.length === 0)) {
-      currentRules = [createDefaultRule()];
-    }
-    
     config.enableDateFilter = enabled;
-    config.dateFilterRules = currentRules;
     await saveConfig(config);
     
     // Update UI
@@ -1456,7 +1422,6 @@ async function handleMasterToggleChange() {
     }
     
     toggleDateFilterSections(enabled);
-    renderRulesList();
     
     notificationHandler.showStatusMessage(
       enabled ? 'Tarih filtresi etkinleştirildi' : 'Tarih filtresi devre dışı bırakıldı',
@@ -1483,294 +1448,6 @@ function toggleDateFilterSections(enabled) {
       contentSection.style.maxHeight = '0';
       contentSection.style.opacity = '0';
     }
-  }
-  
-  if (enabled) {
-    loadDateFilterCacheStats();
-  }
-}
-
-function createDefaultRule() {
-  return {
-    id: 'block-new-users',
-    criteria: 'NEWER_THAN',
-    value: 3650,
-    valueType: 'days',
-    action: 'ENGELLE',
-    description: '10 yıldan yeni hesapları engelle',
-    isDefault: true
-  };
-}
-
-function renderRulesList() {
-  const rulesList = document.getElementById('rulesList');
-  const rulesCount = document.getElementById('rulesCount');
-  
-  if (!rulesList) return;
-  
-  // Update count
-  if (rulesCount) {
-    const count = currentRules.length;
-    rulesCount.textContent = `${count} kural`;
-  }
-  
-  // Clear existing rules
-  rulesList.innerHTML = '';
-  
-  // Render each rule
-  currentRules.forEach((rule, index) => {
-    const ruleElement = createRuleElement(rule, index);
-    rulesList.appendChild(ruleElement);
-  });
-}
-
-function createRuleElement(rule, index) {
-  const div = document.createElement('div');
-  div.className = 'rule-item';
-  div.dataset.ruleId = rule.id;
-  
-  // Determine icon based on action (convert old BLOCK to new value)
-  const action = rule.action === 'BLOCK' ? 'ENGELLE' : rule.action;
-  const icon = '🚫';
-  
-  // Format criteria text
-  let criteriaText = formatCriteriaText(rule);
-  
-  div.innerHTML = `
-    <div class="rule-icon">${icon}</div>
-    <div class="rule-content">
-      <div class="rule-title">${getActionText(action)} - ${criteriaText}</div>
-      <div class="rule-description">${rule.description || criteriaText}</div>
-    </div>
-    ${rule.isDefault ? '<span class="rule-badge">Varsayılan</span>' : ''}
-    <div class="rule-actions">
-      <button class="rule-btn rule-btn-edit" title="Düzenle">✏️</button>
-      <button class="rule-btn rule-btn-delete" title="Sil">🗑️</button>
-    </div>
-  `;
-  
-  // Add event listeners
-  const editBtn = div.querySelector('.rule-btn-edit');
-  const deleteBtn = div.querySelector('.rule-btn-delete');
-  
-  editBtn.addEventListener('click', () => editRule(rule.id));
-  deleteBtn.addEventListener('click', () => deleteRule(rule.id));
-  
-  return div;
-}
-
-function formatCriteriaText(rule) {
-  const criteriaMap = {
-    'NEWER_THAN': 'Hesap yaşı <',
-    'OLDER_THAN': 'Hesap yaşı >',
-    'BEFORE_DATE': 'Kayıt tarihi <',
-    'AFTER_DATE': 'Kayıt tarihi >'
-  };
-  
-  if (rule.criteria === 'BEFORE_DATE' || rule.criteria === 'AFTER_DATE') {
-    const date = new Date(rule.value);
-    return `${criteriaMap[rule.criteria]} ${date.toLocaleDateString('tr-TR')}`;
-  } else {
-    let value = rule.value;
-    let unit = rule.valueType === 'days' ? 'gün' : (rule.valueType === 'months' ? 'ay' : 'yıl');
-    return `${criteriaMap[rule.criteria]} ${value} ${unit}`;
-  }
-}
-
-function getActionText(action) {
-  const actionMap = {
-    'ENGELLE': 'Engelle',
-    'BLOCK': 'Engelle'
-  };
-  return actionMap[action] || action;
-}
-
-function showRuleForm() {
-  editingRuleId = null;
-  document.getElementById('ruleFormTitle').textContent = '📝 Yeni Kural Ekle';
-  document.getElementById('ruleId').value = '';
-  document.getElementById('ruleIsDefault').value = 'false';
-  
-  // Reset form fields
-  document.getElementById('ruleCriteria').value = 'NEWER_THAN';
-  document.getElementById('ruleValueDays').value = '30';
-  document.getElementById('ruleUnit').value = 'days';
-  document.getElementById('ruleAction').value = 'ENGELLE';
-  document.getElementById('ruleDescription').value = '';
-  
-  handleCriteriaChange();
-  
-  document.getElementById('ruleFormSection').style.display = 'block';
-  document.getElementById('addNewRuleBtn').style.display = 'none';
-}
-
-function hideRuleForm() {
-  document.getElementById('ruleFormSection').style.display = 'none';
-  document.getElementById('addNewRuleBtn').style.display = 'block';
-  editingRuleId = null;
-}
-
-function editRule(ruleId) {
-  const rule = currentRules.find(r => r.id === ruleId);
-  if (!rule) return;
-  
-  editingRuleId = ruleId;
-  document.getElementById('ruleFormTitle').textContent = '✏️ Kuralı Düzenle';
-  document.getElementById('ruleId').value = rule.id;
-  document.getElementById('ruleIsDefault').value = rule.isDefault ? 'true' : 'false';
-  
-  // Set form values
-  document.getElementById('ruleCriteria').value = rule.criteria;
-  document.getElementById('ruleAction').value = rule.action;
-  document.getElementById('ruleDescription').value = rule.description || '';
-  
-  if (rule.criteria === 'BEFORE_DATE' || rule.criteria === 'AFTER_DATE') {
-    document.getElementById('ruleValueDate').value = rule.value;
-  } else {
-    document.getElementById('ruleValueDays').value = rule.value;
-    document.getElementById('ruleUnit').value = rule.valueType || 'days';
-  }
-  
-  handleCriteriaChange();
-  
-  document.getElementById('ruleFormSection').style.display = 'block';
-  document.getElementById('addNewRuleBtn').style.display = 'none';
-}
-
-async function deleteRule(ruleId) {
-  const rule = currentRules.find(r => r.id === ruleId);
-  if (rule && rule.isDefault) {
-    notificationHandler.showStatusMessage('Varsayılan kural silinemez', 'error');
-    return;
-  }
-  
-  if (!confirm('Bu kuralı silmek istediğinizden emin misiniz?')) {
-    return;
-  }
-  
-  currentRules = currentRules.filter(r => r.id !== ruleId);
-  
-  try {
-    const { config, saveConfig } = await import('./config.js');
-    config.dateFilterRules = currentRules;
-    await saveConfig(config);
-    
-    renderRulesList();
-    notificationHandler.showStatusMessage('Kural silindi', 'success');
-    
-  } catch (error) {
-    console.error('Error deleting rule:', error);
-    notificationHandler.showStatusMessage('Kural silinirken hata oluştu', 'error');
-  }
-}
-
-async function saveRule() {
-  const criteria = document.getElementById('ruleCriteria').value;
-  const action = document.getElementById('ruleAction').value;
-  const description = document.getElementById('ruleDescription').value.trim();
-  
-  let value;
-  let valueType = 'days';
-  
-  if (criteria === 'BEFORE_DATE' || criteria === 'AFTER_DATE') {
-    value = document.getElementById('ruleValueDate').value;
-    if (!value) {
-      notificationHandler.showStatusMessage('Lütfen bir tarih seçin', 'error');
-      return;
-    }
-  } else {
-    value = parseInt(document.getElementById('ruleValueDays').value);
-    valueType = document.getElementById('ruleUnit').value;
-    
-    if (isNaN(value) || value < 1) {
-      notificationHandler.showStatusMessage('Lütfen geçerli bir değer girin', 'error');
-      return;
-    }
-    
-    // Convert to days for storage
-    if (valueType === 'months') value = value * 30;
-    else if (valueType === 'years') value = value * 365;
-  }
-  
-  const rule = {
-    id: editingRuleId || 'rule-' + Date.now(),
-    criteria,
-    value,
-    valueType,
-    action,
-    description: description || formatCriteriaText({ criteria, value, valueType }),
-    isDefault: false
-  };
-  
-  if (editingRuleId) {
-    // Update existing rule
-    const index = currentRules.findIndex(r => r.id === editingRuleId);
-    if (index !== -1) {
-      currentRules[index] = rule;
-    }
-  } else {
-    // Add new rule
-    currentRules.push(rule);
-  }
-  
-  try {
-    const { config, saveConfig } = await import('./config.js');
-    config.dateFilterRules = currentRules;
-    await saveConfig(config);
-    
-    renderRulesList();
-    hideRuleForm();
-    notificationHandler.showStatusMessage(
-      editingRuleId ? 'Kural güncellendi' : 'Kural eklendi',
-      'success'
-    );
-    
-  } catch (error) {
-    console.error('Error saving rule:', error);
-    notificationHandler.showStatusMessage('Kural kaydedilirken hata oluştu', 'error');
-  }
-}
-
-function handleCriteriaChange() {
-  const criteria = document.getElementById('ruleCriteria').value;
-  const daysGroup = document.getElementById('daysValueGroup');
-  const dateGroup = document.getElementById('dateValueGroup');
-  
-  if (criteria === 'BEFORE_DATE' || criteria === 'AFTER_DATE') {
-    daysGroup.style.display = 'none';
-    dateGroup.style.display = 'block';
-  } else {
-    daysGroup.style.display = 'block';
-    dateGroup.style.display = 'none';
-  }
-}
-
-async function loadDateFilterCacheStats() {
-  try {
-    const stats = await storageHandler.getRegistrationDateCacheStats();
-    
-    document.getElementById('cacheTotalCount').textContent = stats.total;
-    document.getElementById('cacheValidCount').textContent = stats.valid;
-    document.getElementById('cacheExpiredCount').textContent = stats.expired;
-    
-  } catch (error) {
-    console.error('Error loading cache stats:', error);
-  }
-}
-
-async function clearDateFilterCache() {
-  if (!confirm('Tüm kayıt tarihi önbelleğini temizlemek istediğinizden emin misiniz?')) {
-    return;
-  }
-  
-  try {
-    await storageHandler.clearRegistrationDateCache();
-    await loadDateFilterCacheStats();
-    notificationHandler.showStatusMessage('Önbellek temizlendi', 'success');
-    
-  } catch (error) {
-    console.error('Error clearing cache:', error);
-    notificationHandler.showStatusMessage('Önbellek temizlenirken hata oluştu', 'error');
   }
 }
 

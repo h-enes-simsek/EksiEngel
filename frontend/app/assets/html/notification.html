@@ -130,67 +130,11 @@
       Kayıt tarihine göre iki farklı işlem yapabilirsiniz:
     </p>
     <ul class="card-description-list">
-      <li><strong>Filtre Kuralları:</strong> Engelleme işlemleri sadece belirli tarih kriterlerine uyan hesaplara uygulanır.</li>
+      <li><strong>Filtre Kuralları:</strong> Engelleme işlemleri sadece belirli tarih kriterlerine uyan hesaplara uygulanır. Kurallar <a href="#" id="openFaqFromDates">Ayarlar</a> sayfasından yapılandırılabilir.</li>
       <li><strong>Toplu İşlem:</strong> Mevcut listenizdeki (engelli/sessiz) kullanıcıları tarih kriterine göre toplu işleme tabi tutar.</li>
     </ul>
     
     <div class="date-operations-content collapsible-content" id="dateOperationsContent" style="display: none;">
-      
-      <div class="sub-section" id="dateFilterRulesSection">
-        <div class="sub-section-header">
-          <h3>🎯 Filtre Kuralları</h3>
-          <span class="rules-count" id="rulesCount">0</span>
-        </div>
-        <div class="rules-list" id="rulesList"></div>
-        <div class="rules-actions">
-          <button id="addNewRuleBtn" class="btn btn-primary btn-tiny">+ Kural</button>
-        </div>
-      </div>
-      
-      <div class="sub-section rule-form-section" id="ruleFormSection" style="display: none;">
-        <div class="sub-section-header">
-          <h3 id="ruleFormTitle">📝 Yeni Kural</h3>
-        </div>
-        <div class="form-content">
-          <div class="form-row-compact">
-            <label>Kriter:
-              <select id="ruleCriteria" class="form-select">
-                <option value="NEWER_THAN">Yaş küçüktür</option>
-                <option value="OLDER_THAN">Yaş büyüktür</option>
-                <option value="BEFORE_DATE">Tarihten önce</option>
-                <option value="AFTER_DATE">Tarihten sonra</option>
-              </select>
-            </label>
-            <label id="daysValueGroup">Değer:
-              <span class="input-group">
-                <input type="number" id="ruleValueDays" class="form-input" min="1" value="3650">
-                <select id="ruleUnit" class="form-select unit-select">
-                  <option value="days">gün</option>
-                  <option value="months">ay</option>
-                  <option value="years">yıl</option>
-                </select>
-              </span>
-            </label>
-          </div>
-
-          <div class="form-group" id="dateValueGroup" style="display: none;">
-            <label>Tarih: <input type="date" id="ruleValueDate" class="form-input"></label>
-          </div>
-
-          <input type="hidden" id="ruleAction" value="ENGELLE">
-          <input type="hidden" id="ruleId">
-          <input type="hidden" id="ruleIsDefault" value="false">
-
-          <div class="form-group">
-            <label>Açıklama: <input type="text" id="ruleDescription" class="form-input" placeholder="Opsiyonel"></label>
-          </div>
-
-          <div class="form-actions">
-            <button id="saveRuleBtn" class="btn btn-success btn-tiny">Kaydet</button>
-            <button id="cancelRuleBtn" class="btn btn-secondary btn-tiny">İptal</button>
-          </div>
-        </div>
-      </div>
       
       <div class="sub-section">
         <div class="sub-section-header">
@@ -244,18 +188,6 @@
           <div class="bulk-action-buttons">
             <button id="startBulkActionBtn" class="btn btn-success btn-tiny">🚀 Başlat</button>
           </div>
-        </div>
-      </div>
-      
-      <div class="sub-section" id="dateFilterCacheSection">
-        <div class="sub-section-header">
-          <h3>💾 Önbellek</h3>
-          <button id="clearCacheBtn" class="btn btn-danger btn-tiny">🗑️</button>
-        </div>
-        <div class="cache-stats-inline">
-          <span class="cache-mini">Toplam: <b id="cacheTotalCount">0</b></span>
-          <span class="cache-mini">Geçerli: <b id="cacheValidCount">0</b></span>
-          <span class="cache-mini">Süresi Dolmuş: <b id="cacheExpiredCount">0</b></span>
         </div>
       </div>
       
