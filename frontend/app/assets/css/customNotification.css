@@ -1108,3 +1108,16 @@ body {
     .action-btn, .btn, .stats-btn { display: none; }
     .status-message { display: none; }
 }
+/* Card Title Section */
+.card-title-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.card-subtitle {
+    font-size: 0.7rem;
+    font-weight: 400;
+    color: var(--text-secondary);
+    opacity: 0.8;
+}
