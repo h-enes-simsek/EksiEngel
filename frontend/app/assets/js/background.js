@@ -443,6 +443,16 @@ chrome.runtime.onMessage.addListener(function messageListener_Popup(message, sen
       sendResponse({ success: false, error: error.message });
     }
     return true;
+  } else if (message.action === "getRunningTasksState") {
+    // Check for running tasks (refresh operations, etc.)
+    try {
+      const hasRunningTasks = programController.hasAnyRunningTasks;
+      sendResponse({ success: true, hasRunningTasks });
+    } catch (error) {
+      log.err("bg", `Error getting running tasks state: ${error}`);
+      sendResponse({ success: false, error: error.message });
+    }
+    return true;
   } else if (message && message.earlyStop !== undefined) {
     programController.stopCurrentOperation(true).then(result => {
       programController.stopAllOperations();

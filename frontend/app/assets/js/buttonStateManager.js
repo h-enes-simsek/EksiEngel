@@ -4,6 +4,7 @@ class ButtonStateManager {
   constructor() {
     this.buttonStates = new Map();
     this.operationState = 'INACTIVE';
+    this.hasRunningTasks = false;
     this.isProcessing = false;
     this.initialized = false;
     this.listCounts = { muted: 0, blocked: 0, mutedTotal: 0, blockedTotal: 0 };
@@ -68,17 +69,46 @@ class ButtonStateManager {
       const resumableOp = await this.getResumableOperationState();
       if (resumableOp) {
         this.operationState = resumableOp.state;
+        this.hasRunningTasks = resumableOp.hasRunningTasks || false;
+        return;
+      }
+      
+      // Check for running tasks (like refresh operations) from background
+      const runningTasksResponse = await this.getRunningTasksState();
+      if (runningTasksResponse && runningTasksResponse.hasRunningTasks) {
+        this.operationState = 'ACTIVE';
+        this.hasRunningTasks = true;
         return;
       }
       
       // Fall back to legacy storage-based operations
       const activeOperation = await storageHandler.getActiveOperation();
       this.operationState = activeOperation ? (activeOperation.state || 'ACTIVE') : 'INACTIVE';
+      this.hasRunningTasks = false;
     } catch (error) {
       console.warn('Failed to check operation state:', error);
       this.operationState = 'INACTIVE';
+      this.hasRunningTasks = false;
     }
   }
+  async getRunningTasksState() {
+    try {
+      const response = await new Promise((resolve, reject) => {
+        chrome.runtime.sendMessage({ action: "getRunningTasksState" }, (response) => {
+          if (chrome.runtime.lastError) {
+            reject(chrome.runtime.lastError);
+          } else {
+            resolve(response);
+          }
+        });
+      });
+      return response;
+    } catch (error) {
+      console.warn('Failed to get running tasks state:', error);
+      return null;
+    }
+  }
+
   async getResumableOperationState() {
     try {
       // Get current operation from background script
@@ -97,19 +127,19 @@ class ButtonStateManager {
         // Map resumable operation states to UI states
         switch (op.state) {
           case 'RUNNING':
-            return { state: 'ACTIVE' };
+            return { state: 'ACTIVE', hasRunningTasks: true };
           case 'PAUSING':
-            return { state: 'PAUSING' };
+            return { state: 'PAUSING', hasRunningTasks: true };
           case 'PAUSED':
-            return { state: 'PAUSED' };
+            return { state: 'PAUSED', hasRunningTasks: true };
           case 'STOPPING':
-            return { state: 'STOPPING' };
+            return { state: 'STOPPING', hasRunningTasks: true };
           case 'STOPPED':
-            return { state: 'STOPPED' };
+            return { state: 'STOPPED', hasRunningTasks: false };
           case 'COMPLETED':
-            return { state: 'INACTIVE' };
+            return { state: 'INACTIVE', hasRunningTasks: false };
           default:
-            return { state: 'INACTIVE' };
+            return { state: 'INACTIVE', hasRunningTasks: false };
         }
       }
       return null;
@@ -207,8 +237,8 @@ class ButtonStateManager {
     const originalInnerHTML = buttonElement ? buttonElement.innerHTML : '';
     switch (buttonId) {
       case 'earlyStop':
-        // Early stop should be enabled when any operation is running, paused, or in cooldown
-        const canStopOperation = isOperationActive || isOperationPaused || isOperationPausinng || isOperationCooldown;
+        // Early stop should be enabled when any operation is running, paused, in cooldown, or has running tasks
+        const canStopOperation = isOperationActive || isOperationPaused || isOperationPausinng || isOperationCooldown || this.hasRunningTasks;
         return {
           disabled: !canStopOperation || isProcessing,
           title: !canStopOperation ? 'No active operation to stop' : isProcessing ? 'Stopping operation...' : 'Stop the current operation',
@@ -316,6 +346,7 @@ class ButtonStateManager {
   reset() {
     this.buttonStates.clear();
     this.operationState = 'INACTIVE';
+    this.hasRunningTasks = false;
     this.isProcessing = false;
     this.initialized = false;
     this.listCounts = { muted: 0, blocked: 0, mutedTotal: 0, blockedTotal: 0 };
