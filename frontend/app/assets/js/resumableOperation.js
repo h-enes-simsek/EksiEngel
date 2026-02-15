@@ -1,6 +1,8 @@
 import { log } from './log.js';
 import { storageHandler } from './storageHandler.js';
 import * as enums from './enums.js';
+import { notificationHandler } from './notificationHandler.js';
+import { processQueue } from './queue.js';
 
 /**
  * OperationState - Enum for resumable operation states
@@ -176,6 +178,20 @@ export class ResumableOperationRegistry {
     // If operation is already paused, immediately stop and unregister
     if (op.state === OperationState.PAUSED) {
       log.info('resumableOp', `Operation ${this._currentOperationId} was paused, stopping immediately`);
+      
+      // Map operation type to BanSource for proper finish notification
+      const banSourceMap = {
+        'DATE_BASED_BULK': enums.BanSource.DATE_BASED_BULK,
+        'MIGRATE_BLOCKED_TO_MUTED': enums.BanSource.MIGRATE_BLOCKED_TO_MUTED,
+        'BLOCK_MUTED_USERS': enums.BanSource.BLOCK_MUTED_USERS,
+        'BLOCK_TITLES': enums.BanSource.BLOCKED_MUTED_TITLES,
+        'REFRESH_MUTED_LIST': enums.BanSource.REFRESH_MUTED_LIST,
+        'REFRESH_BLOCKED_LIST': enums.BanSource.REFRESH_BLOCKED_LIST
+      };
+      const banSource = banSourceMap[op.type] || enums.BanSource.DATE_BASED_BULK;
+      
+      // Send FINISH notification to properly complete the task in queue
+      notificationHandler.finishErrorEarlyStop(banSource, null, processQueue.currentItemMetadata);
       
       // First, set state to STOPPED and notify UI
       op.state = OperationState.STOPPED;

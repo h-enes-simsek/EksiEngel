@@ -901,3 +901,115 @@ When stopping a paused operation:
 - Stop status shows correctly immediately after stopping
 - No more "Durduruluyor..." overwriting the stopped state
 - UI updates properly for both paused and running operations
+
+### Commit 26: Fix Empty List Operations Stuck in Queue (2026-02-15)
+**Purpose:** Fix tasks staying stuck in "⏳ Sıradaki İşlemler" when they find zero users to process
+
+**Root Cause:**
+When operations found no users to process, they called `notificationHandler.notify()` and returned early without calling `notificationHandler.finishSuccess()`. This meant:
+1. No FINISH notification was sent to the UI
+2. The task was not added to "✅ Tamamlanan İşlemler"
+3. The task remained visible in "⏳ Sıradaki İşlemler" until page refresh
+
+**Changes:**
+
+All early return cases now properly call `finishSuccess()` with 0 results:
+
+| Function | Condition | Fix |
+|----------|-----------|-----|
+| `startDateBasedBulkAction()` | Empty source list | Calls `finishSuccess(DATE_BASED_BULK, BAN, 0, 0, 0)` |
+| `startDateBasedBulkAction()` | No matching users | Calls `finishSuccess(DATE_BASED_BULK, BAN, 0, 0, 0)` |
+| `migrateBlockedToMuted()` | Empty blocked list | Calls `finishSuccess(MIGRATE_BLOCKED_TO_MUTED, BAN, 0, 0, 0)` |
+| `blockTitlesOfBlockedMuted()` | No users to process | Calls `finishSuccess(BLOCKED_MUTED_TITLES, BAN, 0, 0, 0)` |
+| `unmuteAllUsers()` | Empty muted list | Calls `finishSuccess(UNMUTEALL, UNDOBAN, 0, 0, 0)` |
+| `unblockAllUserTitles()` | No blocked titles | Calls `finishSuccess(TITLE, UNDOBAN, 0, 0, 0)` |
+| `_resumeDateBasedBulkAction()` | Empty userList on resume | Calls `finishSuccess(DATE_BASED_BULK, BAN, 0, 0, 0)` |
+| `_resumeDateBasedBulkAction()` | No matching users on resume | Calls `finishSuccess(DATE_BASED_BULK, BAN, 0, 0, 0)` |
+
+Each fix also:
+- Sets the in-progress flag to false
+- Calls `resumableOperationRegistry.completeOperation()` to properly clean up
+
+**Files Modified:**
+- `programController.js` - Updated 8 early return cases with proper finish handling
+
+**Result:**
+- Tasks with no users to process now properly complete and move to "✅ Tamamlanan İşlemler"
+- Queue continues to next item correctly
+- No more stuck items in "⏳ Sıradaki İşlemler"
+
+### Commit 27: Fix All Error Cases Not Completing Tasks (2026-02-16)
+**Purpose:** Fix all error handling cases that leave tasks stuck in "⏳ Sıradaki İşlemler"
+
+**Root Cause:**
+Multiple error handling paths used `notificationHandler.notify()` instead of `notificationHandler.finishSuccess()`, leaving tasks in the queue without proper completion.
+
+**Changes:**
+
+**1. Refresh Operations - Error Cases:**
+
+| Function | Location | Fix |
+|----------|----------|-----|
+| `refreshMutedList()` | else case (scraping error) | `notify()` → `finishSuccess(REFRESH_MUTED_LIST)` |
+| `refreshMutedList()` | catch block (unexpected error) | `notify()` → `finishSuccess(REFRESH_MUTED_LIST)` |
+| `refreshBlockedList()` | else case (scraping error) | `notify()` → `finishSuccess(REFRESH_BLOCKED_LIST)` |
+| `refreshBlockedList()` | catch block (unexpected error) | `notify()` → `finishSuccess(REFRESH_BLOCKED_LIST)` |
+
+**2. Bulk Operations - Catch Blocks:**
+
+| Function | Fix |
+|----------|-----|
+| `startDateBasedBulkAction()` catch | `notify()` → `finishSuccess(DATE_BASED_BULK, BAN)` |
+| `migrateBlockedToMuted()` catch | `notify()` → `finishSuccess(MIGRATE_BLOCKED_TO_MUTED, BAN)` |
+| `blockMutedUsers()` catch | `notify()` → `finishSuccess(BLOCK_MUTED_USERS, BAN)` |
+| `blockTitlesOfBlockedMuted()` catch | `notify()` → `finishSuccess(BLOCKED_MUTED_TITLES, BAN)` |
+| `startUnmuteAll()` catch | `notify()` → `finishSuccess(UNMUTEALL, UNDOBAN)` |
+| `migrateBlockedTitlesToUnblocked()` catch | `notify()` → `finishSuccess(TITLE, UNDOBAN)` |
+
+**Files Modified:**
+- `programController.js` - Updated 10 error handling paths
+
+**Result:**
+- All error cases now properly complete tasks in the queue
+- Stopping a refresh operation moves it to "✅ Tamamlanan İşlemler"
+- Unexpected errors during operations no longer leave tasks stuck
+- Consistent behavior across all operations
+
+### Commit 28: Fix Stop Paused Operation Not Completing Task (2026-02-16)
+**Purpose:** Fix tasks staying stuck in "⏳ Sıradaki İşlemler" when stopping a paused operation
+
+**Root Cause:**
+When `requestStop()` was called on a PAUSED operation, it:
+1. Set state to STOPPED
+2. Sent `operationStateChanged` message to UI
+3. Unregistered the operation
+
+But it didn't call `notificationHandler.finishErrorEarlyStop()` to send a FINISH notification, so the task remained in "⏳ Sıradaki İşlemler" instead of moving to "✅ Tamamlanan İşlemler".
+
+**Changes:**
+
+1. **Added imports to `resumableOperation.js`:**
+   - `notificationHandler` from './notificationHandler.js'
+   - `processQueue` from './queue.js'
+
+2. **Updated PAUSED case in `requestStop()` method:**
+   - Added `banSourceMap` to map operation types to `enums.BanSource` values
+   - Added call to `notificationHandler.finishErrorEarlyStop(banSource, null, processQueue.currentItemMetadata)` before setting state to STOPPED
+
+**Operation Type to BanSource Mapping:**
+| Operation Type | BanSource |
+|----------------|-----------|
+| DATE_BASED_BULK | DATE_BASED_BULK |
+| MIGRATE_BLOCKED_TO_MUTED | MIGRATE_BLOCKED_TO_MUTED |
+| BLOCK_MUTED_USERS | BLOCK_MUTED_USERS |
+| BLOCK_TITLES | BLOCKED_MUTED_TITLES |
+| REFRESH_MUTED_LIST | REFRESH_MUTED_LIST |
+| REFRESH_BLOCKED_LIST | REFRESH_BLOCKED_LIST |
+
+**Files Modified:**
+- `resumableOperation.js` - Added imports, updated `requestStop()` method
+
+**Result:**
+- Stopping a paused operation now properly completes the task in the queue
+- Task moves from "⏳ Sıradaki İşlemler" to "✅ Tamamlanan İşlemler"
+- Consistent behavior for all stop scenarios

@@ -265,8 +265,10 @@ class ProgramController {
       }
       
       if (userList.length === 0) {
-        log.info("progctrl", "No users found in selected source.");
-        notificationHandler.notify("Seçilen kaynakta kullanıcı bulunamadı.");
+        log.info("progctrl", "No users found in selected source - completing with 0 results");
+        notificationHandler.finishSuccess(enums.BanSource.DATE_BASED_BULK, enums.BanMode.BAN, 0, 0, 0, processQueue.currentItemMetadata);
+        this._dateBasedBulkInProgress = false;
+        resumableOperationRegistry.completeOperation();
         return;
       }
       
@@ -381,7 +383,10 @@ class ProgramController {
       log.info("progctrl", `Found ${matchingUsers.length} users matching the date criteria.`);
       
       if (matchingUsers.length === 0) {
-        notificationHandler.notify("Tarih kriterine uyan kullanıcı bulunamadı.");
+        log.info("progctrl", "No users matched date criteria - completing with 0 results");
+        notificationHandler.finishSuccess(enums.BanSource.DATE_BASED_BULK, enums.BanMode.BAN, 0, 0, 0, processQueue.currentItemMetadata);
+        this._dateBasedBulkInProgress = false;
+        resumableOperationRegistry.completeOperation();
         return;
       }
       
@@ -480,7 +485,7 @@ class ProgramController {
       
     } catch (error) {
       log.err("progctrl", `Error during date-based bulk action: ${error}`, error);
-      notificationHandler.notify(`Tarih bazlı toplu işlem sırasında hata: ${error.message}`);
+      notificationHandler.finishSuccess(enums.BanSource.DATE_BASED_BULK, enums.BanMode.BAN, 0, 0, 0, processQueue.currentItemMetadata);
     } finally {
       log.info("progctrl", "startDateBasedBulkAction completed.");
       this.earlyStop = false;
@@ -754,9 +759,9 @@ class ProgramController {
 
       if (blockedUsers.length === 0) {
         log.info("progctrl", "No blocked users found - completing with 0 results");
+        notificationHandler.finishSuccess(enums.BanSource.MIGRATE_BLOCKED_TO_MUTED, enums.BanMode.BAN, 0, 0, 0, processQueue.currentItemMetadata);
         this._migrationInProgress = false;
         resumableOperationRegistry.completeOperation();
-        notificationHandler.notify("Engellenen kullanıcı bulunamadı.");
         return;
       }
 
@@ -858,7 +863,7 @@ class ProgramController {
 
     } catch (error) {
       log.err("progctrl", `An error occurred during migration: ${error}`, error);
-      notificationHandler.notify(`Taşıma sırasında bir hata oluştu: ${error.message || "Bilinmeyen hata"}`);
+      notificationHandler.finishSuccess(enums.BanSource.MIGRATE_BLOCKED_TO_MUTED, enums.BanMode.BAN, 0, 0, 0, processQueue.currentItemMetadata);
     } finally {
       log.info("progctrl", "migrateBlockedToMuted function completed.");
       this.earlyStop = false;
@@ -1087,7 +1092,7 @@ class ProgramController {
 
     } catch (error) {
       log.err("progctrl", `An unexpected error occurred during blocking muted users: ${error}`, error);
-      notificationHandler.notify(`Sessize alınan kullanıcıları engelleme sırasında beklenmedik bir hata oluştu: ${error.message || "Bilinmeyen hata"}. İşlenen: ${processedCount} kullanıcı.`);
+      notificationHandler.finishSuccess(enums.BanSource.BLOCK_MUTED_USERS, enums.BanMode.BAN, 0, 0, 0, processQueue.currentItemMetadata);
     } finally {
       log.info("progctrl", "blockMutedUsers function completed.");
       this.earlyStop = false;
@@ -1169,8 +1174,10 @@ class ProgramController {
       const usersToProcess = Array.from(combinedUsersMap.values());
 
       if (usersToProcess.length === 0) {
-        log.info("progctrl", "No blocked or muted users found to process titles for - completing with 0 results, queue will continue with next item");
-        notificationHandler.notify("Başlıkları işlenecek engellenmiş veya sessize alınmış kullanıcı bulunamadı.");
+        log.info("progctrl", "No blocked or muted users found to process titles for - completing with 0 results");
+        notificationHandler.finishSuccess(enums.BanSource.BLOCKED_MUTED_TITLES, enums.BanMode.BAN, 0, 0, 0, processQueue.currentItemMetadata);
+        this._blockTitlesInProgress = false;
+        resumableOperationRegistry.completeOperation();
         return;
       }
 
@@ -1295,7 +1302,7 @@ class ProgramController {
 
     } catch (error) {
       log.err("progctrl", `An error occurred during blocking titles: ${error}`, error);
-      notificationHandler.notify(`Başlık engelleme sırasında bir hata oluştu: ${error.message}. İşlenen kullanıcı sayısı: ${usersProcessedCount}.`);
+      notificationHandler.finishSuccess(enums.BanSource.BLOCKED_MUTED_TITLES, enums.BanMode.BAN, 0, 0, 0, processQueue.currentItemMetadata);
     } finally {
       log.info("progctrl", "blockTitlesOfBlockedMuted function completed.");
       this.earlyStop = false;
@@ -1325,9 +1332,10 @@ class ProgramController {
       const mutedUsers = await storageHandler.getMutedUserList();
 
       if (!mutedUsers || mutedUsers.length === 0) {
-        log.info("progctrl", "No muted users found.");
-        notificationHandler.notify("Sessiz listede kullanıcı bulunamadı.");
+        log.info("progctrl", "No muted users found - completing with 0 results");
+        notificationHandler.finishSuccess(enums.BanSource.UNMUTEALL, enums.BanMode.UNDOBAN, 0, 0, 0, processQueue.currentItemMetadata);
         this._unmuteAllInProgress = false;
+        resumableOperationRegistry.completeOperation();
         return;
       }
 
@@ -1395,7 +1403,7 @@ class ProgramController {
 
     } catch (error) {
       log.err("progctrl", `An error occurred during unmute all: ${error}`, error);
-      notificationHandler.notify(`Tüm sessizleri kaldırma sırasında bir hata oluştu: ${error.message || "Bilinmeyen hata"}`);
+      notificationHandler.finishSuccess(enums.BanSource.UNMUTEALL, enums.BanMode.UNDOBAN, 0, 0, 0, processQueue.currentItemMetadata);
     } finally {
       log.info("progctrl", "startUnmuteAll function completed.");
       this.earlyStop = false;
@@ -1501,7 +1509,7 @@ class ProgramController {
           }).catch(e => log.warn("progctrl", `Error sending error message: ${e}`));
         }
         
-        notificationHandler.notify(`Sessiz liste yenileme başarısız: ${result.error}`);
+        notificationHandler.finishSuccess(enums.BanSource.REFRESH_MUTED_LIST, null, 0, 0, 0, processQueue.currentItemMetadata);
       }
     } catch (e) {
       log.err("progctrl", `Unexpected error during refreshMutedList: ${e}`);
@@ -1516,7 +1524,7 @@ class ProgramController {
         }).catch(err => log.warn("progctrl", `Error sending error message: ${err}`));
       }
       
-      notificationHandler.notify(`Sessiz liste yenileme sırasında hata: ${e.message}`);
+      notificationHandler.finishSuccess(enums.BanSource.REFRESH_MUTED_LIST, null, 0, 0, 0, processQueue.currentItemMetadata);
     } finally {
       log.info("progctrl", "refreshMutedList function completed.");
       this.earlyStop = false;
@@ -1626,7 +1634,7 @@ class ProgramController {
           }).catch(e => log.warn("progctrl", `Error sending error message: ${e}`));
         }
         
-        notificationHandler.notify(`Engelli liste yenileme başarısız: ${result.error}`);
+        notificationHandler.finishSuccess(enums.BanSource.REFRESH_BLOCKED_LIST, null, 0, 0, 0, processQueue.currentItemMetadata);
       }
     } catch (e) {
       log.err("progctrl", `Unexpected error during refreshBlockedList: ${e}`);
@@ -1639,7 +1647,7 @@ class ProgramController {
         }).catch(err => log.warn("progctrl", `Error sending error message: ${err}`));
       }
       
-      notificationHandler.notify(`Engelli liste yenileme sırasında hata: ${e.message}`);
+      notificationHandler.finishSuccess(enums.BanSource.REFRESH_BLOCKED_LIST, null, 0, 0, 0, processQueue.currentItemMetadata);
     } finally {
       log.info("progctrl", "refreshBlockedList function completed.");
       this.earlyStop = false;
@@ -1685,9 +1693,10 @@ class ProgramController {
       const totalCount = scrapeResult.count;
 
       if (usersWithBlockedTitles.length === 0) {
-        log.info("progctrl", "No users with blocked titles found - completing with 0 results, queue will continue with next item");
-        notificationHandler.notify("Başlıkları engellenen kullanıcı bulunamadı.");
+        log.info("progctrl", "No users with blocked titles found - completing with 0 results");
+        notificationHandler.finishSuccess(enums.BanSource.TITLE, enums.BanMode.UNDOBAN, 0, 0, 0, processQueue.currentItemMetadata);
         this._blockTitlesInProgress = false;
+        resumableOperationRegistry.completeOperation();
         return;
       }
 log.info("progctrl", `Successfully fetched list of ${totalCount} users with blocked titles. Starting unblocking process...`);
@@ -1739,9 +1748,9 @@ notificationHandler.notify(`${totalCount} adet başlıkları engellenen kullanı
            notificationHandler.finishSuccess(enums.BanSource.TITLE, enums.BanMode.UNDOBAN, unblockedCount, totalProcessed, usersWithBlockedTitles.length, processQueue.currentItemMetadata);
        }
   
-     } catch (error) {
+      } catch (error) {
        log.err("progctrl", `An error occurred during unblocking blocked titles: ${error}`, error);
-       notificationHandler.notify(`Engellenen başlıkların engeli kaldırılırken bir hata oluştu: ${error.message}`);
+       notificationHandler.finishSuccess(enums.BanSource.TITLE, enums.BanMode.UNDOBAN, 0, 0, 0, processQueue.currentItemMetadata);
      } finally {
        log.info("progctrl", "migrateBlockedTitlesToUnblocked function completed.");
        this.earlyStop = false;
@@ -2071,10 +2080,11 @@ notificationHandler.notify(`${totalCount} adet başlıkları engellenen kullanı
       }
       
       if (userList.length === 0) {
-        log.info("progctrl", "No users found to resume operation.");
-        notificationHandler.notify("Devam ettirilecek kullanıcı bulunamadı.");
+        log.info("progctrl", "No users found to resume operation - completing with 0 results");
+        notificationHandler.finishSuccess(enums.BanSource.DATE_BASED_BULK, enums.BanMode.BAN, 0, 0, 0, processQueue.currentItemMetadata);
         this._dateBasedBulkInProgress = false;
-        return { success: false, error: 'İşlenecek kullanıcı yok' };
+        resumableOperationRegistry.completeOperation();
+        return { success: true, completed: true };
       }
       
       log.info("progctrl", `Resuming with ${userList.length} users`);
@@ -2179,7 +2189,8 @@ notificationHandler.notify(`${totalCount} adet başlıkları engellenen kullanı
       log.info("progctrl", `Found ${matchingUsers.length} users matching the date criteria.`);
       
       if (matchingUsers.length === 0) {
-        notificationHandler.notify("Tarih kriterine uyan kullanıcı bulunamadı.");
+        log.info("progctrl", "No users matched date criteria - completing with 0 results");
+        notificationHandler.finishSuccess(enums.BanSource.DATE_BASED_BULK, enums.BanMode.BAN, 0, 0, 0, processQueue.currentItemMetadata);
         this._dateBasedBulkInProgress = false;
         await resumableOperationRegistry.completeOperation();
         return { success: true, completed: true };
