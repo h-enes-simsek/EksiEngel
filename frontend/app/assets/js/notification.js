@@ -262,7 +262,7 @@ async function handlePauseOperation() {
             // Update UI based on final state
             if (op.state === 'PAUSED') {
               notificationHandler.showStatusMessage('İşlem duraklatıldı.', 'success');
-              updateUniversalControls({ state: 'PAUSED', type: op.type });
+              updateUniversalControls({ state: 'PAUSED', type: op.type }, message.stats || op.checkpointData);
             } else {
               // Operation resumed or stopped, reset button
               pauseBtn.disabled = false;
@@ -472,7 +472,7 @@ function hidePausedOperationBanner() {
   }
 }
 
-function updateUniversalControls(operation) {
+function updateUniversalControls(operation, stats = null) {
   const pauseBtn = document.getElementById('btnPauseOperation');
   const resumeBtn = document.getElementById('btnResumeOperation');
   const earlyStopBtn = document.getElementById('earlyStop');
@@ -542,7 +542,32 @@ function updateUniversalControls(operation) {
     if (statusDisplay) {
       statusDisplay.style.display = 'block';
       if (opTypeSpan) opTypeSpan.textContent = getOperationTypeDisplay(operation.type);
-      if (opStateSpan) opStateSpan.textContent = '(Duraklatıldı)';
+      if (opStateSpan) {
+        const count = stats?.totalCount || stats?.userCount || 0;
+        if (count > 0) {
+          opStateSpan.textContent = `(Duraklatıldı - ${count} kullanıcı)`;
+        } else {
+          opStateSpan.textContent = '(Duraklatıldı)';
+        }
+      }
+    }
+  } else if (operation.state === 'STOPPED') {
+    if (pauseBtn) {
+      pauseBtn.disabled = true;
+      pauseBtn.innerHTML = '<span class="btn-icon">⏸️</span><span class="btn-text">Duraklat</span>';
+    }
+    if (resumeBtn) {
+      resumeBtn.disabled = true;
+      resumeBtn.innerHTML = '<span class="btn-icon">▶️</span><span class="btn-text">Devam Et</span>';
+    }
+    if (earlyStopBtn) {
+      earlyStopBtn.disabled = true;
+      earlyStopBtn.innerHTML = '<span class="btn-icon">🛑</span><span class="btn-text">Erken Durdur</span>';
+    }
+    if (statusDisplay) {
+      statusDisplay.style.display = 'block';
+      if (opTypeSpan) opTypeSpan.textContent = getOperationTypeDisplay(operation.type);
+      if (opStateSpan) opStateSpan.textContent = '(Durduruldu)';
     }
   }
 }
@@ -581,10 +606,31 @@ async function handleEarlyStop() {
   earlyStopButton.innerHTML = '<span class="btn-icon">⏳</span><span class="btn-text">Durduruluyor...</span>';
   earlyStopButton.disabled = true;
   
+  let stopHandled = false;
+  
+  const stopMessageListener = (message) => {
+    if (message && message.action === "operationStateChanged") {
+      if (message.newState === 'STOPPED' || message.operation?.state === 'STOPPED') {
+        stopHandled = true;
+        if (earlyStopButton._stopTimeoutId) {
+          clearTimeout(earlyStopButton._stopTimeoutId);
+          earlyStopButton._stopTimeoutId = null;
+        }
+        chrome.runtime.onMessage.removeListener(stopMessageListener);
+        
+        const op = message.operation;
+        updateUniversalControls({ state: 'STOPPED', type: op?.type }, message.stats || op?.checkpointData);
+        notificationHandler.showStatusMessage('İşlem durduruldu.', 'success');
+      }
+    }
+  };
+  
+  chrome.runtime.onMessage.addListener(stopMessageListener);
+  
   try {
     const response = await sendEarlyStopWithRetry();
     
-    if (response && response.status === 'ok') {
+    if (!stopHandled && response && response.status === 'ok') {
       console.log("notification.js: earlyStop message sent successfully");
       notificationHandler.updateStatusIndicator('warning');
       
@@ -595,18 +641,26 @@ async function handleEarlyStop() {
       
       notificationHandler.showStatusMessage("İşlem durduruluyor...", "info");
       
-      setTimeout(() => {
+      earlyStopButton._stopTimeoutId = setTimeout(() => {
+        chrome.runtime.onMessage.removeListener(stopMessageListener);
+        
         const btn = document.getElementById("earlyStop");
         if (btn) {
           btn.innerHTML = '<span class="btn-icon">🛑</span><span class="btn-text">Erken Durdur</span>';
-          btn.disabled = false;
         }
-      }, 3000);
+        
+        sendMessageWithPromise({ action: "getCurrentOperation" }).then(opResponse => {
+          updateUniversalControls(opResponse?.operation || opResponse);
+        }).catch(() => {
+          updateUniversalControls(null);
+        });
+      }, 5000);
       
-    } else {
+    } else if (!stopHandled) {
       throw new Error("Invalid response from background script");
     }
   } catch (err) {
+    chrome.runtime.onMessage.removeListener(stopMessageListener);
     console.warn("notification.js: Error sending earlyStop message:", err.message);
     
     let errorMessage = "Durdurma işleminde hata oluştu: ";

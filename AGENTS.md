@@ -697,3 +697,207 @@ notificationHandler.updateTableCounts();
 - Provides sensible defaults for new users
 - Date filter feature is more discoverable with a pre-populated rule
 - Users can still delete or modify the default rule
+
+### Commit 20: Pause/Resume Support for List Refresh Operations (2026-02-15)
+**Purpose:** Add pause, resume, and stop functionality to Listeler (Lists) bulk actions
+
+**Changes:**
+
+1. **programController.js - New Methods**
+   - Added `refreshMutedList()` - Refreshes muted users list with registry registration
+   - Added `refreshBlockedList()` - Refreshes blocked users list with registry registration
+   - Both methods register with `resumableOperationRegistry` for checkpoint-based pause/resume
+   - Use `pauseCheckCallback` to check for pause/stop requests during scraping
+   - Handle paused state properly in finally block (don't complete if paused)
+
+2. **programController.js - Resume Handlers**
+   - Added `_resumeRefreshMutedList()` - Resume handler for muted list refresh
+   - Added `_resumeRefreshBlockedList()` - Resume handler for blocked list refresh
+   - Updated `resumeOperation()` switch case to dispatch to these handlers
+
+3. **programController.js - Simplified getCurrentOperation()**
+   - Removed legacy operation checks since all operations now use registry
+   - All registered operations return `canPause: true`
+
+4. **background.js - Updated Handlers**
+   - Replaced inline handlers for `refreshMutedList` with call to `programController.refreshMutedList()`
+   - Replaced inline handlers for `refreshBlockedList` with call to `programController.refreshBlockedList()`
+   - Handlers now delegate to programController instead of implementing logic inline
+
+**Operations Now Supporting Pause/Resume:**
+| Operation | Checkpoints |
+|-----------|-------------|
+| `REFRESH_MUTED_LIST` | FETCH_PAGES |
+| `REFRESH_BLOCKED_LIST` | FETCH_PAGES |
+| `DATE_BASED_BULK` | FETCH_USERS, FETCH_DATES, FILTER_USERS, PERFORM_ACTIONS |
+| `MIGRATE_BLOCKED_TO_MUTED` | FETCH_USERS, PROCESS_USERS |
+| `BLOCK_MUTED_USERS` | FETCH_PAGES, PROCESS_USERS |
+| `BLOCK_TITLES` | FETCH_USERS, PROCESS_USERS |
+
+**Files Modified:**
+- `programController.js` - Added refreshMutedList(), refreshBlockedList(), resume handlers
+- `background.js` - Updated refreshMutedList and refreshBlockedList handlers
+
+**Result:**
+- Pause button now works during list refresh operations
+- Resume continues from where the operation was paused
+- Stop (early stop) terminates the operation immediately
+- Consistent pause/resume behavior across all bulk operations
+
+### Commit 21: Fix Pause/Resume for Bulk Actions (2026-02-15)
+**Purpose:** Fix pause button not working on regular bulk actions (İşlemler section)
+
+**Root Cause:**
+1. Pause checks only happened every 10 users - too infrequent
+2. Scraping functions were called without `pauseCheckCallback` - pause didn't work during user fetching phase
+3. Page fetching loop in `blockMutedUsers()` didn't check for pause
+
+**Changes:**
+
+1. **migrateBlockedToMuted()**
+   - Added `pauseCheckCallback` to `scrapeAllBlockedUsers()` call
+   - Changed checkpoint frequency from every 10 users to every user
+   - Added pause handling during blocked users fetch
+
+2. **blockMutedUsers()**
+   - Added pause check before each page fetch in the while loop
+   - Changed checkpoint frequency from every 10 users to every user
+
+3. **blockTitlesOfBlockedMuted()**
+   - Added `pauseCheckCallback` to `scrapeAllBlockedUsers()` call
+   - Changed checkpoint frequency from every 10 users to every user
+   - Already had pause handling during blocked users fetch
+
+4. **refreshMutedList() and refreshBlockedList()**
+   - Fixed resume to pass checkpoint data so counter continues from paused position
+   - Added `savedState` parameter to accept resume state
+   - Converted checkpoint data to `initialState` for scraping functions
+
+**Files Modified:**
+- `programController.js` - Updated all bulk action methods with proper pause support
+
+**Result:**
+- Pause button now works immediately during all bulk actions
+- Resume continues from exact position where it was paused
+- Consistent pause/resume behavior across all operations
+
+### Commit 22: Fix Pause Status Display and Resume Counter (2026-02-15)
+**Purpose:** Fix status message being lost after pause and counter resetting to zero on resume
+
+**Root Cause:**
+1. Operation stats (progress count) were not passed to UI when paused
+2. Progress callback was not called immediately on resume to show initial state
+3. Field name mismatch: checkpoint data used `userCount` but UI checked for `totalCount`
+
+**Changes:**
+
+1. **programController.js - refreshMutedList()**
+   - Added immediate progress update when resuming with `initialState.totalCount`
+   - UI now shows correct count immediately after clicking resume
+
+2. **programController.js - refreshBlockedList()**
+   - Same fix for immediate progress update on resume
+
+3. **resumableOperation.js - _notifyUIStateChanged()**
+   - Added `stats` field to message including `op.stats` or `op.checkpointData`
+   - UI can now display progress count when paused
+
+4. **notification.js - updateUniversalControls()**
+   - Added `stats` parameter to function signature
+   - PAUSED state now shows progress count: `(Duraklatıldı - 150 kullanıcı)`
+   - Checks both `totalCount` and `userCount` for compatibility
+
+5. **notification.js - PAUSED state handler**
+   - Passes `message.stats` or `op.checkpointData` to `updateUniversalControls()`
+
+**Files Modified:**
+- `programController.js`, `resumableOperation.js`, `notification.js`
+
+**Result:**
+- Status shows "Duraklatıldı - X kullanıcı" when paused
+- Resume counter continues from where it was paused, not from zero
+- Consistent progress display across all pause/resume operations
+
+### Commit 23: Fix Stop Button Stuck When Paused (2026-02-15)
+**Purpose:** Fix the stop button getting stuck when trying to stop a paused operation
+
+**Root Cause:**
+When stopping a paused operation:
+1. `requestStop()` called `unregisterOperation()` which sent `operationStateChanged` with `null` operation
+2. This caused `updateUniversalControls(null)` which disabled all buttons improperly
+3. The UI got into a stuck state with no way to recover
+
+**Changes:**
+
+1. **resumableOperation.js - requestStop()**
+   - When operation is PAUSED, now sets state to STOPPED first
+   - Notifies UI of STOPPED state before unregistering
+   - Unregisters operation without sending another null notification
+   - UI sees proper STOPPED state instead of null
+
+2. **notification.js - updateUniversalControls()**
+   - Added STOPPED state case
+   - All buttons properly disabled in STOPPED state
+   - Shows "(Durduruldu)" status text
+   - No more null operation state reaching UI
+
+**Files Modified:**
+- `resumableOperation.js`, `notification.js`
+
+**Result:**
+- Stop button works correctly when operation is paused
+- UI shows proper "(Durduruldu)" status
+- All buttons properly disabled after stop
+- No stuck button states
+
+### Commit 24: Fix Early Stop UI Not Updating (2026-02-15)
+**Purpose:** Fix the stop button stuck on "Durduruluyor..." when stopping a paused operation
+
+**Root Cause:**
+The `handleEarlyStop()` function showed "Durduruluyor..." and relied on a 3-second timeout, but didn't listen for the `operationStateChanged` message that comes when the operation is actually stopped. The UI only updated after timeout or page refresh.
+
+**Changes:**
+
+1. **notification.js - handleEarlyStop()**
+   - Added message listener before sending stop request
+   - Listens for STOPPED state and updates UI immediately
+   - Cleans up listener and timeout properly on success or error
+   - Changed timeout from 3 seconds to 5 seconds as fallback
+   - On timeout, re-syncs with background script for actual state
+   - Properly removes listener in error handler
+
+**Files Modified:**
+- `notification.js`
+
+**Result:**
+- Stop button updates immediately when operation stops
+- Shows "(Durduruldu)" status without page refresh
+- Fallback timeout handles edge cases
+- Consistent UI behavior for all stop scenarios
+
+### Commit 25: Fix Stop Status Overwrite Bug (2026-02-15)
+**Purpose:** Fix the stop status being overwritten after STOPPED message was already received
+
+**Root Cause:**
+When stopping a paused operation:
+1. Message listener is added for STOPPED state
+2. `sendEarlyStopWithRetry()` is called
+3. During that call, background sends `operationStateChanged` with STOPPED state
+4. Listener receives it and updates UI to STOPPED
+5. But then `handleEarlyStop()` continues and sets `statusText.innerHTML = "Durduruluyor..."` which OVERWRITES the STOPPED status!
+
+**Changes:**
+
+1. **notification.js - handleEarlyStop()**
+   - Added `stopHandled` flag to track if stop was already handled by message listener
+   - Set `stopHandled = true` when STOPPED message is received
+   - Wrapped status text updates in `if (!stopHandled)` check
+   - Prevents overwriting status when STOPPED was already processed
+
+**Files Modified:**
+- `notification.js`
+
+**Result:**
+- Stop status shows correctly immediately after stopping
+- No more "Durduruluyor..." overwriting the stopped state
+- UI updates properly for both paused and running operations

@@ -173,14 +173,26 @@ export class ResumableOperationRegistry {
       return { success: false, error: 'Operation not found' };
     }
 
-    // If operation is already paused, immediately clear and unregister
+    // If operation is already paused, immediately stop and unregister
     if (op.state === OperationState.PAUSED) {
-      log.info('resumableOp', `Operation ${this._currentOperationId} was paused, clearing state on stop request`);
+      log.info('resumableOp', `Operation ${this._currentOperationId} was paused, stopping immediately`);
+      
+      // First, set state to STOPPED and notify UI
+      op.state = OperationState.STOPPED;
+      this._notifyUIStateChanged();
+      
+      // Clear state if requested
       if (clearState) {
         await storageHandler.clearOperationState(this._currentOperationId);
       }
+      
+      // Now unregister without sending another notification (we already sent STOPPED)
+      this._activeOperations.delete(this._currentOperationId);
+      const stoppedId = this._currentOperationId;
+      this._currentOperationId = null;
       this._clearStateOnStop = false;
-      this.unregisterOperation(this._currentOperationId);
+      
+      log.info('resumableOp', `Unregistered operation ${stoppedId} after stop`);
       return { success: true, wasPaused: true };
     }
 
@@ -427,12 +439,14 @@ export class ResumableOperationRegistry {
     // Send message to notification page with both formats for compatibility
     // - newState/operationData for buttonStateManager.js
     // - operation for notification.js
+    // Include stats for displaying progress when paused
     try {
       chrome.runtime.sendMessage({
         action: "operationStateChanged",
         newState: newState,
         operationData: op,
-        operation: op  // Keep for backward compatibility with notification.js
+        operation: op,
+        stats: op?.stats || op?.checkpointData || null
       }).catch(() => {
         // Ignore errors if notification page is not open
       });

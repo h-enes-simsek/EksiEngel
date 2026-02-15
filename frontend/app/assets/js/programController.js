@@ -722,7 +722,18 @@ class ProgramController {
     try {
       log.info("progctrl", "Fetching all blocked users...");
       notificationHandler.notify("Engellenen kullanıcılar getiriliyor...");
-      const scrapeResult = await scrapingHandler.scrapeAllBlockedUsers();
+
+      const pauseCheckCallback = async () => {
+        const status = await checkPauseOrStop();
+        return status.paused || status.stopped;
+      };
+
+      const scrapeResult = await scrapingHandler.scrapeAllBlockedUsers(null, null, pauseCheckCallback);
+
+      if (scrapeResult.paused) {
+        log.info("progctrl", "Migration paused during blocked users fetch.");
+        return;
+      }
 
       if (!scrapeResult.success) {
         log.err("progctrl", `Failed to fetch blocked users: ${scrapeResult.error}`);
@@ -767,27 +778,18 @@ class ProgramController {
       for (let i = 0; i < blockedUsers.length; i++) {
         const user = blockedUsers[i];
 
-        // Check for pause/stop request every 10 users
-        if (i % 10 === 0) {
-          const status = await checkPauseOrStop();
-          if (status.paused) {
-            await resumableOperationRegistry.checkpointReached({
-              stage: 'PROCESS_USERS',
-              blockedUsers: blockedUsers,
-              processedCount: i,
-              migratedCount: migratedCount,
-              failedCount: failedCount
-            });
-            return;
-          }
-          if (status.stopped || this.earlyStop) {
-            log.info("progctrl", "Migration stopped early by user.");
-            notificationHandler.notify(`Taşıma işlemi kullanıcı tarafından durduruldu. İşlenen: ${i}/${blockedUsers.length}`);
-            break;
-          }
+        const status = await checkPauseOrStop();
+        if (status.paused) {
+          await resumableOperationRegistry.checkpointReached({
+            stage: 'PROCESS_USERS',
+            blockedUsers: blockedUsers,
+            processedCount: i,
+            migratedCount: migratedCount,
+            failedCount: failedCount
+          });
+          return;
         }
-
-        if (this.earlyStop) {
+        if (status.stopped || this.earlyStop) {
           log.info("progctrl", "Migration stopped early by user.");
           notificationHandler.notify(`Taşıma işlemi kullanıcı tarafından durduruldu. İşlenen: ${i}/${blockedUsers.length}`);
           break;
@@ -911,6 +913,26 @@ class ProgramController {
         log.info("progctrl", `Fetching muted users page ${pageIndex}...`);
         notificationHandler.notify(`Sessize alınan kullanıcılar getiriliyor: Sayfa ${pageIndex}...`);
 
+        // Check for pause before fetching each page
+        const prePageStatus = await checkPauseOrStop();
+        if (prePageStatus.paused) {
+          await resumableOperationRegistry.checkpointReached({
+            stage: 'FETCH_PAGES',
+            pageIndex: pageIndex,
+            processedCount: processedCount,
+            totalUsersFound: totalUsersFound,
+            blockedCount: blockedCount,
+            unmutedCount: unmutedCount,
+            failedCount: failedCount
+          });
+          return;
+        }
+        if (prePageStatus.stopped || this.earlyStop) {
+          log.info("progctrl", "Blocking muted users stopped early by user during page fetch.");
+          notificationHandler.notify(`Sessize alınan kullanıcıları engelleme işlemi kullanıcı tarafından durduruldu. İşlenen: ${processedCount} kullanıcı.`);
+          break;
+        }
+
         let partialListObj;
         try {
           partialListObj = await scrapingHandler.scrapeMutedUsersPage(pageIndex);
@@ -953,24 +975,23 @@ class ProgramController {
               const authorIdFromPage = pageUserIds[i];
               processedCount++;
 
-              // Check for pause every 10 users
-              if (processedCount % 10 === 0) {
-                const status = await checkPauseOrStop();
-                if (status.paused) {
-                  await resumableOperationRegistry.checkpointReached({
-                    stage: 'PROCESS_USERS',
-                    pageIndex: pageIndex,
-                    processedCount: processedCount,
-                    totalUsersFound: totalUsersFound,
-                    blockedCount: blockedCount,
-                    unmutedCount: unmutedCount,
-                    failedCount: failedCount
-                  });
-                  return;
-                }
-                if (status.stopped) {
-                  break;
-                }
+              const status = await checkPauseOrStop();
+              if (status.paused) {
+                await resumableOperationRegistry.checkpointReached({
+                  stage: 'PROCESS_USERS',
+                  pageIndex: pageIndex,
+                  processedCount: processedCount,
+                  totalUsersFound: totalUsersFound,
+                  blockedCount: blockedCount,
+                  unmutedCount: unmutedCount,
+                  failedCount: failedCount
+                });
+                return;
+              }
+              if (status.stopped || this.earlyStop) {
+                log.info("progctrl", "Blocking muted users stopped early by user.");
+                notificationHandler.notify(`Sessize alınan kullanıcıları engelleme işlemi kullanıcı tarafından durduruldu. İşlenen: ${processedCount} kullanıcı.`);
+                break;
               }
 
               notificationHandler.notifyOngoing(unmutedCount, processedCount, totalUsersFound, processQueue.currentItemMetadata);
@@ -1105,7 +1126,18 @@ class ProgramController {
     try {
       notificationHandler.notify("Engellenen ve sessize alınan kullanıcı listeleri getiriliyor...");
 
-      const blockedUsersResult = await scrapingHandler.scrapeAllBlockedUsers();
+      const pauseCheckCallback = async () => {
+        const status = await checkPauseOrStop();
+        return status.paused || status.stopped;
+      };
+
+      const blockedUsersResult = await scrapingHandler.scrapeAllBlockedUsers(null, null, pauseCheckCallback);
+
+      if (blockedUsersResult.paused) {
+        log.info("progctrl", "Blocking titles paused during blocked users fetch.");
+        return;
+      }
+
       if (!blockedUsersResult.success) {
           log.err("progctrl", `Failed to fetch blocked users: ${blockedUsersResult.error}`);
           notificationHandler.notify(`Engellenen kullanıcılar getirilemedi: ${blockedUsersResult.error}`);
@@ -1162,27 +1194,18 @@ class ProgramController {
       notificationHandler.notifyOngoing(successfulUsersCount, usersProcessedCount, usersToProcess.length, processQueue.currentItemMetadata);
 
       for (let i = 0; i < usersToProcess.length; i++) {
-        // Check for pause/stop every 10 users
-        if (i % 10 === 0) {
-          const status = await checkPauseOrStop();
-          if (status.paused) {
-            await resumableOperationRegistry.checkpointReached({
-              stage: 'PROCESS_USERS',
-              usersToProcess: usersToProcess,
-              processedCount: i,
-              serverBlockedTitlesCount: serverBlockedTitlesCount,
-              simulatedBlockedTitlesCount: simulatedBlockedTitlesCount
-            });
-            return;
-          }
-          if (status.stopped || this.earlyStop) {
-            log.info("progctrl", "Blocking titles stopped early by user.");
-            notificationHandler.notify(`Başlık engelleme erken durduruldu. İşlenen kullanıcı: ${i}/${usersToProcess.length}.`);
-            break;
-          }
+        const status = await checkPauseOrStop();
+        if (status.paused) {
+          await resumableOperationRegistry.checkpointReached({
+            stage: 'PROCESS_USERS',
+            usersToProcess: usersToProcess,
+            processedCount: i,
+            serverBlockedTitlesCount: serverBlockedTitlesCount,
+            simulatedBlockedTitlesCount: simulatedBlockedTitlesCount
+          });
+          return;
         }
-
-        if (this.earlyStop) {
+        if (status.stopped || this.earlyStop) {
           log.info("progctrl", "Blocking titles stopped early by user.");
           notificationHandler.notify(`Başlık engelleme erken durduruldu. İşlenen kullanıcı: ${i}/${usersToProcess.length}.`);
           break;
@@ -1380,6 +1403,257 @@ class ProgramController {
     }
   }
 
+  async refreshMutedList(savedState = null) {
+    log.info("progctrl", "refreshMutedList function started.");
+
+    if (this._isMutedListRefreshInProgress) {
+      log.warn("progctrl", "Muted list refresh is already in progress.");
+      notificationHandler.notify("Sessiz liste yenileme zaten devam ediyor.");
+      return;
+    }
+
+    this._isMutedListRefreshInProgress = true;
+    this.earlyStop = false;
+
+    const operationId = savedState?.operationId || 'refresh-muted-' + Date.now();
+    
+    const initialState = savedState?.checkpointData ? {
+      scrapedUsers: savedState.checkpointData.collectedUsers || [],
+      currentPage: savedState.checkpointData.currentPage || 0,
+      totalCount: savedState.checkpointData.userCount || 0
+    } : null;
+
+    resumableOperationRegistry.registerOperation(
+      operationId,
+      'REFRESH_MUTED_LIST',
+      {},
+      ['FETCH_PAGES']
+    );
+
+    try {
+      const updateProgress = async (progress) => {
+        if (this.tabId) {
+          chrome.tabs.sendMessage(this.tabId, {
+            action: "mutedListRefreshProgress",
+            count: progress.currentCount
+          }).catch(e => log.warn("progctrl", `Error sending progress message: ${e}`));
+        }
+        await storageHandler.saveMutedUserCount(progress.currentCount);
+      };
+
+      if (initialState && initialState.totalCount > 0) {
+        await updateProgress({ currentCount: initialState.totalCount });
+      }
+
+      const pauseCheckCallback = async () => {
+        const status = await checkPauseOrStop();
+        return status.paused || status.stopped;
+      };
+
+      const result = await scrapingHandler.scrapeAllMutedUsers(updateProgress, null, pauseCheckCallback, null, initialState);
+
+      if (result.paused) {
+        log.info("progctrl", "Muted list refresh paused by user.");
+        return;
+      }
+
+      if (result.success) {
+        await storageHandler.clearMutedRefreshResumeState();
+        await storageHandler.clearPartialMutedUsers();
+        await storageHandler.saveMutedUserList(result.usernames);
+        await storageHandler.saveMutedUserCount(result.count);
+
+        if (this.tabId) {
+          chrome.tabs.sendMessage(this.tabId, {
+            action: "mutedListRefreshComplete",
+            success: true,
+            count: result.count
+          }).catch(e => log.warn("progctrl", `Error sending complete message: ${e}`));
+        }
+        
+        notificationHandler.finishSuccess(enums.BanSource.REFRESH_MUTED_LIST, null, result.count, result.count, result.count, processQueue.currentItemMetadata);
+      } else if (result.stoppedEarly) {
+        await storageHandler.savePartialMutedUsers(result.usernames || [], true);
+        await storageHandler.clearMutedRefreshResumeState();
+
+        if (this.tabId) {
+          chrome.tabs.sendMessage(this.tabId, {
+            action: "mutedListRefreshComplete",
+            success: false,
+            stoppedEarly: true,
+            usernames: result.usernames || [],
+            count: result.count || 0,
+            error: result.error || "İşlem kullanıcı tarafından durduruldu"
+          }).catch(e => log.warn("progctrl", `Error sending early stop message: ${e}`));
+        }
+        
+        notificationHandler.finishErrorEarlyStop(enums.BanSource.REFRESH_MUTED_LIST, null, processQueue.currentItemMetadata);
+      } else {
+        log.err("progctrl", "Error scraping muted users:", result.error);
+        await storageHandler.clearMutedRefreshResumeState();
+        await storageHandler.clearPartialMutedUsers();
+
+        if (this.tabId) {
+          chrome.tabs.sendMessage(this.tabId, {
+            action: "mutedListRefreshComplete",
+            success: false,
+            error: result.error
+          }).catch(e => log.warn("progctrl", `Error sending error message: ${e}`));
+        }
+        
+        notificationHandler.notify(`Sessiz liste yenileme başarısız: ${result.error}`);
+      }
+    } catch (e) {
+      log.err("progctrl", `Unexpected error during refreshMutedList: ${e}`);
+      await storageHandler.clearMutedRefreshResumeState();
+      await storageHandler.clearPartialMutedUsers();
+
+      if (this.tabId) {
+        chrome.tabs.sendMessage(this.tabId, {
+          action: "mutedListRefreshComplete",
+          success: false,
+          error: e.message || "Bilinmeyen hata"
+        }).catch(err => log.warn("progctrl", `Error sending error message: ${err}`));
+      }
+      
+      notificationHandler.notify(`Sessiz liste yenileme sırasında hata: ${e.message}`);
+    } finally {
+      log.info("progctrl", "refreshMutedList function completed.");
+      this.earlyStop = false;
+      this._isMutedListRefreshInProgress = false;
+
+      const currentOp = resumableOperationRegistry.getCurrentOperation();
+      if (!currentOp || currentOp.state !== OperationState.PAUSED) {
+        resumableOperationRegistry.completeOperation();
+      }
+
+      notificationHandler.notifyUpdateCounts();
+    }
+  }
+
+  async refreshBlockedList(savedState = null) {
+    log.info("progctrl", "refreshBlockedList function started.");
+
+    if (this._isBlockedListRefreshInProgress) {
+      log.warn("progctrl", "Blocked list refresh is already in progress.");
+      notificationHandler.notify("Engelli liste yenileme zaten devam ediyor.");
+      return;
+    }
+
+    this._isBlockedListRefreshInProgress = true;
+    this.earlyStop = false;
+
+    const operationId = savedState?.operationId || 'refresh-blocked-' + Date.now();
+    
+    const initialState = savedState?.checkpointData ? {
+      scrapedUsers: savedState.checkpointData.collectedUsers || [],
+      currentPage: savedState.checkpointData.currentPage || 0,
+      totalCount: savedState.checkpointData.userCount || 0
+    } : null;
+
+    resumableOperationRegistry.registerOperation(
+      operationId,
+      'REFRESH_BLOCKED_LIST',
+      {},
+      ['FETCH_PAGES']
+    );
+
+    try {
+      const updateProgress = async (progress) => {
+        if (this.tabId) {
+          chrome.tabs.sendMessage(this.tabId, {
+            action: "blockedListRefreshProgress",
+            count: progress.currentCount
+          }).catch(e => log.warn("progctrl", `Error sending progress message: ${e}`));
+        }
+        await storageHandler.saveBlockedUserCount(progress.currentCount);
+      };
+
+      if (initialState && initialState.totalCount > 0) {
+        await updateProgress({ currentCount: initialState.totalCount });
+      }
+
+      const pauseCheckCallback = async () => {
+        const status = await checkPauseOrStop();
+        return status.paused || status.stopped;
+      };
+
+      const result = await scrapingHandler.scrapeAllBlockedUsers(updateProgress, null, pauseCheckCallback, null, initialState);
+
+      if (result.paused) {
+        log.info("progctrl", "Blocked list refresh paused by user.");
+        return;
+      }
+
+      if (result.success) {
+        await storageHandler.clearPartialBlockedUsers();
+        await storageHandler.saveBlockedUserList(result.usernames);
+        await storageHandler.saveBlockedUserCount(result.count);
+
+        if (this.tabId) {
+          chrome.tabs.sendMessage(this.tabId, {
+            action: "blockedListRefreshComplete",
+            success: true,
+            count: result.count
+          }).catch(e => log.warn("progctrl", `Error sending complete message: ${e}`));
+        }
+        
+        notificationHandler.finishSuccess(enums.BanSource.REFRESH_BLOCKED_LIST, null, result.count, result.count, result.count, processQueue.currentItemMetadata);
+      } else if (result.stoppedEarly) {
+        await storageHandler.savePartialBlockedUsers(result.usernames || [], true);
+
+        if (this.tabId) {
+          chrome.tabs.sendMessage(this.tabId, {
+            action: "blockedListRefreshComplete",
+            success: false,
+            stoppedEarly: true,
+            usernames: result.usernames || [],
+            count: result.count || 0,
+            error: result.error || "İşlem kullanıcı tarafından durduruldu"
+          }).catch(e => log.warn("progctrl", `Error sending early stop message: ${e}`));
+        }
+        
+        notificationHandler.finishErrorEarlyStop(enums.BanSource.REFRESH_BLOCKED_LIST, null, processQueue.currentItemMetadata);
+      } else {
+        log.err("progctrl", "Error scraping blocked users:", result.error);
+        await storageHandler.clearPartialBlockedUsers();
+
+        if (this.tabId) {
+          chrome.tabs.sendMessage(this.tabId, {
+            action: "blockedListRefreshComplete",
+            success: false,
+            error: result.error
+          }).catch(e => log.warn("progctrl", `Error sending error message: ${e}`));
+        }
+        
+        notificationHandler.notify(`Engelli liste yenileme başarısız: ${result.error}`);
+      }
+    } catch (e) {
+      log.err("progctrl", `Unexpected error during refreshBlockedList: ${e}`);
+
+      if (this.tabId) {
+        chrome.tabs.sendMessage(this.tabId, {
+          action: "blockedListRefreshComplete",
+          success: false,
+          error: e.message || "Bilinmeyen hata"
+        }).catch(err => log.warn("progctrl", `Error sending error message: ${err}`));
+      }
+      
+      notificationHandler.notify(`Engelli liste yenileme sırasında hata: ${e.message}`);
+    } finally {
+      log.info("progctrl", "refreshBlockedList function completed.");
+      this.earlyStop = false;
+      this._isBlockedListRefreshInProgress = false;
+
+      const currentOp = resumableOperationRegistry.getCurrentOperation();
+      if (!currentOp || currentOp.state !== OperationState.PAUSED) {
+        resumableOperationRegistry.completeOperation();
+      }
+
+      notificationHandler.notifyUpdateCounts();
+    }
+  }
+
   async migrateBlockedTitlesToUnblocked() {
     log.info("progctrl", "migrateBlockedTitlesToUnblocked function started.");
 
@@ -1497,16 +1771,6 @@ notificationHandler.notify(`${totalCount} adet başlıkları engellenen kullanı
     // Check if there's a resumable operation registered
     const currentOp = resumableOperationRegistry.getCurrentOperation();
     if (!currentOp) {
-      // Check if any legacy operations are running that don't support pause
-      if (this._isMutedListRefreshInProgress || 
-          this._isBlockedListRefreshInProgress ||
-          this._migrationInProgress ||
-          this._blockMutedUsersInProgress ||
-          this._blockTitlesInProgress ||
-          this._dateBasedBulkInProgress) {
-        log.warn("progctrl", "Pause not supported for legacy operations");
-        return { success: false, error: 'Bu işlem türü duraklatmayı desteklemiyor. Erken durdurmayı kullanın.' };
-      }
       log.warn("progctrl", "No operation running to pause");
       return { success: false, error: 'Duraklatılacak işlem bulunamadı' };
     }
@@ -1551,6 +1815,10 @@ notificationHandler.notify(`${totalCount} adet başlıkları engellenen kullanı
         return await this._resumeBlockMutedUsers(savedState);
       case 'BLOCK_TITLES':
         return await this._resumeBlockTitles(savedState);
+      case 'REFRESH_MUTED_LIST':
+        return await this._resumeRefreshMutedList(savedState);
+      case 'REFRESH_BLOCKED_LIST':
+        return await this._resumeRefreshBlockedList(savedState);
       default:
         return { success: false, error: `Bilinmeyen işlem türü: ${savedState.operationType}` };
     }
@@ -1581,29 +1849,6 @@ notificationHandler.notify(`${totalCount} adet başlıkları engellenen kullanı
     if (resumableOp) {
       // All operations registered with the registry now support checkpoint-based pausing
       return { ...resumableOp, canPause: true };
-    }
-    
-    // Check for legacy operations that don't use the resumable registry
-    // These operations run through the queue system but don't support pause/resume
-    
-    if (this._isMutedListRefreshInProgress) {
-      return {
-        id: 'legacy-muted-refresh',
-        type: 'REFRESH_MUTED_LIST',
-        state: OperationState.RUNNING,
-        canPause: false,
-        message: 'Liste yenileme işlemi duraklatmayı desteklemiyor. Erken durdurmayı kullanın.'
-      };
-    }
-    
-    if (this._isBlockedListRefreshInProgress) {
-      return {
-        id: 'legacy-blocked-refresh',
-        type: 'REFRESH_BLOCKED_LIST',
-        state: OperationState.RUNNING,
-        canPause: false,
-        message: 'Liste yenileme işlemi duraklatmayı desteklemiyor. Erken durdurmayı kullanın.'
-      };
     }
     
     return null;
@@ -2113,7 +2358,6 @@ notificationHandler.notify(`${totalCount} adet başlıkları engellenen kullanı
   async _resumeBlockTitles(savedState) {
     log.info("progctrl", "Resuming block titles from saved state - restarting operation");
     
-    // Block titles doesn't have granular checkpoints, so we restart it
     this._blockTitlesInProgress = false;
     
     try {
@@ -2124,6 +2368,42 @@ notificationHandler.notify(`${totalCount} adet başlıkları engellenen kullanı
       return { success: false, error: error.message };
     }
   }
- }
+
+  /**
+   * Resume muted list refresh from saved state
+   * @private
+   */
+  async _resumeRefreshMutedList(savedState) {
+    log.info("progctrl", "Resuming muted list refresh from saved state");
+    
+    this._isMutedListRefreshInProgress = false;
+    
+    try {
+      await this.refreshMutedList(savedState);
+      return { success: true };
+    } catch (error) {
+      log.err("progctrl", `Error resuming muted list refresh: ${error}`);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Resume blocked list refresh from saved state
+   * @private
+   */
+  async _resumeRefreshBlockedList(savedState) {
+    log.info("progctrl", "Resuming blocked list refresh from saved state");
+    
+    this._isBlockedListRefreshInProgress = false;
+    
+    try {
+      await this.refreshBlockedList(savedState);
+      return { success: true };
+    } catch (error) {
+      log.err("progctrl", `Error resuming blocked list refresh: ${error}`);
+      return { success: false, error: error.message };
+    }
+  }
+}
  
  export const programController = new ProgramController();

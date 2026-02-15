@@ -184,83 +184,10 @@ chrome.runtime.onMessage.addListener(function messageListener_Popup(message, sen
         }
       } else if (message.action === "refreshMutedList") {
         if (!programController.isMutedListRefreshInProgress && !(programController.isActive && processQueue.size === 0 && !processQueue.isRunning)) {
-          const handler = async () => {
-            if (programController.isMutedListRefreshInProgress) return;
-            programController.isMutedListRefreshInProgress = true;
-            programController.earlyStop = false;
-            
-            const updateProgress = async (progress) => {
-              if (g_notificationTabId) {
-                  chrome.tabs.sendMessage(g_notificationTabId, {
-                    action: "mutedListRefreshProgress", count: progress.currentCount
-                  }).catch(e => log.warn("bg", `Error sending message to notification tab: ${e}`));
-              }
-              await storageHandler.saveMutedUserCount(progress.currentCount);
-              await storageHandler.saveMutedRefreshResumeState(progress.currentPage || 0, progress.currentCount);
-            };
-            
-            try {
-              const resumeState = await storageHandler.getMutedRefreshResumeState();
-              let resumeFromIndex = null;
-              
-              if (resumeState && !programController.earlyStop) {
-                log.info("bg", `Resuming muted list refresh from page ${resumeState.pageIndex + 1}, count: ${resumeState.count}`);
-                resumeFromIndex = resumeState.pageIndex;
-              }
-              
-              const result = await scrapingHandler.scrapeAllMutedUsers(updateProgress, resumeFromIndex);
-              
-              if (result.success) {
-                await storageHandler.clearMutedRefreshResumeState();
-                await storageHandler.clearPartialMutedUsers();
-                
-                await storageHandler.saveMutedUserList(result.usernames);
-                await storageHandler.saveMutedUserCount(result.count);
-                
-                if (g_notificationTabId) {
-                    chrome.tabs.sendMessage(g_notificationTabId, {
-                      action: "mutedListRefreshComplete", success: true, count: result.count
-                    }).catch(e => log.warn("bg", `Error sending message to notification tab: ${e}`));
-                }
-              } else {
-                if (result.stoppedEarly) {
-                  await storageHandler.savePartialMutedUsers(result.usernames || [], true);
-                  await storageHandler.clearMutedRefreshResumeState();
-                  
-                  if (g_notificationTabId) {
-                      chrome.tabs.sendMessage(g_notificationTabId, {
-                        action: "mutedListRefreshComplete", success: false, stoppedEarly: true, usernames: result.usernames || [], count: result.count || 0, error: result.error || "Process stopped by user"
-                      }).catch(e => log.warn("bg", `Error sending message to notification tab: ${e}`));
-                  }
-                } else {
-                  log.err("bg", "Error scraping muted users:", result.error);
-                  await storageHandler.clearMutedRefreshResumeState();
-                  await storageHandler.clearPartialMutedUsers();
-                  
-                  if (g_notificationTabId) {
-                      chrome.tabs.sendMessage(g_notificationTabId, {
-                        action: "mutedListRefreshComplete", success: false, error: result.error
-                      }).catch(e => log.warn("bg", `Error sending message to notification tab: ${e}`));
-                  }
-                }
-              }
-            } catch (e) {
-              log.err("bg", `Unexpected error during refreshMutedList: ${e}`);
-              await storageHandler.clearMutedRefreshResumeState();
-              await storageHandler.clearPartialMutedUsers();
-              
-              if (g_notificationTabId) {
-                  chrome.tabs.sendMessage(g_notificationTabId, {
-                    action: "mutedListRefreshComplete", success: false, error: e.message || "Unknown error"
-                  }).catch(err => log.warn("bg", `Error sending message to notification tab: ${err}`));
-              }
-            } finally {
-              programController.isMutedListRefreshInProgress = false;
-            }
-          };
+          const handler = () => programController.refreshMutedList();
           
           const metadata = {
-            operationNotes: "Sessiz kullanıcı listesini sunucudan yeniler (hafif mod + devam etme desteği)",
+            operationNotes: "Sessiz kullanıcı listesini sunucudan yeniler",
             requiresUserInteraction: false,
             targetTypes: [enums.TargetType.MUTE],
             sourceTitle: "Sessiz Kullanıcı Listesi"
@@ -271,61 +198,7 @@ chrome.runtime.onMessage.addListener(function messageListener_Popup(message, sen
         }
       } else if (message.action === "refreshBlockedList") {
         if (!programController.isBlockedListRefreshInProgress && !(programController.isActive && processQueue.size === 0 && !processQueue.isRunning)) {
-          const handler = async () => {
-            if (programController.isBlockedListRefreshInProgress) return;
-            programController.isBlockedListRefreshInProgress = true;
-            programController.earlyStop = false;
-            const updateProgress = async (progress) => {
-              if (g_notificationTabId) {
-                  chrome.tabs.sendMessage(g_notificationTabId, {
-                    action: "blockedListRefreshProgress", count: progress.currentCount
-                  }).catch(e => log.warn("bg", `Error sending message to notification tab: ${e}`));
-              }
-              await storageHandler.saveBlockedUserCount(progress.currentCount);
-            };
-            try {
-              const result = await scrapingHandler.scrapeAllBlockedUsers(updateProgress);
-              if (result.success) {
-                await storageHandler.clearPartialBlockedUsers();
-                
-                await storageHandler.saveBlockedUserList(result.usernames);
-                await storageHandler.saveBlockedUserCount(result.count);
-                if (g_notificationTabId) {
-                    chrome.tabs.sendMessage(g_notificationTabId, {
-                      action: "blockedListRefreshComplete", success: true, count: result.count
-                    }).catch(e => log.warn("bg", `Error sending message to notification tab: ${e}`));
-                }
-              } else {
-                if (result.stoppedEarly) {
-                  await storageHandler.savePartialBlockedUsers(result.usernames || [], true);
-                  
-                  if (g_notificationTabId) {
-                      chrome.tabs.sendMessage(g_notificationTabId, {
-                        action: "blockedListRefreshComplete", success: false, stoppedEarly: true, usernames: result.usernames || [], count: result.count || 0, error: result.error || "Process stopped by user"
-                      }).catch(e => log.warn("bg", `Error sending message to notification tab: ${e}`));
-                  }
-                } else {
-                  log.err("bg", "Error scraping blocked users:", result.error);
-                  await storageHandler.clearPartialBlockedUsers();
-                  
-                  if (g_notificationTabId) {
-                      chrome.tabs.sendMessage(g_notificationTabId, {
-                        action: "blockedListRefreshComplete", success: false, error: result.error
-                      }).catch(e => log.warn("bg", `Error sending message to notification tab: ${e}`));
-                  }
-                }
-              }
-            } catch (e) {
-              log.err("bg", `Unexpected error during refreshBlockedList: ${e}`);
-              if (g_notificationTabId) {
-                  chrome.tabs.sendMessage(g_notificationTabId, {
-                    action: "blockedListRefreshComplete", success: false, error: e.message || "Unknown error"
-                  }).catch(err => log.warn("bg", `Error sending message to notification tab: ${err}`));
-              }
-            } finally {
-              programController.isBlockedListRefreshInProgress = false;
-            }
-          };
+          const handler = () => programController.refreshBlockedList();
           
           const metadata = {
             operationNotes: "Engelli kullanıcı listesini sunucudan yeniler",
