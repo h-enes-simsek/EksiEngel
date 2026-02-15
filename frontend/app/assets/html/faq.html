@@ -345,6 +345,19 @@ margin-bottom: 8px;
     </div>
   </div>
 
+  <div class="card" style="margin-bottom: 20px;">
+    <div class="sub-section" id="storageSection">
+      <div class="sub-section-header">
+        <h3>💾 Depolama Kullanımı</h3>
+        <button id="clearStoredData" class="btn btn-danger btn-tiny">🗑️ Temizle</button>
+      </div>
+      <p class="sub-section-description">Sadece kuyruk ve tamamlanan işlem verilerini temizler.</p>
+      <div class="cache-stats-inline">
+        <span class="cache-mini">Kullanım: <b id="storageUsage">Yükleniyor...</b> / 5MB</span>
+      </div>
+    </div>
+  </div>
+
   <!-- Dark Mode Toggle Section -->
   <h3 style="text-align: center; margin-top: 30px;">
     Görünüm
@@ -361,25 +374,6 @@ margin-bottom: 8px;
     </div>
     <br>
     <small style="color: #666;">Arayüz temasını değiştir</small>
-  </div>
-
-  <!-- Veri Yönetimi ve Depolama Section -->
-  <h3 style="text-align: center; margin-top: 30px;">
-    Veri Yönetimi ve Depolama
-  </h3>
-  
-  <div style="text-align: center; margin-bottom: 20px;">
-    <span style="font-weight: bold;">💾 Depolama Kullanımı:</span>
-    <span id="storageUsage">Yükleniyor...</span>
-    <span>/ 5MB</span>
-  </div>
-  
-  <div style="text-align: center; margin-bottom: 30px;">
-    <button id="clearStoredData" class="btn btn-dark" style="background-color: #dc3545; border-color: #dc3545; color: white;">
-      🗑️ Saklanan Verileri Temizle
-    </button>
-    <br>
-    <small style="color: #666;">Sadece kuyruk ve tamamlanan işlem verilerini temizler</small>
   </div>
   
   <img src="../img/semsiye.png" id="semsiye">
