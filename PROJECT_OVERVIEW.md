@@ -4,38 +4,161 @@
 
 The project "EksiEngelPlus" is a Chrome browser extension designed to facilitate mass blocking/unblocking of users on Ekşi Sözlük. It provides comprehensive blocking options including individual users, their titles, users who favorited specific entries, followers of specific users, and advanced migration features between blocked/muted states.
 
-*   **Frontend (Chrome Extension - Manifest V3):**
-    *   **Main UI Components:**
-        *   **Popup Interface (`popup.html`/`popup.js`)** - Main extension configuration menu with settings for various blocking options
-        *   **Notification Page (`notification.html`/`notification.js`)** - Compact single-page interface showing real-time progress, queue status, and operation results with collapsible sections
-        *   **Content Script (`script.js`)** - Injects blocking buttons and menus directly into Ekşi Sözlük pages using MutationObserver for dynamic content handling
-        *   **Background Service Worker (`background.js`)** - Central orchestrator managing all blocking operations, queue processing, and coordination
-    *   **Core Processing Modules:**
-        *   **Queue Management (`queue.js`)** - Advanced auto-executing queue system with task prioritization and execution coordination
-        *   **Program Controller (`programController.js`)** - High-level operation controller handling complex workflows like migration, bulk operations, and title management
-        *   **Relation Handler (`relationHandler.js`)** - Direct communication with Ekşi Sözlük's blocking/unblocking API endpoints
-        *   **Scraping Handler (`scrapingHandler.js`)** - Comprehensive web scraping for user data, followers, favorites, and page content
-        *   **Notification Handler (`notificationHandler.js`)** - Real-time status updates and progress tracking to notification page
-    *   **Support Services:**
-        *   **Communication Handler (`commHandler.js`)** - Backend API communication for analytics and data collection
-        *   **Configuration Manager (`config.js`)** - Persistent settings with 15+ configuration options for customization
-        *   **Storage Handler (`storageHandler.js`)** - Chrome storage management for user lists, counts, and preferences
-        *   **URL Handler (`urlHandler.js`)** - Site accessibility validation and URL management
-        *   **Logging System (`log.js`)** - Comprehensive logging with levels and data persistence
-        *   **Utilities (`utils.js`)** - Helper functions for data processing, timing, and validation
-        *   **DOM Utilities (`jsdom.js`)** - DOM manipulation and element processing helpers
-        *   **Enums (`enums.js`)** - Centralized constants for action types, modes, sources, and configuration values
-    *   **Additional UI Pages:**
-        *   **Author List Page (`authorListPage.html`/`authorListPage.js`)** - User list management interface
-        *   **FAQ Page (`faq.html`/`faq.js`)** - Help and documentation interface
-        *   **Welcome Page (`welcome.html`/`welcome.js`)** - Initial setup and onboarding interface
-        *   **Documentation Page (`documentation.html`)** - Extended documentation and guides
-    *   **Styling System:** Comprehensive CSS architecture with modular stylesheets for different UI components
+## Repository Structure
 
-*   **Backend (Django Server):**
-    *   **Action API (`/api/`)** - Comprehensive analytics endpoint receiving detailed logs about *blocking/unblocking actions* performed by the extension (`/action/`). Aggregates data to provide statistics like most blocked users, total actions, success rates, failure analysis, and provides current Ekşi Sözlük URL status (`/where_is_eksisozluk/`).
-    *   **Client Data Collector (`/client_data_collector/`)** - Receives general *client-side analytics* including UI interactions (`/analytics`), configuration data, and usage patterns (`/upload_v2`).
-    *   **Database Integration** - PostgreSQL backend with Django ORM for data persistence and aggregation
+```
+EksiEngel/
+├── frontend/
+│   ├── app/                          # Chrome Extension (Manifest V3)
+│   │   ├── manifest.json             # Extension configuration
+│   │   └── assets/
+│   │       ├── js/                   # JavaScript Modules (10,059 lines total)
+│   │       │   ├── programController.js    # 2129 lines - Complex operation controller
+│   │       │   ├── notification.js         # 1655 lines - UI controller for notification page
+│   │       │   ├── background.js           # 1109 lines - Service worker orchestrator
+│   │       │   ├── scrapingHandler.js      # 1077 lines - Web scraping and data extraction
+│   │       │   ├── storageHandler.js       #  907 lines - Chrome storage abstraction
+│   │       │   ├── script.js               #  776 lines - Content script with MutationObserver
+│   │       │   ├── faq.js                  #  565 lines - Settings page controller
+│   │       │   ├── resumableOperation.js   #  448 lines - Pause/resume operation support
+│   │       │   ├── notificationHandler.js  #  384 lines - Real-time status management
+│   │       │   ├── buttonStateManager.js   #  355 lines - UI button state management
+│   │       │   ├── queue.js                #  244 lines - Auto-executing task queue
+│   │       │   ├── utils.js                #  230 lines - Utility functions
+│   │       │   ├── relationHandler.js      #  191 lines - Ekşi Sözlük API communication
+│   │       │   ├── commHandler.js          #  144 lines - Backend API communication
+│   │       │   ├── enums.js                #   88 lines - Centralized constants
+│   │       │   ├── urlHandler.js           #   78 lines - Site accessibility validation
+│   │       │   ├── config.js               #   74 lines - Configuration management
+│   │       │   ├── authorListPage.js       #   42 lines - Author list page controller
+│   │       │   ├── log.js                  #   37 lines - Logging system
+│   │       │   ├── popup.js                #   25 lines - Popup UI controller
+│   │       │   ├── welcome.js              #   11 lines - Welcome page controller
+│   │       │   └── jsdom.js                # Large vendor file - DOM utilities
+│   │       ├── html/                 # HTML Pages (1,021 lines total)
+│   │       │   ├── faq.html                # 431 lines - Settings and documentation
+│   │       │   ├── notification.html       # 287 lines - Main operations page
+│   │       │   ├── documentation.html      # 145 lines - Extended documentation
+│   │       │   ├── welcome.html            #  79 lines - Onboarding interface
+│   │       │   ├── authorListPage.html     #  56 lines - User list management
+│   │       │   └── popup.html              #  23 lines - Extension popup
+│   │       ├── css/                 # Stylesheets (1,888 lines total)
+│   │       │   ├── customNotification.css  # 1123 lines - Notification page styles
+│   │       │   ├── switchButtons.css       #  521 lines - Toggle switch components
+│   │       │   ├── buttons.css             #   87 lines - Button component styles
+│   │       │   ├── tooltip.css             #   84 lines - Tooltip styles
+│   │       │   ├── customPopup.css         #   57 lines - Popup styles
+│   │       │   └── footer.css              #   16 lines - Footer styles
+│   │       └── img/                 # Extension icons and images
+│   │           ├── eksiengel16.png         # Extension icon (16x16)
+│   │           ├── eksiengel32.png         # Extension icon (32x32)
+│   │           ├── eksiengel48.png         # Extension icon (48x48)
+│   │           ├── eksiengel128.png        # Extension icon (128x128)
+│   │           ├── semsiye.png             # UI image
+│   │           ├── authorMenu.png          # Screenshot
+│   │           ├── entryMenu.png           # Screenshot
+│   │           └── *.svg                   # Various icons
+│   └── publish/                      # Chrome Web Store assets
+│       ├── ss/                       # Screenshots
+│       ├── promo/                    # Promotional images
+│       └── README.md
+├── backend/
+│   └── django_EksiEngel/            # Django REST API Server
+│       ├── manage.py                # Django management script
+│       ├── requirements.txt         # Python dependencies
+│       ├── django_EksiEngel/        # Core Django project
+│       │   ├── settings.py          # Django settings
+│       │   ├── urls.py              # Main URL routing
+│       │   ├── wsgi.py              # WSGI deployment
+│       │   └── asgi.py              # ASGI deployment
+│       ├── api/                     # Action Analytics API
+│       │   ├── models.py            # Data models
+│       │   ├── views.py             # API endpoints
+│       │   ├── urls.py              # URL patterns
+│       │   ├── serializers.py       # DRF serializers
+│       │   └── fixtures/            # Initial data
+│       ├── client_data_collector/   # Client Analytics API
+│       │   ├── models.py            # Analytics models
+│       │   ├── views.py             # Data collection endpoints
+│       │   ├── urls.py              # URL patterns
+│       │   └── fixtures/            # Enum definitions
+│       └── where_is_eksisozluk/     # URL Status Monitoring
+│           ├── models.py            # Status models
+│           ├── views.py             # Status endpoints
+│           └── urls.py              # URL patterns
+├── docs/                            # Documentation Website
+│   ├── index.html                   # Documentation homepage
+│   ├── privacypolicy.html           # Privacy policy
+│   ├── releaseNotes.html            # Release notes
+│   ├── changelog.json               # Version history
+│   ├── ss/                          # Screenshots
+│   └── feature_plans/               # Feature planning docs
+├── context_portal/                  # Context Database (development)
+│   ├── alembic/                     # Database migrations
+│   ├── context.db                   # SQLite database
+│   └── conport_vector_data/         # Vector data storage
+├── AGENTS.md                        # AI assistant instructions
+├── PROJECT_OVERVIEW.md              # This file
+├── README.md                        # Project readme
+└── LICENSE.txt                      # MIT License
+```
+
+## Frontend Architecture (Chrome Extension)
+
+### Main UI Components
+
+| Page | Location | Purpose |
+|------|----------|---------|
+| **Popup** | `assets/html/popup.html` + `assets/js/popup.js` | Main extension configuration menu |
+| **Notification** | `assets/html/notification.html` + `assets/js/notification.js` | Real-time progress tracking, operations UI |
+| **FAQ/Settings** | `assets/html/faq.html` + `assets/js/faq.js` | Settings, date filter rules, documentation |
+| **Author List** | `assets/html/authorListPage.html` + `assets/js/authorListPage.js` | User list management |
+| **Welcome** | `assets/html/welcome.html` + `assets/js/welcome.js` | Initial setup and onboarding |
+
+### Core Processing Modules
+
+| Module | Lines | Purpose |
+|--------|-------|---------|
+| **programController.js** | 2129 | High-level operation controller for complex workflows |
+| **background.js** | 1109 | Service worker orchestrator, message handling |
+| **scrapingHandler.js** | 1077 | Web scraping for user data, followers, favorites |
+| **storageHandler.js** | 907 | Chrome storage management, caching |
+| **script.js** | 776 | Content script with MutationObserver |
+| **resumableOperation.js** | 448 | Pause/resume functionality for operations |
+| **notificationHandler.js** | 384 | Real-time status updates |
+| **buttonStateManager.js** | 355 | UI button state management |
+| **queue.js** | 244 | Auto-executing task queue system |
+| **utils.js** | 230 | Helper functions, date filtering |
+| **relationHandler.js** | 191 | Direct Ekşi Sözlük API communication |
+
+### Support Services
+
+| Module | Purpose |
+|--------|---------|
+| **commHandler.js** | Backend API communication for analytics |
+| **config.js** | Persistent configuration with 15+ options |
+| **urlHandler.js** | Site accessibility validation |
+| **enums.js** | Centralized constants (ActionTypes, Modes, Sources) |
+| **log.js** | Logging system with levels |
+
+## Backend Architecture (Django)
+
+### Django Applications
+
+| App | Path | Purpose |
+|-----|------|---------|
+| **api** | `/api/` | Action analytics, blocked user statistics |
+| **client_data_collector** | `/client_data_collector/` | Client-side analytics, usage patterns |
+| **where_is_eksisozluk** | `/where_is_eksisozluk/` | URL status monitoring |
+
+### API Endpoints
+
+| Endpoint | Purpose |
+|----------|---------|
+| `/api/action/` | Log blocking/unblocking actions |
+| `/api/where_is_eksisozluk/` | Get current Ekşi Sözlük URL |
+| `/client_data_collector/analytics/` | UI interaction analytics |
+| `/client_data_collector/upload_v2/` | Configuration and usage data |
 
 ## Key Features
 
@@ -44,220 +167,30 @@ The project "EksiEngelPlus" is a Chrome browser extension designed to facilitate
   * Mass blocking users who favorited specific entries
   * Mass blocking followers of specific users
   * Title-based blocking (block all titles by specific users)
+
 * **Date-Based User Filtering:**
   * Filter users by account registration date before blocking
   * Protect legacy accounts (use bulk action with ENGEL_KALDIR for older accounts)
   * Block newly created accounts (configurable threshold)
   * Custom filter rules with ENGELLE (Block) action
   * 30-day TTL caching for registration dates to optimize performance
-  * Full tabbed UI for filter configuration in notification page
+
 * **Date-Based Bulk Actions:**
-  * Direct bulk operations on users filtered by registration date
   * Source options: Blocked users list, Muted users list, or Author list
   * Date criteria: Account age (newer/older than) or specific dates (before/after)
   * Actions: Block, Mute, Unblock, Unmute, or Follow matching users
-  * Preferences persistence for user convenience
+
 * **Advanced Migration System:**
   * Migrate blocked users to muted status (and vice versa)
   * Block all muted users in bulk
   * Block titles of blocked/muted users
   * Unblock all users and remove all mutes
-* **Sophisticated Configuration:**
-  * Enable/disable title blocking, mute functionality, analysis options
-  * Premium icon hiding (green/yellow badges)
-  * Protection of followed users from blocking
-  * Date-based filtering with customizable rules
-  * Analysis to avoid redundant actions
-  * Configurable logging and data collection
-* **Dynamic UI Integration:**
-  * Injects buttons into entry menus, title menus, and profile pages
-  * MutationObserver-based dynamic content detection
-  * Real-time progress tracking and status updates
-* **Analytics & Monitoring:**
-  * Optional data collection for usage statistics
-  * Comprehensive logging with different severity levels
-  * Real-time operation monitoring and error tracking
-* **Storage Management:**
-  * Persistent storage of user lists and counts
-  * Configuration persistence
-  * Progress state management across sessions
 
-## Architecture Diagram
-
-```mermaid
-graph TB
-    subgraph "Browser Extension"
-        PopupUI[popup.html + popup.js] --> BackgroundJS[background.js]
-        
-        subgraph "Content Script Integration"
-            MutationObserver[MutationObserver] --> DOM[Dynamic DOM Changes]
-            DOM --> EntryProcessors[Entry Menu Processors]
-            DOM --> TitleProcessors[Title Menu Processors] 
-            DOM --> ProfileProcessors[Profile Button Processors]
-            EntryProcessors --> EksiSozluk[Ekşi Sözlük Page]
-            TitleProcessors --> EksiSozluk
-            ProfileProcessors --> EksiSozluk
-            DOM --> ContentScript[script.js]
-        end
-        
-        ContentScript --> BackgroundJS
-        BackgroundJS --> ActionQueue[queue.js - Auto-Executing Queue]
-        ActionQueue --> ProcessHandler[background.js#processHandler]
-        
-        subgraph "Background Processing Pipeline"
-            ProcessHandler --> Scraping[scrapingHandler.js]
-            ProcessHandler --> Relation[relationHandler.js]
-            ProcessHandler --> Config[config.js]
-            ProcessHandler --> Notify[notificationHandler.js]
-            ProcessHandler --> Comm[commHandler.js]
-            ProcessHandler --> Storage[storageHandler.js]
-            ProcessHandler --> ProgramCtrl[programController.js]
-            ProcessHandler --> URLHandler[urlHandler.js]
-            ProcessHandler --> LogSys[log.js]
-        end
-        
-        subgraph "Support Services"
-            Scraping --> EksiSozluk
-            Relation --> EksiSozluk
-            Notify --> NotificationPage[notification.html]
-            Comm --> ActionAPI
-            Comm --> ClientDataCollectorAPI
-            Storage --> ChromeStorage[Chrome Storage API]
-            LogSys --> Console[Console Output]
-            ProgramCtrl --> MultipleOps[Complex Operations]
-        end
-        
-        PopupUI --> BackgroundJS
-        PopupUI --> AuthorList[authorListPage.html]
-        PopupUI --> FAQ[faq.html]
-        PopupUI --> Welcome[welcome.html]
-        PopupUI --> Documentation[documentation.html]
-        
-        Config --> Processors
-        URLHandler --> EksiSozluk
-    end
-
-    subgraph "Server Backend"
-        ActionAPI[/api/] --> Database[(PostgreSQL Database)]
-        ClientDataCollectorAPI[/client_data_collector/] --> Database
-        ActionAPI --> StatsInterface[Analytics Dashboard]
-        ClientDataCollectorAPI --> AnalyticsEngine[Analytics Processing]
-    end
-
-    User --> PopupUI
-    User --> EksiSozluk
-    User --> NotificationPage
-    User --> AuthorList
-    User --> FAQ
-    User --> Welcome
-    User --> Documentation
-
-    classDef api fill:#f9d,stroke:#333,stroke-width:2px
-    classDef collector fill:#dfd,stroke:#333,stroke-width:2px
-    classDef observer fill:#9cf,stroke:#333,stroke-width:2px
-    classDef storage fill:#ffd,stroke:#333,stroke-width:2px
-    classDef queue fill:#ddf,stroke:#333,stroke-width:2px
-    
-    class ActionAPI api
-    class ClientDataCollectorAPI collector
-    class MutationObserver,Processors observer
-    class Storage,ChromeStorage storage
-    class ActionQueue,ProcessHandler queue
-```
-
-## Technical Architecture
-
-### Frontend Structure
-
-**Core JavaScript Modules (20+ files):**
-- `background.js` - Service worker orchestrator (970+ lines)
-- `script.js` - Content script with MutationObserver (776+ lines)
-- `programController.js` - Complex operation controller (846+ lines)
-- `notificationHandler.js` - Real-time status management
-- `queue.js` - Auto-executing task queue system
-- `relationHandler.js` - Direct Ekşi Sözlük API communication
-- `scrapingHandler.js` - Web scraping and data extraction
-- `config.js` - Configuration management with 15+ options
-- `commHandler.js` - Backend API communication
-- `storageHandler.js` - Chrome storage abstraction
-- `urlHandler.js` - Site accessibility validation
-- `log.js` - Comprehensive logging system
-- `utils.js` - Utility functions and helpers
-- `jsdom.js` - DOM manipulation utilities
-- `enums.js` - Centralized constants and enums
-
-**UI Components (6 HTML pages + corresponding JS):**
-- `popup.html/js` - Main configuration interface
-- `notification.html/js` - Real-time progress tracking
-- `authorListPage.html/js` - User list management
-- `faq.html/js` - Help and documentation
-- `welcome.html/js` - Onboarding interface
-- `documentation.html` - Extended documentation
-
-**Styling System (6 CSS files):**
-- `customPopup.css` - Main popup styling
-- `customNotification.css` - Notification page styling
-- `buttons.css` - Button component styles
-- `switchButtons.css` - Toggle switch components
-- `footer.css` - Footer element styles
-- `tooltip.css` - Tooltip component styles
-
-### Backend Structure
-
-**Django Applications:**
-- `api/` - Main analytics API with detailed action logging
-- `client_data_collector/` - Client-side analytics and usage data
-- `where_is_eksisozluk/` - Ekşi Sözlük URL status monitoring
-- `django_EksiEngel/` - Core Django project configuration
-
-**API Endpoints:**
-- `/api/action/` - Action logging and analytics
-- `/api/where_is_eksisozluk/` - Site accessibility monitoring
-- `/client_data_collector/analytics/` - UI interaction analytics
-- `/client_data_collector/upload_v2/` - Configuration and usage data
-
-### Configuration Options
-
-The extension provides 15+ configurable options:
-- **Core Features:** Title blocking, mute functionality, noob author handling
-- **Analysis Options:** Pre-operation analysis, redundant action prevention, followed user protection
-- **UI Customization:** Premium icon hiding, logging levels, console output
-- **Data Collection:** Server communication, log sending, analytics participation
-- **Site Configuration:** Custom Ekşi Sözlük URLs, server endpoints
-
-### Advanced Features
-
-**Migration System:**
-- Blocked → Muted user migration with bulk processing
-- Muted → Blocked user migration with title blocking
-- Complete unblock/mute removal operations
-- Progress tracking and error handling
-
-**Queue Management:**
-- Auto-executing task queue with priority handling
-- Concurrent operation prevention
-- Progress state persistence
-- Early stop capability with cleanup
-- Pause/Resume support for compatible operations
-
-**Operation Control System:**
-- Checkpoint-based pause/resume for supported operations
-- Legacy operation compatibility layer
-- Operation state tracking (RUNNING, PAUSING, PAUSED, STOPPING, STOPPED, COMPLETED)
-- Intelligent pause support detection (non-pausable operations: DATE_BASED_BULK, MIGRATE_BLOCKED_TO_MUTED, BLOCK_MUTED_USERS, BLOCK_TITLES)
-- Graceful handling of operations that don't support checkpoint-based pausing
-
-**Storage Management:**
-- Persistent user lists (blocked/muted)
-- Configuration persistence across sessions
-- Progress state recovery
-- Count management and updates
-
-**Notification System:**
-- Real-time progress updates
-- Queue status monitoring
-- Error handling and reporting
-- Cooldown management for API limits
+* **Operation Control System:**
+  * Checkpoint-based pause/resume for supported operations
+  * Operation state tracking (RUNNING, PAUSING, PAUSED, STOPPING, STOPPED, COMPLETED)
+  * Intelligent pause support detection
+  * Early stop capability with cleanup
 
 ## Development Notes
 
@@ -270,4 +203,7 @@ The extension provides 15+ configurable options:
 - **No External Frameworks:** Vanilla JavaScript for DOM manipulation
 - **Internationalization:** Turkish language interface with English code comments
 
-This architecture provides a robust, scalable solution for mass user management on Ekşi Sözlük with comprehensive analytics, real-time monitoring, and extensive configuration options.
+## Commands
+
+- **Backend:** `cd backend/django_EksiEngel && python manage.py runserver`
+- **Load extension:** Load `frontend/app/` as unpacked in `chrome://extensions` (Developer mode)

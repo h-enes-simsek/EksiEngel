@@ -3,9 +3,59 @@
 ## Project Overview
 Chrome extension for mass blocking on Ekşi Sözlük with Django backend for analytics.
 
-## Structure
-- `frontend/app/` - Chrome extension (Manifest V3): content scripts, background service worker, popup
-- `backend/django_EksiEngel/` - Django REST API: `/api/`, `/client_data_collector/`, `/where_is_eksisozluk/`
+## Repository Structure
+
+```
+EksiEngel/
+├── frontend/app/                    # Chrome Extension (Manifest V3)
+│   ├── manifest.json               # Extension configuration
+│   └── assets/
+│       ├── js/                     # JavaScript modules
+│       │   ├── programController.js    # 2129 lines - Operation controller
+│       │   ├── notification.js         # 1655 lines - Operations page UI
+│       │   ├── background.js           # 1109 lines - Service worker
+│       │   ├── scrapingHandler.js      # 1077 lines - Web scraping
+│       │   ├── storageHandler.js       #  907 lines - Storage management
+│       │   ├── script.js               #  776 lines - Content script
+│       │   ├── faq.js                  #  565 lines - Settings page UI
+│       │   ├── resumableOperation.js   #  448 lines - Pause/resume
+│       │   ├── notificationHandler.js  #  384 lines - Status updates
+│       │   ├── buttonStateManager.js   #  355 lines - Button states
+│       │   ├── queue.js                #  244 lines - Task queue
+│       │   ├── utils.js                #  230 lines - Utilities
+│       │   ├── relationHandler.js      #  191 lines - API communication
+│       │   ├── commHandler.js          #  144 lines - Backend API
+│       │   ├── enums.js                #   88 lines - Constants
+│       │   ├── urlHandler.js           #   78 lines - URL validation
+│       │   ├── config.js               #   74 lines - Configuration
+│       │   ├── authorListPage.js       #   42 lines - Author list
+│       │   ├── log.js                  #   37 lines - Logging
+│       │   ├── popup.js                #   25 lines - Popup UI
+│       │   └── welcome.js              #   11 lines - Welcome page
+│       ├── html/                   # HTML pages
+│       │   ├── faq.html                # 431 lines - Settings page
+│       │   ├── notification.html       # 287 lines - Operations page
+│       │   ├── documentation.html      # 145 lines - Documentation
+│       │   ├── welcome.html            #  79 lines - Onboarding
+│       │   ├── authorListPage.html     #  56 lines - Author list
+│       │   └── popup.html              #  23 lines - Extension popup
+│       ├── css/                    # Stylesheets
+│       │   ├── customNotification.css  # 1123 lines - Main styles
+│       │   ├── switchButtons.css       #  521 lines - Toggle switches
+│       │   ├── buttons.css             #   87 lines - Buttons
+│       │   ├── tooltip.css             #   84 lines - Tooltips
+│       │   ├── customPopup.css         #   57 lines - Popup styles
+│       │   └── footer.css              #   16 lines - Footer
+│       └── img/                    # Images and icons
+├── backend/django_EksiEngel/        # Django REST API
+│   ├── api/                        # Action analytics
+│   ├── client_data_collector/      # Client analytics
+│   └── where_is_eksisozluk/        # URL monitoring
+├── docs/                           # Documentation website
+├── context_portal/                 # Development database
+├── AGENTS.md                       # This file
+└── PROJECT_OVERVIEW.md             # Detailed architecture
+```
 
 ## Commands
 - **Backend**: `cd backend/django_EksiEngel && python manage.py runserver`
@@ -18,62 +68,58 @@ Chrome extension for mass blocking on Ekşi Sözlük with Django backend for ana
 - **No external JS frameworks** - vanilla JavaScript for DOM manipulation
 
 ## Key Files
-- `frontend/app/assets/js/script.js` - Content script injected into Ekşi Sözlük
-- `frontend/app/assets/js/background.js` - Service worker orchestrating blocking actions
-- `frontend/app/manifest.json` - Extension configuration
-- notification.html is the main status and action buttons page.
-- popup.html is the main extension config page that shares some functionalitiy with notification.html.
+| File | Purpose |
+|------|---------|
+| `frontend/app/assets/js/script.js` | Content script injected into Ekşi Sözlük |
+| `frontend/app/assets/js/background.js` | Service worker orchestrating blocking actions |
+| `frontend/app/assets/js/programController.js` | Complex operation controller (migrations, bulk actions) |
+| `frontend/app/assets/js/notification.js` | Operations page UI controller |
+| `frontend/app/assets/js/faq.js` | Settings page UI controller |
+| `frontend/app/manifest.json` | Extension configuration |
+
+## Page Roles
+| Page | File | Purpose |
+|------|------|---------|
+| **popup.html** | `assets/html/popup.html` + `assets/js/popup.js` | Extension popup (quick access) |
+| **notification.html** | `assets/html/notification.html` + `assets/js/notification.js` | Main operations page (status, actions, lists) |
+| **faq.html** | `assets/html/faq.html` + `assets/js/faq.js` | Settings page (toggles, date filter rules, storage) |
+| **authorListPage.html** | `assets/html/authorListPage.html` + `assets/js/authorListPage.js` | User list management |
 
 ## Important
-popup.html is shares some functionalitiy with notification.html. When changing a button function in one page, always first check if it also impacts the other.
+- popup.html shares some functionality with notification.html. When changing a button function in one page, always first check if it also impacts the other.
+- Date filter configuration (rules, cache) is in faq.html (Settings page)
+- Date filter master toggle and bulk actions are in notification.html (Operations page)
 
-## Date-Based User Filtering (New Feature)
+## Date-Based User Filtering
 
 ### Overview
-Implemented comprehensive date-based filtering system to filter users by account registration date before blocking operations.
+Comprehensive date-based filtering system to filter users by account registration date before blocking operations.
 
 ### Key Components
 
 **Core Infrastructure:**
-- `enums.js` - Added `DateFilterCriteria` (NEWER_THAN, OLDER_THAN, BEFORE_DATE, AFTER_DATE) and `DateFilterAction` (BLOCK, SKIP, PROTECT)
-- `config.js` - Added `enableDateFilter` and `dateFilterRules` configuration
-- `utils.js` - Added `applyDateFilters()`, `parseRegistrationDate()`, `isDateInRange()` functions
-- `scrapingHandler.js` - Added `scrapeRegistrationDate()` method
+- `enums.js` - `DateFilterCriteria` (NEWER_THAN, OLDER_THAN, BEFORE_DATE, AFTER_DATE) and `DateFilterAction` (ENGELLE)
+- `config.js` - `enableDateFilter` and `dateFilterRules` configuration
+- `utils.js` - `applyDateFilters()`, `parseRegistrationDate()`, `isDateInRange()` functions
+- `scrapingHandler.js` - `scrapeRegistrationDate()` method
 
-**Caching System:**
-- `storageHandler.js` - 30-day TTL cache for registration dates with methods:
-  - `saveRegistrationDate()`, `saveRegistrationDatesBatch()`
-  - `getRegistrationDate()`, `getRegistrationDatesBatch()`
-  - `cleanupRegistrationDateCache()`, `getRegistrationDateCacheStats()`
+**Caching System (storageHandler.js):**
+- 30-day TTL cache for registration dates
+- Methods: `saveRegistrationDate()`, `getRegistrationDate()`, `getRegistrationDatesBatch()`, `cleanupRegistrationDateCache()`, `getRegistrationDateCacheStats()`
 
 **Pipeline Integration:**
-- `background.js` - Integrated date filtering into FAV, FOLLOW, and TITLE operations
-- Added `fetchRegistrationDates()`, `applyDateFiltersToRelations()`, `logDateFilterResults()`
+- `background.js` - Integrated into FAV, FOLLOW, and TITLE operations
+- `programController.js` - `startDateBasedBulkAction()` for bulk operations
 
-**UI Implementation:**
-- `notification.html` - "Tarih Bazlı İşlemler" section with master toggle and bulk action form
-- `faq.html` - "📅 Tarih Filtresi" section with rules list, add/edit form, and cache statistics
-- `notification.js` - Master toggle handling and bulk action functions
-- `faq.js` - Rule management and cache functions
-- `customNotification.css` - Added styles for toggle switches, forms, rule lists
+**UI:**
+- `notification.html` - Master toggle + bulk action form
+- `faq.html` - Rules list, add/edit form, cache statistics
+- `customNotification.css` - Toggle switches, forms, rule lists
 
 ### Default Behavior
-- **Date Filter Rule**: Block accounts newer than 10 years (3650 days) - applied during blocking operations (FAV, FOLLOW, TITLE)
-- **Date Bulk Action**: Unmute accounts older than 10 years (3650 days) from muted users list - for bulk operations
-- Feature is disabled by default (opt-in)
-- Caching minimizes performance impact on repeated operations
-
-### Files Modified
-- `enums.js`, `config.js`, `scrapingHandler.js`, `utils.js`
-- `storageHandler.js`, `background.js`, `notification.html`, `notification.js`, `faq.html`, `faq.js`, `customNotification.css`
-
-### Usage
-1. Open notification.html (Ana İşlemler page)
-2. Find "📅 Tarih Bazlı İşlemler" section
-3. Enable the toggle to enable date filtering
-4. Configure filter rules in the Settings page (faq.html) - click "Ayarlar" link
-5. Use "Tarih Bazlı Toplu İşlem" for bulk operations (default: unmute accounts > 10 years)
-6. Rules are automatically applied to FAV, FOLLOW, and TITLE blocking operations
+- **Date Filter Rule**: Block accounts NEWER_THAN 10 years (3650 days)
+- **Date Bulk Action**: Unmute accounts OLDER_THAN 10 years from muted list
+- Feature disabled by default (opt-in)
 
 ---
 
