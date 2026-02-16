@@ -1202,3 +1202,40 @@ But it didn't call `notificationHandler.finishErrorEarlyStop()` to send a FINISH
 - All hyperlinks are visible in dark mode
 - Help button text is white without underline
 - Theme persists across all pages via localStorage
+
+### Commit 32: Fix Task Queue Display Race Condition (2026-02-16)
+**Purpose:** Fix tasks not appearing in "⏳ Sıradaki İşlemler" when triggered from title menu buttons
+
+**Root Cause:**
+The legacy message handler in `background.js` had a race condition where the task was enqueued (and immediately started processing via `dequeue()`) before the notification tab was ready. By the time `ensureNotificationTabExistsAndIsReady()` completed, the task had already been removed from the queue, so `updatePlannedProcessesList()` showed an empty queue.
+
+**Affected Buttons:**
+- "başlıktakileri engelle (son 24 saatte)" - Title menu dropdown
+- "başlıktakileri engelle (tümü)" - Title menu dropdown
+- Single user block/unblock - Entry menu, Profile
+- "Favori edenleri engelle" - Entry menu
+- "Takipçileri engelle" - Profile
+- "Listeden engelle" - Author list
+
+**Bug Flow:**
+1. User clicks "başlıktakileri engelle (tümü)"
+2. `processQueue.enqueue(wrapperProcessHandler)` - Item added and `dequeue()` starts async
+3. `(async () => { await ensureNotificationTabExistsAndIsReady(); ... })()` - Slow async IIFE
+4. Task finishes quickly (short list)
+5. `dequeue()` removes item from queue
+6. Notification tab finally ready, calls `updatePlannedProcessesList(processQueue.itemAttributes)`
+7. Queue is now empty - item never appeared in UI
+
+**Fix:**
+Restructured the legacy message handler to match the working pattern used by other actions (`startMigration`, `refreshMutedList`, etc.):
+- Await notification tab readiness BEFORE enqueueing
+- Update UI immediately after enqueue (before `dequeue()` can run)
+- Return `true` to keep message port open for async response
+
+**Files Modified:**
+- `background.js` - Restructured legacy message handler (lines 356-398)
+
+**Result:**
+- Tasks now appear in "⏳ Sıradaki İşlemler" immediately when triggered
+- Task moves to "✅ Tamamlanan İşlemler" after completion
+- Consistent queue behavior across all action types

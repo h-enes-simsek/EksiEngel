@@ -354,41 +354,47 @@ chrome.runtime.onMessage.addListener(function messageListener_Popup(message, sen
     });
     return true;
   } else {
-    const obj = utils.filterMessage(message, "banSource", "banMode");
-    if(obj.resultType === enums.ResultType.FAIL) {
-      sendResponse({status: 'ok', message: 'Unknown action or already handled.'});
-      return true;
-    }
-    
-    let wrapperProcessHandler = processHandler.bind(null, obj.banSource, obj.banMode, obj.entryUrl, obj.authorName, obj.authorId, obj.targetType, obj.clickSource, obj.titleName, obj.titleId, obj.timeSpecifier);
-    wrapperProcessHandler.banSource = obj.banSource;
-    wrapperProcessHandler.banMode = obj.banMode;
-    wrapperProcessHandler.creationDateInStr = new Date().getHours() + ":" + new Date().getMinutes();
-    
-    wrapperProcessHandler.metadata = {
-      actionDescription: getActionDescription(obj.banSource, obj),
-      requiresUserInteraction: false,
-      targetTypes: obj.targetType ? [obj.targetType] : [],
-      sourceEntry: obj.entryUrl || null,
-      sourceAuthor: obj.authorName || null,
-      sourceTitle: obj.titleName || null,
-      timeFilter: obj.timeSpecifier || null,
-      clickSource: obj.clickSource || null,
-      banSource: obj.banSource,
-      banMode: obj.banMode
-    };
-    
-    processQueue.enqueue(wrapperProcessHandler);
-
-    (async () => {
-      const notificationTabReady = await ensureNotificationTabExistsAndIsReady();
-      if (notificationTabReady) {
-        notificationHandler.updatePlannedProcessesList(processQueue.itemAttributes);
+    // Legacy message handler for TITLE, SINGLE, FAV, FOLLOW, LIST actions
+    // Must await notification tab BEFORE enqueue to prevent race condition
+    ensureNotificationTabExistsAndIsReady().then(notificationTabReady => {
+      if (!notificationTabReady) {
+        log.warn("bg", "Notification tab not ready for legacy action");
+        sendResponse({ status: 'error', message: 'Could not open notification page.' });
+        return;
       }
-    })();
 
-    sendResponse({status: 'ok', message: 'Process enqueued.'});
-    return true;
+      const obj = utils.filterMessage(message, "banSource", "banMode");
+      if(obj.resultType === enums.ResultType.FAIL) {
+        sendResponse({status: 'ok', message: 'Unknown action or already handled.'});
+        return;
+      }
+      
+      let wrapperProcessHandler = processHandler.bind(null, obj.banSource, obj.banMode, obj.entryUrl, obj.authorName, obj.authorId, obj.targetType, obj.clickSource, obj.titleName, obj.titleId, obj.timeSpecifier);
+      wrapperProcessHandler.banSource = obj.banSource;
+      wrapperProcessHandler.banMode = obj.banMode;
+      wrapperProcessHandler.creationDateInStr = new Date().getHours() + ":" + new Date().getMinutes();
+      
+      wrapperProcessHandler.metadata = {
+        actionDescription: getActionDescription(obj.banSource, obj),
+        requiresUserInteraction: false,
+        targetTypes: obj.targetType ? [obj.targetType] : [],
+        sourceEntry: obj.entryUrl || null,
+        sourceAuthor: obj.authorName || null,
+        sourceTitle: obj.titleName || null,
+        timeFilter: obj.timeSpecifier || null,
+        clickSource: obj.clickSource || null,
+        banSource: obj.banSource,
+        banMode: obj.banMode
+      };
+      
+      processQueue.enqueue(wrapperProcessHandler);
+      notificationHandler.updatePlannedProcessesList(processQueue.itemAttributes);
+      sendResponse({status: 'ok', message: 'Process enqueued.'});
+    }).catch(error => {
+      log.err("bg", `Error in legacy message handler: ${error}`);
+      sendResponse({ status: 'error', message: error.message || 'Unknown error' });
+    });
+    return true;  // Keep message port open for async response
   }
 });
 
