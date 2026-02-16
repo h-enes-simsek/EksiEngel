@@ -267,16 +267,12 @@ class ButtonStateManager {
       case 'btnBlockTitlesOfBlockedMuted':
       case 'migrateBlockedTitlesToUnblocked':
       case 'startUndobanAll':
-        return {
-          disabled: isOperationActive || isOperationCooldown || isProcessing,
-          title: isOperationActive || isOperationCooldown ? 'Action blocked: Another operation is currently running' : isProcessing ? 'Processing...' : 'Start this action',
-          innerHTML: originalInnerHTML
-        };
       case 'refreshMutedList':
       case 'refreshBlockedList':
+        // Buttons remain enabled to allow queueing tasks when another operation is running
         return {
-          disabled: isOperationActive || isOperationCooldown || isProcessing,
-          title: isOperationActive || isOperationCooldown ? 'Refresh blocked: Another operation is currently running' : isProcessing ? 'Refreshing...' : 'Refresh the list',
+          disabled: isProcessing,
+          title: isProcessing ? 'İşleniyor...' : 'Bu işlemi başlat (başka bir işlem devam ediyorsa sıraya eklenir)',
           innerHTML: originalInnerHTML
         };
       case 'exportMutedListCSV':

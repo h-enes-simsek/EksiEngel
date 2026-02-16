@@ -141,7 +141,7 @@ chrome.runtime.onMessage.addListener(function messageListener_Popup(message, sen
       };
 
       if (message.action === "startDateBasedBulkAction") {
-        if (!programController.isDateBasedBulkInProgress && !(programController.isActive && processQueue.size === 0 && !processQueue.isRunning)) {
+        if (!programController.isDateBasedBulkInProgress) {
           const handler = () => programController.startDateBasedBulkAction(message);
           
           const metadata = {
@@ -165,8 +165,6 @@ chrome.runtime.onMessage.addListener(function messageListener_Popup(message, sen
 
         if (specificTaskInProgress) {
           notificationHandler.notify(`${taskName} işlemi zaten devam ediyor.`);
-        } else if (programController.isActive && processQueue.size === 0 && !processQueue.isRunning) {
-          notificationHandler.notify(`Başka bir işlem aktifken ${taskName} başlatılamaz. Sıraya eklendi.`);
         } else {
           const handler = isTitleMigration ?
             () => programController.migrateBlockedTitlesToUnblocked() :
@@ -183,7 +181,7 @@ chrome.runtime.onMessage.addListener(function messageListener_Popup(message, sen
           handleProcessQueue(wrapperProcessHandler, `${taskName} process enqueued.`);
         }
       } else if (message.action === "refreshMutedList") {
-        if (!programController.isMutedListRefreshInProgress && !(programController.isActive && processQueue.size === 0 && !processQueue.isRunning)) {
+        if (!programController.isMutedListRefreshInProgress) {
           const handler = () => programController.refreshMutedList();
           
           const metadata = {
@@ -197,7 +195,7 @@ chrome.runtime.onMessage.addListener(function messageListener_Popup(message, sen
           handleProcessQueue(wrapperProcessHandler, 'Muted list refresh enqueued.');
         }
       } else if (message.action === "refreshBlockedList") {
-        if (!programController.isBlockedListRefreshInProgress && !(programController.isActive && processQueue.size === 0 && !processQueue.isRunning)) {
+        if (!programController.isBlockedListRefreshInProgress) {
           const handler = () => programController.refreshBlockedList();
           
           const metadata = {
@@ -211,7 +209,7 @@ chrome.runtime.onMessage.addListener(function messageListener_Popup(message, sen
           handleProcessQueue(wrapperProcessHandler, 'Blocked list refresh enqueued.');
         }
       } else if (message.action === "blockMutedUsers") {
-        if (!programController.isBlockMutedUsersInProgress && !(programController.isActive && processQueue.size === 0 && !processQueue.isRunning)) {
+        if (!programController.isBlockMutedUsersInProgress) {
           const handler = () => programController.blockMutedUsers();
           
           const metadata = {
@@ -225,7 +223,7 @@ chrome.runtime.onMessage.addListener(function messageListener_Popup(message, sen
           handleProcessQueue(wrapperProcessHandler, 'Block Muted Users process enqueued.');
         }
       } else if (message.action === "blockTitlesOfBlockedMuted") {
-        if (!programController.isBlockTitlesInProgress && !(programController.isActive && processQueue.size === 0 && !processQueue.isRunning)) {
+        if (!programController.isBlockTitlesInProgress) {
           const handler = () => programController.blockTitlesOfBlockedMuted();
           
           const metadata = {

@@ -273,6 +273,15 @@ export class ResumableOperationRegistry {
   }
 
   /**
+   * Check if there's a paused operation
+   * @returns {boolean}
+   */
+  hasPausedOperation() {
+    const op = this.getCurrentOperation();
+    return op && op.state === OperationState.PAUSED;
+  }
+
+  /**
    * Check if pause is requested
    * @returns {boolean}
    */

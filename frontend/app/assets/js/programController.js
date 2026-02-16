@@ -63,7 +63,8 @@ class ProgramController {
            this._blockMutedUsersInProgress ||
            this._blockTitlesInProgress ||
            this._dateBasedBulkInProgress ||
-           this._unmuteAllInProgress;
+           this._unmuteAllInProgress ||
+           resumableOperationRegistry.hasPausedOperation();
   }
 
   set tabId(val) { this._tabId = val; }

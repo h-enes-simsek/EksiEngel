@@ -1013,3 +1013,68 @@ But it didn't call `notificationHandler.finishErrorEarlyStop()` to send a FINISH
 - Stopping a paused operation now properly completes the task in the queue
 - Task moves from "⏳ Sıradaki İşlemler" to "✅ Tamamlanan İşlemler"
 - Consistent behavior for all stop scenarios
+
+### Commit 29: Fix Task Queueing During Active Operations (2026-02-16)
+**Purpose:** Fix tasks not being added to the queue when there's an ongoing operation
+
+**Root Cause Analysis:**
+1. **Redundant condition in `background.js`:** The condition `!(programController.isActive && processQueue.size === 0 && !processQueue.isRunning)` prevented tasks from being enqueued when an operation was running directly (not through the queue)
+2. **Button state management in `buttonStateManager.js`:** Buttons were disabled when `operationState === 'ACTIVE'`, preventing users from clicking to add tasks to the queue
+
+**Problem Flow:**
+- When operation is RUNNING → `operationState = 'ACTIVE'` → buttons DISABLED → cannot add to queue
+- When operation is PAUSED → `operationState = 'PAUSED'` → buttons ENABLED → can add to queue
+
+**Changes:**
+
+1. **background.js** - Removed redundant conditions from all bulk action handlers:
+   - `startDateBasedBulkAction`: Removed `&& !(programController.isActive && processQueue.size === 0 && !processQueue.isRunning)`
+   - `startMigration/startTitleMigration`: Simplified to only check `specificTaskInProgress`
+   - `refreshMutedList`, `refreshBlockedList`, `blockMutedUsers`, `blockTitlesOfBlockedMuted`: Same simplification
+
+2. **resumableOperation.js** - Added `hasPausedOperation()` method:
+   ```javascript
+   hasPausedOperation() {
+     const op = this.getCurrentOperation();
+     return op && op.state === OperationState.PAUSED;
+   }
+   ```
+
+3. **programController.js** - Updated `isActive` getter to check for paused operations:
+   ```javascript
+   get isActive() {
+     return processQueue.isRunning ||
+            this._migrationInProgress ||
+            this._isMutedListRefreshInProgress ||
+            this._isBlockedListRefreshInProgress ||
+            this._blockMutedUsersInProgress ||
+            this._blockTitlesInProgress ||
+            this._dateBasedBulkInProgress ||
+            this._unmuteAllInProgress ||
+            resumableOperationRegistry.hasPausedOperation();
+   }
+   ```
+
+4. **buttonStateManager.js** - Enabled action buttons during active operations:
+   - Removed `isOperationActive` and `isOperationCooldown` from disabled condition
+   - Buttons now only disabled when `isProcessing` (same button's action in progress)
+   - Updated tooltip to inform users about queueing behavior
+
+**Files Modified:**
+- `background.js` - Removed redundant queueing conditions
+- `resumableOperation.js` - Added `hasPausedOperation()` method
+- `programController.js` - Updated `isActive` getter
+- `buttonStateManager.js` - Enabled buttons during active operations
+
+**Expected Behavior After Fix:**
+| Scenario | Button State | Action |
+|----------|--------------|--------|
+| No operation | Enabled | Task starts immediately |
+| Operation running | Enabled | Task added to queue |
+| Operation paused | Enabled | Task added to queue |
+| Same button's task running | Disabled | Prevented by `isProcessing` |
+
+**Safety:**
+- `background.js` checks prevent duplicate tasks (e.g., `if (!programController.isMutedListRefreshInProgress)`)
+- `queue.dequeue()` checks `programController.isActive` before processing next item
+- Tasks wait in queue until current operation completes or paused operation is resumed and completed
