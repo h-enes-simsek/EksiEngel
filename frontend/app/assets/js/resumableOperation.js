@@ -152,8 +152,13 @@ export class ResumableOperationRegistry {
         await this._persistStoppedState(op, checkpointData);
       }
       this._clearStateOnStop = false; // Reset the flag
+      
       log.info('resumableOp', `Operation ${this._currentOperationId} stopped at checkpoint ${checkpointData.stage}`);
       this._notifyUIStateChanged();
+      
+      // Trigger queue processing for next item
+      this._triggerQueueProcessing();
+      
       return { shouldContinue: false, stopped: true };
     }
 
@@ -209,6 +214,10 @@ export class ResumableOperationRegistry {
       this._clearStateOnStop = false;
       
       log.info('resumableOp', `Unregistered operation ${stoppedId} after stop`);
+      
+      // Trigger queue processing for next item
+      this._triggerQueueProcessing();
+      
       return { success: true, wasPaused: true };
     }
 
@@ -243,7 +252,24 @@ export class ResumableOperationRegistry {
       }
       
       this._notifyUIStateChanged();
+      
+      // Trigger queue processing for next item after completion
+      this._triggerQueueProcessing();
     }
+  }
+
+  /**
+   * Trigger queue processing for next item
+   * @private
+   */
+  _triggerQueueProcessing() {
+    log.info('resumableOp', 'Triggering queue processing for next item');
+    // Use setTimeout to ensure all state changes are complete
+    setTimeout(() => {
+      if (processQueue && typeof processQueue.triggerProcessing === 'function') {
+        processQueue.triggerProcessing();
+      }
+    }, 200);
   }
 
   /**

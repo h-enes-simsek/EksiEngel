@@ -56,6 +56,13 @@ class ProgramController {
   }
 
   get isActive() {
+    // Check if operation is being stopped or stopped - do not count these as active
+    const op = resumableOperationRegistry.getCurrentOperation();
+    const isOperationStopping = op && (op.state === OperationState.STOPPING || op.state === OperationState.STOPPED);
+    
+    // If operation is stopping/stopped, do not count paused operation as active
+    const hasPausedOp = !isOperationStopping && resumableOperationRegistry.hasPausedOperation();
+    
     return processQueue.isRunning ||
            this._migrationInProgress ||
            this._isMutedListRefreshInProgress ||
@@ -64,8 +71,9 @@ class ProgramController {
            this._blockTitlesInProgress ||
            this._dateBasedBulkInProgress ||
            this._unmuteAllInProgress ||
-           resumableOperationRegistry.hasPausedOperation();
+           hasPausedOp;
   }
+
 
   set tabId(val) { this._tabId = val; }
   get tabId() { return this._tabId; }
@@ -97,6 +105,18 @@ class ProgramController {
     } else {
       log.info("progctrl", "early stop flag cleared.");
     }
+  }
+
+  forceClearAllFlags() {
+    log.info("progctrl", "Force clearing all in-progress flags");
+    this._earlyStop = false;
+    this._migrationInProgress = false;
+    this._isBlockedListRefreshInProgress = false;
+    this._isMutedListRefreshInProgress = false;
+    this._blockMutedUsersInProgress = false;
+    this._blockTitlesInProgress = false;
+    this._dateBasedBulkInProgress = false;
+    this._unmuteAllInProgress = false;
   }
 
   stopAllOperations() {
@@ -1845,9 +1865,21 @@ notificationHandler.notify(`${totalCount} adet başlıkları engellenen kullanı
     // Set early stop flag for immediate effect
     this.earlyStop = true;
     
+    // Force clear flags immediately to allow queue to continue
+    this.forceClearAllFlags();
+    
     // Also use registry stop
-    return await resumableOperationRegistry.requestStop(clearState);
+    const result = await resumableOperationRegistry.requestStop(clearState);
+    
+    // Trigger queue processing for next item
+    if (result.success) {
+      log.info("progctrl", "Stop successful, triggering queue processing");
+      processQueue.triggerProcessing();
+    }
+    
+    return result;
   }
+
 
   /**
    * Get current operation info

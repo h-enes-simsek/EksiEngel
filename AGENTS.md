@@ -1078,3 +1078,55 @@ But it didn't call `notificationHandler.finishErrorEarlyStop()` to send a FINISH
 - `background.js` checks prevent duplicate tasks (e.g., `if (!programController.isMutedListRefreshInProgress)`)
 - `queue.dequeue()` checks `programController.isActive` before processing next item
 - Tasks wait in queue until current operation completes or paused operation is resumed and completed
+
+### Commit 30: Auto-Continue Queue After Stop (2026-02-16)
+**Purpose:** Fix the queue not automatically processing the next item after stopping an operation, and not auto-starting on page refresh
+
+**Root Cause Analysis:**
+1. **Queue not auto-starting on page refresh:** When `_initializePersistedQueue()` restored items from storage, it never called `dequeue()` to start processing
+2. **Queue not continuing after stop:** When an operation was stopped (especially from PAUSED state), the queue's `dequeue()` was never triggered
+3. **isActive blocking dequeue:** The `programController.isActive` getter included `hasPausedOperation()` but didn't exclude STOPPING/STOPPED states, preventing queue from starting
+
+**Changes:**
+
+1. **queue.js - Auto-start and trigger processing:**
+   - Added auto-start after `_initializePersistedQueue()` restores items: 1 second delay then calls `dequeue()`
+   - Added `triggerProcessing()` method for external trigger of queue processing
+   - Updated `dequeue()` to check `hasPausedOperation()` more carefully
+
+2. **resumableOperation.js - Trigger queue after stop:**
+   - Added `processQueue` import
+   - Added `_triggerQueueProcessing()` private method
+   - Called `_triggerQueueProcessing()` after:
+     - Operation stops at checkpoint (STOPPING → STOPPED)
+     - Paused operation is stopped (PAUSED → STOPPED)
+     - Operation completes
+
+3. **programController.js - Clear flags on stop:**
+   - Added `forceClearAllFlags()` method to clear all `_xxxInProgress` flags
+   - Updated `stopCurrentOperation()` to:
+     - Call `forceClearAllFlags()` before registry stop
+     - Call `processQueue.triggerProcessing()` after successful stop
+   - Updated `isActive` getter to exclude STOPPING/STOPPED states from active check
+
+**Files Modified:**
+- `queue.js` - Auto-start on restoration, `triggerProcessing()` method
+- `resumableOperation.js` - `_triggerQueueProcessing()` method, import `processQueue`
+- `programController.js` - `forceClearAllFlags()`, updated `stopCurrentOperation()`, updated `isActive`
+
+**Result:**
+- When multiple items are in queue and stop button is pressed, the next item automatically starts
+- When page is refreshed with items in queue, processing auto-starts after 1 second
+- Queue properly continues after operation completes or is stopped
+- Consistent behavior for all stop scenarios (running → stop, paused → stop)
+
+**Flow After Fix:**
+1. User clicks stop on running operation
+2. `programController.stopCurrentOperation()` called
+3. `forceClearAllFlags()` clears all in-progress flags
+4. `resumableOperationRegistry.requestStop()` called
+5. Operation state → STOPPING/STOPPED
+6. `_triggerQueueProcessing()` called
+7. `processQueue.triggerProcessing()` called
+8. Queue checks `programController.isActive` → false (flags cleared, no paused op)
+9. `dequeue()` processes next item

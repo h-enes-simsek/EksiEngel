@@ -1,6 +1,7 @@
 import { programController } from './programController.js';
 import * as enums from './enums.js';
 import { storageHandler } from './storageHandler.js';
+import { resumableOperationRegistry, OperationState } from './resumableOperation.js';
 
 class Queue {
   constructor() { this._items = []; }
@@ -136,6 +137,15 @@ class AutoQueue extends Queue {
       if (persistedItems && Array.isArray(persistedItems)) {
         this._items = persistedItems;
         console.log(`Queue: Restored ${this._items.length} items from storage`);
+        
+        // Auto-start queue processing if there are items restored
+        if (this._items.length > 0) {
+          // Delay to allow other components to initialize
+          setTimeout(() => {
+            console.log("Queue: Auto-starting queue processing after restoration");
+            this.dequeue();
+          }, 1000);
+        }
       }
     } catch (error) {
       console.warn('Queue: Failed to restore queue from storage:', error);
@@ -206,7 +216,16 @@ class AutoQueue extends Queue {
       console.log("Queue: Skipping dequeue - promise already pending");
       return false;
     }
+    
+    // Check if programController is truly active (not just has a paused operation)
+    // We need to allow dequeue if there's only a paused operation that's being stopped
     if (programController && programController.isActive) {
+      // Check if the only thing blocking is a paused operation that's about to be cleared
+      const hasPausedOp = resumableOperationRegistry.hasPausedOperation();
+      if (hasPausedOp) {
+        console.log("Queue: Skipping dequeue - paused operation exists (resume or stop it first)");
+        return false;
+      }
       console.log("Queue: Skipping dequeue - programController is active");
       return false;
     }
@@ -235,6 +254,16 @@ class AutoQueue extends Queue {
       setTimeout(() => this.dequeue(), 0);
     }
     return true;
+  }
+
+  /**
+   * Trigger queue processing - called after an operation stops
+   * This allows the next queued item to start
+   */
+  triggerProcessing() {
+    console.log("Queue: Trigger processing called - checking for next item");
+    // Small delay to ensure flags are cleared
+    setTimeout(() => this.dequeue(), 100);
   }
 
   get currentItemMetadata() { return this._currentItemMetadata || null; }
