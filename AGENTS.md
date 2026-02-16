@@ -1130,3 +1130,75 @@ But it didn't call `notificationHandler.finishErrorEarlyStop()` to send a FINISH
 7. `processQueue.triggerProcessing()` called
 8. Queue checks `programController.isActive` → false (flags cleared, no paused op)
 9. `dequeue()` processes next item
+
+### Commit 31: Complete Dark Mode Support (2026-02-16)
+**Purpose:** Fix all remaining dark mode styling issues across all pages
+
+**Issues Fixed:**
+
+1. **Card Headers** - Section titles (like "📅 Tarih Bazlı İşlemler") had light gradient backgrounds in dark mode
+2. **Toggle Switches** - "Açık" button text was unreadable (dark text on dark background)
+3. **Hyperlinks** - Black text in dark mode
+4. **welcome.html** - No dark mode support
+5. **documentation.html** - No dark mode support
+6. **authorListPage.html** - No dark mode theme loading
+7. **faq.html** - Hardcoded black text, question mark icon not inverted
+8. **Help Button** - Text had underline and wrong color in dark mode
+
+**Changes:**
+
+**customNotification.css:**
+- Added dark mode styles for `.card-header` (dark gradient: #334155 → #475569)
+- Added dark mode styles for `.table-header`, `.modern-table`, `.stat-mini`, `.rule-icon`
+- Added dark mode hyperlink styles (blue: #60a5fa, hover: #93c5fd, visited: #a78bfa)
+- Added dark mode help button styles (white text, no underline)
+
+**switchButtons.css:**
+- Added dark mode support for candy theme toggle switches
+- Dark background (#1e293b), light text colors
+- Proper slider border colors
+
+**tooltip.css:**
+- Added dark mode tooltip styles (#475569 background)
+
+**faq.html:**
+- Replaced hardcoded `color:black` inline styles with CSS classes
+- Added `.faq-link` class (dark in light mode, blue in dark mode)
+- Added `.faq-bold` class (black in light mode, light in dark mode)
+- Added dark mode styles for h3, li, ol elements
+- Added filter: invert(1) for question mark icon in dark mode
+- Added dark mode button styles for theme toggle
+
+**welcome.html:**
+- Added customNotification.css import
+- Added dark mode styles for body, content, links, headings
+- Updated welcome.js to apply saved theme on load
+
+**welcome.js:**
+- Added `applyTheme()` function to load theme from localStorage
+
+**authorListPage.js:**
+- Added `applyTheme()` function to load theme from localStorage
+
+**documentation.html:**
+- Added customNotification.css import
+- Added dark mode styles for body, grid items, headings
+- Added inline script to apply saved theme on load
+
+**Files Modified:**
+- `customNotification.css` - Card headers, tables, stats, hyperlinks, help button
+- `switchButtons.css` - Toggle switch dark mode styles
+- `tooltip.css` - Tooltip dark mode styles
+- `faq.html` - Link/bold classes, h3/li/ol dark styles, question mark invert
+- `welcome.html` - Dark mode styles
+- `welcome.js` - Theme loading
+- `authorListPage.js` - Theme loading
+- `documentation.html` - Dark mode styles
+
+**Result:**
+- All pages now properly support dark mode
+- Card section headers have dark backgrounds in dark mode
+- Toggle switch text is readable in dark mode
+- All hyperlinks are visible in dark mode
+- Help button text is white without underline
+- Theme persists across all pages via localStorage

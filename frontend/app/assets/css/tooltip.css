@@ -83,3 +83,11 @@
   left: 0;
   transform: translate(calc(-100% - 5px), -50%) rotate(45deg);
 }
+/* Dark mode tooltip support */
+[data-theme="dark"] .tooltip::after {
+    background-color: #475569;
+}
+
+[data-theme="dark"] .tooltip::before {
+    background-color: #475569;
+}

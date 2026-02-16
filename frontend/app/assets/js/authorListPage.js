@@ -1,5 +1,11 @@
 import * as enums from './enums.js';
 
+// Apply saved theme on load
+function applyTheme() {
+  const savedTheme = localStorage.getItem('theme') || 'light';
+  document.documentElement.setAttribute('data-theme', savedTheme);
+}
+
 const saveAuthorListToStorage = () => {
   const userListString = document.getElementById("userList").value;
   chrome.storage.local.set({ "userList": userListString }, () => {
@@ -41,3 +47,7 @@ const blinkSavedMsg = () => {
     if (counter === 0) clearInterval();
   }, 100);
 };
+
+// Initialize theme on load
+document.addEventListener('DOMContentLoaded', applyTheme);
+applyTheme();

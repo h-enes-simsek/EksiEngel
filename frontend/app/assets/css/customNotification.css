@@ -1121,3 +1121,48 @@ body {
     color: var(--text-secondary);
     opacity: 0.8;
 }
+
+/* Dark Mode Card Headers */
+[data-theme="dark"] .card-header {
+    background: linear-gradient(135deg, #334155 0%, #475569 100%);
+}
+
+[data-theme="dark"] .table-header {
+    background: var(--card-bg);
+}
+
+[data-theme="dark"] .modern-table {
+    background: var(--card-bg);
+}
+
+[data-theme="dark"] .stat-mini {
+    background: var(--card-bg);
+}
+
+[data-theme="dark"] .rule-icon {
+    background: var(--card-bg);
+}
+
+/* Dark Mode Hyperlinks */
+[data-theme="dark"] a {
+    color: #60a5fa;
+}
+
+[data-theme="dark"] a:hover {
+    color: #93c5fd;
+}
+
+[data-theme="dark"] a:visited {
+    color: #a78bfa;
+}
+
+/* Dark Mode Help Button - already has white text, just ensure it stays white */
+[data-theme="dark"] .help-btn-compact,
+[data-theme="dark"] .help-btn-compact:visited,
+[data-theme="dark"] .help-btn-compact:hover,
+[data-theme="dark"] .help-btn-compact .btn-text {
+    color: white !important;
+    text-decoration: none !important;
+}
+
+

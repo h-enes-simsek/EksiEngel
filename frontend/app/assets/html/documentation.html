@@ -1,7 +1,14 @@
+<!DOCTYPE html>
 <html>
-
 <head>
+<meta charset="UTF-8">
+<title>EksiEngelPlus - Dokümantasyon</title>
+<link rel="stylesheet" href="../css/customNotification.css">
 <style>
+body {
+  padding: 20px;
+}
+
 .grid-container.six-column {
   display: grid;
   grid-template-columns: auto auto auto auto auto auto;
@@ -13,9 +20,26 @@
   grid-template-columns: auto auto auto auto auto auto auto;
   padding: 10px;
 }
+
 .grid-item {
   padding: 10px;
-  border: 1px solid;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+}
+
+/* Dark mode styles for documentation page */
+[data-theme="dark"] body {
+  background-color: #0f172a;
+  color: #f1f5f9;
+}
+
+[data-theme="dark"] .grid-item {
+  background: #1e293b;
+  border-color: #475569;
+}
+
+[data-theme="dark"] h3 {
+  color: #e2e8f0;
 }
 </style>
 </head>
@@ -25,7 +49,7 @@
     <h3 style="text-align: center;">
       <b style="color:green">Ekşi Engel</b> Detaylı İşlem Tablosu
     </h3>
-    <div class="grid-container six-column" style="border: 1px solid black">
+    <div class="grid-container six-column" style="border: 1px solid var(--border-color)">
     
       <div class="grid-item"></div>
       <div class="grid-item">Engelleme Modu <br>(BanMode::BAN)</div>
@@ -82,7 +106,7 @@
     <h3 style="text-align: center;">
       <b style="color:green">Ekşi Engel</b> Toplanan Veriler Tablosu (v3.0 ve sonrası)
     </h3>
-    <div class="grid-container seven-column" style="border: 1px solid black">
+    <div class="grid-container seven-column" style="border: 1px solid var(--border-color)">
     
       <div class="grid-item"></div>
       <div class="grid-item">Target Type</div>
@@ -141,6 +165,15 @@
       <div class="grid-item">+</div>
     </div>
 </div>
+
+<script>
+// Apply saved theme on load
+function applyTheme() {
+  const savedTheme = localStorage.getItem('theme') || 'light';
+  document.documentElement.setAttribute('data-theme', savedTheme);
+}
+applyTheme();
+</script>
 
 </body>
 </html>

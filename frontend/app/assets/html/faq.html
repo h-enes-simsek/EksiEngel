@@ -81,6 +81,22 @@ margin-bottom: 8px;
   background-color: #f0f0f0;
 }
 
+/* Dark mode button styles */
+[data-theme="dark"] .btn-dark {
+  border-color: #e2e8f0;
+  color: #e2e8f0;
+}
+[data-theme="dark"] .btn-dark:hover,
+[data-theme="dark"] .btn-dark.active {
+  border-color: #4CAF50;
+  background-color: #4CAF50;
+  color: white;
+}
+[data-theme="dark"] .theme-btn:hover:not(.active) {
+  background-color: #334155;
+}
+
+
 /* Dark mode styles for faq page */
 [data-theme="dark"] body {
   background-color: #0f172a;
@@ -135,6 +151,38 @@ margin-bottom: 8px;
   padding: 12px;
 }
 
+/* FAQ page specific styles */
+.faq-link {
+  color: #1f1f1f;
+}
+
+
+[data-theme="dark"] .faq-link {
+  color: #60a5fa;
+}
+
+.faq-bold {
+  font-weight: bold;
+}
+
+/* Additional dark mode text styles */
+[data-theme="dark"] h3 {
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] li,
+[data-theme="dark"] ol {
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .faq-bold {
+  color: #f1f5f9;
+}
+
+[data-theme="dark"] #questionMark {
+  filter: invert(1);
+}
+
 [data-theme="dark"] .faq-card-header {
   background: linear-gradient(135deg, #334155 0%, #475569 100%);
 }
@@ -148,7 +196,7 @@ margin-bottom: 8px;
     <b style="color:green">EksiEngelPlus</b> <img src="../img/eksiengel16.png"> 
   </h3>
 
-  <p>Versiyon notları için <a style="color:black" target="_blank" href="welcome.html">tıklayın</a></p>
+  <p>Versiyon notları için <a class="faq-link" target="_blank" href="welcome.html">tıklayın</a></p>
 
   <div class="card" style="margin-bottom: 20px;">
     <div class="card-header">
@@ -399,14 +447,14 @@ margin-bottom: 8px;
           <li>
             Eklenti simgesine <img src="../img/eksiengel16.png"> tıklayarak eklenti menüsünü açın.
             <br>
-            <b style="text-decoration: none; color:black;">Gireceğim Listedeki Yazarları Engelle / Engelini Kaldır</b> butonuna tıklayın. 
+            <b class="faq-bold">Gireceğim Listedeki Yazarları Engelle / Engelini Kaldır</b> butonuna tıklayın. 
             <br>
-            Elinizdeki yazar listesini metin kutusuna yapıştırıp, <b style="text-decoration: none; color:black;">Engelle</b> veya <b style="text-decoration: none; color:black;">Engeli Kaldır</b> butonuna tıklayın.
+            Elinizdeki yazar listesini metin kutusuna yapıştırıp, <b class="faq-bold">Engelle</b> veya <b class="faq-bold">Engeli Kaldır</b> butonuna tıklayın.
           </li>
           <li>
             Eklenti simgesine <img src="../img/eksiengel16.png"> tıklayarak eklenti menüsünü açın.
             <br>
-            <b style="text-decoration: none; color:black;">Tüm Engellerimi Kaldır</b> butonuna tıklayın.  
+            <b class="faq-bold">Tüm Engellerimi Kaldır</b> butonuna tıklayın.  
           </li>
       </ol>
 	</ul>
