@@ -1076,6 +1076,8 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
           cooldownTimerDiv.style.display = "inline";
         }
       }
+      const earlyStopBtn = document.getElementById("earlyStop");
+      if (earlyStopBtn) earlyStopBtn.disabled = false;
     } else {
       const cooldownTimerDiv = document.getElementById("cooldownTimer");
       if (cooldownTimerDiv) {

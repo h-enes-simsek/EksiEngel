@@ -1239,3 +1239,49 @@ Restructured the legacy message handler to match the working pattern used by oth
 - Tasks now appear in "⏳ Sıradaki İşlemler" immediately when triggered
 - Task moves to "✅ Tamamlanan İşlemler" after completion
 - Consistent queue behavior across all action types
+
+### Commit 33: Fix Pause/Stop Buttons Disabled During Cooldown (2026-02-16)
+**Purpose:** Fix pause and stop buttons being deactivated during cooldown for tasks like "başlıktakileri engelle (tümü)" or "başlıktakileri engelle (son 24 saatte)"
+
+**Root Cause:**
+1. Legacy TITLE operations run through `processQueue` but don't register with `resumableOperationRegistry`
+2. `hasAnyRunningTasks` getter in `programController.js` did NOT include `processQueue.isRunning`, so the buttonStateManager couldn't detect running legacy operations
+3. COOLDOWN notification handling in `notification.js` only updated status text but didn't ensure buttons remained enabled
+4. Early stop button was disabled because `getRunningTasksState()` returned `{ hasRunningTasks: false }` for legacy operations
+
+**Affected Operations:**
+- "başlıktakileri engelle (son 24 saatte)" - Title menu dropdown
+- "başlıktakileri engelle (tümü)" - Title menu dropdown
+- Single user block/unblock - Entry menu, Profile
+- "Favori edenleri engelle" - Entry menu
+- "Takipçileri engelle" - Profile
+- "Listeden engelle" - Author list
+
+**Changes:**
+
+1. **programController.js - hasAnyRunningTasks getter**
+   - Added `processQueue.isRunning` to the getter
+   - Legacy operations running through queue now detected as running tasks
+   ```javascript
+   get hasAnyRunningTasks() {
+     return processQueue.isRunning ||
+            this._migrationInProgress ||
+            // ... other flags
+   }
+   ```
+
+2. **notification.js - COOLDOWN handler**
+   - Added code to ensure early stop button remains enabled during cooldown
+   ```javascript
+   const earlyStopBtn = document.getElementById("earlyStop");
+   if (earlyStopBtn) earlyStopBtn.disabled = false;
+   ```
+
+**Files Modified:**
+- `programController.js` - Updated `hasAnyRunningTasks` getter (line 127-136)
+- `notification.js` - Added button enable in COOLDOWN handler (line 1079-1080)
+
+**Result:**
+- Pause and stop buttons now remain enabled during cooldown for all operations
+- Users can stop operations even while waiting for API rate limit cooldown
+- Legacy TITLE operations are properly detected as running tasks

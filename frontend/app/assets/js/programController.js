@@ -125,7 +125,8 @@ class ProgramController {
   }
 
   get hasAnyRunningTasks() {
-    return this._migrationInProgress ||
+    return processQueue.isRunning ||
+           this._migrationInProgress ||
            this._isMutedListRefreshInProgress ||
            this._isBlockedListRefreshInProgress ||
            this._blockMutedUsersInProgress ||
