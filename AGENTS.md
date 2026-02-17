@@ -1332,3 +1332,19 @@ The Listeler section now has 3 cards in a row:
 - Orange for Listeler indicates data viewing/export functionality
 - Gray for İşlem Geçmişi indicates historical/reference information
 - Creates visual distinction between operational vs informational sections
+
+### Commit 36: White Logo Background (2026-02-17)
+**Purpose:** Fix the EksiEngel logo's green background clashing with the green header
+
+**Root Cause:**
+The logo image has a green background that matched the green header, making it visually indistinct. The inline style used `background: rgba(255,255,255,0.1)` which appeared greenish when overlaid on the green header gradient.
+
+**Changes:**
+- Changed `background: rgba(255,255,255,0.1)` to `background: white` on the logo `<img>` element in `notification.html` line 20
+
+**Files Modified:**
+- `notification.html` - Updated logo background style
+
+**Result:**
+- Logo now has a clean white background that contrasts well with the green header
+- Better visual distinction between the logo icon and header background
