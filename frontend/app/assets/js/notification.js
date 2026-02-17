@@ -3,8 +3,23 @@ import * as utils from './utils.js';
 import { commHandler } from './commHandler.js';
 import { storageHandler } from './storageHandler.js';
 import { notificationHandler } from './notificationHandler.js';
-import { generateUnifiedDescription, processQueue } from './queue.js';
+import { generateUnifiedDescription, processQueue, getTaskCategory } from './queue.js';
 import { buttonStateManager } from './buttonStateManager.js';
+
+function getCategoryDisplayName(taskCategory) {
+  switch (taskCategory) {
+    case enums.TaskCategory.BLOCKING:
+      return "Engelleme";
+    case enums.TaskCategory.MIGRATION:
+      return "Taşıma";
+    case enums.TaskCategory.REFRESH:
+      return "Yenileme";
+    case enums.TaskCategory.UNBLOCKING:
+      return "Engel Kaldırma";
+    default:
+      return "Diğer";
+  }
+}
 
 let mutedUserCountSpan;
 let blockedUserCountSpan;
@@ -1273,7 +1288,28 @@ async function insertCompletedProcessesTable(banSource, successfulAction, perfor
   let cell6 = row.insertCell(5);
   let d = new Date();
   cell1.innerHTML = d.getHours() + ":" + d.getMinutes();
-  cell2.innerHTML = banSource;
+  
+  const taskCategory = getTaskCategory(banSource);
+  const categoryDisplayName = getCategoryDisplayName(taskCategory);
+  let categoryIndicator = '';
+  switch (taskCategory) {
+    case enums.TaskCategory.BLOCKING:
+      categoryIndicator = '🔒';
+      break;
+    case enums.TaskCategory.MIGRATION:
+      categoryIndicator = '🔄';
+      break;
+    case enums.TaskCategory.REFRESH:
+      categoryIndicator = '🔃';
+      break;
+    case enums.TaskCategory.UNBLOCKING:
+      categoryIndicator = '🔓';
+      break;
+    default:
+      categoryIndicator = '⚙️';
+  }
+  cell2.innerHTML = `${categoryIndicator} ${categoryDisplayName}`;
+  cell2.title = `İşlem türü: ${categoryDisplayName}`;
   
   let description = generateDescriptionFromMetadataForCompleted(banSource, operationMetadata || {});
   
@@ -1325,34 +1361,15 @@ function updatePlannedProcessesTable(plannedProcesses) {
     cell1.title = `Sıra: ${process.queuePosition}/${process.totalQueueSize}`;
     
     let cell2 = row.insertCell(1);
-    cell2.innerHTML = process.banSource;
-    cell2.title = `Kategori: ${process.taskCategory}\nKarmaşıklık: ${process.taskComplexity}\nÖncelik: ${process.taskPriority}`;
     
     let cell3 = row.insertCell(2);
     cell3.innerHTML = process.actionDescription || process.banMode;
     cell3.title = process.operationNotes || 'Açıklama yok';
     
     let cell4 = row.insertCell(3);
-    if (process.targetTypes && process.targetTypes.length > 0) {
-      const targetNames = process.targetTypes.map(type => {
-        switch (type) {
-          case enums.TargetType.USER: return 'Engelli';
-          case enums.TargetType.TITLE: return 'Başlık';
-          case enums.TargetType.MUTE: return 'Sessiz';
-          default: return type;
-        }
-      });
-      cell4.innerHTML = targetNames.join(', ');
-      cell4.title = `Hedef türü: ${targetNames.join(', ')}`;
-    } else {
-      cell4.innerHTML = '-';
-      cell4.title = 'Hedef türü belirtilmemiş';
-    }
-    
-    let cell5 = row.insertCell(4);
     let statusDisplay = process.taskStatus === 'QUEUED' ? 'Sırada' : (process.taskStatus || 'Sırada');
-    cell5.innerHTML = statusDisplay;
-    cell5.title = `İşlem durumu: ${process.taskStatus}`;
+    cell4.innerHTML = statusDisplay;
+    cell4.title = `İşlem durumu: ${process.taskStatus}`;
     
     let categoryIndicator = '';
     switch (process.taskCategory) {
@@ -1388,7 +1405,9 @@ function updatePlannedProcessesTable(plannedProcesses) {
         break;
     }
     
-    cell2.innerHTML = `${categoryIndicator} ${priorityIndicator} ${process.banSource}`;
+    const categoryDisplayName = getCategoryDisplayName(process.taskCategory);
+    cell2.innerHTML = `${categoryIndicator} ${categoryDisplayName}`;
+    cell2.title = `Kategori: ${categoryDisplayName}\nKarmaşıklık: ${process.taskComplexity}\nÖncelik: ${process.taskPriority}`;
   }
 }
 

@@ -1348,3 +1348,66 @@ The logo image has a green background that matched the green header, making it v
 **Result:**
 - Logo now has a clean white background that contrasts well with the green header
 - Better visual distinction between the logo icon and header background
+
+### Commit 37: Replace "Kaynak" Column with "Tür" and Remove "Hedef" Column (2026-02-17)
+**Purpose:** Improve queue table clarity by replacing cryptic "Kaynak" column with meaningful "Tür" (category) column and removing redundant "Hedef" column
+
+**Root Cause:**
+The "Kaynak" (Source) column displayed raw `banSource` enum values like "1", "6", "8", "10" which were meaningless to users. Additionally, the "Hedef" (Target) column in "Sıradaki İşlemler" table provided redundant information already available in the "Açıklama" column.
+
+**Changes:**
+
+1. **notification.html - Table Headers**
+   - Changed `<th>📂 Kaynak</th>` to `<th>📋 Tür</th>` in both tables
+   - Removed `<th>🎯 Hedef</th>` from "Sıradaki İşlemler" table
+
+2. **notification.js - Added getCategoryDisplayName() Helper**
+   ```javascript
+   function getCategoryDisplayName(taskCategory) {
+     switch (taskCategory) {
+       case enums.TaskCategory.BLOCKING:   return "Engelleme";
+       case enums.TaskCategory.MIGRATION:  return "Taşıma";
+       case enums.TaskCategory.REFRESH:    return "Yenileme";
+       case enums.TaskCategory.UNBLOCKING: return "Engel Kaldırma";
+       default: return "Diğer";
+     }
+   }
+   ```
+
+3. **notification.js - Updated Cell Rendering**
+   - `updatePlannedProcessesTable()`: Now displays category name with emoji indicator (e.g., "🔒 Engelleme")
+   - `insertCompletedProcessesTable()`: Same category display format
+   - Removed Hedef column cell creation code
+
+4. **queue.js - Added Missing BanSource Cases**
+   - Added `UNMUTEALL` to `getTaskCategory()` returning `TaskCategory.UNBLOCKING`
+   - Added `DATE_BASED_BULK` to `getTaskCategory()` returning `TaskCategory.BLOCKING`
+   - Added descriptions for `UNMUTEALL` ("Tüm Sessizleri Kaldır") and `DATE_BASED_BULK` ("Tarih Bazlı Toplu İşlem") in `generateUnifiedDescription()`
+
+5. **queue.js - Exported getTaskCategory**
+   - Added `export` keyword to `getTaskCategory()` function for use in notification.js
+
+**Resulting Tables:**
+
+| Table | Columns |
+|-------|---------|
+| Sıradaki İşlemler | ⏰ Saat, 📋 Tür, 📝 Açıklama, 📊 Durum |
+| Tamamlanan İşlemler | ⏰ Saat, 📋 Tür, 📝 Açıklama, ⚡ İşlenen, ✅ Başarılı, 📊 Durum |
+
+**Example Cell Values:**
+| Before | After |
+|--------|-------|
+| `🔒 🟡 6` | `🔒 Engelleme` |
+| `🔄 🟡 8` | `🔄 Taşıma` |
+| `🔃 🟢 10` | `🔃 Yenileme` |
+| `🔓 🟡 5` | `🔓 Engel Kaldırma` |
+
+**Files Modified:**
+- `notification.html` - Updated table headers
+- `notification.js` - Added helper function, updated cell rendering, removed Hedef column
+- `queue.js` - Added missing BanSource cases, exported getTaskCategory
+
+**Benefits:**
+- Users can immediately understand the operation type
+- Cleaner, more compact table layout
+- Consistent Turkish terminology throughout UI

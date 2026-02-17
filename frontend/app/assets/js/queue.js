@@ -10,7 +10,7 @@ class Queue {
   get size() { return this._items.length; }
 }
 
-function getTaskCategory(banSource) {
+export function getTaskCategory(banSource) {
   switch (banSource) {
     case enums.BanSource.SINGLE:
     case enums.BanSource.FAV:
@@ -26,7 +26,10 @@ function getTaskCategory(banSource) {
     case enums.BanSource.REFRESH_BLOCKED_LIST:
       return enums.TaskCategory.REFRESH;
     case enums.BanSource.UNDOBANALL:
+    case enums.BanSource.UNMUTEALL:
       return enums.TaskCategory.UNBLOCKING;
+    case enums.BanSource.DATE_BASED_BULK:
+      return enums.TaskCategory.BLOCKING;
     default:
       return enums.TaskCategory.BLOCKING;
   }
@@ -116,6 +119,12 @@ export function generateUnifiedDescription(banSource, metadata = {}) {
       break;
     case enums.BanSource.REFRESH_BLOCKED_LIST:
       baseDescription = "Engelli Listesi Yenile";
+      break;
+    case enums.BanSource.UNMUTEALL:
+      baseDescription = "Tüm Sessizleri Kaldır";
+      break;
+    case enums.BanSource.DATE_BASED_BULK:
+      baseDescription = "Tarih Bazlı Toplu İşlem";
       break;
     default:
       baseDescription = `${operationType} İşlemi`;
