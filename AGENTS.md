@@ -1285,3 +1285,32 @@ Restructured the legacy message handler to match the working pattern used by oth
 - Pause and stop buttons now remain enabled during cooldown for all operations
 - Users can stop operations even while waiting for API rate limit cooldown
 - Legacy TITLE operations are properly detected as running tasks
+
+### Commit 34: Move Yazar Listesi Button to Listeler Section (2026-02-17)
+**Purpose:** Relocate the "Yazar Listesi" button from the status card's action section to the Listeler section for better logical organization
+
+**Changes:**
+
+1. **notification.html**
+   - Removed `<button id="openauthorListPage">` from `#universalControls` div in the status card
+   - Added a new `stats-card` to `.stats-cards` grid in the Listeler section with:
+     - Header: "📝 Yazar Listesi İşlemleri"
+     - Single button: "Düzenle" (uses existing `openauthorListPage` ID)
+
+2. **customNotification.css**
+   - Updated `.stats-cards` grid from `repeat(2, 1fr)` to `repeat(3, 1fr)` for 3-column layout
+   - Mobile responsive styles already handle single column at smaller screens
+
+3. **notification.js**
+   - No changes required - existing `handleOpenAuthorListPage()` event listener works with the button in its new location
+
+**Result:**
+The Listeler section now has 3 cards in a row:
+1. 🔇 Sessiz Kullanıcılar (count + Yenile + CSV)
+2. 🚫 Engellenmiş Kullanıcılar (count + Yenile + CSV)
+3. 📝 Yazar Listesi İşlemleri (Düzenle button)
+
+**Files Modified:**
+- `notification.html` - Moved button, added new card
+- `customNotification.css` - Updated grid columns
+- `AGENTS.md` - This documentation

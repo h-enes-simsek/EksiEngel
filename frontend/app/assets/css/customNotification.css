@@ -376,7 +376,7 @@ body {
 
 .stats-cards {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 6px;
     padding: 8px 10px;
 }
@@ -1044,7 +1044,7 @@ body {
 /* Responsive */
 @media (max-width: 1024px) {
     .tables-container { grid-template-columns: 1fr; gap: 5px; }
-    .islemler-grid { grid-template-columns: repeat(2, 1fr); }
+    .islemler-grid { grid-template-columns: repeat(3, 1fr); }
 }
 
 @media (max-width: 768px) {
