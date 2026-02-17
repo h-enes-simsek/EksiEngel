@@ -372,7 +372,7 @@ body {
 .btn-text { font-weight: 500; }
 
 /* Stats Section */
-.stats-section-card { border-left: 3px solid var(--primary-color); }
+.stats-section-card { border-left: 3px solid #FFB74D; }
 
 .stats-cards {
     display: grid;
@@ -492,7 +492,7 @@ body {
 .status-message.success { background: var(--success-color); }
 
 /* Queue Card */
-.queue-card { border-left: 3px solid var(--primary-color); }
+.queue-card { border-left: 3px solid #9E9E9E; }
 
 .tables-container {
     display: grid;

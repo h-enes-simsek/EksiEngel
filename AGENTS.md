@@ -1314,3 +1314,21 @@ The Listeler section now has 3 cards in a row:
 - `notification.html` - Moved button, added new card
 - `customNotification.css` - Updated grid columns
 - `AGENTS.md` - This documentation
+
+### Commit 35: Section Accent Color Updates (2026-02-17)
+**Purpose:** Differentiate sections visually with distinct accent colors
+
+**Changes:**
+
+| Section | Old Color | New Color |
+|---------|-----------|-----------|
+| 📊 Listeler (`.stats-section-card`) | `var(--primary-color)` (green) | `#FFB74D` (pale orange) |
+| 📋 İşlem Geçmişi (`.queue-card`) | `var(--primary-color)` (green) | `#9E9E9E` (gray) |
+
+**Files Modified:**
+- `customNotification.css` - Updated `border-left` colors for `.stats-section-card` and `.queue-card`
+
+**Rationale:**
+- Orange for Listeler indicates data viewing/export functionality
+- Gray for İşlem Geçmişi indicates historical/reference information
+- Creates visual distinction between operational vs informational sections
