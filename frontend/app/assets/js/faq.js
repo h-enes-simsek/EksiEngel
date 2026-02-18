@@ -300,7 +300,7 @@ function createDefaultRule() {
     value: 3650,
     valueType: 'days',
     action: 'ENGELLE',
-    description: '10 yıldan yeni hesapları engelle',
+    description: 'Yapılacak işlem 10 yıldan yeni hesapları kapsar',
     isDefault: true
   };
 }
