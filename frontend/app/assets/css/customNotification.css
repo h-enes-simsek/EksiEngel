@@ -572,6 +572,22 @@ body {
 .modern-table tbody tr:hover { background: var(--bg-color); }
 .modern-table tbody tr:last-child td { border-bottom: none; }
 
+#plannedProcesses th:nth-child(1),
+#plannedProcesses td:nth-child(1) { max-width: 70px; }
+#plannedProcesses th:nth-child(2),
+#plannedProcesses td:nth-child(2) { max-width: 90px; }
+#plannedProcesses th:nth-child(4),
+#plannedProcesses td:nth-child(4) { max-width: 70px; }
+
+#completedProcesses th:nth-child(1),
+#completedProcesses td:nth-child(1) { min-width: 70px; }
+#completedProcesses th:nth-child(2),
+#completedProcesses td:nth-child(2) { min-width: 90px; }
+#completedProcesses th:nth-child(4),
+#completedProcesses td:nth-child(4) { min-width: 70px; }
+#completedProcesses th:nth-child(5),
+#completedProcesses td:nth-child(5) { min-width: 70px; }
+
 /* Date Filter Styles */
 .datefilter-toggle-card { border-left: 3px solid #2196F3; }
 .datefilter-rules-card { border-left: 3px solid #4CAF50; }
