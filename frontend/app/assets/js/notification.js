@@ -1453,8 +1453,8 @@ function setupDateFilterUI() {
 
 async function loadDateFilterState() {
   try {
-    const { config } = await import('./config.js');
-    await config.handleConfig();
+    const { config, handleConfig } = await import('./config.js');
+    await handleConfig();
     
     // Update master toggle
     const masterToggle = document.getElementById('dateFilterMasterToggle');
@@ -1566,8 +1566,8 @@ function handleBulkCriteriaChange() {
 
 async function loadDateBulkPreferences() {
   try {
-    const { config } = await import('./config.js');
-    await config.handleConfig();
+    const { config, handleConfig } = await import('./config.js');
+    await handleConfig();
     
     const defaults = {
       source: 'MUTED_USERS',

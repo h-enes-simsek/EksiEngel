@@ -252,10 +252,10 @@ class AutoQueue extends Queue {
       this._currentItemMetadata = (item.action && item.action.metadata) ? item.action.metadata : null;
       const payload = await item.action(this);
       this._pendingPromise = false;
-      item.resolve(payload);
+      if (item.resolve) item.resolve(payload);
     } catch (e) {
       this._pendingPromise = false;
-      item.reject(e);
+      if (item.reject) item.reject(e);
     } finally {
       this._currentItemMetadata = null;
       console.log(`Queue: Finished processing item, queue size after: ${this._items.length}, continuing to next item...`);
