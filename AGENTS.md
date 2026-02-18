@@ -1930,3 +1930,50 @@ if (monthYearMatch && turkishMonths.hasOwnProperty(monthYearMatch[1])) {
 - Registration dates now correctly extracted from Ekşi Sözlük profiles
 - Turkish month names (ocak, şubat, mart, etc.) properly parsed
 - Date-based filtering works correctly for all users
+
+### Commit 48: Add Combined Follow Actions (2026-02-19)
+**Purpose:** Add "Engel Kaldır ve Takip Et" and "Sessizden Çıkar ve Takip Et" options to date-based bulk operations
+
+**Changes:**
+
+**1. enums.js**
+- Added `FOLLOW: "4"` to `TargetType` for follow action support
+- Added two new actions to `DateBulkAction`:
+  - `ENGEL_KALDIR_VE_TAKIP_ET` - Unblock and follow users
+  - `SESSIZDEN_CIKAR_VE_TAKIP_ET` - Unmute and follow users
+
+**2. relationHandler.js**
+- Added `isTargetFollow` parameter to `performAction()` function
+- Added follow handling block that uses `TargetType.FOLLOW` with `"b"` parameter
+- Updated rate limit and success checks to include follow actions
+
+**3. programController.js**
+- Updated `_performActionWithRetry()` to accept `isTargetFollow` parameter
+- Implemented `TAKIP_ET` action (previously was just a placeholder)
+- Added two new combined action cases:
+  - `ENGEL_KALDIR_VE_TAKIP_ET`: First unblock, then follow
+  - `SESSIZDEN_CIKAR_VE_TAKIP_ET`: First unmute, then follow
+- Updated both `startDateBasedBulkAction()` and `_resumeDateBasedBulkAction()` switch statements
+
+**4. notification.html**
+- Added two new options to the Eylem dropdown:
+  - `🔓➕ Engel Kaldır ve Takip Et`
+  - `🔊➕ Sessizden Çıkar ve Takip Et`
+
+**Technical Details:**
+Ekşi Sözlük follow endpoint uses the same `/userrelation/` API:
+- Follow: `addrelation/{userId}?r=b`
+- Unfollow: `removerelation/{userId}?r=b`
+- Block: `addrelation/{userId}?r=m`
+- Mute: `addrelation/{userId}?r=u`
+
+**Files Modified:**
+- `enums.js` - Added TargetType.FOLLOW, added two new DateBulkAction values
+- `relationHandler.js` - Added isTargetFollow parameter and follow handling
+- `programController.js` - Implemented TAKIP_ET and combined actions
+- `notification.html` - Added dropdown options for new actions
+
+**Result:**
+- Users can now unblock/unmute users and follow them in a single operation
+- Useful for restoring access to trusted users from blocked/muted lists
+- Combined actions execute sequentially (first unblock/unmute, then follow)

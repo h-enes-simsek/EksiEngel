@@ -15,7 +15,7 @@ export const BanSource = {
 };
 
 export const BanMode = { BAN: "1", UNDOBAN: "2" };
-export const TargetType = { USER: "1", TITLE: "2", MUTE: "3" };
+export const TargetType = { USER: "1", TITLE: "2", MUTE: "3", FOLLOW: "4" };
 
 export const ClickSource = {
   ENTRY: "1",
@@ -78,7 +78,9 @@ export const DateBulkAction = {
   SESSIZE_AL: "SESSIZE_AL",     // Mute users
   ENGEL_KALDIR: "ENGEL_KALDIR", // Unblock users
   SESSIZDEN_CIKAR: "SESSIZDEN_CIKAR", // Unmute users
-  TAKIP_ET: "TAKIP_ET"          // Follow users
+  TAKIP_ET: "TAKIP_ET",         // Follow users
+  ENGEL_KALDIR_VE_TAKIP_ET: "ENGEL_KALDIR_VE_TAKIP_ET", // Unblock and follow
+  SESSIZDEN_CIKAR_VE_TAKIP_ET: "SESSIZDEN_CIKAR_VE_TAKIP_ET" // Unmute and follow
 };
 
 export const DateBulkSource = {

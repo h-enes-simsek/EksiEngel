@@ -475,10 +475,22 @@ class ProgramController {
             result = await this._performActionWithRetry(enums.BanMode.UNDOBAN, authorId, false, false, true);
             break;
           case 'TAKIP_ET':
-            // Note: Following is not implemented in relationHandler, skip for now
-            log.warn("progctrl", "Follow action not yet implemented");
-            failCount++;
-            continue;
+            result = await this._performActionWithRetry(enums.BanMode.BAN, authorId, false, false, false, true);
+            break;
+          case 'ENGEL_KALDIR_VE_TAKIP_ET':
+            // First unblock, then follow
+            result = await this._performActionWithRetry(enums.BanMode.UNDOBAN, authorId, true, false, false);
+            if (result.resultType === enums.ResultType.SUCCESS) {
+              result = await this._performActionWithRetry(enums.BanMode.BAN, authorId, false, false, false, true);
+            }
+            break;
+          case 'SESSIZDEN_CIKAR_VE_TAKIP_ET':
+            // First unmute, then follow
+            result = await this._performActionWithRetry(enums.BanMode.UNDOBAN, authorId, false, false, true);
+            if (result.resultType === enums.ResultType.SUCCESS) {
+              result = await this._performActionWithRetry(enums.BanMode.BAN, authorId, false, false, false, true);
+            }
+            break;
           default:
             log.err("progctrl", `Unknown bulk action: ${bulkAction}`);
             failCount++;
@@ -669,7 +681,7 @@ class ProgramController {
     }
   }
 
-  async _performActionWithRetry(banMode, id, isTargetUser, isTargetTitle, isTargetMute, retries = 3) {
+  async _performActionWithRetry(banMode, id, isTargetUser, isTargetTitle, isTargetMute, isTargetFollow = false, retries = 3) {
     let attempt = 0;
     while (attempt < retries) {
       if (this.earlyStop) {
@@ -679,11 +691,11 @@ class ProgramController {
 
       const banModeStr = Object.keys(enums.BanMode).find(key => enums.BanMode[key] === banMode) || banMode;
       if (attempt === 0) {
-        log.debug("progctrl", `Attempt ${attempt + 1} for action: ${banModeStr}, id: ${id}, user: ${isTargetUser}, title: ${isTargetTitle}, mute: ${isTargetMute}`);
+        log.debug("progctrl", `Attempt ${attempt + 1} for action: ${banModeStr}, id: ${id}, user: ${isTargetUser}, title: ${isTargetTitle}, mute: ${isTargetMute}, follow: ${isTargetFollow}`);
       }
 
       relationHandler.reset();
-      const result = await relationHandler.performAction(banMode, id, isTargetUser, isTargetTitle, isTargetMute);
+      const result = await relationHandler.performAction(banMode, id, isTargetUser, isTargetTitle, isTargetMute, isTargetFollow);
 
       if (result.resultType === enums.ResultType.SUCCESS) {
         log.debug("progctrl", `Action successful for id: ${id}`);
@@ -2337,9 +2349,22 @@ notificationHandler.notify(`${totalCount} adet başlıkları engellenen kullanı
             result = await this._performActionWithRetry(enums.BanMode.UNDOBAN, authorId, false, false, true);
             break;
           case 'TAKIP_ET':
-            log.warn("progctrl", "Follow action not yet implemented");
-            failCount++;
-            continue;
+            result = await this._performActionWithRetry(enums.BanMode.BAN, authorId, false, false, false, true);
+            break;
+          case 'ENGEL_KALDIR_VE_TAKIP_ET':
+            // First unblock, then follow
+            result = await this._performActionWithRetry(enums.BanMode.UNDOBAN, authorId, true, false, false);
+            if (result.resultType === enums.ResultType.SUCCESS) {
+              result = await this._performActionWithRetry(enums.BanMode.BAN, authorId, false, false, false, true);
+            }
+            break;
+          case 'SESSIZDEN_CIKAR_VE_TAKIP_ET':
+            // First unmute, then follow
+            result = await this._performActionWithRetry(enums.BanMode.UNDOBAN, authorId, false, false, true);
+            if (result.resultType === enums.ResultType.SUCCESS) {
+              result = await this._performActionWithRetry(enums.BanMode.BAN, authorId, false, false, false, true);
+            }
+            break;
           default:
             log.err("progctrl", `Unknown bulk action: ${params.bulkAction}`);
             failCount++;

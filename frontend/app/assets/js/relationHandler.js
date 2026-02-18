@@ -10,7 +10,7 @@ class RelationHandler
   successfulAction;
   performedAction;
   
-  async performAction(banMode, id, isTargetUser, isTargetTitle, isTargetMute)
+  async performAction(banMode, id, isTargetUser, isTargetTitle, isTargetMute, isTargetFollow)
   {
     // Returns: { resultType: enums.ResultType, successfulAction: number, performedAction: number, retryAfter?: number }
     if(id == 0 || id === "0" || !id) // Added more robust check for invalid ID
@@ -24,7 +24,8 @@ class RelationHandler
 
     let resUser = { status: enums.ResultTypeHttpReq.SUCCESS },
         resTitle = { status: enums.ResultTypeHttpReq.SUCCESS },
-        resMute = { status: enums.ResultTypeHttpReq.SUCCESS };
+        resMute = { status: enums.ResultTypeHttpReq.SUCCESS },
+        resFollow = { status: enums.ResultTypeHttpReq.SUCCESS };
     let retryAfter = 0; // Store the max retryAfter value
 
     if(isTargetUser)
@@ -54,11 +55,21 @@ class RelationHandler
         retryAfter = Math.max(retryAfter, resMute.retryAfter);
       }
     }
+    if(isTargetFollow)
+    {
+      // enums.TargetType.FOLLOW
+      let urlFollow = this.#prepareHTTPRequest(banMode, enums.TargetType.FOLLOW, id);
+      resFollow = await this.#performHTTPRequest(banMode, enums.TargetType.FOLLOW, id, urlFollow);
+      if (resFollow.status === enums.ResultTypeHttpReq.TOO_MANY_REQ && resFollow.retryAfter) {
+        retryAfter = Math.max(retryAfter, resFollow.retryAfter);
+      }
+    }
 
     // Check if any request hit the rate limit
     if((isTargetUser  && resUser.status == enums.ResultTypeHttpReq.TOO_MANY_REQ)  ||
        (isTargetTitle && resTitle.status == enums.ResultTypeHttpReq.TOO_MANY_REQ) ||
-       (isTargetMute  && resMute.status == enums.ResultTypeHttpReq.TOO_MANY_REQ)  )
+       (isTargetMute  && resMute.status == enums.ResultTypeHttpReq.TOO_MANY_REQ)  ||
+       (isTargetFollow && resFollow.status == enums.ResultTypeHttpReq.TOO_MANY_REQ) )
     {
       // Rate limit hit, return FAIL and the calculated retryAfter duration
       log.warn("relation", `Rate limit hit for id ${id}. Suggested retryAfter: ${retryAfter} seconds.`);
@@ -74,11 +85,12 @@ class RelationHandler
       if (isTargetUser && resUser.status !== enums.ResultTypeHttpReq.SUCCESS) allSucceeded = false;
       if (isTargetTitle && resTitle.status !== enums.ResultTypeHttpReq.SUCCESS) allSucceeded = false;
       if (isTargetMute && resMute.status !== enums.ResultTypeHttpReq.SUCCESS) allSucceeded = false;
+      if (isTargetFollow && resFollow.status !== enums.ResultTypeHttpReq.SUCCESS) allSucceeded = false;
 
       if (allSucceeded) {
         this.successfulAction++;
       } else {
-         log.warn("relation", `One or more actions failed for id ${id} (not rate limit). User: ${resUser.status}, Title: ${resTitle.status}, Mute: ${resMute.status}`);
+         log.warn("relation", `One or more actions failed for id ${id} (not rate limit). User: ${resUser.status}, Title: ${resTitle.status}, Mute: ${resMute.status}, Follow: ${resFollow.status}`);
       }
 
       return {resultType: enums.ResultType.SUCCESS, successfulAction: this.successfulAction, performedAction: this.performedAction};
