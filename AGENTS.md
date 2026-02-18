@@ -1453,3 +1453,188 @@ Completely rewrote the user guide section with comprehensive documentation for a
 - Users have comprehensive documentation for all features
 - Accurate reflection of current extension capabilities
 - Better user onboarding experience
+
+### Commit 39: Fix Random List Refresh Triggering (2026-02-18)
+**Purpose:** Fix the 'Sessiz Kullanıcılar' refresh randomly triggering itself due to service worker lifecycle issues
+
+**Root Cause:**
+When a Chrome extension service worker restarts (due to idle timeout, memory pressure, or extension reload):
+1. Queue items persisted to storage lose their executable function nature (functions can't be serialized)
+2. The `_initializePersistedQueue()` auto-started the queue regardless of why the previous operation stopped
+3. All in-progress flags (`_xxxInProgress`, registry operations) are lost because they're memory-only
+4. Attempting to execute a non-function queue item causes errors and loops
+
+**Changes:**
+
+**1. `storageHandler.js` - Operation Result Tracking**
+- Added `LAST_OPERATION_RESULT_KEY` constant
+- Added `saveLastOperationResult(result)` - saves 'RUNNING' | 'COMPLETED' | 'STOPPED' | 'INTERRUPTED' | 'PAUSED'
+- Added `getLastOperationResult()` - retrieves the last operation result
+- Added `clearLastOperationResult()` - clears the result
+
+**2. `background.js` - Service Worker Initialization**
+- Added `initializeOperationState()` function that runs on service worker startup
+- Checks if last operation was RUNNING (died mid-operation) → marks as INTERRUPTED
+- Restores PAUSED operations from storage to registry for manual resume
+- Calls `resumableOperationRegistry.clearStaleOperations()` to clean up
+
+**3. `programController.js` - Operation Result Tracking**
+- All operations now call `storageHandler.saveLastOperationResult('RUNNING')` at start
+- Finally blocks save 'COMPLETED' if operation finished, 'PAUSED' if paused
+- `stopCurrentOperation()` saves 'STOPPED' when user clicks stop button
+
+**4. `queue.js` - Smart Queue Restoration**
+- `_initializePersistedQueue()` now validates items before adding to queue
+- Invalid items (non-executable actions) are silently removed with console warning
+- Auto-start only happens if previous operation result was 'COMPLETED' or null
+- `dequeue()` checks if item.action is actually a function before executing
+
+**5. `resumableOperation.js` - Operation Restoration**
+- Added `clearStaleOperations()` - clears RUNNING operations, preserves PAUSED
+- Added `restoreOperation(operationId, savedState)` - restores a PAUSED operation from storage
+
+**6. `notification.js` - User Notification**
+- Added `showInterruptedOperationBanner()` - shows warning when previous operation was interrupted
+- Checks for INTERRUPTED status on page load and shows user-friendly message
+
+**Behavior After Fix:**
+
+| Scenario | Behavior |
+|----------|----------|
+| Notification page refresh | Operation continues (background keeps running) |
+| Service worker restart + RUNNING op | Marked INTERRUPTED, queue doesn't auto-start |
+| Service worker restart + PAUSED op | Preserved, user can manually resume |
+| Service worker restart + STOPPED | Queue doesn't auto-start |
+| Service worker restart + COMPLETED | Queue auto-starts next item |
+| Invalid queue items | Silently removed from queue |
+
+**Files Modified:**
+- `storageHandler.js` - Added operation result tracking methods
+- `background.js` - Added initialization function
+- `programController.js` - Added result tracking to all operations
+- `queue.js` - Smart queue restoration with validation
+- `resumableOperation.js` - Operation restoration methods
+- `notification.js` - Interrupted operation banner
+- `AGENTS.md` - This documentation
+
+**Result:**
+- No more random list refresh triggering
+- Operations don't auto-continue after service worker dies mid-operation
+- PAUSED operations survive service worker restarts
+- User is notified when previous operation was interrupted
+- Clean queue management with proper state tracking
+
+### Commit 39: Fix Random List Refresh Triggering (2026-02-18)
+**Purpose:** Fix the 'Sessiz Kullanıcılar' refresh randomly triggering itself due to service worker lifecycle issues
+
+**Root Cause:**
+When a Chrome extension service worker restarts (due to idle timeout, memory pressure, or extension reload):
+1. Queue items persisted to storage lose their executable function nature (functions can't be serialized)
+2. The `_initializePersistedQueue()` auto-started the queue regardless of why the previous operation stopped
+3. All in-progress flags (`_xxxInProgress`, registry operations) are lost because they're memory-only
+4. Attempting to execute a non-function queue item causes errors and loops
+
+**Changes:**
+
+**1. `storageHandler.js` - Operation Result Tracking**
+- Added `LAST_OPERATION_RESULT_KEY` constant
+- Added `saveLastOperationResult(result)` - saves 'RUNNING' | 'COMPLETED' | 'STOPPED' | 'INTERRUPTED' | 'PAUSED'
+- Added `getLastOperationResult()` - retrieves the last operation result
+- Added `clearLastOperationResult()` - clears the result
+
+**2. `background.js` - Service Worker Initialization**
+- Added `initializeOperationState()` function that runs on service worker startup
+- Checks if last operation was RUNNING (died mid-operation) → marks as INTERRUPTED
+- Restores PAUSED operations from storage to registry for manual resume
+- Calls `resumableOperationRegistry.clearStaleOperations()` to clean up
+
+**3. `programController.js` - Operation Result Tracking**
+- All operations now call `storageHandler.saveLastOperationResult('RUNNING')` at start
+- Finally blocks save 'COMPLETED' if operation finished, 'PAUSED' if paused
+- `stopCurrentOperation()` saves 'STOPPED' when user clicks stop button
+
+**4. `queue.js` - Smart Queue Restoration**
+- `_initializePersistedQueue()` now validates items before adding to queue
+- Invalid items (non-executable actions) are silently removed with console warning
+- Auto-start only happens if previous operation result was 'COMPLETED' or null
+- `dequeue()` checks if item.action is actually a function before executing
+
+**5. `resumableOperation.js` - Operation Restoration**
+- Added `clearStaleOperations()` - clears RUNNING operations, preserves PAUSED
+- Added `restoreOperation(operationId, savedState)` - restores a PAUSED operation from storage
+
+**6. `notification.js` - User Notification**
+- Added `showInterruptedOperationBanner()` - shows warning when previous operation was interrupted
+- Checks for INTERRUPTED status on page load and shows user-friendly message
+
+**Behavior After Fix:**
+
+| Scenario | Behavior |
+|----------|----------|
+| Notification page refresh | Operation continues (background keeps running) |
+| Service worker restart + RUNNING op | Marked INTERRUPTED, queue doesn't auto-start |
+| Service worker restart + PAUSED op | Preserved, user can manually resume |
+| Service worker restart + STOPPED | Queue doesn't auto-start |
+| Service worker restart + COMPLETED | Queue auto-starts next item |
+| Invalid queue items | Silently removed from queue |
+
+**Files Modified:**
+- `storageHandler.js` - Added operation result tracking methods
+- `background.js` - Added initialization function
+- `programController.js` - Added result tracking to all operations
+- `queue.js` - Smart queue restoration with validation
+- `resumableOperation.js` - Operation restoration methods
+- `notification.js` - Interrupted operation banner
+- `AGENTS.md` - This documentation
+
+**Result:**
+- No more random list refresh triggering
+- Operations don't auto-continue after service worker dies mid-operation
+- PAUSED operations survive service worker restarts
+- User is notified when previous operation was interrupted
+- Clean queue management with proper state tracking
+
+### Commit 40: Button State Management Fixes (2026-02-18)
+**Purpose:** Fix various button state issues after operation stop/pause
+
+**Issues Fixed:**
+
+1. **Refresh buttons not re-enabled after stop** - The Yenile buttons for Sessiz/Engellenmiş Kullanıcılar remained disabled after stopping an operation
+
+2. **Buttons stuck after pause→stop sequence** - After pausing then stopping an operation, pause/resume/stop buttons remained disabled until page refresh
+
+3. **Refresh buttons should always be clickable** - User requested that refresh buttons always remain functional
+
+**Changes:**
+
+**1. `buttonStateManager.js` - Refresh Buttons Always Enabled**
+- Separated `refreshMutedList` and `refreshBlockedList` from other action buttons
+- These buttons now always return `disabled: false` regardless of operation state
+- User can refresh lists at any time, even during other operations
+
+**2. `notificationHandler.js` - Removed Manual Button Disabling**
+- Removed manual `refreshButton.disabled = true` code from `handleRefreshMutedList()`
+- Removed manual `refreshBlockedListButton.disabled = true` code from `handleRefreshBlockedList()`
+- Button state management now fully handled by `buttonStateManager`
+
+**3. `notification.js` - Handle INACTIVE State After Stop**
+- Added handling for INACTIVE state in `handleEarlyStop()` message listener
+- When stopping a PAUSED operation, two messages are sent: STOPPED then INACTIVE
+- Now properly resets UI and refreshes all button states when INACTIVE is received
+- Added `buttonStateManager.refreshAllButtonStates()` call for complete UI reset
+
+**4. `resumableOperation.js` - Send INACTIVE After Stopping Paused Op**
+- After unregistering a stopped paused operation, now sends INACTIVE notification
+- This triggers proper UI reset in `notification.js`
+
+**Files Modified:**
+- `buttonStateManager.js` - Refresh buttons always enabled
+- `notificationHandler.js` - Removed manual button disabling
+- `notification.js` - Handle INACTIVE state after stop
+- `resumableOperation.js` - Send INACTIVE notification after unregistering stopped operation
+- `AGENTS.md` - This documentation
+
+**Result:**
+- Refresh buttons (Yenile) are always clickable
+- All buttons properly reset after any stop sequence (direct stop or pause→stop)
+- Consistent button state management through buttonStateManager

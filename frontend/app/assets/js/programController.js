@@ -175,6 +175,7 @@ class ProgramController {
     }
     
     this._dateBasedBulkInProgress = true;
+    await storageHandler.saveLastOperationResult('RUNNING');
     this.earlyStop = false;
     
     // Register with resumable operation registry for pause/resume support
@@ -517,6 +518,9 @@ class ProgramController {
       const currentOp = resumableOperationRegistry.getCurrentOperation();
       if (!currentOp || currentOp.state !== OperationState.PAUSED) {
         resumableOperationRegistry.completeOperation();
+        await storageHandler.saveLastOperationResult('COMPLETED');
+      } else {
+        await storageHandler.saveLastOperationResult('PAUSED');
       }
       
       notificationHandler.notifyUpdateCounts();
@@ -735,6 +739,7 @@ class ProgramController {
     }
 
     this._migrationInProgress = true;
+    await storageHandler.saveLastOperationResult('RUNNING');
     this.earlyStop = false;
 
     // Register with resumable operation registry for pause/resume support
@@ -895,6 +900,9 @@ class ProgramController {
       const currentOp = resumableOperationRegistry.getCurrentOperation();
       if (!currentOp || currentOp.state !== OperationState.PAUSED) {
         resumableOperationRegistry.completeOperation();
+        await storageHandler.saveLastOperationResult('COMPLETED');
+      } else {
+        await storageHandler.saveLastOperationResult('PAUSED');
       }
       
       notificationHandler.notifyUpdateCounts();
@@ -910,6 +918,7 @@ class ProgramController {
     }
 
     this._blockMutedUsersInProgress = true;
+    await storageHandler.saveLastOperationResult('RUNNING');
     this.earlyStop = false;
 
     // Register with resumable operation registry for pause/resume support
@@ -1124,6 +1133,9 @@ class ProgramController {
       const currentOp = resumableOperationRegistry.getCurrentOperation();
       if (!currentOp || currentOp.state !== OperationState.PAUSED) {
         resumableOperationRegistry.completeOperation();
+        await storageHandler.saveLastOperationResult('COMPLETED');
+      } else {
+        await storageHandler.saveLastOperationResult('PAUSED');
       }
       
       notificationHandler.notifyUpdateCounts();
@@ -1139,6 +1151,7 @@ class ProgramController {
     }
 
     this._blockTitlesInProgress = true;
+    await storageHandler.saveLastOperationResult('RUNNING');
     this.earlyStop = false;
 
     // Register with resumable operation registry for pause/resume support
@@ -1334,6 +1347,9 @@ class ProgramController {
       const currentOp = resumableOperationRegistry.getCurrentOperation();
       if (!currentOp || currentOp.state !== OperationState.PAUSED) {
         resumableOperationRegistry.completeOperation();
+        await storageHandler.saveLastOperationResult('COMPLETED');
+      } else {
+        await storageHandler.saveLastOperationResult('PAUSED');
       }
     }
   }
@@ -1348,6 +1364,7 @@ class ProgramController {
     }
 
     this._unmuteAllInProgress = true;
+    await storageHandler.saveLastOperationResult('RUNNING');
     this.earlyStop = false;
 
     try {
@@ -1430,6 +1447,7 @@ class ProgramController {
       log.info("progctrl", "startUnmuteAll function completed.");
       this.earlyStop = false;
       this._unmuteAllInProgress = false;
+      await storageHandler.saveLastOperationResult('COMPLETED');
     }
   }
 
@@ -1443,6 +1461,7 @@ class ProgramController {
     }
 
     this._isMutedListRefreshInProgress = true;
+    await storageHandler.saveLastOperationResult('RUNNING');
     this.earlyStop = false;
 
     const operationId = savedState?.operationId || 'refresh-muted-' + Date.now();
@@ -1555,6 +1574,9 @@ class ProgramController {
       const currentOp = resumableOperationRegistry.getCurrentOperation();
       if (!currentOp || currentOp.state !== OperationState.PAUSED) {
         resumableOperationRegistry.completeOperation();
+        await storageHandler.saveLastOperationResult('COMPLETED');
+      } else {
+        await storageHandler.saveLastOperationResult('PAUSED');
       }
 
       notificationHandler.notifyUpdateCounts();
@@ -1571,6 +1593,7 @@ class ProgramController {
     }
 
     this._isBlockedListRefreshInProgress = true;
+    await storageHandler.saveLastOperationResult('RUNNING');
     this.earlyStop = false;
 
     const operationId = savedState?.operationId || 'refresh-blocked-' + Date.now();
@@ -1678,6 +1701,9 @@ class ProgramController {
       const currentOp = resumableOperationRegistry.getCurrentOperation();
       if (!currentOp || currentOp.state !== OperationState.PAUSED) {
         resumableOperationRegistry.completeOperation();
+        await storageHandler.saveLastOperationResult('COMPLETED');
+      } else {
+        await storageHandler.saveLastOperationResult('PAUSED');
       }
 
       notificationHandler.notifyUpdateCounts();
@@ -1694,6 +1720,7 @@ class ProgramController {
     }
 
     this._blockTitlesInProgress = true;
+    await storageHandler.saveLastOperationResult('RUNNING');
     this.earlyStop = false;
 
     try {
@@ -1773,11 +1800,12 @@ notificationHandler.notify(`${totalCount} adet başlıkları engellenen kullanı
       } catch (error) {
        log.err("progctrl", `An error occurred during unblocking blocked titles: ${error}`, error);
        notificationHandler.finishSuccess(enums.BanSource.TITLE, enums.BanMode.UNDOBAN, 0, 0, 0, processQueue.currentItemMetadata);
-     } finally {
-       log.info("progctrl", "migrateBlockedTitlesToUnblocked function completed.");
-       this.earlyStop = false;
-       this._blockTitlesInProgress = false;
-     }
+      } finally {
+        log.info("progctrl", "migrateBlockedTitlesToUnblocked function completed.");
+        this.earlyStop = false;
+        this._blockTitlesInProgress = false;
+        await storageHandler.saveLastOperationResult('COMPLETED');
+      }
    }
 
   // ============================
@@ -1875,6 +1903,7 @@ notificationHandler.notify(`${totalCount} adet başlıkları engellenen kullanı
     // Trigger queue processing for next item
     if (result.success) {
       log.info("progctrl", "Stop successful, triggering queue processing");
+      await storageHandler.saveLastOperationResult('STOPPED');
       processQueue.triggerProcessing();
     }
     

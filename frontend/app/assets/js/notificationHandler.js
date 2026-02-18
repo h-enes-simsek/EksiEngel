@@ -174,16 +174,11 @@ class NotificationHandler {
 
   handleRefreshMutedList = async () => {
     console.log("notificationHandler.js", "Refresh muted list button clicked.");
-    const refreshButton = document.getElementById('refreshMutedList');
-    const earlyStopButton = document.getElementById('earlyStop');
-    if (refreshButton) refreshButton.disabled = true;
     this.updateButtonStatus("Initiating muted list refresh...", false, 0);
     chrome.runtime.sendMessage({ action: "refreshMutedList" }, (response) => {
       if (chrome.runtime.lastError) {
         console.error("notificationHandler.js: Error sending refreshMutedList message:", chrome.runtime.lastError.message);
         this.updateButtonStatus("Error initiating refresh: " + chrome.runtime.lastError.message, true, 5000);
-        if (refreshButton) refreshButton.disabled = false;
-        if (earlyStopButton) earlyStopButton.disabled = false;
       }
     });
   }
@@ -216,15 +211,10 @@ class NotificationHandler {
   handleRefreshBlockedList = async () => {
     console.log("notificationHandler.js", "Refresh blocked list button clicked.");
     this.updateButtonStatus("Initiating blocked list refresh...", false, 0);
-    const refreshBlockedListButton = document.getElementById('refreshBlockedList');
-    if (refreshBlockedListButton) refreshBlockedListButton.disabled = true;
-    const exportBlockedListCSVButton = document.getElementById('exportBlockedListCSV');
-    if (exportBlockedListCSVButton) exportBlockedListCSVButton.disabled = true;
     chrome.runtime.sendMessage({ action: "refreshBlockedList" }, (response) => {
       if (chrome.runtime.lastError) {
         console.error("notificationHandler.js: Error sending refreshBlockedList message:", chrome.runtime.lastError.message);
         this.updateButtonStatus("Error initiating refresh: " + chrome.runtime.lastError.message, true, 5000);
-        if (refreshBlockedListButton) refreshBlockedListButton.disabled = false;
         this.refreshBlockedUserCountDisplay();
       }
     });

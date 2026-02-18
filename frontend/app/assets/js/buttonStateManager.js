@@ -267,12 +267,18 @@ class ButtonStateManager {
       case 'btnBlockTitlesOfBlockedMuted':
       case 'migrateBlockedTitlesToUnblocked':
       case 'startUndobanAll':
-      case 'refreshMutedList':
-      case 'refreshBlockedList':
         // Buttons remain enabled to allow queueing tasks when another operation is running
         return {
           disabled: isProcessing,
           title: isProcessing ? 'İşleniyor...' : 'Bu işlemi başlat (başka bir işlem devam ediyorsa sıraya eklenir)',
+          innerHTML: originalInnerHTML
+        };
+      case 'refreshMutedList':
+      case 'refreshBlockedList':
+        // Refresh buttons are ALWAYS enabled - user can refresh lists at any time
+        return {
+          disabled: false,
+          title: 'Listeyi yenile',
           innerHTML: originalInnerHTML
         };
       case 'exportMutedListCSV':

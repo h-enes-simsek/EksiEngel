@@ -144,16 +144,34 @@ class AutoQueue extends Queue {
     try {
       const persistedItems = await storageHandler.getQueueData();
       if (persistedItems && Array.isArray(persistedItems)) {
-        this._items = persistedItems;
-        console.log(`Queue: Restored ${this._items.length} items from storage`);
+        // Validate items - remove non-executable ones silently
+        const validItems = [];
+        for (const item of persistedItems) {
+          // Check if item has required properties for reconstruction
+          if (item.action && typeof item.action.banSource !== 'undefined') {
+            validItems.push(item);
+          } else {
+            console.warn("Queue: Removing invalid item (missing required properties)");
+          }
+        }
         
-        // Auto-start queue processing if there are items restored
+        this._items = validItems;
+        console.log(`Queue: Restored ${this._items.length} valid items from storage (${persistedItems.length - validItems.length} invalid items removed)`);
+        
+        // Only auto-start if previous operation completed successfully
         if (this._items.length > 0) {
-          // Delay to allow other components to initialize
-          setTimeout(() => {
-            console.log("Queue: Auto-starting queue processing after restoration");
-            this.dequeue();
-          }, 1000);
+          const lastResult = await storageHandler.getLastOperationResult();
+          const shouldAutoStart = !lastResult || lastResult.result === 'COMPLETED';
+          
+          if (shouldAutoStart) {
+            // Delay to allow other components to initialize
+            setTimeout(() => {
+              console.log("Queue: Auto-starting queue processing after restoration (previous: COMPLETED or none)");
+              this.dequeue();
+            }, 1000);
+          } else {
+            console.log(`Queue: Not auto-starting - previous operation result was: ${lastResult?.result}`);
+          }
         }
       }
     } catch (error) {
@@ -242,6 +260,16 @@ class AutoQueue extends Queue {
     const item = super.dequeue();
     if (!item) {
       console.log("Queue: No item to dequeue");
+      return false;
+    }
+
+    // Check if the action is actually executable (a function)
+    // Items restored from storage will have a plain object as action, not a function
+    if (typeof item.action !== 'function') {
+      console.warn("Queue: Item action is not executable (likely restored from storage). Skipping item.");
+      await this._saveQueueState();
+      // Try to process next item
+      setTimeout(() => this.dequeue(), 0);
       return false;
     }
 

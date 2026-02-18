@@ -79,12 +79,38 @@ async function restorePersistedData() {
       }
     }
     
+    // Check for interrupted operation
+    const lastResult = await storageHandler.getLastOperationResult();
+    if (lastResult && lastResult.result === 'INTERRUPTED') {
+      showInterruptedOperationBanner();
+      // Clear the interrupted status after showing the banner
+      await storageHandler.clearLastOperationResult();
+    }
+    
     notificationHandler.updateTableCounts();
     notificationHandler.updateButtonStatus("Queue and completed items restored successfully", false, 3000);
   } catch (error) {
     console.warn('Failed to restore persisted data:', error);
     notificationHandler.updateButtonStatus("Failed to restore some data", false, 3000);
   }
+}
+
+/**
+ * Show a banner notification for interrupted operations
+ */
+function showInterruptedOperationBanner() {
+  const statusText = document.getElementById('statusText');
+  if (statusText) {
+    statusText.innerHTML = '⚠️ Önceki işlem beklenmedik şekilde kesildi (tarayıcı veya eklenti yeniden başlatıldı).';
+    statusText.style.color = '#f59e0b'; // Warning orange color
+    
+    // Clear the warning after 10 seconds
+    setTimeout(() => {
+      statusText.style.color = '';
+      statusText.innerHTML = 'Beklemede.';
+    }, 10000);
+  }
+  console.log("Notification: Previous operation was interrupted");
 }
 
 function setupEarlyStopButton() {
@@ -635,6 +661,20 @@ async function handleEarlyStop() {
         
         const op = message.operation;
         updateUniversalControls({ state: 'STOPPED', type: op?.type }, message.stats || op?.checkpointData);
+        notificationHandler.showStatusMessage('İşlem durduruldu.', 'success');
+      }
+      // Also handle INACTIVE state (sent after STOPPED when operation is unregistered)
+      if (message.newState === 'INACTIVE' || message.operation === null || 
+          (message.operation && message.operation.state === 'COMPLETED')) {
+        stopHandled = true;
+        if (earlyStopButton._stopTimeoutId) {
+          clearTimeout(earlyStopButton._stopTimeoutId);
+          earlyStopButton._stopTimeoutId = null;
+        }
+        chrome.runtime.onMessage.removeListener(stopMessageListener);
+        
+        updateUniversalControls(null);
+        buttonStateManager.refreshAllButtonStates();
         notificationHandler.showStatusMessage('İşlem durduruldu.', 'success');
       }
     }
@@ -1221,8 +1261,10 @@ if (currentOperationDescriptionElement) {
             errorTextDiv.innerHTML = `Hata: ${notification.errorText}`;
             errorTextDiv.style.display = "block";
          }
-         updateUniversalControls(null);
-       }
+          updateUniversalControls(null);
+          // Refresh all button states to re-enable buttons like refreshMutedList
+          buttonStateManager.refreshAllButtonStates();
+        }
 
       if (notification.status === enums.NotificationType.UPDATE_PLANNED_PROCESSES && notification.plannedProcesses) {
         console.log("Updating planned processes table with", notification.plannedProcesses.length, "items");

@@ -12,8 +12,43 @@ import {programController} from './programController.js';
 import {handleEksiSozlukURL} from './urlHandler.js';
 import { notificationHandler } from './notificationHandler.js';
 import { storageHandler } from './storageHandler.js';
+import { resumableOperationRegistry, OperationState } from './resumableOperation.js';
 
 log.info("bg", "initialized");
+
+/**
+ * Initialize operation state on service worker startup
+ * This handles the case where the service worker was killed while an operation was running
+ */
+async function initializeOperationState() {
+  log.info("bg", "Initializing operation state on service worker startup");
+  
+  try {
+    const lastResult = await storageHandler.getLastOperationResult();
+    
+    // Check for paused operations in storage and restore them to registry
+    const pausedOps = await storageHandler.listResumableOperations();
+    for (const opState of pausedOps) {
+      if (opState.operationState === 'PAUSED') {
+        log.info('bg', 'Restoring PAUSED operation from storage: ' + opState.operationId);
+        resumableOperationRegistry.restoreOperation(opState.operationId, opState);
+      }
+    }
+    
+    // If the last result was RUNNING, the service worker died mid-operation
+    if (lastResult && lastResult.result === 'RUNNING') {
+      log.warn('bg', 'Service worker died while operation was running - marking as INTERRUPTED');
+      await storageHandler.saveLastOperationResult('INTERRUPTED');
+      // Clear any stale RUNNING operations from the registry (if any were somehow restored)
+      resumableOperationRegistry.clearStaleOperations();
+    }
+  } catch (error) {
+    log.err("bg", `Error initializing operation state: ${error}`);
+  }
+}
+
+// Run initialization immediately
+initializeOperationState();
 let g_notificationTabId = 0;
 let g_notificationTabCreationInProgress = null;
 

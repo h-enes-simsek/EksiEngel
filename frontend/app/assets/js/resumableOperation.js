@@ -207,13 +207,16 @@ export class ResumableOperationRegistry {
         await storageHandler.clearOperationState(this._currentOperationId);
       }
       
-      // Now unregister without sending another notification (we already sent STOPPED)
+      // Now unregister and send INACTIVE notification to reset UI
       this._activeOperations.delete(this._currentOperationId);
       const stoppedId = this._currentOperationId;
       this._currentOperationId = null;
       this._clearStateOnStop = false;
       
       log.info('resumableOp', `Unregistered operation ${stoppedId} after stop`);
+      
+      // Send INACTIVE state to re-enable buttons
+      this._notifyUIStateChanged();
       
       // Trigger queue processing for next item
       this._triggerQueueProcessing();
@@ -305,6 +308,44 @@ export class ResumableOperationRegistry {
   hasPausedOperation() {
     const op = this.getCurrentOperation();
     return op && op.state === OperationState.PAUSED;
+  }
+
+  /**
+   * Clear stale operations that were RUNNING when service worker died
+   * Preserves PAUSED operations for manual resume
+   */
+  clearStaleOperations() {
+    const op = this.getCurrentOperation();
+    if (op && op.state === OperationState.RUNNING) {
+      log.info('resumableOp', 'Clearing stale RUNNING operation: ' + op.id);
+      this._activeOperations.clear();
+      this._currentOperationId = null;
+    } else if (op && op.state === OperationState.PAUSED) {
+      log.info('resumableOp', 'Preserving PAUSED operation for manual resume: ' + op.id);
+    }
+  }
+
+  /**
+   * Restore a previously paused operation from storage
+   * @param {string} operationId - The operation ID
+   * @param {Object} savedState - The saved operation state from storage
+   */
+  restoreOperation(operationId, savedState) {
+    this._currentOperationId = operationId;
+    this._activeOperations.set(operationId, {
+      id: operationId,
+      type: savedState.operationType,
+      params: savedState.params || {},
+      checkpoints: savedState.checkpoints || [],
+      currentCheckpointIndex: savedState.currentCheckpointIndex || 0,
+      state: OperationState.PAUSED,
+      stats: savedState.stats || { processed: 0, total: 0, success: 0, failed: 0 },
+      timestamp: savedState.savedAt || Date.now(),
+      checkpointData: savedState.checkpointData || null
+    });
+    log.info('resumableOp', 'Restored PAUSED operation from storage: ' + operationId);
+    this._notifyUIStateChanged();
+    return operationId;
   }
 
   /**

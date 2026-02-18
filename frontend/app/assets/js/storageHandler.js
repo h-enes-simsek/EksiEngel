@@ -751,6 +751,7 @@ class StorageHandler {
   // ============================
 
   static RESUMABLE_OPERATION_KEY_PREFIX = 'resumableOp_';
+  static LAST_OPERATION_RESULT_KEY = 'lastOperationResult';
 
   /**
    * Saves operation state for resumable operations
@@ -886,6 +887,76 @@ class StorageHandler {
           }
           resolve(keysToRemove.length);
         });
+      });
+    });
+  }
+
+
+  // ============================
+  // LAST OPERATION RESULT TRACKING
+  // ============================
+
+  /**
+   * Saves the last operation result
+   * @param {string} result - 'COMPLETED' | 'STOPPED' | 'INTERRUPTED' | 'PAUSED' | 'RUNNING'
+   * @returns {Promise<void>}
+   */
+  async saveLastOperationResult(result) {
+    return new Promise((resolve, reject) => {
+      chrome.storage.local.set({
+        [StorageHandler.LAST_OPERATION_RESULT_KEY]: {
+          result: result,
+          timestamp: Date.now()
+        }
+      }, () => {
+        if (chrome.runtime.lastError) {
+          log.err('storage', `Error saving last operation result: ${chrome.runtime.lastError.message}`);
+          reject(this._handleStorageError(chrome.runtime.lastError));
+        } else {
+          log.info('storage', `Saved last operation result: ${result}`);
+          resolve();
+        }
+      });
+    });
+  }
+
+  /**
+   * Gets the last operation result
+   * @returns {Promise<Object|null>} - { result: string, timestamp: number } or null
+   */
+  async getLastOperationResult() {
+    return new Promise((resolve) => {
+      chrome.storage.local.get([StorageHandler.LAST_OPERATION_RESULT_KEY], (result) => {
+        if (chrome.runtime.lastError) {
+          log.err('storage', `Error getting last operation result: ${chrome.runtime.lastError.message}`);
+          resolve(null);
+        } else {
+          const data = result[StorageHandler.LAST_OPERATION_RESULT_KEY];
+          if (data && data.result) {
+            log.info('storage', `Retrieved last operation result: ${data.result}`);
+            resolve(data);
+          } else {
+            resolve(null);
+          }
+        }
+      });
+    });
+  }
+
+  /**
+   * Clears the last operation result
+   * @returns {Promise<void>}
+   */
+  async clearLastOperationResult() {
+    return new Promise((resolve, reject) => {
+      chrome.storage.local.remove([StorageHandler.LAST_OPERATION_RESULT_KEY], () => {
+        if (chrome.runtime.lastError) {
+          log.err('storage', `Error clearing last operation result: ${chrome.runtime.lastError.message}`);
+          reject(this._handleStorageError(chrome.runtime.lastError));
+        } else {
+          log.info('storage', 'Cleared last operation result');
+          resolve();
+        }
       });
     });
   }
