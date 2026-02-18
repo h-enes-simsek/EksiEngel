@@ -426,11 +426,11 @@ margin-bottom: 8px;
 
   <div id="howToUse">
   <h3 style="text-align: center;">
-    Kullanım Klavuzu
+    Kullanım Kılavuzu
     <img src="../img/questionicon.svg" style="width:20px; position: relative; top: 3px;" id="questionMark">
   </h3>
 	<ul>
-		<li>Ekşi Sözlük Arayüzü Üzerinden Kullanımı</li>
+		<li><b class="faq-bold">Ekşi Sözlük Arayüzü Üzerinden Kullanımı</b></li>
 		
 			<ol>
           Entrylerin ayar menüsü güncellendi.
@@ -441,21 +441,111 @@ margin-bottom: 8px;
 			</ol>
 		
 		<br>
-		<li>Eklenti Menüsünden Kullanımı</li>
+		<li><b class="faq-bold">Eklenti Popup Menüsü</b></li>
 		
 			<ol>
-          <li>
-            Eklenti simgesine <img src="../img/eksiengel16.png"> tıklayarak eklenti menüsünü açın.
-            <br>
-            <b class="faq-bold">Gireceğim Listedeki Yazarları Engelle / Engelini Kaldır</b> butonuna tıklayın. 
-            <br>
-            Elinizdeki yazar listesini metin kutusuna yapıştırıp, <b class="faq-bold">Engelle</b> veya <b class="faq-bold">Engeli Kaldır</b> butonuna tıklayın.
-          </li>
-          <li>
-            Eklenti simgesine <img src="../img/eksiengel16.png"> tıklayarak eklenti menüsünü açın.
-            <br>
-            <b class="faq-bold">Tüm Engellerimi Kaldır</b> butonuna tıklayın.  
-          </li>
+        <li>
+          Eklenti simgesine <img src="../img/eksiengel16.png"> tıklayarak popup menüsünü açın.
+        </li>
+        <li>
+          <b class="faq-bold">Ana İşlemler</b>: Toplu işlemler, listeler ve tarih bazlı işlemler sayfasına erişin.
+        </li>
+        <li>
+          <b class="faq-bold">Ayarlar ve Yardım</b>: Eklenti ayarları ve bu kılavuz sayfasına erişin.
+        </li>
+      </ol>
+		
+		<br>
+		<li><b class="faq-bold">Ana İşlemler Sayfası</b></li>
+		
+			<ol>
+        <li><b class="faq-bold">İşlem Durumu</b>
+          <ul>
+            <li>Aktif işlemlerin ilerleme durumu gösterilir</li>
+            <li>⚡ İşlenen, ✅ Başarılı, ⏱️ Kalan sayıları</li>
+            <li>⏸️ Duraklat: İşlemi checkpoint'te duraklatır</li>
+            <li>▶️ Devam Et: Duraklatılan işlemi kaldığı yerden devam ettirir</li>
+            <li>🛑 Durdur: İşlemi hemen sonlandırır</li>
+          </ul>
+        </li>
+        <li><b class="faq-bold">İşlemler</b> (Toplu İşlemler)
+          <ul>
+            <li><b class="faq-bold">Engelli kullanıcıları sessize al</b>: Tüm engellenenleri sessize taşır</li>
+            <li><b class="faq-bold">Sessiz kullanıcıları engelle</b>: Tüm sessizleri engelli listesine taşır</li>
+            <li><b class="faq-bold">Engellilerin başlıklarını da engelle</b>: Engellenenlerin açtığı başlıkları gizler</li>
+            <li><b class="faq-bold">Engellenen başlıkları kaldır</b>: Başlık engellerini temizler</li>
+            <li><b class="faq-bold">Tüm Engelleri Kaldır</b>: Mevcut tüm engelleri temizler</li>
+            <li><b class="faq-bold">Tüm Sessizleri Kaldır</b>: Mevcut tüm sessizleri temizler</li>
+          </ul>
+        </li>
+        <li><b class="faq-bold">Tarih Bazlı İşlemler</b>
+          <ul>
+            <li>Kayıt tarihine göre iki farklı işlem yapılabilir:</li>
+            <li><b class="faq-bold">Filtre Kuralları</b>: Ayarlar sayfasından tanımlanan kurallara göre engelleme</li>
+            <li><b class="faq-bold">Toplu İşlem</b>: Mevcut listedeki kullanıcıları tarih kriterine göre işleme
+              <ul>
+                <li>Kaynak: Engellenenler, Sessizler veya Yazar Listesi</li>
+                <li>Kriter: Yaş küçüktür/büyüktür, Tarihten önce/sonra</li>
+                <li>Eylem: Engelle, Sessize Al, Engel Kaldır, Sessizden Çıkar, Takip Et</li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+        <li><b class="faq-bold">Liste Yönetimi</b>
+          <ul>
+            <li><b class="faq-bold">Sessiz Kullanıcılar</b>: Sayı, yenileme ve CSV dışa aktarma</li>
+            <li><b class="faq-bold">Engellenmiş Kullanıcılar</b>: Sayı, yenileme ve CSV dışa aktarma</li>
+            <li><b class="faq-bold">Yazar Listesi İşlemleri</b>: Özel listeden toplu engelleme/kaldırma</li>
+          </ul>
+        </li>
+        <li><b class="faq-bold">İşlem Geçmişi</b>
+          <ul>
+            <li><b class="faq-bold">Sıradaki İşlemler</b>: Bekleyen görevler</li>
+            <li><b class="faq-bold">Tamamlanan İşlemler</b>: Biten işlemlerin sonuçları</li>
+          </ul>
+        </li>
+      </ol>
+		
+		<br>
+		<li><b class="faq-bold">Ayarlar Sayfası</b></li>
+		
+			<ol>
+        <li><b class="faq-bold">İşlem Ayarları</b>
+          <ul>
+            <li><b class="faq-bold">Engelle veya sessize al</b>: İşlemlerin engelleme mi sessize alma mı yapacağı</li>
+            <li><b class="faq-bold">Başlıklarını da engelle</b>: Engellenenlerin başlıklarını da gizle</li>
+            <li><b class="faq-bold">Çaylak yazarları da engelle</b>: Favori/takipçi engelinde çaylakları dahil et</li>
+            <li><b class="faq-bold">Takip ettiğim yazarları engelleme</b>: Takip edilenleri koru</li>
+            <li><b class="faq-bold">Sadece gerekli işlemleri yap</b>: Tekrar engellemeyi önle</li>
+            <li><b class="faq-bold">Yeşil ve sarı tikleri gizle</b>: Premium hesap ikonlarını gizle</li>
+            <li><b class="faq-bold">Toplanan verileri gönder</b>: Anonim istatistik paylaşımı</li>
+          </ul>
+        </li>
+        <li><b class="faq-bold">Tarih Filtresi</b>
+          <ul>
+            <li><b class="faq-bold">Filtre Kuralları</b>: Kayıt tarihine göre engelleme kriterleri tanımlayın</li>
+            <li><b class="faq-bold">Önbellek</b>: Kayıt tarihleri için 30 günlük önbellek yönetimi</li>
+            <li><b class="faq-bold">Depolama Kullanımı</b>: Kuyruk ve işlem verilerinin boyutu</li>
+          </ul>
+        </li>
+        <li><b class="faq-bold">Görünüm</b>
+          <ul>
+            <li>Açık/Koyu tema seçimi</li>
+          </ul>
+        </li>
+      </ol>
+		
+		<br>
+		<li><b class="faq-bold">Yazar Listesi Sayfası</b></li>
+		
+			<ol>
+        <li>Metin kutusuna yazar nicklerini yazın (satır başına bir tane)</li>
+        <li>
+          <b class="faq-bold">🚫 Engelle</b>: Listedeki tüm yazarları engeller
+        </li>
+        <li>
+          <b class="faq-bold">🔓 Engel Kaldır</b>: Listedeki yazarların engellerini kaldırır
+        </li>
       </ol>
 	</ul>
   

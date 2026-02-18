@@ -1411,3 +1411,45 @@ The "Kaynak" (Source) column displayed raw `banSource` enum values like "1", "6"
 - Users can immediately understand the operation type
 - Cleaner, more compact table layout
 - Consistent Turkish terminology throughout UI
+
+### Commit 38: Update User Guide Documentation (2026-02-18)
+**Purpose:** Update the Kullanım Kılavuzu in faq.html to reflect all current features
+
+**Changes:**
+
+Completely rewrote the user guide section with comprehensive documentation for all features:
+
+1. **Ekşi Sözlük Arayüzü Üzerinden Kullanımı**
+   - Kept existing content with entry menu and author profile screenshots
+
+2. **Eklenti Popup Menüsü** (Updated)
+   - Removed outdated list input feature description
+   - Updated to reflect current popup buttons: "Ana İşlemler" and "Ayarlar ve Yardım"
+
+3. **Ana İşlemler Sayfası** (NEW)
+   - İşlem Durumu: Progress display, pause/resume/stop controls
+   - İşlemler: 6 bulk operations with descriptions
+   - Tarih Bazlı İşlemler: Date filter rules and bulk actions
+   - Liste Yönetimi: Muted/blocked lists, CSV export, author list
+   - İşlem Geçmişi: Queue and completed operations tables
+
+4. **Ayarlar Sayfası** (NEW)
+   - İşlem Ayarları: All 7 settings with descriptions
+   - Tarih Filtresi: Rules, cache, and storage management
+   - Görünüm: Theme toggle
+
+5. **Yazar Listesi Sayfası** (NEW)
+   - Bulk block/unblock from custom author list
+
+**Styling:**
+- All main section titles now use `<b class="faq-bold">` for consistent bold styling
+- Dark mode compatible via existing CSS rules
+
+**Files Modified:**
+- `faq.html` - Rewrote user guide section (472 → 562 lines)
+- `AGENTS.md` - This documentation
+
+**Result:**
+- Users have comprehensive documentation for all features
+- Accurate reflection of current extension capabilities
+- Better user onboarding experience
