@@ -9,12 +9,23 @@ function applyTheme() {
 const saveAuthorListToStorage = () => {
   const userListString = document.getElementById("userList").value;
   chrome.storage.local.set({ "userList": userListString }, () => {
-    if(!chrome.runtime.error) blinkSavedMsg();
+    if(!chrome.runtime.error) showSavedMsg();
     else {
       console.log("chrome.storage.local.set runtime error");
       alert("chrome.storage.local.set runtime error");
     }
   });
+};
+
+const showSavedMsg = () => {
+  const elem = document.getElementById('status');
+  elem.innerHTML = "Yazarlar kaydedildi.";
+};
+
+const showStatus = (message, isError = false) => {
+  const elem = document.getElementById('status');
+  elem.innerHTML = message;
+  elem.style.color = isError ? 'var(--danger-color, #dc3545)' : 'var(--text-muted)';
 };
 
 document.getElementById("startBan").addEventListener("click", () => {
@@ -36,23 +47,6 @@ document.getElementById("startUndoban").addEventListener("click", () => {
     }
   });
 });
-
-const blinkSavedMsg = () => {
-  const elem = document.getElementById('status');
-  elem.innerHTML = "Girilen yazarlar yerel hafızaya kaydedildi, engelleme/engeli kaldırma işlemi başlayacak.";
-  let counter = 4;
-  setInterval(() => {
-    counter--;
-    elem.style.display = (elem.style.display == 'none' ? '' : 'none');
-    if (counter === 0) clearInterval();
-  }, 100);
-};
-
-const showStatus = (message, isError = false) => {
-  const elem = document.getElementById('status');
-  elem.innerHTML = message;
-  elem.style.color = isError ? 'var(--danger-color, #dc3545)' : 'var(--text-muted)';
-};
 
 document.getElementById("importCSV").addEventListener("click", () => {
   document.getElementById("csvFileInput").click();
@@ -85,7 +79,8 @@ document.getElementById("csvFileInput").addEventListener("change", (event) => {
       const textarea = document.getElementById("userList");
       textarea.value = usernames.join('\n');
       
-      showStatus(`${usernames.length} yazar yüklendi`);
+      saveAuthorListToStorage();
+      showStatus(`${usernames.length} yazar yüklendi ve kaydedildi`);
     } catch (error) {
       console.error("CSV import error:", error);
       showStatus("CSV dosyası okunamadı", true);

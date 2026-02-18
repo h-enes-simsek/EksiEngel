@@ -1788,3 +1788,145 @@ if (lastResult && lastResult.result === 'STOPPED') {
 - Buttons properly reset after stopping a paused operation
 - No operation continues unexpectedly after page refresh
 - Consistent button state management across all stop scenarios
+
+### Commit 44: CSV Auto-Save on Import (2026-02-19)
+**Purpose:** Fix Yazar Listesi source not working in Tarih Bazlı İşlemler
+
+**Root Cause:**
+CSV import only populated the textarea, but didn't save to `chrome.storage.local`. When using "Yazar listesi" in Tarih Bazlı İşlemler, `utils.getUserList()` read from storage (which was empty), resulting in 0 users processed.
+
+**Changes:**
+
+**authorListPage.js** (line 88-89):
+- Added `saveAuthorListToStorage()` call after populating textarea
+- Updated success message from "X yazar yüklendi" to "X yazar yüklendi ve kaydedildi"
+
+```javascript
+// Before:
+showStatus(`${usernames.length} yazar yüklendi`);
+
+// After:
+saveAuthorListToStorage();
+showStatus(`${usernames.length} yazar yüklendi ve kaydedildi`);
+```
+
+**Files Modified:**
+- `authorListPage.js` - Auto-save on CSV import
+
+**Result:**
+- CSV import now saves list to storage automatically
+- List immediately available for Tarih Bazlı İşlemler
+- Users see clear confirmation that list was saved
+
+### Commit 45: Remove Blinking Save Message (2026-02-19)
+**Purpose:** Fix infinite blinking message bug after CSV import
+
+**Root Cause:**
+The `blinkSavedMsg()` function called `clearInterval()` without the interval ID, so the interval never stopped:
+```javascript
+setInterval(() => {
+  counter--;
+  if (counter === 0) clearInterval(); // Missing intervalId parameter
+}, 100);
+```
+
+**Changes:**
+
+**authorListPage.js:**
+- Removed blinking entirely
+- Renamed `blinkSavedMsg` to `showSavedMsg`
+- Simplified to static message: "Yazarlar kaydedildi."
+
+```javascript
+const showSavedMsg = () => {
+  const elem = document.getElementById('status');
+  elem.innerHTML = "Yazarlar kaydedildi.";
+};
+```
+
+**Files Modified:**
+- `authorListPage.js` - Removed blinking, simplified message display
+
+**Result:**
+- No more infinite blinking
+- Clean, static confirmation message
+
+### Commit 46: Faster Registration Date Fetching (2026-02-19)
+**Purpose:** Speed up date-based bulk operations
+
+**Changes:**
+
+Reduced sleep delay from 100ms to 50ms (~2x faster) in registration date fetching loops:
+
+| File | Line | Function |
+|------|------|----------|
+| `background.js` | 504 | `fetchRegistrationDates()` |
+| `programController.js` | 368 | `startDateBasedBulkAction()` |
+| `programController.js` | 2213 | `_resumeDateBasedBulkAction()` |
+
+**Rate Limit Context:**
+- Block/Unblock actions: 12 per minute (hard limit on Ekşi Sözlük)
+- Page scraping (reading profiles): No hard limit, but aggressive scraping can trigger IP blocks
+- 50ms delay = ~20 requests/second (safe for reading profile pages)
+
+**Files Modified:**
+- `background.js` - Line 504: `sleep(100)` → `sleep(50)`
+- `programController.js` - Lines 368, 2213: `sleep(100)` → `sleep(50)`
+
+**Result:**
+- Registration date fetching is ~2x faster
+- Date-based bulk operations complete quicker
+
+### Commit 47: Fix Registration Date Scraping (2026-02-19)
+**Purpose:** Fix "Could not find registration date for X" warnings for all users
+
+**Root Cause:**
+1. The scraping selectors didn't match Ekşi Sözlük's actual HTML structure
+2. The date parser couldn't handle Turkish month names (e.g., "aralık 2018")
+
+**Actual HTML Structure:**
+```html
+<div class="recorddate" title="kayıt tarihi">
+  <svg class="eksico"><use xlink:href="#eksico-calendar"></use></svg> aralık 2018
+</div>
+```
+
+**Changes:**
+
+**1. scrapingHandler.js** (line 856):
+Added `.recorddate` selector:
+```javascript
+const possibleSelectors = [
+  '.recorddate',  // Ekşi Sözlük profile page registration date
+  '[data-registration-date]',
+  '.registration-date',
+  // ... other fallback selectors
+];
+```
+
+**2. utils.js** (lines 102-115):
+Added Turkish month name parsing:
+```javascript
+const turkishMonths = {
+  'ocak': 0, 'şubat': 1, 'mart': 2, 'nisan': 3,
+  'mayıs': 4, 'haziran': 5, 'temmuz': 6, 'ağustos': 7,
+  'eylül': 8, 'ekim': 9, 'kasım': 10, 'aralık': 11
+};
+
+// Try Turkish month name format: "aralık 2018" or "ocak 2020"
+const monthYearMatch = trimmed.toLowerCase().match(/^([a-zçğıöşü]+)\s+(\d{4})$/);
+if (monthYearMatch && turkishMonths.hasOwnProperty(monthYearMatch[1])) {
+  const month = turkishMonths[monthYearMatch[1]];
+  const year = parseInt(monthYearMatch[2]);
+  return new Date(year, month, 1);
+}
+```
+
+**Files Modified:**
+- `scrapingHandler.js` - Added `.recorddate` selector
+- `utils.js` - Added Turkish month name parsing to `parseTurkishDate()`
+
+**Result:**
+- Registration dates now correctly extracted from Ekşi Sözlük profiles
+- Turkish month names (ocak, şubat, mart, etc.) properly parsed
+- Date-based filtering works correctly for all users

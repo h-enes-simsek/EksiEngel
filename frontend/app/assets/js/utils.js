@@ -98,6 +98,21 @@ export function parseTurkishDate(dateStr) {
   if (!dateStr || typeof dateStr !== 'string') return null;
   
   const trimmed = dateStr.trim();
+
+  // Turkish month names
+  const turkishMonths = {
+    'ocak': 0, 'şubat': 1, 'mart': 2, 'nisan': 3,
+    'mayıs': 4, 'haziran': 5, 'temmuz': 6, 'ağustos': 7,
+    'eylül': 8, 'ekim': 9, 'kasım': 10, 'aralık': 11
+  };
+
+  // Try Turkish month name format: "aralık 2018" or "ocak 2020"
+  const monthYearMatch = trimmed.toLowerCase().match(/^([a-zçğıöşü]+)\s+(\d{4})$/);
+  if (monthYearMatch && turkishMonths.hasOwnProperty(monthYearMatch[1])) {
+    const month = turkishMonths[monthYearMatch[1]];
+    const year = parseInt(monthYearMatch[2]);
+    return new Date(year, month, 1);
+  }
   
   // Try ISO format first (YYYY-MM-DD)
   const isoMatch = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})/);

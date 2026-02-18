@@ -853,6 +853,7 @@ class ScrapingHandler
       
       // Try to find by common patterns
       const possibleSelectors = [
+        '.recorddate',  // Ekşi Sözlük profile page registration date
         '[data-registration-date]',
         '.registration-date',
         '.user-registration-date',

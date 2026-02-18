@@ -501,7 +501,7 @@ async function fetchRegistrationDates(authorNames, relations) {
       }
       
       // Small delay to avoid rate limiting
-      await utils.sleep(100);
+      await utils.sleep(50);
     } catch (err) {
       log.err("bg", `Error fetching registration date for ${username}: ${err}`);
     }

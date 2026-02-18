@@ -365,7 +365,7 @@ class ProgramController {
             notificationHandler.notifyStatus(`Kayıt tarihi alınıyor: ${fetchedCount}/${usersToFetch.length}`);
           }
           
-          await utils.sleep(100);
+          await utils.sleep(50);
         } catch (err) {
           log.err("progctrl", `Error fetching registration date for ${username}: ${err}`);
         }
@@ -2210,7 +2210,7 @@ notificationHandler.notify(`${totalCount} adet başlıkları engellenen kullanı
             notificationHandler.notifyStatus(`Kayıt tarihi alınıyor: ${fetchedCount}/${usersToFetch.length}`);
           }
           
-          await utils.sleep(100);
+          await utils.sleep(50);
         } catch (err) {
           log.err("progctrl", `Error fetching registration date for ${username}: ${err}`);
         }
