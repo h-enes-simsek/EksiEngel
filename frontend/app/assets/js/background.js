@@ -26,12 +26,23 @@ async function initializeOperationState() {
   try {
     const lastResult = await storageHandler.getLastOperationResult();
     
-    // Check for paused operations in storage and restore them to registry
+    // Check for paused operations in storage
     const pausedOps = await storageHandler.listResumableOperations();
-    for (const opState of pausedOps) {
-      if (opState.operationState === 'PAUSED') {
-        log.info('bg', 'Restoring PAUSED operation from storage: ' + opState.operationId);
-        resumableOperationRegistry.restoreOperation(opState.operationId, opState);
+    
+    // Only restore PAUSED operations if the last result was actually PAUSED
+    // If it was STOPPED, the operation should not be restored
+    if (lastResult && lastResult.result === 'STOPPED') {
+      log.info('bg', 'Last operation was STOPPED - clearing any leftover paused operations');
+      for (const opState of pausedOps) {
+        await storageHandler.clearOperationState(opState.operationId);
+      }
+    } else if (lastResult && lastResult.result === 'PAUSED') {
+      // Only restore PAUSED operations if lastResult confirms it was intentionally paused
+      for (const opState of pausedOps) {
+        if (opState.operationState === 'PAUSED') {
+          log.info('bg', 'Restoring PAUSED operation from storage: ' + opState.operationId);
+          resumableOperationRegistry.restoreOperation(opState.operationId, opState);
+        }
       }
     }
     

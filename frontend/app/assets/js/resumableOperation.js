@@ -198,14 +198,16 @@ export class ResumableOperationRegistry {
       // Send FINISH notification to properly complete the task in queue
       notificationHandler.finishErrorEarlyStop(banSource, null, processQueue.currentItemMetadata);
       
+      // Save STOPPED result FIRST before clearing state (prevents race condition on page refresh)
+      await storageHandler.saveLastOperationResult('STOPPED');
+      
       // First, set state to STOPPED and notify UI
       op.state = OperationState.STOPPED;
       this._notifyUIStateChanged();
       
-      // Clear state if requested
-      if (clearState) {
-        await storageHandler.clearOperationState(this._currentOperationId);
-      }
+      // ALWAYS clear state when stopping a PAUSED operation (not optional)
+      // This prevents the operation from being restored on page refresh
+      await storageHandler.clearOperationState(this._currentOperationId);
       
       // Now unregister and send INACTIVE notification to reset UI
       this._activeOperations.delete(this._currentOperationId);

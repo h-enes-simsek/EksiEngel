@@ -1686,3 +1686,105 @@ username3
 - Users can import usernames from CSV files into the Yazar Listesi page
 - Exported CSV files from muted/blocked lists can be directly used for bulk operations
 - Consistent CSV format across export and import functionality
+
+### Commit 42: Fix querySelector Empty Hash Error (2026-02-18)
+**Purpose:** Fix JavaScript error when anchor elements have empty hash href
+
+**Root Cause:**
+The `setupSmoothScrolling()` function in `notification.js` selected all anchors with `href^="#"`. If an anchor had `href="#"` (empty hash), `querySelector('#')` would throw an invalid selector error.
+
+**Changes:**
+
+**notification.js** (lines 815-830):
+```javascript
+// BEFORE:
+function setupSmoothScrolling() {
+  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+      e.preventDefault();
+      const target = document.querySelector(this.getAttribute('href'));
+      // ...
+    });
+  });
+}
+
+// AFTER:
+function setupSmoothScrolling() {
+  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+      const href = this.getAttribute('href');
+      if (href === '#') return;  // Skip empty hash
+      e.preventDefault();
+      const target = document.querySelector(href);
+      // ...
+    });
+  });
+}
+```
+
+**Files Modified:**
+- `notification.js` - Added empty hash check in `setupSmoothScrolling()`
+
+**Result:**
+- No more JavaScript errors from anchors with `href="#"`
+- Smooth scrolling still works for valid anchor links
+
+### Commit 43: Fix Button State After Stop Paused Operation (2026-02-18)
+**Purpose:** Fix buttons remaining inactive after stopping a paused operation and page refresh
+
+**Root Cause:**
+1. When stopping a PAUSED operation, `clearOperationState()` was only called if `clearState=true`
+2. `saveLastOperationResult('STOPPED')` was not called before clearing state
+3. On page refresh, `background.js` restored PAUSED operations from storage even if they were stopped
+
+**Bug Flow:**
+1. User starts operation → `lastOperationResult = 'RUNNING'`
+2. User pauses → `lastOperationResult = 'PAUSED'`, operation saved to storage
+3. User clicks stop → Operation cleared from registry but NOT from storage (optional)
+4. User refreshes page → `background.js` finds PAUSED operation in storage and restores it
+5. Buttons show wrong state (inactive) while operation appears to continue
+
+**Changes:**
+
+**1. resumableOperation.js** (lines 198-210):
+- Added `saveLastOperationResult('STOPPED')` BEFORE clearing state
+- Changed to ALWAYS clear operation state when stopping PAUSED operation (not optional)
+```javascript
+// Save STOPPED result FIRST before clearing state (prevents race condition)
+await storageHandler.saveLastOperationResult('STOPPED');
+
+// First, set state to STOPPED and notify UI
+op.state = OperationState.STOPPED;
+this._notifyUIStateChanged();
+
+// ALWAYS clear state when stopping a PAUSED operation (not optional)
+await storageHandler.clearOperationState(this._currentOperationId);
+```
+
+**2. background.js** (lines 26-47):
+- If `lastResult === 'STOPPED'`, clear any leftover paused operations from storage
+- Only restore PAUSED operations if `lastResult === 'PAUSED'` (intentionally paused)
+```javascript
+if (lastResult && lastResult.result === 'STOPPED') {
+  log.info('bg', 'Last operation was STOPPED - clearing any leftover paused operations');
+  for (const opState of pausedOps) {
+    await storageHandler.clearOperationState(opState.operationId);
+  }
+} else if (lastResult && lastResult.result === 'PAUSED') {
+  // Only restore PAUSED operations if lastResult confirms it was intentionally paused
+  for (const opState of pausedOps) {
+    if (opState.operationState === 'PAUSED') {
+      resumableOperationRegistry.restoreOperation(opState.operationId, opState);
+    }
+  }
+}
+```
+
+**Files Modified:**
+- `resumableOperation.js` - Save STOPPED result before clearing, always clear state on stop
+- `background.js` - Only restore PAUSED operations when appropriate
+
+**Result:**
+- Buttons properly reset after stopping a paused operation
+- No operation continues unexpectedly after page refresh
+- Consistent button state management across all stop scenarios
