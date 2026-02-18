@@ -138,6 +138,7 @@ body {
 .header-actions { flex-shrink: 0; }
 
 .help-btn-compact {
+    text-decoration: none;
     background: rgba(255, 255, 255, 0.15);
     border: 1px solid rgba(255, 255, 255, 0.3);
     border-radius: var(--radius-sm);
@@ -1071,7 +1072,8 @@ body {
     .header-actions { width: 100%; }
     .main-header h1 { font-size: 0.9rem; }
     .subtitle { font-size: 0.8rem; }
-    .help-btn-compact { width: 100%; justify-content: center; padding: 10px 18px; }
+    .help-btn-compact {
+    text-decoration: none; width: 100%; justify-content: center; padding: 10px 18px; }
     .help-btn-compact .btn-text { font-size: 1.2rem; }
     .card { margin-bottom: 5px; }
     .card-header { padding: 4px 8px; }
@@ -1090,7 +1092,8 @@ body {
     .main-header { padding: 5px 8px; margin-bottom: 5px; }
     .main-header h1 { font-size: 0.85rem; }
     .subtitle { font-size: 0.7rem; }
-    .help-btn-compact { padding: 8px 12px; }
+    .help-btn-compact {
+    text-decoration: none; padding: 8px 12px; }
     .help-btn-compact .btn-icon { font-size: 0.9rem; }
     .help-btn-compact .btn-text { font-size: 0.9rem; }
     .card-header h2 { font-size: 0.8rem; }

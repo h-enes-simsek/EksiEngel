@@ -43,7 +43,10 @@
         style="width: 100%; height: 200px; padding: 12px; font-size: 14px; border: 2px solid var(--border-color); border-radius: 8px; background: var(--bg-color); color: var(--text-primary); resize: vertical; box-sizing: border-box;"></textarea>
     </div>
     
+    <input type="file" id="csvFileInput" accept=".csv" style="display:none">
+    
     <div class="action-section">
+      <button id="importCSV" class="btn btn-secondary">📄 CSV Yükle</button>
       <button id="startBan" class="btn btn-success">🚫 Engelle</button>
       <button id="startUndoban" class="btn btn-danger">🔓 Engel Kaldır</button>
     </div>

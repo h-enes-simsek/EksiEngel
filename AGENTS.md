@@ -1638,3 +1638,51 @@ When a Chrome extension service worker restarts (due to idle timeout, memory pre
 - Refresh buttons (Yenile) are always clickable
 - All buttons properly reset after any stop sequence (direct stop or pause→stop)
 - Consistent button state management through buttonStateManager
+
+### Commit 41: CSV Import for Yazar Listesi (2026-02-18)
+**Purpose:** Add CSV import functionality to the Yazar Listesi page, allowing users to load usernames from CSV files exported by the extension
+
+**Changes:**
+
+**1. authorListPage.html**
+- Added hidden file input: `<input type="file" id="csvFileInput" accept=".csv" style="display:none">`
+- Added CSV import button: `<button id="importCSV" class="btn btn-secondary">📄 CSV Yükle</button>`
+
+**2. authorListPage.js** (54 → 106 lines)
+- Added `showStatus()` helper function for displaying status/error messages
+- Added click handler for `importCSV` button that triggers file input
+- Added change handler for `csvFileInput` that:
+  - Strips UTF-8 BOM character if present
+  - Handles both `\n` and `\r\n` line endings
+  - Skips "Username" header (case-insensitive) if present
+  - Filters empty lines and trims whitespace
+  - Populates textarea with loaded usernames
+  - Shows "X yazar yüklendi" on success or Turkish error message on failure
+
+**3. faq.html**
+- Updated Yazar Listesi Sayfası section with CSV Yükle documentation
+- Added: `<li><b class="faq-bold">📄 CSV Yükle</b>: CSV formatında yüklenen yazar listesini işleme tabi tutar</li>`
+
+**4. customNotification.css**
+- Added `text-decoration: none` to `.help-btn-compact` to remove underline from help button text
+
+**CSV Format Supported:**
+```
+Username
+username1
+username2
+username3
+```
+- Header "Username" is optional and will be skipped if present
+- Compatible with CSV files exported from the extension's "Listeyi CSV olarak kaydet" feature
+
+**Files Modified:**
+- `authorListPage.html` - Added file input and import button
+- `authorListPage.js` - Added CSV import functionality
+- `faq.html` - Updated documentation
+- `customNotification.css` - Fixed help button underline
+
+**Result:**
+- Users can import usernames from CSV files into the Yazar Listesi page
+- Exported CSV files from muted/blocked lists can be directly used for bulk operations
+- Consistent CSV format across export and import functionality
