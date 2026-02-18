@@ -30,7 +30,7 @@ export function createDefaultDateFilterRules() {
       value: 3650,
       valueType: "days",
       action: enums.DateFilterAction.ENGELLE,
-      description: "10 yıldan yeni hesapları engelle",
+      description: "Yapılacak işlem 10 yıldan yeni hesapları kapsar",
       isDefault: true
     }
   ];
