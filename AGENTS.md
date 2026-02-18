@@ -150,8 +150,8 @@ Comprehensive date-based filtering system to filter users by account registratio
   - Author list (from authorListPage)
   
 - **Date Criteria:**
-  - NEWER_THAN: Account age less than X (newer accounts)
-  - OLDER_THAN: Account age greater than X (older accounts)
+  - NEWER_THAN: Seçilen zamandan yeni kullanıcılar (accounts newer than selected time)
+  - OLDER_THAN: Seçilen zamandan eski kullanıcılar (accounts older than selected time)
   - BEFORE_DATE: Registered before specific date
   - AFTER_DATE: Registered after specific date
   

@@ -358,8 +358,8 @@ function createRuleElement(rule, index) {
 
 function formatCriteriaText(rule) {
   const criteriaMap = {
-    'NEWER_THAN': 'Hesap yaşı <',
-    'OLDER_THAN': 'Hesap yaşı >',
+    'NEWER_THAN': 'Seçilen zamandan yeni kullanıcılar',
+    'OLDER_THAN': 'Seçilen zamandan eski kullanıcılar',
     'BEFORE_DATE': 'Kayıt tarihi <',
     'AFTER_DATE': 'Kayıt tarihi >'
   };
