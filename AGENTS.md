@@ -2205,3 +2205,48 @@ Updated "Yazar Listesi Sayfası" section with new button descriptions.
 - Users can unblock users and follow them in one action
 - Users can unmute users and follow them in one action
 - Consistent with existing date-based bulk action functionality
+
+### Commit 54: Show Running Task in Queue (2026-02-19)
+**Purpose:** Fix the running task being overwritten when queuing a second task
+
+**Root Cause:**
+When a task is dequeued and starts running, it's removed from `_items` array. The `itemAttributes` getter only returned items from `_items`, so the running task "disappeared" from the queue table. When a second task was queued, it appeared to "replace" the running task because the running task wasn't shown.
+
+**Bug Flow:**
+1. User starts Task A (e.g., "Sessiz Listesi Yenile")
+2. Task A is dequeued from `_items` and starts processing
+3. `_items` is now empty (Task A removed)
+4. User clicks Task B (e.g., "Engelli Listesi Yenile")
+5. Task B is added to `_items`
+6. `itemAttributes` returns only Task B (Task A not in `_items`)
+7. UI shows only Task B - Task A "disappeared"
+
+**Changes:**
+
+**1. `queue.js` - Constructor**
+- Added `this._currentItem = null;` to store the currently running task
+
+**2. `queue.js` - dequeue()**
+- Store the full item in `this._currentItem` before processing starts
+- Clear it in the finally block after processing completes
+
+**3. `queue.js` - itemAttributes getter**
+- Now checks `this._pendingPromise && this._currentItem` first
+- If a task is running, adds it to the attributes array with `taskStatus: PROCESSING`
+- Then adds all queued items with `taskStatus: QUEUED`
+- `queuePosition: 0` indicates the currently running task
+- `totalQueueSize` includes the running task in the count
+
+**4. `notification.js` - Status Display**
+- Added handling for `PROCESSING` status: displays "⚡ Çalışıyor"
+- Previously only handled `QUEUED` status
+
+**Files Modified:**
+- `queue.js` - Added `_currentItem` tracking, updated `itemAttributes` getter
+- `notification.js` - Added PROCESSING status display
+
+**Result:**
+- Running task now shows in "Sıradaki İşlemler" with status "⚡ Çalışıyor"
+- Queued tasks show below with status "Sırada"
+- Both running and queued tasks are visible simultaneously
+- No more "replacement" of running task when queuing additional tasks

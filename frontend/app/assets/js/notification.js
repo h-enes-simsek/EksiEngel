@@ -1411,7 +1411,7 @@ function updatePlannedProcessesTable(plannedProcesses) {
     cell3.title = process.operationNotes || 'Açıklama yok';
     
     let cell4 = row.insertCell(3);
-    let statusDisplay = process.taskStatus === 'QUEUED' ? 'Sırada' : (process.taskStatus || 'Sırada');
+    let statusDisplay = process.taskStatus === 'QUEUED' ? 'Sırada' : (process.taskStatus === 'PROCESSING' ? '⚡ Çalışıyor' : (process.taskStatus || 'Sırada'));
     cell4.innerHTML = statusDisplay;
     cell4.title = `İşlem durumu: ${process.taskStatus}`;
     

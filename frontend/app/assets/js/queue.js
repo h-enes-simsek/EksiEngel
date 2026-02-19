@@ -136,6 +136,7 @@ class AutoQueue extends Queue {
   constructor() {
     super();
     this._pendingPromise = false;
+    this._currentItem = null;
     this._isInitialized = false;
     this._initializePersistedQueue();
   }
@@ -193,19 +194,48 @@ class AutoQueue extends Queue {
 
   get item() { return this._items; }
 
+
   get itemAttributes() {
     const attrs = [];
+    
+    // First, add the currently running task if there is one
+    if (this._pendingPromise && this._currentItem) {
+      const item = this._currentItem;
+      const action = item.action || {};
+      const metadata = action.metadata || {};
+      attrs.push({
+        banSource: action.banSource,
+        banMode: action.banMode,
+        creationDateInStr: action.creationDateInStr,
+        actionDescription: action.actionDescription || generateUnifiedDescription(action.banSource, { ...metadata, banMode: action.banMode }),
+        taskCategory: getTaskCategory(action.banSource),
+        taskComplexity: getTaskComplexity(action.banSource),
+        taskPriority: getTaskPriority(action.banSource),
+        sourceEntry: metadata.sourceEntry || null,
+        sourceAuthor: metadata.sourceAuthor || null,
+        sourceTitle: metadata.sourceTitle || null,
+        sourceList: metadata.sourceList || null,
+        targetTypes: metadata.targetTypes || [],
+        timeFilter: metadata.timeFilter || null,
+        taskStatus: enums.TaskStatus.PROCESSING,
+        operationNotes: metadata.operationNotes || "",
+        requiresUserInteraction: metadata.requiresUserInteraction || false,
+        queuePosition: 0,
+        totalQueueSize: this._items.length + 1
+      });
+    }
+    
+    // Then add all queued items
     for(let i = 0; i < this._items.length; i++) {
       const action = this._items[i].action;
       const metadata = action.metadata || {};
-      const complexity = getTaskComplexity(action.banSource);
       attrs.push({
         banSource: action.banSource,
         banMode: action.banMode,
         creationDateInStr: action.creationDateInStr,
         actionDescription: action.actionDescription || generateUnifiedDescription(action.banSource, { ...action.metadata, banMode: action.banMode }),
         taskCategory: getTaskCategory(action.banSource),
-        taskComplexity: complexity,
+        taskComplexity: getTaskComplexity(action.banSource),
         taskPriority: getTaskPriority(action.banSource),
         sourceEntry: metadata.sourceEntry || null,
         sourceAuthor: metadata.sourceAuthor || null,
@@ -217,11 +247,12 @@ class AutoQueue extends Queue {
         operationNotes: metadata.operationNotes || "",
         requiresUserInteraction: metadata.requiresUserInteraction || false,
         queuePosition: i + 1,
-        totalQueueSize: this._items.length
+        totalQueueSize: this._items.length + (this._pendingPromise ? 1 : 0)
       });
     }
     return attrs;
   }
+
 
   get isRunning() { return this._pendingPromise; }
 
@@ -238,6 +269,7 @@ class AutoQueue extends Queue {
     });
   }
 
+
   async dequeue() {
     if (this._pendingPromise) {
       console.log("Queue: Skipping dequeue - promise already pending");
@@ -245,7 +277,7 @@ class AutoQueue extends Queue {
     }
     
     // Check if programController is truly active (not just has a paused operation)
-    // We need to allow dequeue if there's only a paused operation that's being stopped
+    // We need to allow dequeue if there's only a paused operation that's about to be cleared
     if (programController && programController.isActive) {
       // Check if the only thing blocking is a paused operation that's about to be cleared
       const hasPausedOp = resumableOperationRegistry.hasPausedOperation();
@@ -277,6 +309,8 @@ class AutoQueue extends Queue {
     
     try {
       this._pendingPromise = true;
+      // Store the full item for itemAttributes to include currently running task
+      this._currentItem = item;
       this._currentItemMetadata = (item.action && item.action.metadata) ? item.action.metadata : null;
       const payload = await item.action(this);
       this._pendingPromise = false;
@@ -285,6 +319,7 @@ class AutoQueue extends Queue {
       this._pendingPromise = false;
       if (item.reject) item.reject(e);
     } finally {
+      this._currentItem = null;
       this._currentItemMetadata = null;
       console.log(`Queue: Finished processing item, queue size after: ${this._items.length}, continuing to next item...`);
       await this._saveQueueState();
@@ -292,6 +327,7 @@ class AutoQueue extends Queue {
     }
     return true;
   }
+
 
   /**
    * Trigger queue processing - called after an operation stops
