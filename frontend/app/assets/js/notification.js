@@ -1586,12 +1586,46 @@ function setupDateBulkActionUI() {
     criteriaSelect.addEventListener('change', handleBulkCriteriaChange);
   }
   
+  const unitSelect = document.getElementById('bulkUnit');
+  if (unitSelect) {
+    unitSelect.addEventListener('change', handleBulkUnitChange);
+  }
+  
   const startBtn = document.getElementById('startBulkActionBtn');
   if (startBtn) {
     startBtn.addEventListener('click', handleStartBulkAction);
   }
   
   loadDateBulkPreferences();
+}
+
+function handleBulkUnitChange() {
+  const valueInput = document.getElementById('bulkValueDays');
+  const unitSelect = document.getElementById('bulkUnit');
+  const currentValue = parseInt(valueInput.value) || 0;
+  const oldUnit = unitSelect.dataset.previousUnit || 'days';
+  const newUnit = unitSelect.value;
+  
+  // Convert the displayed value to the new unit
+  let newValue;
+  if (oldUnit === 'days') {
+    if (newUnit === 'months') newValue = Math.round(currentValue / 30);
+    else if (newUnit === 'years') newValue = Math.round(currentValue / 365);
+    else newValue = currentValue;
+  } else if (oldUnit === 'months') {
+    const days = currentValue * 30;
+    if (newUnit === 'days') newValue = days;
+    else if (newUnit === 'years') newValue = Math.round(currentValue / 12);
+    else newValue = currentValue;
+  } else if (oldUnit === 'years') {
+    const days = currentValue * 365;
+    if (newUnit === 'days') newValue = days;
+    else if (newUnit === 'months') newValue = currentValue * 12;
+    else newValue = currentValue;
+  }
+  
+  valueInput.value = newValue || 1;
+  unitSelect.dataset.previousUnit = newUnit;
 }
 
 function handleBulkCriteriaChange() {
@@ -1616,7 +1650,7 @@ async function loadDateBulkPreferences() {
     const defaults = {
       source: 'MUTED_USERS',
       criteria: 'OLDER_THAN',
-      value: 3650,
+      value: 3650,  // stored in days
       valueType: 'days',
       action: 'SESSIZDEN_CIKAR'
     };
@@ -1625,14 +1659,35 @@ async function loadDateBulkPreferences() {
       const cfg = config.dateBulkConfig;
       document.getElementById('bulkSource').value = cfg.lastSource || defaults.source;
       document.getElementById('bulkCriteria').value = cfg.lastCriteria || defaults.criteria;
-      document.getElementById('bulkValueDays').value = cfg.lastValue || defaults.value;
-      document.getElementById('bulkUnit').value = cfg.lastValueType || defaults.valueType;
       document.getElementById('bulkAction').value = cfg.lastAction || defaults.action;
+      
+      // Value is stored in days, convert for display based on valueType
+      const storedValueDays = cfg.lastValue || defaults.value;
+      const storedValueType = cfg.lastValueType || defaults.valueType;
+      
+      // Convert days to the appropriate unit for display
+      let displayValue, displayUnit;
+      if (storedValueDays >= 365 && storedValueDays % 365 === 0) {
+        displayValue = storedValueDays / 365;
+        displayUnit = 'years';
+      } else if (storedValueDays >= 30 && storedValueDays % 30 === 0) {
+        displayValue = storedValueDays / 30;
+        displayUnit = 'months';
+      } else {
+        displayValue = storedValueDays;
+        displayUnit = 'days';
+      }
+      
+      document.getElementById('bulkValueDays').value = displayValue;
+      document.getElementById('bulkUnit').value = displayUnit;
+      document.getElementById('bulkUnit').dataset.previousUnit = displayUnit;
     } else {
       document.getElementById('bulkSource').value = defaults.source;
       document.getElementById('bulkCriteria').value = defaults.criteria;
-      document.getElementById('bulkValueDays').value = defaults.value;
-      document.getElementById('bulkUnit').value = defaults.valueType;
+      // Default is 10 years (3650 days), display as years
+      document.getElementById('bulkValueDays').value = 10;
+      document.getElementById('bulkUnit').value = 'years';
+      document.getElementById('bulkUnit').dataset.previousUnit = 'years';
       document.getElementById('bulkAction').value = defaults.action;
     }
     

@@ -477,7 +477,7 @@ class ScrapingHandler
 
               if (progressCallback && typeof progressCallback === 'function') {
                 try {
-                  progressCallback({ currentPage: index, currentCount: totalCount });
+                  await progressCallback({ currentPage: index, currentCount: totalCount, newUsernames: partialListObj.authorNameList });
                 } catch (cbError) {
                   log.err("scraping", `Progress callback error: ${cbError}`);
                 }
@@ -609,7 +609,7 @@ class ScrapingHandler
 
         if (progressCallback && typeof progressCallback === 'function') {
           try {
-            await progressCallback({ currentCount: totalCount });
+            await progressCallback({ currentCount: totalCount, newUsernames: partialNameList });
           } catch (callbackError) {
             log.warn("scraping", `Error in progress callback for blocked users: ${callbackError}`);
           }
@@ -679,7 +679,7 @@ class ScrapingHandler
 
         if (progressCallback && typeof progressCallback === 'function') {
           try {
-            await progressCallback({ currentCount: totalCount });
+            await progressCallback({ currentCount: totalCount, newUsernames: partialNameList });
           } catch (callbackError) {
             log.warn("scraping", `Error in progress callback for users with blocked titles: ${callbackError}`);
           }

@@ -1977,3 +1977,186 @@ Ekşi Sözlük follow endpoint uses the same `/userrelation/` API:
 - Users can now unblock/unmute users and follow them in a single operation
 - Useful for restoring access to trusted users from blocked/muted lists
 - Combined actions execute sequentially (first unblock/unmute, then follow)
+
+### Commit 49: CSV Export/Import with Registration Dates (2026-02-19)
+**Purpose:** Include registration dates in CSV exports from Listeler and parse dates on CSV import to speed up date-based bulk operations
+
+**Changes:**
+
+**1. notificationHandler.js - CSV Export with Dates**
+- Updated `downloadCSV()` to async function
+- Fetches cached registration dates using `storageHandler.getRegistrationDatesBatch()`
+- New CSV format: `Username,RegistrationDate` with YYYY-MM-DD date format
+- Status message shows count of users with cached dates
+
+**2. authorListPage.js - CSV Import with Date Parsing**
+- Added imports: `storageHandler`, `utils`
+- Added `parseCSVLine()` helper for proper CSV parsing with quote handling
+- Added `parseRegistrationDate()` helper supporting YYYY-MM-DD, ISO, and Turkish date formats
+- CSV import now:
+  - Detects and parses `Username,RegistrationDate` format
+  - Saves dates from CSV to cache via `storageHandler.saveRegistrationDatesBatch()`
+  - Does NOT fetch missing dates (date-based operations will fetch when needed)
+  - Shows status with count of cached dates from file
+
+**3. programController.js - Registration Date Fetching on List Refresh**
+- Updated `refreshMutedList()` to fetch and cache registration dates after scraping usernames
+- Updated `refreshBlockedList()` to fetch and cache registration dates after scraping usernames
+- After saving usernames, checks for cached dates and fetches missing ones from Ekşi Sözlük
+- Shows progress during date fetching: "Kayıt tarihi getiriliyor: X/Y"
+- Respects early stop during date fetching
+
+**4. faq.html - Documentation Updates**
+- Updated "Liste Yönetimi" section to note CSV exports include registration dates
+- Updated "Yazar Listesi Sayfası" section with:
+  - New CSV format documentation
+  - Date format specification (YYYY-MM-DD)
+  - Note that dates from CSV are cached automatically
+
+**CSV Format:**
+```
+Username,RegistrationDate
+username1,2018-12-01
+username2,2020-03-15
+username3,
+```
+- Old format (`Username` only, one per line) still supported
+- Empty date column means no cached date available
+- Users without dates are skipped in date-based operations (likely banned accounts)
+
+**Files Modified:**
+- `notificationHandler.js` - Updated `downloadCSV()` to include dates
+- `authorListPage.js` - Added date parsing on import
+- `programController.js` - Added date fetching to refreshMutedList() and refreshBlockedList()
+- `faq.html` - Updated documentation
+
+**Result:**
+- CSV exports now include cached registration dates
+- CSV imports parse and cache dates from file
+- List refresh (Yenile) fetches registration dates during scraping (parallel)
+- Date-based bulk operations only use cached dates (users without dates are skipped)
+- Seamless workflow: refresh list → export → import to author list → use in date-based operations
+
+### Commit 50: Parallel Date Fetching & Skip Users Without Dates (2026-02-19)
+**Purpose:** Improve efficiency by fetching dates during scraping and skipping users without cached dates in bulk operations
+
+**Changes:**
+
+**1. scrapingHandler.js - Progress Callback Enhancement**
+- `scrapeAllMutedUsers()` (line 480): Added `newUsernames` to progress callback
+- `scrapeAllBlockedUsers()` (line 612): Added `newUsernames` to progress callback
+- Progress callback now passes `{ currentCount, newUsernames }` instead of just `{ currentCount }`
+
+**2. programController.js - Parallel Date Fetching During Scraping**
+- `refreshMutedList()` (lines 1495-1537): 
+  - Added `datesFetchedCount` counter
+  - Fetches registration dates for each batch during scraping (not after)
+  - Shows status: "Sessiz kullanıcılar: X, kayıt tarihleri: Y"
+  - Removed 35 lines of post-scraping date fetching code
+- `refreshBlockedList()` (lines 1661-1703):
+  - Same parallel fetching approach
+  - Shows status: "Engellenmiş kullanıcılar: X, kayıt tarihleri: Y"
+
+**3. programController.js - Skip Users Without Cached Dates**
+- `startDateBasedBulkAction()` (lines 298-328):
+  - Removed date scraping loop (60+ lines)
+  - Now only uses cached dates from storage
+  - Users without cached dates are skipped (likely banned users)
+  - Shows: "X kullanıcının kayıt tarihi yok (atlanacak)"
+- `_resumeDateBasedBulkAction()` (lines 2157-2184):
+  - Same simplification - no date scraping
+  - Only processes users with cached dates
+
+**Rationale:**
+- Users without dates in CSV are banned accounts whose profiles cannot be accessed
+- Scraping banned users' profiles would fail anyway
+- Parallel fetching during scraping is faster than sequential fetching after
+- Reduces unnecessary network requests
+
+**Files Modified:**
+- `scrapingHandler.js` - Added `newUsernames` to progress callbacks
+- `programController.js` - Parallel date fetching, removed date scraping from bulk operations
+- `faq.html` - Updated documentation to note users without dates are skipped
+
+**Result:**
+- List refresh now fetches dates in parallel during scraping
+- Date-based bulk operations only use cached dates (no scraping)
+- Banned users without dates are skipped automatically
+- Faster operation completion with fewer failed requests
+
+### Commit 51: Fix Unit Conversion Bug in Date-Based Bulk Actions (2026-02-19)
+**Purpose:** Fix the bug where changing the unit dropdown without changing the value caused incorrect date filtering
+
+**Root Cause:**
+The default value was stored as `3650` (days) with `valueType: 'days'`. If the user changed the unit to "years" without changing the number, the value would be multiplied again:
+- Default: 3650 days
+- User changes unit to "years": `value = 3650 * 365 = 1,332,250` days!
+
+This caused the date filter to never match any users.
+
+**Changes:**
+
+**1. `notification.js` - `loadDateBulkPreferences()`**
+- Value is stored in days, but displayed in the most appropriate unit
+- 3650 days → displayed as "10 years"
+- 30 days → displayed as "1 month"
+- Sets `previousUnit` data attribute for unit change tracking
+
+**2. `notification.js` - `handleBulkUnitChange()` (NEW)**
+- Added handler for unit dropdown change
+- Converts the displayed value to the new unit when user changes unit
+- Examples:
+  - 10 years → days: 3650
+  - 3650 days → years: 10
+  - 12 months → years: 1
+
+**3. `notification.js` - `setupDateBulkActionUI()`**
+- Added event listener for unit dropdown change
+
+**Files Modified:**
+- `notification.js` - Fixed unit conversion, added `handleBulkUnitChange()`
+
+**Result:**
+- Default displays as "10 years" (not "3650 days")
+- Changing unit dropdown correctly converts the displayed value
+- Date filter condition works correctly for all unit combinations
+
+### Commit 52: Fix Missing await in Muted Users Progress Callback (2026-02-19)
+**Purpose:** Fix registration dates not being fetched for all muted users during list refresh
+
+**Root Cause:**
+In `scrapingHandler.js`, the `progressCallback` for muted users (line 480) was missing `await`, while the same callback for blocked users (line 612) had `await`.
+
+**Bug Flow:**
+1. Page 1 scraped (25 users)
+2. `progressCallback` called but NOT awaited
+3. Scraping immediately continued to sleep 500ms then fetch next page
+4. Date fetching for 25 users started in background but didn't complete in time
+5. User stopped operation → only 6 dates fetched out of 100 users
+
+**Log Evidence:**
+```
+Sessiz kullanıcılar: 25, kayıt tarihleri: 4
+Sessiz kullanıcılar: 50, kayıt tarihleri: 5
+Sessiz kullanıcılar: 75, kayıt tarihleri: 5
+Sessiz kullanıcılar: 100, kayıt tarihleri: 6
+```
+
+Only 6 dates were fetched because the callback wasn't awaited.
+
+**Fix:**
+Added `await` to the muted users progressCallback:
+```javascript
+// Before:
+progressCallback({ currentPage: index, currentCount: totalCount, newUsernames: ... });
+
+// After:
+await progressCallback({ currentPage: index, currentCount: totalCount, newUsernames: ... });
+```
+
+**Files Modified:**
+- `scrapingHandler.js` - Added `await` to muted users progressCallback (line 480)
+
+**Result:**
+- Date fetching now completes for each page before scraping continues to next page
+- All registration dates are properly fetched during list refresh

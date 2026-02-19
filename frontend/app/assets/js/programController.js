@@ -296,93 +296,16 @@ class ProgramController {
       }
       
       log.info("progctrl", `Found ${userList.length} users in source list.`);
-      notificationHandler.notify(`${userList.length} kullanıcı bulundu. Kayıt tarihleri kontrol ediliyor...`);
       
-      // Fetch registration dates for all users
-      const userRelations = new Map();
-      for (const username of userList) {
-        userRelations.set(username, { registrationDate: null });
-      }
-      
-      // Use the same fetchRegistrationDates logic from background.js
+      // Get cached registration dates - users without dates are skipped (likely banned)
       const cachedDates = await storageHandler.getRegistrationDatesBatch(userList);
-      const usersToFetch = userList.filter(name => !cachedDates.has(name));
+      const usersWithDates = userList.filter(name => cachedDates.has(name));
+      const usersWithoutDates = userList.filter(name => !cachedDates.has(name));
       
-      log.info("progctrl", `Found ${cachedDates.size} cached dates, need to fetch ${usersToFetch.length}`);
+      log.info("progctrl", `Found ${cachedDates.size} cached dates, ${usersWithoutDates.length} users without dates (skipped)`);
       
-      let fetchedCount = 0;
-      const newlyFetchedDates = new Map();
-      
-      // Save checkpoint before starting date fetching
-      await resumableOperationRegistry.checkpointReached({
-        stage: 'FETCH_DATES',
-        userList: userList,
-        fetchedCount: 0,
-        processedCount: 0
-      });
-      
-      for (let i = 0; i < usersToFetch.length; i++) {
-        const username = usersToFetch[i];
-        
-        if (this.earlyStop) break;
-        
-        // Check for pause/stop more frequently - every 5 users
-        if (i % 5 === 0 && i > 0) {
-          const status = await checkPauseOrStop();
-          if (status.paused) {
-            // Save checkpoint with current progress
-            await resumableOperationRegistry.checkpointReached({
-              stage: 'FETCH_DATES',
-              userList: userList,
-              fetchedCount: i,
-              processedCount: 0,
-              newlyFetchedDates: Array.from(newlyFetchedDates.entries())
-            });
-            return;
-          }
-          if (status.stopped) {
-            notificationHandler.finishErrorEarlyStop(enums.BanSource.DATE_BASED_BULK, enums.BanMode.BAN, processQueue.currentItemMetadata);
-            return;
-          }
-          if (status.timeout) {
-            log.info("progctrl", "Pause timed out during date fetching, continuing...");
-          }
-        }
-        
-        try {
-          const regDate = await scrapingHandler.scrapeRegistrationDate(username);
-          if (regDate) {
-            newlyFetchedDates.set(username, regDate);
-            const relation = userRelations.get(username);
-            if (relation) {
-              relation.registrationDate = regDate;
-              userRelations.set(username, relation);
-            }
-          }
-          
-          fetchedCount++;
-          if (fetchedCount % 10 === 0) {
-            notificationHandler.notifyStatus(`Kayıt tarihi alınıyor: ${fetchedCount}/${usersToFetch.length}`);
-          }
-          
-          await utils.sleep(50);
-        } catch (err) {
-          log.err("progctrl", `Error fetching registration date for ${username}: ${err}`);
-        }
-      }
-      
-      // Cache newly fetched dates
-      if (newlyFetchedDates.size > 0) {
-        await storageHandler.saveRegistrationDatesBatch(newlyFetchedDates);
-      }
-      
-      // Add cached dates to relations
-      for (const [username, regDate] of cachedDates) {
-        const relation = userRelations.get(username);
-        if (relation) {
-          relation.registrationDate = regDate;
-          userRelations.set(username, relation);
-        }
+      if (usersWithoutDates.length > 0) {
+        notificationHandler.notify(`${userList.length} kullanıcı bulundu. ${usersWithoutDates.length} kullanıcının kayıt tarihi yok (atlanacak).`);
       }
       
       // Create a filter rule to evaluate users
@@ -393,12 +316,13 @@ class ProgramController {
         action: 'MATCH' // This is a pseudo-action for filtering
       };
       
-      // Filter users based on date criteria
+      // Filter users based on date criteria (only users with cached dates)
       const matchingUsers = [];
-      for (const [username, userData] of userRelations) {
+      for (const username of usersWithDates) {
         if (this.earlyStop) break;
         
-        if (userData.registrationDate && utils.evaluateDateFilter(userData.registrationDate, filterRule)) {
+        const regDate = cachedDates.get(username);
+        if (regDate && utils.evaluateDateFilter(regDate, filterRule)) {
           matchingUsers.push(username);
         }
       }
@@ -1492,6 +1416,8 @@ class ProgramController {
     );
 
     try {
+      let datesFetchedCount = 0;
+
       const updateProgress = async (progress) => {
         if (this.tabId) {
           chrome.tabs.sendMessage(this.tabId, {
@@ -1500,6 +1426,38 @@ class ProgramController {
           }).catch(e => log.warn("progctrl", `Error sending progress message: ${e}`));
         }
         await storageHandler.saveMutedUserCount(progress.currentCount);
+
+        // Fetch registration dates for the new usernames batch during scraping
+        if (progress.newUsernames && progress.newUsernames.length > 0) {
+          const cachedDates = await storageHandler.getRegistrationDatesBatch(progress.newUsernames);
+          const usersToFetch = progress.newUsernames.filter(u => !cachedDates.has(u));
+          
+          if (usersToFetch.length > 0) {
+            const newlyFetchedDates = new Map();
+            
+            for (const username of usersToFetch) {
+              if (this.earlyStop) break;
+              
+              try {
+                const regDate = await scrapingHandler.scrapeRegistrationDate(username);
+                if (regDate) {
+                  newlyFetchedDates.set(username, regDate);
+                  datesFetchedCount++;
+                }
+                
+                await utils.sleep(50);
+              } catch (err) {
+                log.warn("progctrl", `Could not fetch registration date for ${username}: ${err}`);
+              }
+            }
+            
+            if (newlyFetchedDates.size > 0) {
+              await storageHandler.saveRegistrationDatesBatch(newlyFetchedDates);
+            }
+            
+            notificationHandler.notifyStatus(`Sessiz kullanıcılar: ${progress.currentCount}, kayıt tarihleri: ${datesFetchedCount}`);
+          }
+        }
       };
 
       if (initialState && initialState.totalCount > 0) {
@@ -1624,6 +1582,8 @@ class ProgramController {
     );
 
     try {
+      let datesFetchedCount = 0;
+
       const updateProgress = async (progress) => {
         if (this.tabId) {
           chrome.tabs.sendMessage(this.tabId, {
@@ -1632,6 +1592,38 @@ class ProgramController {
           }).catch(e => log.warn("progctrl", `Error sending progress message: ${e}`));
         }
         await storageHandler.saveBlockedUserCount(progress.currentCount);
+
+        // Fetch registration dates for the new usernames batch during scraping
+        if (progress.newUsernames && progress.newUsernames.length > 0) {
+          const cachedDates = await storageHandler.getRegistrationDatesBatch(progress.newUsernames);
+          const usersToFetch = progress.newUsernames.filter(u => !cachedDates.has(u));
+          
+          if (usersToFetch.length > 0) {
+            const newlyFetchedDates = new Map();
+            
+            for (const username of usersToFetch) {
+              if (this.earlyStop) break;
+              
+              try {
+                const regDate = await scrapingHandler.scrapeRegistrationDate(username);
+                if (regDate) {
+                  newlyFetchedDates.set(username, regDate);
+                  datesFetchedCount++;
+                }
+                
+                await utils.sleep(50);
+              } catch (err) {
+                log.warn("progctrl", `Could not fetch registration date for ${username}: ${err}`);
+              }
+            }
+            
+            if (newlyFetchedDates.size > 0) {
+              await storageHandler.saveRegistrationDatesBatch(newlyFetchedDates);
+            }
+            
+            notificationHandler.notifyStatus(`Engellenmiş kullanıcılar: ${progress.currentCount}, kayıt tarihleri: ${datesFetchedCount}`);
+          }
+        }
       };
 
       if (initialState && initialState.totalCount > 0) {
@@ -2164,83 +2156,12 @@ notificationHandler.notify(`${totalCount} adet başlıkları engellenen kullanı
       
       log.info("progctrl", `Resuming with ${userList.length} users`);
       
-      // Now continue with the date filtering and action phase
-      // Build user relations map
-      const userRelations = new Map();
-      for (const username of userList) {
-        userRelations.set(username, { registrationDate: null });
-      }
-      
-      // Fetch registration dates if not already done
+      // Get cached registration dates - users without dates are skipped (likely banned)
       const cachedDates = await storageHandler.getRegistrationDatesBatch(userList);
-      const usersToFetch = userList.filter(name => !cachedDates.has(name));
+      const usersWithDates = userList.filter(name => cachedDates.has(name));
+      const usersWithoutDates = userList.filter(name => !cachedDates.has(name));
       
-      log.info("progctrl", `Found ${cachedDates.size} cached dates, need to fetch ${usersToFetch.length}`);
-      
-      let fetchedCount = 0;
-      const newlyFetchedDates = new Map();
-      
-      // Resume fetching dates from where we left off
-      const fetchStartIndex = checkpointData?.stage === 'FETCH_DATES' || checkpointData?.stage === 'FILTER_USERS' 
-        ? (checkpointData.fetchedCount || 0) 
-        : 0;
-      
-      for (let i = fetchStartIndex; i < usersToFetch.length; i++) {
-        if (this.earlyStop) break;
-        
-        const status = await checkPauseOrStop();
-        if (status.paused) {
-          // Save checkpoint and return
-          await resumableOperationRegistry.checkpointReached({
-            stage: 'FETCH_DATES',
-            userList: userList,
-            fetchedCount: i,
-            processedCount: 0
-          });
-          this._dateBasedBulkInProgress = false;
-          return { success: true, paused: true };
-        }
-        if (status.stopped) {
-          this._dateBasedBulkInProgress = false;
-          return { success: true, stopped: true };
-        }
-        
-        const username = usersToFetch[i];
-        try {
-          const regDate = await scrapingHandler.scrapeRegistrationDate(username);
-          if (regDate) {
-            newlyFetchedDates.set(username, regDate);
-            const relation = userRelations.get(username);
-            if (relation) {
-              relation.registrationDate = regDate;
-              userRelations.set(username, relation);
-            }
-          }
-          
-          fetchedCount++;
-          if (fetchedCount % 10 === 0) {
-            notificationHandler.notifyStatus(`Kayıt tarihi alınıyor: ${fetchedCount}/${usersToFetch.length}`);
-          }
-          
-          await utils.sleep(50);
-        } catch (err) {
-          log.err("progctrl", `Error fetching registration date for ${username}: ${err}`);
-        }
-      }
-      
-      // Cache newly fetched dates
-      if (newlyFetchedDates.size > 0) {
-        await storageHandler.saveRegistrationDatesBatch(newlyFetchedDates);
-      }
-      
-      // Add cached dates to relations
-      for (const [username, regDate] of cachedDates) {
-        const relation = userRelations.get(username);
-        if (relation) {
-          relation.registrationDate = regDate;
-          userRelations.set(username, relation);
-        }
-      }
+      log.info("progctrl", `Found ${cachedDates.size} cached dates, ${usersWithoutDates.length} users without dates (skipped)`);
       
       // Create a filter rule to evaluate users
       const filterRule = {
@@ -2252,10 +2173,11 @@ notificationHandler.notify(`${totalCount} adet başlıkları engellenen kullanı
       
       // Filter users based on date criteria (only if not already restored from checkpoint)
       if (matchingUsers.length === 0) {
-        for (const [username, userData] of userRelations) {
+        for (const username of usersWithDates) {
           if (this.earlyStop) break;
           
-          if (userData.registrationDate && utils.evaluateDateFilter(userData.registrationDate, filterRule)) {
+          const regDate = cachedDates.get(username);
+          if (regDate && utils.evaluateDateFilter(regDate, filterRule)) {
             matchingUsers.push(username);
           }
         }

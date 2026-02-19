@@ -1,4 +1,6 @@
 import * as enums from './enums.js';
+import { storageHandler } from './storageHandler.js';
+import * as utils from './utils.js';
 
 // Apply saved theme on load
 function applyTheme() {
@@ -52,38 +54,127 @@ document.getElementById("importCSV").addEventListener("click", () => {
   document.getElementById("csvFileInput").click();
 });
 
-document.getElementById("csvFileInput").addEventListener("change", (event) => {
+/**
+ * Parses a CSV line handling commas within values (basic CSV parsing)
+ * @param {string} line - CSV line to parse
+ * @returns {string[]} - Array of values
+ */
+const parseCSVLine = (line) => {
+  const values = [];
+  let current = '';
+  let inQuotes = false;
+  
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    
+    if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === ',' && !inQuotes) {
+      values.push(current.trim());
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  values.push(current.trim());
+  
+  return values;
+};
+
+/**
+ * Parses registration date from CSV value
+ * Supports: YYYY-MM-DD, ISO format, Turkish date formats
+ * @param {string} dateStr - Date string from CSV
+ * @returns {string|null} - ISO date string or null
+ */
+const parseRegistrationDate = (dateStr) => {
+  if (!dateStr || dateStr.trim() === '') return null;
+  
+  const trimmed = dateStr.trim();
+  
+  // Try YYYY-MM-DD format first
+  const ymdMatch = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (ymdMatch) {
+    const date = new Date(parseInt(ymdMatch[1]), parseInt(ymdMatch[2]) - 1, parseInt(ymdMatch[3]));
+    if (!isNaN(date.getTime())) {
+      return date.toISOString();
+    }
+  }
+  
+  // Use existing Turkish date parser for other formats
+  const parsed = utils.parseTurkishDate(trimmed);
+  return parsed ? parsed.toISOString() : null;
+};
+
+document.getElementById("csvFileInput").addEventListener("change", async (event) => {
   const file = event.target.files[0];
   if (!file) return;
 
   const reader = new FileReader();
   
-  reader.onload = (e) => {
+  reader.onload = async (e) => {
     try {
       let content = e.target.result;
       
+      // Remove BOM if present
       if (content.charCodeAt(0) === 0xFEFF) {
         content = content.slice(1);
       }
       
       let lines = content.split(/\r?\n/);
       
-      if (lines.length > 0 && lines[0].trim().toLowerCase() === 'username') {
-        lines = lines.slice(1);
+      // Check if CSV has header row
+      const firstLine = lines[0] ? parseCSVLine(lines[0]) : [];
+      const hasHeader = firstLine.length > 0 && firstLine[0].toLowerCase() === 'username';
+      
+      // Skip header row if present
+      const dataLines = hasHeader ? lines.slice(1) : lines;
+      
+      // Parse users and dates from CSV
+      const users = [];
+      const datesFromFile = new Map();
+      
+      for (const line of dataLines) {
+        if (!line.trim()) continue;
+        
+        const values = parseCSVLine(line);
+        const username = values[0]?.trim();
+        
+        if (username && username.length > 0) {
+          users.push(username);
+          
+          // If CSV has date column, parse it
+          if (values.length >= 2) {
+            const dateValue = values[1];
+            const parsedDate = parseRegistrationDate(dateValue);
+            if (parsedDate) {
+              datesFromFile.set(username, parsedDate);
+            }
+          }
+        }
       }
       
-      const usernames = lines
-        .map(line => line.trim())
-        .filter(line => line.length > 0);
+      if (users.length === 0) {
+        showStatus("CSV dosyasında kullanıcı bulunamadı", true);
+        return;
+      }
       
+      // Populate textarea with usernames
       const textarea = document.getElementById("userList");
-      textarea.value = usernames.join('\n');
-      
+      textarea.value = users.join('\n');
       saveAuthorListToStorage();
-      showStatus(`${usernames.length} yazar yüklendi ve kaydedildi`);
+      
+      // Save dates from CSV file to cache (if any)
+      if (datesFromFile.size > 0) {
+        await storageHandler.saveRegistrationDatesBatch(datesFromFile);
+        showStatus(`${users.length} yazar yüklendi ve kaydedildi. ${datesFromFile.size} kayıt tarihi önbelleğe alındı.`);
+      } else {
+        showStatus(`${users.length} yazar yüklendi ve kaydedildi.`);
+      }
+      
     } catch (error) {
       console.error("CSV import error:", error);
-      showStatus("CSV dosyası okunamadı", true);
+      showStatus("CSV dosyası okunamadı: " + error.message, true);
     }
   };
   

@@ -150,13 +150,25 @@ class NotificationHandler {
     }
   }
 
-  downloadCSV = (usernames, listType) => {
+  downloadCSV = async (usernames, listType) => {
     if (!Array.isArray(usernames) || usernames.length === 0) {
       this.updateButtonStatus("No usernames to export.", true);
       return;
     }
-    const csvHeader = "Username\n";
-    const csvContent = csvHeader + usernames.join("\n");
+    
+    // Fetch cached registration dates for all users
+    const cachedDates = await storageHandler.getRegistrationDatesBatch(usernames);
+    
+    // Build CSV with Username,RegistrationDate columns
+    const csvHeader = "Username,RegistrationDate\n";
+    const csvRows = usernames.map(username => {
+      const regDate = cachedDates.get(username);
+      // Format date as YYYY-MM-DD if available
+      const dateStr = regDate ? regDate.split('T')[0] : '';
+      return `${username},${dateStr}`;
+    });
+    const csvContent = csvHeader + csvRows.join("\n");
+    
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -169,7 +181,9 @@ class NotificationHandler {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    this.updateButtonStatus(`${listType === 'blocked' ? 'Blocked' : 'Muted'} user list exported.`, false);
+    
+    const cachedCount = cachedDates.size;
+    this.updateButtonStatus(`${listType === 'blocked' ? 'Blocked' : 'Muted'} list exported (${cachedCount}/${usernames.length} with cached dates).`, false);
   }
 
   handleRefreshMutedList = async () => {
@@ -197,7 +211,7 @@ class NotificationHandler {
           this.updateButtonStatus("Exporting partial list from early stop...", false);
         }
       }
-      if (usernames && usernames.length > 0) this.downloadCSV(usernames, 'muted');
+      if (usernames && usernames.length > 0) await this.downloadCSV(usernames, 'muted');
       else this.updateButtonStatus("No muted user list found in storage to export.", true);
     } catch (error) {
       console.error("notificationHandler.js", "Error exporting muted list:", error);
@@ -234,7 +248,7 @@ class NotificationHandler {
           this.updateButtonStatus("Exporting partial list from early stop...", false);
         }
       }
-      if (blockedUsernames && blockedUsernames.length > 0) this.downloadCSV(blockedUsernames, 'blocked');
+      if (blockedUsernames && blockedUsernames.length > 0) await this.downloadCSV(blockedUsernames, 'blocked');
       else this.updateButtonStatus("No blocked user list found in storage to export.", true);
     } catch (error) {
       console.error("notificationHandler.js", "Error exporting blocked list:", error);

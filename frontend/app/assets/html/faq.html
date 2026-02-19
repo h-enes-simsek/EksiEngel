@@ -493,8 +493,8 @@ margin-bottom: 8px;
         </li>
         <li><b class="faq-bold">Liste Yönetimi</b>
           <ul>
-            <li><b class="faq-bold">Sessiz Kullanıcılar</b>: Sayı, yenileme ve CSV dışa aktarma</li>
-            <li><b class="faq-bold">Engellenmiş Kullanıcılar</b>: Sayı, yenileme ve CSV dışa aktarma</li>
+            <li><b class="faq-bold">Sessiz Kullanıcılar</b>: Sayı, yenileme ve CSV dışa aktarma (kayıt tarihi dahil)</li>
+            <li><b class="faq-bold">Engellenmiş Kullanıcılar</b>: Sayı, yenileme ve CSV dışa aktarma (kayıt tarihi dahil)</li>
             <li><b class="faq-bold">Yazar Listesi İşlemleri</b>: Özel listeden toplu engelleme/kaldırma</li>
           </ul>
         </li>
@@ -541,9 +541,10 @@ margin-bottom: 8px;
         <li>Metin kutusuna yazar nicklerini yazın (satır başına bir tane)</li>
         <li><b class="faq-bold">📄 CSV Yükle</b>: CSV dosyasından yazar listesi yükler.
           <ul style="margin-top: 4px; margin-bottom: 4px;">
-            <li>Liste otomatik olarak kaydedilir</li>
-            <li>"X yazar yüklendi ve kaydedildi" onayı gösterilir</li>
-            <li>Liste hemen "Tarih Bazlı İşlemler"de kullanılabilir</li>
+            <li>CSV formatı: <code>Username,RegistrationDate</code> (eski format <code>Username</code> de desteklenir)</li>
+            <li>Kayıt tarihi YYYY-MM-DD formatında olmalıdır (örn: 2018-12-01)</li>
+            <li>Liste otomatik olarak kaydedilir, tarihler önbelleğe alınır</li>
+            <li>Kayıt tarihi olmayan kullanıcılar "Tarih Bazlı İşlemler"de atlanır (muhtemelen engellenmiş hesaplar)</li>
           </ul>
         </li>
         <li><b class="faq-bold">🚫 Engelle</b>: Listedeki tüm yazarları engeller</li>
