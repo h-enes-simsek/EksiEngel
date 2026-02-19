@@ -2160,3 +2160,48 @@ await progressCallback({ currentPage: index, currentCount: totalCount, newUserna
 **Result:**
 - Date fetching now completes for each page before scraping continues to next page
 - All registration dates are properly fetched during list refresh
+
+### Commit 53: Add Follow Actions to Author List Page (2026-02-19)
+**Purpose:** Add new buttons to Yazar Listesi page for follow and combined actions
+
+**Changes:**
+
+**1. `relationHandler.js` - Bug Fix**
+- Added missing `TargetType.FOLLOW` case in `#prepareHTTPRequest()` method
+- Parameter "b" for follow/unfollow API calls (same as Ekşi Sözlük uses)
+- This was a bug - FOLLOW was referenced but not handled, causing malformed URLs
+
+**2. `authorListPage.html` - New Buttons & Unified Styling**
+Added 3 new buttons to `.action-section`:
+- `startFollow` - "⭐ Takip Et" (follow all users in list)
+- `startUnblockFollow` - "🔓➕ Engel Kaldır ve Takip Et" (unblock then follow)
+- `startUnmuteFollow` - "🔊➕ Sessizden Çıkar ve Takip Et" (unmute then follow)
+- Changed `startBan` and `startUndoban` from `btn-success`/`btn-danger` to `btn-secondary` for consistent styling
+
+**3. `authorListPage.js` - Event Handlers**
+Added 3 new event handlers that send messages with `action` parameter:
+- TAKIP_ET: Follow users only
+- ENGEL_KALDIR_VE_TAKIP_ET: First unblock, then follow
+- SESSIZDEN_CIKAR_VE_TAKIP_ET: First unmute, then follow
+
+**4. `background.js` - Extended LIST Handler**
+- Updated `performWithRetry()` to accept `isTargetFollow` parameter (default false for backward compatibility)
+- Extended `BanSource.LIST` handler to check `message.action` parameter
+- Supports new actions while maintaining backward compatibility with legacy `banMode`
+
+**5. `faq.html` - Documentation**
+Updated "Yazar Listesi Sayfası" section with new button descriptions.
+
+**Files Modified:**
+- `relationHandler.js` - Added FOLLOW case (bug fix)
+- `authorListPage.html` - Added 3 new buttons
+- `authorListPage.js` - Added 3 new event handlers
+- `background.js` - Extended performWithRetry and LIST handler
+- `faq.html` - Updated documentation
+- `AGENTS.md` - This documentation
+
+**Result:**
+- Users can now follow users from author list
+- Users can unblock users and follow them in one action
+- Users can unmute users and follow them in one action
+- Consistent with existing date-based bulk action functionality

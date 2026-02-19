@@ -119,6 +119,8 @@ class RelationHandler
       targetTypeText = "i";
     else if(targetType == enums.TargetType.MUTE)
       targetTypeText = "u";
+    else if(targetType == enums.TargetType.FOLLOW)
+      targetTypeText = "b";
     
     let url = `${config.EksiSozlukURL}/userrelation/${banModeText}/${id}?r=${targetTypeText}`;
     return url;

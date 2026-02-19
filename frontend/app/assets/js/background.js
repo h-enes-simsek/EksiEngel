@@ -605,12 +605,12 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
     });
   };
 
-  const performWithRetry = async (banMode, id, isTargetUser, isTargetTitle, isTargetMute) => {
-    let res = await relationHandler.performAction(banMode, id, isTargetUser, isTargetTitle, isTargetMute);
+  const performWithRetry = async (banMode, id, isTargetUser, isTargetTitle, isTargetMute, isTargetFollow = false) => {
+    let res = await relationHandler.performAction(banMode, id, isTargetUser, isTargetTitle, isTargetMute, isTargetFollow);
     if(res.resultType == enums.ResultType.FAIL) {
       await handleCooldown();
       if(!programController.earlyStop) {
-        res = await relationHandler.performAction(banMode, id, isTargetUser, isTargetTitle, isTargetMute);
+        res = await relationHandler.performAction(banMode, id, isTargetUser, isTargetTitle, isTargetMute, isTargetFollow);
       }
     }
     return res;
@@ -635,7 +635,26 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
       if(programController.earlyStop) break;
       let authorId = await scrapingHandler.scrapeAuthorIdFromAuthorProfilePage(authorNameList[i]);
       authorIdList.push(authorId);
-      let res = await performWithRetry(banMode, authorId, banMode == enums.BanMode.BAN ? !config.enableMute : true, config.enableTitleBan, config.enableMute);
+      
+      let res;
+      const action = message.action;
+      
+      if (action === "TAKIP_ET") {
+        res = await performWithRetry(enums.BanMode.BAN, authorId, false, false, false, true);
+      } else if (action === "ENGEL_KALDIR_VE_TAKIP_ET") {
+        res = await performWithRetry(enums.BanMode.UNDOBAN, authorId, true, false, false, false);
+        if (res.successfulAction > 0) {
+          res = await performWithRetry(enums.BanMode.BAN, authorId, false, false, false, true);
+        }
+      } else if (action === "SESSIZDEN_CIKAR_VE_TAKIP_ET") {
+        res = await performWithRetry(enums.BanMode.UNDOBAN, authorId, false, false, true, false);
+        if (res.successfulAction > 0) {
+          res = await performWithRetry(enums.BanMode.BAN, authorId, false, false, false, true);
+        }
+      } else {
+        res = await performWithRetry(banMode, authorId, banMode == enums.BanMode.BAN ? !config.enableMute : true, config.enableTitleBan, config.enableMute);
+      }
+      
       notificationHandler.notifyOngoing(res.successfulAction, res.performedAction, authorNameList.length, processQueue.currentItemMetadata);
     }
   } else if(banSource === enums.BanSource.FAV) {

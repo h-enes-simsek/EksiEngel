@@ -50,6 +50,39 @@ document.getElementById("startUndoban").addEventListener("click", () => {
   });
 });
 
+// Follow users
+document.getElementById("startFollow").addEventListener("click", () => {
+  saveAuthorListToStorage();
+  chrome.runtime.sendMessage(null, {"banSource":enums.BanSource.LIST, "action":"TAKIP_ET"}, (response) => {
+    if (chrome.runtime.lastError) {
+      console.error("authorListPage.js: Error sending startFollow message:", chrome.runtime.lastError.message);
+      alert("Error starting follow process: " + chrome.runtime.lastError.message);
+    }
+  });
+});
+
+// Unblock and Follow
+document.getElementById("startUnblockFollow").addEventListener("click", () => {
+  saveAuthorListToStorage();
+  chrome.runtime.sendMessage(null, {"banSource":enums.BanSource.LIST, "action":"ENGEL_KALDIR_VE_TAKIP_ET"}, (response) => {
+    if (chrome.runtime.lastError) {
+      console.error("authorListPage.js: Error sending startUnblockFollow message:", chrome.runtime.lastError.message);
+      alert("Error starting unblock and follow process: " + chrome.runtime.lastError.message);
+    }
+  });
+});
+
+// Unmute and Follow
+document.getElementById("startUnmuteFollow").addEventListener("click", () => {
+  saveAuthorListToStorage();
+  chrome.runtime.sendMessage(null, {"banSource":enums.BanSource.LIST, "action":"SESSIZDEN_CIKAR_VE_TAKIP_ET"}, (response) => {
+    if (chrome.runtime.lastError) {
+      console.error("authorListPage.js: Error sending startUnmuteFollow message:", chrome.runtime.lastError.message);
+      alert("Error starting unmute and follow process: " + chrome.runtime.lastError.message);
+    }
+  });
+});
+
 document.getElementById("importCSV").addEventListener("click", () => {
   document.getElementById("csvFileInput").click();
 });
