@@ -1462,7 +1462,7 @@ function updatePlannedProcessesTable(plannedProcesses) {
   for(let i = 0; i < rowNumber; i++)
     table.deleteRow(0);
   
-  for(let i = plannedProcesses.length - 1; i >= 0; i--) {
+  for(let i = 0; i < plannedProcesses.length; i++) {
     const process = plannedProcesses[i];
     let row = table.insertRow(-1);
     

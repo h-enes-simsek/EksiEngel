@@ -2387,3 +2387,40 @@ When a task is dequeued and starts running, it's removed from `_items` array. Th
 - Pause button stops scraping immediately at any point
 - CSV export available after pause or early stop with partial data
 - Consistent behavior across all three list types (muted, blocked, followed)
+
+### Commit 57: Queue Display Order Fix (2026-02-22)
+**Purpose:** Swap the order of queued items in the Sıradaki İşlemler table
+
+**Changes:**
+
+**Previous Behavior:**
+- Most recently queued item appeared at top
+- Running task appeared at bottom
+- Order was reversed (LIFO display)
+
+**New Behavior:**
+- Running task (⚡ Çalışıyor) appears at top
+- Queued items follow in FIFO order (oldest first)
+- Most recently queued item appears at bottom
+
+**Code Change:**
+`notification.js` line 1465:
+```javascript
+// Before:
+for(let i = plannedProcesses.length - 1; i >= 0; i--) {
+
+// After:
+for(let i = 0; i < plannedProcesses.length; i++) {
+```
+
+**Rationale:**
+- Running task is most relevant - should be visible at top
+- Queued items in chronological order is more intuitive
+- Completed items remain unchanged (most recent at top via `insertRow(0)`)
+
+**Files Modified:**
+- `notification.js` - Changed iteration from reverse to forward
+
+**Result:**
+- Queue table now shows: Running → Oldest Queued → ... → Newest Queued
+- More intuitive visual hierarchy for task management
