@@ -479,6 +479,25 @@ class ScrapingHandler
                 try {
                   await progressCallback({ currentPage: index, currentCount: totalCount, newUsernames: partialListObj.authorNameList });
                 } catch (cbError) {
+                  if (cbError.message === 'PAUSED_BY_USER') {
+                    log.info("scraping", "Progress callback paused by user.");
+                    return {
+                      success: false,
+                      usernames: allMutedUsernames,
+                      count: totalCount,
+                      paused: true,
+                      error: 'Process paused by user'
+                    };
+                  } else if (cbError.message === 'STOPPED_BY_USER') {
+                    log.info("scraping", "Progress callback stopped by user.");
+                    return {
+                      success: false,
+                      usernames: allMutedUsernames,
+                      count: totalCount,
+                      stoppedEarly: true,
+                      error: 'Process stopped by user'
+                    };
+                  }
                   log.err("scraping", `Progress callback error: ${cbError}`);
                 }
               }
@@ -611,6 +630,25 @@ class ScrapingHandler
           try {
             await progressCallback({ currentCount: totalCount, newUsernames: partialNameList });
           } catch (callbackError) {
+            if (callbackError.message === 'PAUSED_BY_USER') {
+              log.info("scraping", "Progress callback paused by user.");
+              return {
+                success: false,
+                usernames: scrapedUsernames,
+                count: totalCount,
+                paused: true,
+                error: 'Process paused by user'
+              };
+            } else if (callbackError.message === 'STOPPED_BY_USER') {
+              log.info("scraping", "Progress callback stopped by user.");
+              return {
+                success: false,
+                usernames: scrapedUsernames,
+                count: totalCount,
+                stoppedEarly: true,
+                error: 'Process stopped by user'
+              };
+            }
             log.warn("scraping", `Error in progress callback for blocked users: ${callbackError}`);
           }
         }
@@ -800,6 +838,162 @@ class ScrapingHandler
     }
     
     return scrapedRelations;
+  }
+
+  /**
+   * Scrapes all followed users (users the current logged-in user follows)
+   * with checkpoint support for pause/resume
+   * @param {Function} progressCallback - Callback for progress updates ({ currentPage, currentCount, newUsernames })
+   * @param {Function} shouldStopCallback - Callback to check if should stop
+   * @param {Function} checkpointCallback - Callback to save checkpoint state periodically
+   * @param {Object} initialState - Initial state for resume (scrapedUsers, currentPage, totalCount)
+   * @returns {Promise<Object>} - Result with usernames, count, and state
+   */
+  async scrapeAllFollowedUsers(progressCallback = null, shouldStopCallback = null, checkpointCallback = null, initialState = null) {
+    log.info("scraping", "Starting to scrape all followed users...");
+    
+    let allFollowedUsernames = initialState?.scrapedUsers || [];
+    let totalCount = initialState?.totalCount || 0;
+    let index = initialState?.currentPage || 0;
+    let isLast = false;
+    const politeDelayMs = 500;
+    const maxRetries = 3;
+    const retryDelayMs = 1000;
+
+    try {
+      const { clientName } = await this.scrapeClientNameAndId();
+      if (!clientName) {
+        log.err("scraping", "Could not get client name for followed users scraping");
+        return { success: false, usernames: [], count: 0, error: "Could not get client name - user may not be logged in" };
+      }
+      log.info("scraping", `Scraping followed users for client: ${clientName}`);
+
+      while (!isLast) {
+        if (programController.earlyStop) {
+          log.info("scraping", "Followed user scraping stopped by user.");
+          return { success: false, usernames: allFollowedUsernames, count: totalCount, stoppedEarly: true, paused: false, error: 'Process stopped by user' };
+        }
+        
+        if (shouldStopCallback && typeof shouldStopCallback === 'function') {
+          const shouldStop = await shouldStopCallback();
+          if (shouldStop) {
+            log.info("scraping", "Followed user scraping stopped by pause/stop request.");
+            const isPaused = !programController.earlyStop;
+            
+            if (isPaused) {
+              await resumableOperationRegistry.checkpointReached({
+                stage: 'FETCH_USERS',
+                collectedUsers: allFollowedUsernames,
+                userCount: totalCount,
+                currentPage: index,
+                source: 'FOLLOWED_USERS'
+              });
+            }
+            
+            return { 
+              success: false, 
+              usernames: allFollowedUsernames, 
+              count: totalCount, 
+              stoppedEarly: !isPaused, 
+              paused: isPaused, 
+              error: isPaused ? 'Process paused by user' : 'Process stopped by user',
+              state: {
+                scrapedUsers: allFollowedUsernames,
+                currentPage: index,
+                totalCount: totalCount
+              }
+            };
+          }
+        }
+        
+        index++;
+        let attempt = 0;
+        let success = false;
+        let pageUsernames = [];
+
+        while (attempt < maxRetries && !success) {
+          attempt++;
+          log.info("scraping", `Fetching followed users page ${index}, attempt ${attempt}...`);
+
+          try {
+            const scrapedRelations = new Map();
+            const pageIsLast = await this.#scrapeFollowingPartially(scrapedRelations, clientName, index);
+            
+            pageUsernames = Array.from(scrapedRelations.keys());
+            
+            if (pageUsernames.length > 0) {
+              allFollowedUsernames.push(...pageUsernames);
+              totalCount += pageUsernames.length;
+              log.info("scraping", `Found ${pageUsernames.length} users on page ${index}. Total: ${totalCount}`);
+            } else {
+              log.info("scraping", `Found 0 users on page ${index}.`);
+            }
+            isLast = pageIsLast;
+            success = true;
+
+            if (progressCallback && typeof progressCallback === 'function') {
+              try {
+                await progressCallback({ currentPage: index, currentCount: totalCount, newUsernames: pageUsernames });
+              } catch (cbError) {
+                if (cbError.message === 'PAUSED_BY_USER') {
+                  log.info("scraping", "Progress callback paused by user.");
+                  return {
+                    success: false,
+                    usernames: allFollowedUsernames,
+                    count: totalCount,
+                    paused: true,
+                    error: 'Process paused by user'
+                  };
+                } else if (cbError.message === 'STOPPED_BY_USER') {
+                  log.info("scraping", "Progress callback stopped by user.");
+                  return {
+                    success: false,
+                    usernames: allFollowedUsernames,
+                    count: totalCount,
+                    stoppedEarly: true,
+                    error: 'Process stopped by user'
+                  };
+                }
+                log.err("scraping", `Progress callback error: ${cbError}`);
+              }
+            }
+            
+            if (checkpointCallback && typeof checkpointCallback === 'function') {
+              try {
+                await checkpointCallback({
+                  scrapedUsers: allFollowedUsernames,
+                  currentPage: index,
+                  totalCount: totalCount
+                });
+              } catch (cpError) {
+                log.warn("scraping", `Checkpoint callback error: ${cpError}`);
+              }
+            }
+          } catch (err) {
+            log.warn("scraping", `Error fetching page ${index}, attempt ${attempt}: ${err.message || err}`);
+            if (attempt >= maxRetries) {
+              throw new Error(`Failed to fetch page ${index} after ${maxRetries} attempts.`);
+            }
+            await utils.sleep(retryDelayMs);
+          }
+        }
+
+        if (!success) {
+          throw new Error(`Failed to fetch page ${index} definitively.`);
+        }
+
+        if (!isLast) {
+          await utils.sleep(politeDelayMs);
+        }
+      }
+
+      log.info("scraping", `Successfully scraped all followed users. Total count: ${totalCount}`);
+      return { success: true, count: totalCount, usernames: allFollowedUsernames };
+
+    } catch (err) {
+      log.err("scraping", `Error scraping all followed users: ${err.message || err}`);
+      return { success: false, usernames: allFollowedUsernames, count: totalCount, error: err.message || 'Unknown error during scraping' };
+    }
   }
 
   scrapeAuthorIdFromAuthorProfilePage = async (authorName) => {

@@ -784,6 +784,8 @@ function setupActionButtons() {
   document.getElementById('exportMutedListCSV')?.addEventListener('click', () => notificationHandler.handleExportMutedList());
   document.getElementById('refreshBlockedList')?.addEventListener('click', () => notificationHandler.handleRefreshBlockedList());
   document.getElementById('exportBlockedListCSV')?.addEventListener('click', () => notificationHandler.handleExportBlockedList());
+  document.getElementById('refreshFollowedList')?.addEventListener('click', () => notificationHandler.handleRefreshFollowedList());
+  document.getElementById('exportFollowedListCSV')?.addEventListener('click', () => notificationHandler.handleExportFollowedList());
   
   document.getElementById('openFaq')?.addEventListener('click', handleOpenFaq);
   
@@ -800,6 +802,7 @@ function setupActionButtons() {
 function initializeRealTimeFeatures() {
   notificationHandler.loadMutedUserCount();
   notificationHandler.refreshBlockedUserCountDisplay();
+  notificationHandler.loadFollowedUserCount();
   
   chrome.runtime.sendMessage(null, { action: "notificationPageReady" }, (response) => {
     if (chrome.runtime.lastError) {
@@ -951,6 +954,7 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
     console.log("Received message to update user counts.");
     notificationHandler.loadMutedUserCount();
     notificationHandler.refreshBlockedUserCountDisplay();
+    notificationHandler.refreshFollowedUserCountDisplay();
     sendResponse({ status: "ok" });
     return true;
   }
@@ -968,10 +972,6 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
       migrationBar.style.width = `${percentage}%`;
       migrationBarText.innerHTML = `%${percentage}`;
       migrationProgressText.innerHTML = `Sayfa: ${message.currentPage}, Toplam: ${message.currentCount}`;
-
-      if (mutedUserCountSpan) {
-        mutedUserCountSpan.textContent = message.currentCount;
-      }
 
       if (migrationStatusText) {
         migrationStatusText.innerHTML = "Sessize alınan kullanıcılar alınıyor...";
@@ -999,7 +999,15 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
     }
 
     if (mutedUserCountSpan) {
-      mutedUserCountSpan.textContent = message.count;
+      if (message.success) {
+        mutedUserCountSpan.textContent = `${message.count} of ${message.count}`;
+      } else if (message.paused) {
+        mutedUserCountSpan.textContent = `${message.datesFetched || 0} of ${message.totalUsers || message.count}`;
+      } else if (message.stoppedEarly) {
+        mutedUserCountSpan.textContent = `${message.datesFetched || message.count} of ${message.totalUsers || message.count}`;
+      } else {
+        mutedUserCountSpan.textContent = message.count;
+      }
     }
 
     if (migrationStatusText) {
@@ -1036,6 +1044,13 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
     if (refreshButton) {
       refreshButton.disabled = false;
     }
+
+    const exportMutedListCSVButton = document.getElementById('exportMutedListCSV');
+    if (exportMutedListCSVButton) {
+      if (message.success || message.paused || (message.stoppedEarly && message.usernames && message.usernames.length > 0)) {
+        exportMutedListCSVButton.disabled = false;
+      }
+    }
     
     buttonStateManager.refreshAllButtonStates();
 
@@ -1043,25 +1058,13 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
      return true;
    }
  
-   if (message && typeof message === 'string' && message.includes("Total ")) {
-     console.log(`Received progress message: ${message}`);
-     const totalMatch = message.match(/Total (\d+)/);
-     if (totalMatch && totalMatch[1]) {
-       const totalCount = totalMatch[1];
-       const mutedUserCountSpan = document.getElementById("mutedUserCount");
-       if (mutedUserCountSpan) {
-         mutedUserCountSpan.textContent = totalCount;
-       }
-     }
-     sendResponse({ status: "ok" });
-     return true;
-   }
+
 
   if (message && message.action === "mutedListRefreshProgress") {
-    console.log(`Received muted list refresh progress: Count ${message.count}`);
+    console.log(`Received muted list refresh progress: ${message.datesFetched} of ${message.totalUsers}`);
     const mutedUserCountSpan = document.getElementById("mutedUserCount");
     if (mutedUserCountSpan) {
-      mutedUserCountSpan.textContent = message.count;
+      mutedUserCountSpan.textContent = `${message.datesFetched} of ${message.totalUsers}`;
     }
     sendResponse({ status: "ok" });
     return true;
@@ -1072,9 +1075,30 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
 
     if (refreshBlockedListButton) refreshBlockedListButton.disabled = false;
     
-    notificationHandler.refreshBlockedUserCountDisplay().catch(error => {
-      console.error("notification.js: Error updating blocked user count display:", error);
-    });
+    const blockedUserCountEl = document.getElementById("blockedUserCount");
+    if (blockedUserCountEl) {
+      if (message.success) {
+        blockedUserCountEl.textContent = `${message.count} of ${message.count}`;
+      } else if (message.paused) {
+        blockedUserCountEl.textContent = `${message.datesFetched || 0} of ${message.totalUsers || message.count}`;
+      } else if (message.stoppedEarly) {
+        blockedUserCountEl.textContent = `${message.datesFetched || message.count} of ${message.totalUsers || message.count}`;
+      } else {
+        blockedUserCountEl.textContent = message.count || 0;
+      }
+    }
+    
+    const exportBlockedListCSVButton = document.getElementById('exportBlockedListCSV');
+    if (exportBlockedListCSVButton) {
+      if (message.success || message.paused || (message.stoppedEarly && message.usernames && message.usernames.length > 0)) {
+        exportBlockedListCSVButton.disabled = false;
+      }
+    }
+    
+    // Commented out - this overwrites the "X of Y" format we set above
+    // notificationHandler.refreshBlockedUserCountDisplay().catch(error => {
+    //   console.error("notification.js: Error updating blocked user count display:", error);
+    // });
 
     if (message.success) {
       notificationHandler.updateButtonStatus(`Blocked list refreshed. Found ${message.count} users.`, false, 5000);
@@ -1090,11 +1114,53 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
   }
 
   if (message && message.action === "blockedListRefreshProgress") {
-    console.log(`Received blocked list refresh progress: Count ${message.count}`);
-    if (blockedUserCountSpan) {
-      blockedUserCountSpan.textContent = message.count;
+    console.log(`Received blocked list refresh progress: ${message.datesFetched} of ${message.totalUsers}`);
+    const blockedUserCountEl = document.getElementById("blockedUserCount");
+    if (blockedUserCountEl) {
+      blockedUserCountEl.textContent = `${message.datesFetched} of ${message.totalUsers}`;
     }
-    if (exportBlockedListCSVButton) exportBlockedListCSVButton.disabled = true;
+    sendResponse({ status: "ok" });
+    return true;
+  }
+
+  if (message && message.action === "followedListRefreshProgress") {
+    console.log(`Received followed list refresh progress: ${message.datesFetched} of ${message.totalUsers}`);
+    const followedUserCountSpan = document.getElementById("followedUserCount");
+    if (followedUserCountSpan) {
+      followedUserCountSpan.textContent = `${message.datesFetched} of ${message.totalUsers}`;
+    }
+    sendResponse({ status: "ok" });
+    return true;
+  }
+
+  if (message && message.action === "followedListRefreshComplete") {
+    console.log(`Followed list refresh complete: Success=${message.success}, StoppedEarly=${message.stoppedEarly}, Count=${message.count}, Error=${message.error}`);
+
+    const followedUserCountSpan = document.getElementById("followedUserCount");
+    if (followedUserCountSpan) {
+      if (message.success) {
+        followedUserCountSpan.textContent = `${message.count} of ${message.count}`;
+      } else if (message.paused) {
+        followedUserCountSpan.textContent = `${message.datesFetched || 0} of ${message.totalUsers || message.count}`;
+      } else if (message.stoppedEarly) {
+        followedUserCountSpan.textContent = `${message.datesFetched || message.count} of ${message.totalUsers || message.count}`;
+      } else {
+        followedUserCountSpan.textContent = message.count || 0;
+      }
+    }
+
+    const refreshButton = document.getElementById('refreshFollowedList');
+    if (refreshButton) refreshButton.disabled = false;
+    
+    const exportFollowedListCSVButton = document.getElementById('exportFollowedListCSV');
+    if (exportFollowedListCSVButton) {
+      if (message.success || message.paused || (message.stoppedEarly && message.usernames && message.usernames.length > 0)) {
+        exportFollowedListCSVButton.disabled = false;
+      }
+    }
+    
+    buttonStateManager.refreshAllButtonStates();
+
     sendResponse({ status: "ok" });
     return true;
   }

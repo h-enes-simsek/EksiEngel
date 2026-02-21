@@ -482,6 +482,62 @@ class StorageHandler {
     });
   }
 
+  async getPartialFollowedUsers() {
+    return new Promise((resolve) => {
+      chrome.storage.local.get(['partialFollowedUsers', 'partialFollowedUsersTimestamp', 'partialFollowedUsersTemporary'], (result) => {
+        if (chrome.runtime.lastError) {
+          log.err('storage', `Error getting partial followed users: ${chrome.runtime.lastError.message}`);
+          resolve(null);
+        } else {
+          const users = result.partialFollowedUsers;
+          if (Array.isArray(users)) {
+            log.info('storage', `Retrieved ${users.length} partial followed users from storage.`);
+            resolve({
+              usernames: users,
+              timestamp: result.partialFollowedUsersTimestamp,
+              isTemporary: result.partialFollowedUsersTemporary
+            });
+          } else {
+            log.info('storage', 'No partial followed users found in storage.');
+            resolve(null);
+          }
+        }
+      });
+    });
+  }
+
+  async savePartialFollowedUsers(usernames, isTemporary = true) {
+    return new Promise((resolve, reject) => {
+      chrome.storage.local.set({
+        'partialFollowedUsers': usernames,
+        'partialFollowedUsersTimestamp': Date.now(),
+        'partialFollowedUsersTemporary': isTemporary
+      }, () => {
+        if (chrome.runtime.lastError) {
+          log.err('storage', `Error saving partial followed users: ${chrome.runtime.lastError.message}`);
+          reject(this._handleStorageError(chrome.runtime.lastError));
+        } else {
+          log.info('storage', `Saved ${usernames.length} partial followed users (temporary: ${isTemporary}).`);
+          resolve();
+        }
+      });
+    });
+  }
+
+  async clearPartialFollowedUsers() {
+    return new Promise((resolve, reject) => {
+      chrome.storage.local.remove(['partialFollowedUsers', 'partialFollowedUsersTimestamp', 'partialFollowedUsersTemporary'], () => {
+        if (chrome.runtime.lastError) {
+          log.err('storage', `Error clearing partial followed users: ${chrome.runtime.lastError.message}`);
+          reject(this._handleStorageError(chrome.runtime.lastError));
+        } else {
+          log.info('storage', 'Cleared partial followed users from storage.');
+          resolve();
+        }
+      });
+    });
+  }
+
   // Registration date cache methods
   // Cache TTL: 30 days (in milliseconds)
   static REGISTRATION_DATE_CACHE_TTL = 30 * 24 * 60 * 60 * 1000;
@@ -969,6 +1025,74 @@ class StorageHandler {
           resolve(null);
         } else {
           resolve(result.activeOperation || null);
+        }
+      });
+    });
+  }
+
+  async saveFollowedUserList(usernamesArray) {
+    return new Promise((resolve, reject) => {
+      chrome.storage.local.set({ 'followedUserList': usernamesArray }, () => {
+        if (chrome.runtime.lastError) {
+          log.err('storage', `Error saving followed user list: ${chrome.runtime.lastError.message}`);
+          reject(this._handleStorageError(chrome.runtime.lastError));
+        } else {
+          log.info('storage', `Saved ${usernamesArray.length} followed usernames.`);
+          resolve();
+        }
+      });
+    });
+  }
+
+  async getFollowedUserList() {
+    return new Promise((resolve) => {
+      chrome.storage.local.get(['followedUserList'], (result) => {
+        if (chrome.runtime.lastError) {
+          log.err('storage', `Error getting followed user list: ${chrome.runtime.lastError.message}`);
+          resolve(null);
+        } else {
+          const list = result['followedUserList'];
+          if (Array.isArray(list)) {
+            log.info('storage', `Retrieved ${list.length} followed usernames from storage.`);
+            resolve(list);
+          } else {
+            log.info('storage', 'No followed user list found in storage.');
+            resolve(null);
+          }
+        }
+      });
+    });
+  }
+
+  async saveFollowedUserCount(count) {
+    return new Promise((resolve, reject) => {
+      chrome.storage.local.set({ 'followedUserCount': count }, () => {
+        if (chrome.runtime.lastError) {
+          log.err('storage', `Error saving followed user count: ${chrome.runtime.lastError.message}`);
+          reject(this._handleStorageError(chrome.runtime.lastError));
+        } else {
+          log.info('storage', `Saved followed user count: ${count}.`);
+          resolve();
+        }
+      });
+    });
+  }
+
+  async getFollowedUserCount() {
+    return new Promise((resolve) => {
+      chrome.storage.local.get(['followedUserCount'], (result) => {
+        if (chrome.runtime.lastError) {
+          log.err('storage', `Error getting followed user count: ${chrome.runtime.lastError.message}`);
+          resolve(0);
+        } else {
+          const count = result['followedUserCount'];
+          if (typeof count === 'number') {
+            log.info('storage', `Retrieved followed user count: ${count} from storage.`);
+            resolve(count);
+          } else {
+            log.info('storage', 'No followed user count found in storage, or it is not a number.');
+            resolve(0);
+          }
         }
       });
     });

@@ -145,7 +145,7 @@ async function ensureNotificationTabExistsAndIsReady() {
 
 chrome.runtime.onMessage.addListener(function messageListener_Popup(message, sender, sendResponse) {
   const actionsRequiringNotification = [
-    "startMigration", "startTitleMigration", "refreshMutedList", "refreshBlockedList",
+    "startMigration", "startTitleMigration", "refreshMutedList", "refreshBlockedList", "refreshFollowedList",
     "blockMutedUsers", "blockTitlesOfBlockedMuted", "startDateBasedBulkAction"
   ];
 
@@ -248,11 +248,15 @@ chrome.runtime.onMessage.addListener(function messageListener_Popup(message, sen
             operationNotes: "Engelli kullanıcı listesini sunucudan yeniler",
             requiresUserInteraction: false,
             targetTypes: [enums.TargetType.USER],
-            sourceTitle: "Engelli Kullanıcı Listesi"
+            sourceTitle: "Engilli Kullanıcı Listesi"
           };
           
           const wrapperProcessHandler = createWrapperProcessHandler(handler, enums.BanSource.REFRESH_BLOCKED_LIST, metadata, getDisplayMode(message.action));
           handleProcessQueue(wrapperProcessHandler, 'Blocked list refresh enqueued.');
+        }
+      } else if (message.action === "refreshFollowedList") {
+        if (!programController.isFollowedListRefreshInProgress) {
+          programController.refreshFollowedList();
         }
       } else if (message.action === "blockMutedUsers") {
         if (!programController.isBlockMutedUsersInProgress) {

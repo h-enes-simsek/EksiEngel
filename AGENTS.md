@@ -2250,3 +2250,140 @@ When a task is dequeued and starts running, it's removed from `_items` array. Th
 - Queued tasks show below with status "Sırada"
 - Both running and queued tasks are visible simultaneously
 - No more "replacement" of running task when queuing additional tasks
+
+### Commit 55: Add Takip Edilenler CSV Export (2026-02-20)
+**Purpose:** Add CSV export functionality for the followed users (Takip Ettiklerim) list
+
+**Changes:**
+
+**1. `storageHandler.js` - New Storage Methods**
+- `saveFollowedUserList(users)` - Saves followed users list to storage
+- `getFollowedUserList()` - Retrieves followed users list from storage
+- `saveFollowedUserCount(count)` - Saves followed users count
+- `getFollowedUserCount()` - Retrieves followed users count
+- `savePartialFollowedUsers(users)` - Saves partial followed users during scraping
+- `getPartialFollowedUsers()` - Retrieves partial followed users for resume
+- `clearPartialFollowedUsers()` - Clears partial followed users
+
+**2. `enums.js` - New BanSource**
+- Added `REFRESH_FOLLOWED_LIST: "14"` to `BanSource` enum for followed list operations
+
+**3. `programController.js` - New Operation**
+- Added `_isFollowedListRefreshInProgress` flag for operation tracking
+- Added `refreshFollowedList()` method:
+  - Scrapes all followed users from Ekşi Sözlük profile pages
+  - Supports pause/resume via checkpoint-based pausing
+  - Supports early stop functionality
+  - Fetches registration dates in parallel during scraping
+  - Saves users and count to storage on completion
+- Added `_resumeRefreshFollowedList()` resume handler for paused operations
+- Updated `isActive` getter to include `_isFollowedListRefreshInProgress`
+- Updated `hasAnyRunningTasks` getter to include `_isFollowedListRefreshInProgress`
+
+**4. `background.js` - Message Handler**
+- Added `refreshFollowedList` message handler that delegates to `programController.refreshFollowedList()`
+
+**5. `notificationHandler.js` - UI Handlers**
+- Added `loadFollowedUserCount()` - Loads followed user count from storage
+- Added `refreshFollowedUserCountDisplay()` - Updates UI with current count
+- Added `handleRefreshFollowedList()` - Handles refresh button click
+- Added `handleExportFollowedList()` - Handles CSV export button click
+- Updated `downloadCSV()` to support 'followed' list type with registration dates
+
+**6. `notification.js` - Event Listeners**
+- Added event listener for `refreshFollowedList` button
+- Added event listener for `exportFollowedList` button
+- Added `loadFollowedUserCount()` call on page initialization
+
+**7. `notification.html` - New Stats Card**
+- Added "⭐ Takip Edilenler" stats card to Listeler section
+- Displays followed user count
+- Includes "Yenile" (refresh) and "CSV" (export) buttons
+
+**8. `customNotification.css` - Grid Update**
+- Updated `.stats-cards` grid from `repeat(3, 1fr)` to `repeat(4, 1fr)` for 4-column layout
+- Mobile responsive styles handle single column at smaller screens
+
+**9. `buttonStateManager.js` - Button Tracking**
+- Added `refreshFollowedList` to managed buttons
+- Button state follows same pattern as other refresh buttons (always enabled)
+
+**10. `faq.html` - Documentation Update**
+- Updated "Liste Yönetimi" section to include Takip Edilenler
+- Added description of followed users refresh and export functionality
+
+**Files Modified:**
+- `storageHandler.js` - Added 7 new storage methods
+- `enums.js` - Added REFRESH_FOLLOWED_LIST BanSource
+- `programController.js` - Added refreshFollowedList() and resume handler
+- `background.js` - Added refreshFollowedList message handler
+- `notificationHandler.js` - Added UI handlers for followed list
+- `notification.js` - Added event listeners
+- `notification.html` - Added Takip Edilenler stats card
+- `customNotification.css` - Updated grid to 4 columns
+- `buttonStateManager.js` - Added button tracking
+- `faq.html` - Updated documentation
+- `AGENTS.md` - This documentation
+
+**Result:**
+- Users can now refresh their followed users list
+- Followed users can be exported to CSV with registration dates
+- Pause/resume/stop supported during refresh operation
+- Listeler section now shows 4 cards: Sessiz, Engellenmiş, Takip Edilenler, Yazar Listesi
+
+### Commit 56: Real-Time Counter & Pause/Export Improvements (2026-02-21)
+**Purpose:** Improve counter display, pause functionality, and enable CSV export for interrupted operations
+
+**Changes:**
+
+**1. Counter Display - "X of Y" Format**
+- Changed counter from single number to "X of Y" format where:
+  - X = Number of users whose registration dates have been fetched
+  - Y = Total users scraped so far
+- Counter updates in real-time after each date fetch (not once per page)
+- On completion: Shows "500 of 500" (dates fetched of total users)
+- On pause/stop: Shows "150 of 500" (actual progress)
+
+**Files affected:**
+- `programController.js` - Progress message sends `{ datesFetched, totalUsers }`
+- `notification.js` - Handlers display `${datesFetched} of ${totalUsers}`
+- `scrapingHandler.js` - Catches pause/stop errors from progress callback
+
+**2. Pause Functionality During Date Fetching**
+- Pause now stops scraping immediately during date fetching phase
+- Progress callback throws `PAUSED_BY_USER` error when pause detected
+- scrapingHandler catches error and returns `{ paused: true }`
+- Checkpoint saved with `datesFetched` count for proper resume
+
+**Files affected:**
+- `programController.js` - `scrapeProgressCallback` throws error on pause
+- `scrapingHandler.js` - Catches `PAUSED_BY_USER` and returns paused result
+
+**3. CSV Export for Interrupted Operations**
+- Export buttons now enabled after pause or early stop
+- Partial data saved to storage on pause/stop
+- Export handler falls back to partial data when full list is empty
+- CSV contains all scraped usernames with cached registration dates
+
+**Files affected:**
+- `programController.js` - Saves partial data on pause, sends message with usernames
+- `notification.js` - Enables export button for `paused` and `stoppedEarly` cases
+- `notificationHandler.js` - Export handlers check partial data
+
+**4. Bug Fixes**
+- Fixed blocked user counter not updating (used `document.getElementById()` directly)
+- Fixed counter being overwritten on completion (removed conflicting refresh calls)
+- Fixed pause not stopping scraping (throw error instead of break)
+- Fixed counter showing 100% on stop instead of actual progress
+
+**Files Modified:**
+- `programController.js` - Counter format, pause handling, partial data saving
+- `scrapingHandler.js` - Pause/stop error catching in all three scrape methods
+- `notification.js` - Counter display handlers, export button enabling
+- `notificationHandler.js` - Export button state management
+
+**Result:**
+- Counter shows real-time progress: "0 of 100" → "1 of 100" → ... → "100 of 100"
+- Pause button stops scraping immediately at any point
+- CSV export available after pause or early stop with partial data
+- Consistent behavior across all three list types (muted, blocked, followed)

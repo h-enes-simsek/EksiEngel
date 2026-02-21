@@ -131,6 +131,12 @@ class NotificationHandler {
     if (blockedUserCountSpan) blockedUserCountSpan.textContent = blockedUserCount;
   }
 
+  loadFollowedUserCount = async () => {
+    const followedUserCount = await storageHandler.getFollowedUserCount();
+    const followedUserCountSpan = document.getElementById("followedUserCount");
+    if (followedUserCountSpan) followedUserCountSpan.textContent = followedUserCount;
+  }
+
   refreshBlockedUserCountDisplay = async () => {
     try {
       const blockedUserCount = await storageHandler.getBlockedUserCount();
@@ -147,6 +153,25 @@ class NotificationHandler {
       if (blockedUserCountSpan) blockedUserCountSpan.textContent = "0";
       const exportBlockedListCSVButton = document.getElementById('exportBlockedListCSV');
       if (exportBlockedListCSVButton) exportBlockedListCSVButton.disabled = true;
+    }
+  }
+
+  refreshFollowedUserCountDisplay = async () => {
+    try {
+      const followedUserCount = await storageHandler.getFollowedUserCount();
+      const partialData = await storageHandler.getPartialFollowedUsers();
+      const hasTemporaryData = partialData && partialData.usernames && partialData.usernames.length > 0;
+      const followedUserCountSpan = document.getElementById("followedUserCount");
+      if (followedUserCountSpan) followedUserCountSpan.textContent = followedUserCount;
+      const exportFollowedListCSVButton = document.getElementById('exportFollowedListCSV');
+      if (exportFollowedListCSVButton) exportFollowedListCSVButton.disabled = (followedUserCount === 0 && !hasTemporaryData);
+      console.log(`notificationHandler.js: Updated followed user count display: ${followedUserCount} (temporary: ${hasTemporaryData})`);
+    } catch (error) {
+      console.error("notificationHandler.js: Error refreshing followed user count display:", error);
+      const followedUserCountSpan = document.getElementById("followedUserCount");
+      if (followedUserCountSpan) followedUserCountSpan.textContent = "0";
+      const exportFollowedListCSVButton = document.getElementById('exportFollowedListCSV');
+      if (exportFollowedListCSVButton) exportFollowedListCSVButton.disabled = true;
     }
   }
 
@@ -174,7 +199,9 @@ class NotificationHandler {
     const link = document.createElement("a");
     link.setAttribute("href", url);
     const timestamp = new Date().toISOString().slice(0, 10);
-    const filenamePrefix = listType === 'blocked' ? 'eksiengel_blocked_users' : 'eksiengel_muted_users';
+    let filenamePrefix = 'eksiengel_muted_users';
+    if (listType === 'blocked') filenamePrefix = 'eksiengel_blocked_users';
+    else if (listType === 'followed') filenamePrefix = 'eksiengel_followed_users';
     link.setAttribute("download", `${filenamePrefix}_${timestamp}.csv`);
     link.style.visibility = "hidden";
     document.body.appendChild(link);
@@ -183,7 +210,8 @@ class NotificationHandler {
     URL.revokeObjectURL(url);
     
     const cachedCount = cachedDates.size;
-    this.updateButtonStatus(`${listType === 'blocked' ? 'Blocked' : 'Muted'} list exported (${cachedCount}/${usernames.length} with cached dates).`, false);
+    const listTypeDisplay = listType === 'blocked' ? 'Blocked' : (listType === 'followed' ? 'Followed' : 'Muted');
+    this.updateButtonStatus(`${listTypeDisplay} list exported (${cachedCount}/${usernames.length} with cached dates).`, false);
   }
 
   handleRefreshMutedList = async () => {
@@ -257,6 +285,44 @@ class NotificationHandler {
       const blockedUserCountSpan = document.getElementById("blockedUserCount");
       const currentCount = parseInt(blockedUserCountSpan?.textContent) || 0;
       if (exportBlockedListCSVButton) exportBlockedListCSVButton.disabled = currentCount === 0;
+    }
+  }
+
+  handleRefreshFollowedList = async () => {
+    console.log("notificationHandler.js", "Refresh followed list button clicked.");
+    this.updateButtonStatus("Initiating followed list refresh...", false, 0);
+    chrome.runtime.sendMessage({ action: "refreshFollowedList" }, (response) => {
+      if (chrome.runtime.lastError) {
+        console.error("notificationHandler.js: Error sending refreshFollowedList message:", chrome.runtime.lastError.message);
+        this.updateButtonStatus("Error initiating refresh: " + chrome.runtime.lastError.message, true, 5000);
+        this.refreshFollowedUserCountDisplay();
+      }
+    });
+  }
+
+  handleExportFollowedList = async () => {
+    console.log("notificationHandler.js", "Export followed list button clicked.");
+    const exportFollowedListCSVButton = document.getElementById('exportFollowedListCSV');
+    if (exportFollowedListCSVButton) exportFollowedListCSVButton.disabled = true;
+    this.updateButtonStatus("Preparing export...", false, 0);
+    try {
+      let followedUsernames = await storageHandler.getFollowedUserList();
+      if (!followedUsernames || followedUsernames.length === 0) {
+        const partialData = await storageHandler.getPartialFollowedUsers();
+        if (partialData && partialData.usernames) {
+          followedUsernames = partialData.usernames;
+          this.updateButtonStatus("Exporting partial list from early stop...", false);
+        }
+      }
+      if (followedUsernames && followedUsernames.length > 0) await this.downloadCSV(followedUsernames, 'followed');
+      else this.updateButtonStatus("No followed user list found in storage to export.", true);
+    } catch (error) {
+      console.error("notificationHandler.js", "Error exporting followed list:", error);
+      this.updateButtonStatus(`Error exporting: ${error.message || 'Unknown error'}`, true);
+    } finally {
+      const followedUserCountSpan = document.getElementById("followedUserCount");
+      const currentCount = parseInt(followedUserCountSpan?.textContent) || 0;
+      if (exportFollowedListCSVButton) exportFollowedListCSVButton.disabled = currentCount === 0;
     }
   }
 

@@ -211,6 +211,7 @@ class ButtonStateManager {
       { id: 'startUndobanAll', element: document.getElementById('startUndobanAll') },
       { id: 'refreshMutedList', element: document.getElementById('refreshMutedList') },
       { id: 'refreshBlockedList', element: document.getElementById('refreshBlockedList') },
+      { id: 'refreshFollowedList', element: document.getElementById('refreshFollowedList') },
       { id: 'exportMutedListCSV', element: document.getElementById('exportMutedListCSV') },
       { id: 'exportBlockedListCSV', element: document.getElementById('exportBlockedListCSV') },
       { id: 'openauthorListPage', element: document.getElementById('openauthorListPage') },
@@ -275,6 +276,7 @@ class ButtonStateManager {
         };
       case 'refreshMutedList':
       case 'refreshBlockedList':
+      case 'refreshFollowedList':
         // Refresh buttons are ALWAYS enabled - user can refresh lists at any time
         return {
           disabled: false,

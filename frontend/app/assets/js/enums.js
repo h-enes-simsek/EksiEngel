@@ -11,7 +11,8 @@ export const BanSource = {
   REFRESH_MUTED_LIST: "10",
   REFRESH_BLOCKED_LIST: "11",
   DATE_BASED_BULK: "12",
-  UNMUTEALL: "13"
+  UNMUTEALL: "13",
+  REFRESH_FOLLOWED_LIST: "14"
 };
 
 export const BanMode = { BAN: "1", UNDOBAN: "2" };

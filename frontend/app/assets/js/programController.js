@@ -52,6 +52,7 @@ class ProgramController {
     this._blockTitlesInProgress = false;
     this._dateBasedBulkInProgress = false;
     this._unmuteAllInProgress = false;
+    this._isFollowedListRefreshInProgress = false;
     this._tabId = 0;
   }
 
@@ -71,6 +72,7 @@ class ProgramController {
            this._blockTitlesInProgress ||
            this._dateBasedBulkInProgress ||
            this._unmuteAllInProgress ||
+           this._isFollowedListRefreshInProgress ||
            hasPausedOp;
   }
 
@@ -97,6 +99,8 @@ class ProgramController {
         log.info("progctrl", "early stop received during date-based bulk action process. Current operation will stop.");
       } else if (this._unmuteAllInProgress) {
         log.info("progctrl", "early stop received during unmute all process. Current operation will stop.");
+      } else if (this._isFollowedListRefreshInProgress) {
+        log.info("progctrl", "early stop received during followed list refresh process. Queued tasks will continue after current task stops.");
       } else if (processQueue.isRunning) {
         log.info("progctrl", "early stop received while queue is processing. Current operation will stop, remaining queued operations will continue.");
       } else {
@@ -117,6 +121,7 @@ class ProgramController {
     this._blockTitlesInProgress = false;
     this._dateBasedBulkInProgress = false;
     this._unmuteAllInProgress = false;
+    this._isFollowedListRefreshInProgress = false;
   }
 
   stopAllOperations() {
@@ -132,7 +137,8 @@ class ProgramController {
            this._blockMutedUsersInProgress ||
            this._blockTitlesInProgress ||
            this._dateBasedBulkInProgress ||
-           this._unmuteAllInProgress;
+           this._unmuteAllInProgress ||
+           this._isFollowedListRefreshInProgress;
   }
 
   get isMutedListRefreshInProgress() { return this._isMutedListRefreshInProgress; }
@@ -1405,7 +1411,8 @@ class ProgramController {
     const initialState = savedState?.checkpointData ? {
       scrapedUsers: savedState.checkpointData.collectedUsers || [],
       currentPage: savedState.checkpointData.currentPage || 0,
-      totalCount: savedState.checkpointData.userCount || 0
+      totalCount: savedState.checkpointData.userCount || 0,
+      datesFetched: savedState.checkpointData.datesFetched || 0
     } : null;
 
     resumableOperationRegistry.registerOperation(
@@ -1415,53 +1422,66 @@ class ProgramController {
       ['FETCH_PAGES']
     );
 
+    let datesFetchedCount = initialState?.datesFetched || 0;
+
     try {
-      let datesFetchedCount = 0;
-
-      const updateProgress = async (progress) => {
-        if (this.tabId) {
-          chrome.tabs.sendMessage(this.tabId, {
-            action: "mutedListRefreshProgress",
-            count: progress.currentCount
-          }).catch(e => log.warn("progctrl", `Error sending progress message: ${e}`));
-        }
-        await storageHandler.saveMutedUserCount(progress.currentCount);
-
-        // Fetch registration dates for the new usernames batch during scraping
-        if (progress.newUsernames && progress.newUsernames.length > 0) {
-          const cachedDates = await storageHandler.getRegistrationDatesBatch(progress.newUsernames);
-          const usersToFetch = progress.newUsernames.filter(u => !cachedDates.has(u));
+      const scrapeProgressCallback = async (progress) => {
+        const newUsernames = progress.newUsernames || [];
+        const totalUsers = progress.currentCount;
+        
+        for (const username of newUsernames) {
+          if (this.earlyStop) break;
           
-          if (usersToFetch.length > 0) {
-            const newlyFetchedDates = new Map();
-            
-            for (const username of usersToFetch) {
-              if (this.earlyStop) break;
-              
-              try {
-                const regDate = await scrapingHandler.scrapeRegistrationDate(username);
-                if (regDate) {
-                  newlyFetchedDates.set(username, regDate);
-                  datesFetchedCount++;
-                }
-                
-                await utils.sleep(50);
-              } catch (err) {
-                log.warn("progctrl", `Could not fetch registration date for ${username}: ${err}`);
+          const status = await checkPauseOrStop();
+          if (status.paused || status.stopped) {
+            await resumableOperationRegistry.checkpointReached({
+              stage: 'FETCH_PAGES',
+              collectedUsers: [],
+              userCount: totalUsers,
+              currentPage: 0,
+              datesFetched: datesFetchedCount
+            });
+            throw new Error(status.paused ? 'PAUSED_BY_USER' : 'STOPPED_BY_USER');
+          }
+          
+          try {
+            const cachedDate = await storageHandler.getRegistrationDate(username);
+            if (cachedDate) {
+              datesFetchedCount++;
+            } else {
+              const regDate = await scrapingHandler.scrapeRegistrationDate(username);
+              if (regDate) {
+                await storageHandler.saveRegistrationDate(username, regDate);
+                datesFetchedCount++;
               }
             }
-            
-            if (newlyFetchedDates.size > 0) {
-              await storageHandler.saveRegistrationDatesBatch(newlyFetchedDates);
-            }
-            
-            notificationHandler.notifyStatus(`Sessiz kullanıcılar: ${progress.currentCount}, kayıt tarihleri: ${datesFetchedCount}`);
+          } catch (err) {
+            log.warn("progctrl", `Could not fetch registration date for ${username}: ${err}`);
           }
+          
+          if (this.tabId) {
+            chrome.tabs.sendMessage(this.tabId, {
+              action: "mutedListRefreshProgress",
+              datesFetched: datesFetchedCount,
+              totalUsers: totalUsers
+            }).catch(e => log.warn("progctrl", `Error sending progress message: ${e}`));
+          }
+          
+          await utils.sleep(50);
         }
+        
+        notificationHandler.notifyStatus(`Sessiz kullanıcılar: ${totalUsers}, kayıt tarihleri: ${datesFetchedCount}`);
+        await storageHandler.saveMutedUserCount(totalUsers);
       };
 
       if (initialState && initialState.totalCount > 0) {
-        await updateProgress({ currentCount: initialState.totalCount });
+        if (this.tabId) {
+          chrome.tabs.sendMessage(this.tabId, {
+            action: "mutedListRefreshProgress",
+            datesFetched: datesFetchedCount,
+            totalUsers: initialState.totalCount
+          }).catch(e => log.warn("progctrl", `Error sending progress message: ${e}`));
+        }
       }
 
       const pauseCheckCallback = async () => {
@@ -1469,28 +1489,50 @@ class ProgramController {
         return status.paused || status.stopped;
       };
 
-      const result = await scrapingHandler.scrapeAllMutedUsers(updateProgress, null, pauseCheckCallback, null, initialState);
+      const result = await scrapingHandler.scrapeAllMutedUsers(scrapeProgressCallback, null, pauseCheckCallback, null, initialState);
 
       if (result.paused) {
         log.info("progctrl", "Muted list refresh paused by user.");
+        
+        if (result.usernames && result.usernames.length > 0) {
+          await storageHandler.savePartialMutedUsers(result.usernames, true);
+          log.info("progctrl", `Saved ${result.usernames.length} partial muted users on pause.`);
+        }
+        
+        if (this.tabId) {
+          chrome.tabs.sendMessage(this.tabId, {
+            action: "mutedListRefreshComplete",
+            success: false,
+            paused: true,
+            stoppedEarly: false,
+            usernames: result.usernames || [],
+            count: result.count || 0,
+            datesFetched: datesFetchedCount,
+            totalUsers: result.count || 0,
+            error: "İşlem duraklatıldı"
+          }).catch(e => log.warn("progctrl", `Error sending paused message: ${e}`));
+        }
+        
         return;
       }
 
       if (result.success) {
+        const usernames = result.usernames;
+        
         await storageHandler.clearMutedRefreshResumeState();
         await storageHandler.clearPartialMutedUsers();
-        await storageHandler.saveMutedUserList(result.usernames);
-        await storageHandler.saveMutedUserCount(result.count);
+        await storageHandler.saveMutedUserList(usernames);
+        await storageHandler.saveMutedUserCount(usernames.length);
 
         if (this.tabId) {
           chrome.tabs.sendMessage(this.tabId, {
             action: "mutedListRefreshComplete",
             success: true,
-            count: result.count
+            count: usernames.length
           }).catch(e => log.warn("progctrl", `Error sending complete message: ${e}`));
         }
         
-        notificationHandler.finishSuccess(enums.BanSource.REFRESH_MUTED_LIST, null, result.count, result.count, result.count, processQueue.currentItemMetadata);
+        notificationHandler.finishSuccess(enums.BanSource.REFRESH_MUTED_LIST, null, usernames.length, usernames.length, usernames.length, processQueue.currentItemMetadata);
       } else if (result.stoppedEarly) {
         await storageHandler.savePartialMutedUsers(result.usernames || [], true);
         await storageHandler.clearMutedRefreshResumeState();
@@ -1502,6 +1544,8 @@ class ProgramController {
             stoppedEarly: true,
             usernames: result.usernames || [],
             count: result.count || 0,
+            datesFetched: datesFetchedCount,
+            totalUsers: result.count || 0,
             error: result.error || "İşlem kullanıcı tarafından durduruldu"
           }).catch(e => log.warn("progctrl", `Error sending early stop message: ${e}`));
         }
@@ -1571,7 +1615,8 @@ class ProgramController {
     const initialState = savedState?.checkpointData ? {
       scrapedUsers: savedState.checkpointData.collectedUsers || [],
       currentPage: savedState.checkpointData.currentPage || 0,
-      totalCount: savedState.checkpointData.userCount || 0
+      totalCount: savedState.checkpointData.userCount || 0,
+      datesFetched: savedState.checkpointData.datesFetched || 0
     } : null;
 
     resumableOperationRegistry.registerOperation(
@@ -1581,53 +1626,66 @@ class ProgramController {
       ['FETCH_PAGES']
     );
 
+    let datesFetchedCount = initialState?.datesFetched || 0;
+
     try {
-      let datesFetchedCount = 0;
-
-      const updateProgress = async (progress) => {
-        if (this.tabId) {
-          chrome.tabs.sendMessage(this.tabId, {
-            action: "blockedListRefreshProgress",
-            count: progress.currentCount
-          }).catch(e => log.warn("progctrl", `Error sending progress message: ${e}`));
-        }
-        await storageHandler.saveBlockedUserCount(progress.currentCount);
-
-        // Fetch registration dates for the new usernames batch during scraping
-        if (progress.newUsernames && progress.newUsernames.length > 0) {
-          const cachedDates = await storageHandler.getRegistrationDatesBatch(progress.newUsernames);
-          const usersToFetch = progress.newUsernames.filter(u => !cachedDates.has(u));
+      const scrapeProgressCallback = async (progress) => {
+        const newUsernames = progress.newUsernames || [];
+        const totalUsers = progress.currentCount;
+        
+        for (const username of newUsernames) {
+          if (this.earlyStop) break;
           
-          if (usersToFetch.length > 0) {
-            const newlyFetchedDates = new Map();
-            
-            for (const username of usersToFetch) {
-              if (this.earlyStop) break;
-              
-              try {
-                const regDate = await scrapingHandler.scrapeRegistrationDate(username);
-                if (regDate) {
-                  newlyFetchedDates.set(username, regDate);
-                  datesFetchedCount++;
-                }
-                
-                await utils.sleep(50);
-              } catch (err) {
-                log.warn("progctrl", `Could not fetch registration date for ${username}: ${err}`);
+          const status = await checkPauseOrStop();
+          if (status.paused || status.stopped) {
+            await resumableOperationRegistry.checkpointReached({
+              stage: 'FETCH_PAGES',
+              collectedUsers: [],
+              userCount: totalUsers,
+              currentPage: 0,
+              datesFetched: datesFetchedCount
+            });
+            throw new Error(status.paused ? 'PAUSED_BY_USER' : 'STOPPED_BY_USER');
+          }
+          
+          try {
+            const cachedDate = await storageHandler.getRegistrationDate(username);
+            if (cachedDate) {
+              datesFetchedCount++;
+            } else {
+              const regDate = await scrapingHandler.scrapeRegistrationDate(username);
+              if (regDate) {
+                await storageHandler.saveRegistrationDate(username, regDate);
+                datesFetchedCount++;
               }
             }
-            
-            if (newlyFetchedDates.size > 0) {
-              await storageHandler.saveRegistrationDatesBatch(newlyFetchedDates);
-            }
-            
-            notificationHandler.notifyStatus(`Engellenmiş kullanıcılar: ${progress.currentCount}, kayıt tarihleri: ${datesFetchedCount}`);
+          } catch (err) {
+            log.warn("progctrl", `Could not fetch registration date for ${username}: ${err}`);
           }
+          
+          if (this.tabId) {
+            chrome.tabs.sendMessage(this.tabId, {
+              action: "blockedListRefreshProgress",
+              datesFetched: datesFetchedCount,
+              totalUsers: totalUsers
+            }).catch(e => log.warn("progctrl", `Error sending progress message: ${e}`));
+          }
+          
+          await utils.sleep(50);
         }
+        
+        notificationHandler.notifyStatus(`Engellenmiş kullanıcılar: ${totalUsers}, kayıt tarihleri: ${datesFetchedCount}`);
+        await storageHandler.saveBlockedUserCount(totalUsers);
       };
 
       if (initialState && initialState.totalCount > 0) {
-        await updateProgress({ currentCount: initialState.totalCount });
+        if (this.tabId) {
+          chrome.tabs.sendMessage(this.tabId, {
+            action: "blockedListRefreshProgress",
+            datesFetched: datesFetchedCount,
+            totalUsers: initialState.totalCount
+          }).catch(e => log.warn("progctrl", `Error sending progress message: ${e}`));
+        }
       }
 
       const pauseCheckCallback = async () => {
@@ -1635,27 +1693,49 @@ class ProgramController {
         return status.paused || status.stopped;
       };
 
-      const result = await scrapingHandler.scrapeAllBlockedUsers(updateProgress, null, pauseCheckCallback, null, initialState);
+      const result = await scrapingHandler.scrapeAllBlockedUsers(scrapeProgressCallback, null, pauseCheckCallback, null, initialState);
 
       if (result.paused) {
         log.info("progctrl", "Blocked list refresh paused by user.");
+        
+        if (result.usernames && result.usernames.length > 0) {
+          await storageHandler.savePartialBlockedUsers(result.usernames, true);
+          log.info("progctrl", `Saved ${result.usernames.length} partial blocked users on pause.`);
+        }
+        
+        if (this.tabId) {
+          chrome.tabs.sendMessage(this.tabId, {
+            action: "blockedListRefreshComplete",
+            success: false,
+            paused: true,
+            stoppedEarly: false,
+            usernames: result.usernames || [],
+            count: result.count || 0,
+            datesFetched: datesFetchedCount,
+            totalUsers: result.count || 0,
+            error: "İşlem duraklatıldı"
+          }).catch(e => log.warn("progctrl", `Error sending paused message: ${e}`));
+        }
+        
         return;
       }
 
       if (result.success) {
+        const usernames = result.usernames;
+        
         await storageHandler.clearPartialBlockedUsers();
-        await storageHandler.saveBlockedUserList(result.usernames);
-        await storageHandler.saveBlockedUserCount(result.count);
+        await storageHandler.saveBlockedUserList(usernames);
+        await storageHandler.saveBlockedUserCount(usernames.length);
 
         if (this.tabId) {
           chrome.tabs.sendMessage(this.tabId, {
             action: "blockedListRefreshComplete",
             success: true,
-            count: result.count
+            count: usernames.length
           }).catch(e => log.warn("progctrl", `Error sending complete message: ${e}`));
         }
         
-        notificationHandler.finishSuccess(enums.BanSource.REFRESH_BLOCKED_LIST, null, result.count, result.count, result.count, processQueue.currentItemMetadata);
+        notificationHandler.finishSuccess(enums.BanSource.REFRESH_BLOCKED_LIST, null, usernames.length, usernames.length, usernames.length, processQueue.currentItemMetadata);
       } else if (result.stoppedEarly) {
         await storageHandler.savePartialBlockedUsers(result.usernames || [], true);
 
@@ -1666,6 +1746,8 @@ class ProgramController {
             stoppedEarly: true,
             usernames: result.usernames || [],
             count: result.count || 0,
+            datesFetched: datesFetchedCount,
+            totalUsers: result.count || 0,
             error: result.error || "İşlem kullanıcı tarafından durduruldu"
           }).catch(e => log.warn("progctrl", `Error sending early stop message: ${e}`));
         }
@@ -1701,6 +1783,205 @@ class ProgramController {
       log.info("progctrl", "refreshBlockedList function completed.");
       this.earlyStop = false;
       this._isBlockedListRefreshInProgress = false;
+
+      const currentOp = resumableOperationRegistry.getCurrentOperation();
+      if (!currentOp || currentOp.state !== OperationState.PAUSED) {
+        resumableOperationRegistry.completeOperation();
+        await storageHandler.saveLastOperationResult('COMPLETED');
+      } else {
+        await storageHandler.saveLastOperationResult('PAUSED');
+      }
+
+      notificationHandler.notifyUpdateCounts();
+    }
+  }
+
+  async refreshFollowedList(savedState = null) {
+    log.info("progctrl", "refreshFollowedList function started.");
+
+    if (this._isFollowedListRefreshInProgress) {
+      log.warn("progctrl", "Followed list refresh is already in progress.");
+      notificationHandler.notify("Takip edilenler liste yenileme zaten devam ediyor.");
+      return;
+    }
+
+    this._isFollowedListRefreshInProgress = true;
+    await storageHandler.saveLastOperationResult('RUNNING');
+    this.earlyStop = false;
+
+    const operationId = savedState?.operationId || 'refresh-followed-' + Date.now();
+    
+    const initialState = savedState?.checkpointData ? {
+      scrapedUsers: savedState.checkpointData.collectedUsers || [],
+      currentPage: savedState.checkpointData.currentPage || 0,
+      totalCount: savedState.checkpointData.userCount || 0,
+      datesFetched: savedState.checkpointData.datesFetched || 0
+    } : null;
+
+    resumableOperationRegistry.registerOperation(
+      operationId,
+      'REFRESH_FOLLOWED_LIST',
+      {},
+      ['FETCH_PAGES']
+    );
+
+    let datesFetchedCount = initialState?.datesFetched || 0;
+
+    try {
+      const scrapeProgressCallback = async (progress) => {
+        const newUsernames = progress.newUsernames || [];
+        const totalUsers = progress.currentCount;
+        
+        for (const username of newUsernames) {
+          if (this.earlyStop) break;
+          
+          const status = await checkPauseOrStop();
+          if (status.paused || status.stopped) {
+            await resumableOperationRegistry.checkpointReached({
+              stage: 'FETCH_PAGES',
+              collectedUsers: [],
+              userCount: totalUsers,
+              currentPage: 0,
+              datesFetched: datesFetchedCount
+            });
+            throw new Error(status.paused ? 'PAUSED_BY_USER' : 'STOPPED_BY_USER');
+          }
+          
+          try {
+            const cachedDate = await storageHandler.getRegistrationDate(username);
+            if (cachedDate) {
+              datesFetchedCount++;
+            } else {
+              const regDate = await scrapingHandler.scrapeRegistrationDate(username);
+              if (regDate) {
+                await storageHandler.saveRegistrationDate(username, regDate);
+                datesFetchedCount++;
+              }
+            }
+          } catch (err) {
+            log.warn("progctrl", `Could not fetch registration date for ${username}: ${err}`);
+          }
+          
+          if (this.tabId) {
+            chrome.tabs.sendMessage(this.tabId, {
+              action: "followedListRefreshProgress",
+              datesFetched: datesFetchedCount,
+              totalUsers: totalUsers
+            }).catch(e => log.warn("progctrl", `Error sending progress message: ${e}`));
+          }
+          
+          await utils.sleep(50);
+        }
+        
+        notificationHandler.notifyStatus(`Takip edilenler: ${totalUsers}, kayıt tarihleri: ${datesFetchedCount}`);
+        await storageHandler.saveFollowedUserCount(totalUsers);
+      };
+
+      if (initialState && initialState.totalCount > 0) {
+        if (this.tabId) {
+          chrome.tabs.sendMessage(this.tabId, {
+            action: "followedListRefreshProgress",
+            datesFetched: datesFetchedCount,
+            totalUsers: initialState.totalCount
+          }).catch(e => log.warn("progctrl", `Error sending progress message: ${e}`));
+        }
+      }
+
+      const pauseCheckCallback = async () => {
+        const status = await checkPauseOrStop();
+        return status.paused || status.stopped;
+      };
+
+      const result = await scrapingHandler.scrapeAllFollowedUsers(scrapeProgressCallback, pauseCheckCallback, null, initialState);
+
+      if (result.paused) {
+        log.info("progctrl", "Followed list refresh paused by user.");
+        
+        if (result.usernames && result.usernames.length > 0) {
+          await storageHandler.savePartialFollowedUsers(result.usernames, true);
+          log.info("progctrl", `Saved ${result.usernames.length} partial followed users on pause.`);
+        }
+        
+        if (this.tabId) {
+          chrome.tabs.sendMessage(this.tabId, {
+            action: "followedListRefreshComplete",
+            success: false,
+            paused: true,
+            stoppedEarly: false,
+            usernames: result.usernames || [],
+            count: result.count || 0,
+            datesFetched: datesFetchedCount,
+            totalUsers: result.count || 0,
+            error: "İşlem duraklatıldı"
+          }).catch(e => log.warn("progctrl", `Error sending paused message: ${e}`));
+        }
+        
+        return;
+      }
+
+      if (result.success) {
+        const usernames = result.usernames;
+        
+        await storageHandler.clearPartialFollowedUsers();
+        await storageHandler.saveFollowedUserList(usernames);
+        await storageHandler.saveFollowedUserCount(usernames.length);
+
+        if (this.tabId) {
+          chrome.tabs.sendMessage(this.tabId, {
+            action: "followedListRefreshComplete",
+            success: true,
+            count: usernames.length
+          }).catch(e => log.warn("progctrl", `Error sending complete message: ${e}`));
+        }
+        
+        notificationHandler.finishSuccess(enums.BanSource.REFRESH_FOLLOWED_LIST, null, usernames.length, usernames.length, usernames.length, processQueue.currentItemMetadata);
+      } else if (result.stoppedEarly) {
+        await storageHandler.savePartialFollowedUsers(result.usernames || [], true);
+
+        if (this.tabId) {
+          chrome.tabs.sendMessage(this.tabId, {
+            action: "followedListRefreshComplete",
+            success: false,
+            stoppedEarly: true,
+            usernames: result.usernames || [],
+            count: result.count || 0,
+            datesFetched: datesFetchedCount,
+            totalUsers: result.count || 0,
+            error: result.error || "İşlem kullanıcı tarafından durduruldu"
+          }).catch(e => log.warn("progctrl", `Error sending early stop message: ${e}`));
+        }
+        
+        notificationHandler.finishErrorEarlyStop(enums.BanSource.REFRESH_FOLLOWED_LIST, null, processQueue.currentItemMetadata);
+      } else {
+        log.err("progctrl", "Error scraping followed users:", result.error);
+        await storageHandler.clearPartialFollowedUsers();
+
+        if (this.tabId) {
+          chrome.tabs.sendMessage(this.tabId, {
+            action: "followedListRefreshComplete",
+            success: false,
+            error: result.error
+          }).catch(e => log.warn("progctrl", `Error sending error message: ${e}`));
+        }
+        
+        notificationHandler.finishSuccess(enums.BanSource.REFRESH_FOLLOWED_LIST, null, 0, 0, 0, processQueue.currentItemMetadata);
+      }
+    } catch (e) {
+      log.err("progctrl", `Unexpected error during refreshFollowedList: ${e}`);
+
+      if (this.tabId) {
+        chrome.tabs.sendMessage(this.tabId, {
+          action: "followedListRefreshComplete",
+          success: false,
+          error: e.message || "Bilinmeyen hata"
+        }).catch(err => log.warn("progctrl", `Error sending error message: ${err}`));
+      }
+      
+      notificationHandler.finishSuccess(enums.BanSource.REFRESH_FOLLOWED_LIST, null, 0, 0, 0, processQueue.currentItemMetadata);
+    } finally {
+      log.info("progctrl", "refreshFollowedList function completed.");
+      this.earlyStop = false;
+      this._isFollowedListRefreshInProgress = false;
 
       const currentOp = resumableOperationRegistry.getCurrentOperation();
       if (!currentOp || currentOp.state !== OperationState.PAUSED) {
@@ -1882,6 +2163,8 @@ notificationHandler.notify(`${totalCount} adet başlıkları engellenen kullanı
         return await this._resumeRefreshMutedList(savedState);
       case 'REFRESH_BLOCKED_LIST':
         return await this._resumeRefreshBlockedList(savedState);
+      case 'REFRESH_FOLLOWED_LIST':
+        return await this._resumeRefreshFollowedList(savedState);
       default:
         return { success: false, error: `Bilinmeyen işlem türü: ${savedState.operationType}` };
     }
@@ -2422,6 +2705,24 @@ notificationHandler.notify(`${totalCount} adet başlıkları engellenen kullanı
       return { success: true };
     } catch (error) {
       log.err("progctrl", `Error resuming blocked list refresh: ${error}`);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Resume followed list refresh from saved state
+   * @private
+   */
+  async _resumeRefreshFollowedList(savedState) {
+    log.info("progctrl", "Resuming followed list refresh from saved state");
+    
+    this._isFollowedListRefreshInProgress = false;
+    
+    try {
+      await this.refreshFollowedList(savedState);
+      return { success: true };
+    } catch (error) {
+      log.err("progctrl", `Error resuming followed list refresh: ${error}`);
       return { success: false, error: error.message };
     }
   }
