@@ -191,7 +191,8 @@ export class ResumableOperationRegistry {
         'BLOCK_MUTED_USERS': enums.BanSource.BLOCK_MUTED_USERS,
         'BLOCK_TITLES': enums.BanSource.BLOCKED_MUTED_TITLES,
         'REFRESH_MUTED_LIST': enums.BanSource.REFRESH_MUTED_LIST,
-        'REFRESH_BLOCKED_LIST': enums.BanSource.REFRESH_BLOCKED_LIST
+        'REFRESH_BLOCKED_LIST': enums.BanSource.REFRESH_BLOCKED_LIST,
+        'REFRESH_FOLLOWED_LIST': enums.BanSource.REFRESH_FOLLOWED_LIST
       };
       const banSource = banSourceMap[op.type] || enums.BanSource.DATE_BASED_BULK;
       

@@ -162,7 +162,7 @@ chrome.runtime.onMessage.addListener(function messageListener_Popup(message, sen
         switch (action) {
           case "startMigration": case "blockMutedUsers": case "blockTitlesOfBlockedMuted": case "startTitleMigration":
             return "PROCESS";
-          case "refreshMutedList": case "refreshBlockedList":
+          case "refreshMutedList": case "refreshBlockedList": case "refreshFollowedList":
             return "REFRESH";
           default:
             return "UNKNOWN";
@@ -256,7 +256,17 @@ chrome.runtime.onMessage.addListener(function messageListener_Popup(message, sen
         }
       } else if (message.action === "refreshFollowedList") {
         if (!programController.isFollowedListRefreshInProgress) {
-          programController.refreshFollowedList();
+          const handler = () => programController.refreshFollowedList();
+          
+          const metadata = {
+            operationNotes: "Takip edilen kullanıcı listesini sunucudan yeniler",
+            requiresUserInteraction: false,
+            targetTypes: [enums.TargetType.USER],
+            sourceTitle: "Takip Edilen Kullanıcı Listesi"
+          };
+          
+          const wrapperProcessHandler = createWrapperProcessHandler(handler, enums.BanSource.REFRESH_FOLLOWED_LIST, metadata, getDisplayMode(message.action));
+          handleProcessQueue(wrapperProcessHandler, 'Followed list refresh enqueued.');
         }
       } else if (message.action === "blockMutedUsers") {
         if (!programController.isBlockMutedUsersInProgress) {

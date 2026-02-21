@@ -24,6 +24,7 @@ export function getTaskCategory(banSource) {
       return enums.TaskCategory.MIGRATION;
     case enums.BanSource.REFRESH_MUTED_LIST:
     case enums.BanSource.REFRESH_BLOCKED_LIST:
+    case enums.BanSource.REFRESH_FOLLOWED_LIST:
       return enums.TaskCategory.REFRESH;
     case enums.BanSource.UNDOBANALL:
     case enums.BanSource.UNMUTEALL:
@@ -51,6 +52,7 @@ function getTaskComplexity(banSource) {
     case enums.BanSource.UNDOBANALL:
     case enums.BanSource.REFRESH_MUTED_LIST:
     case enums.BanSource.REFRESH_BLOCKED_LIST:
+    case enums.BanSource.REFRESH_FOLLOWED_LIST:
       return enums.TaskComplexity.HEAVY;
     default:
       return enums.TaskComplexity.MODERATE;
@@ -61,6 +63,7 @@ function getTaskPriority(banSource) {
   switch (banSource) {
     case enums.BanSource.REFRESH_MUTED_LIST:
     case enums.BanSource.REFRESH_BLOCKED_LIST:
+    case enums.BanSource.REFRESH_FOLLOWED_LIST:
       return enums.TaskPriority.LOW;
     case enums.BanSource.SINGLE:
       return enums.TaskPriority.HIGH;
@@ -119,6 +122,9 @@ export function generateUnifiedDescription(banSource, metadata = {}) {
       break;
     case enums.BanSource.REFRESH_BLOCKED_LIST:
       baseDescription = "Engelli Listesi Yenile";
+      break;
+    case enums.BanSource.REFRESH_FOLLOWED_LIST:
+      baseDescription = "Takip Edilenler Listesi Yenile";
       break;
     case enums.BanSource.UNMUTEALL:
       baseDescription = "Tüm Sessizleri Kaldır";

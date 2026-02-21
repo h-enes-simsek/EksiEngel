@@ -2424,3 +2424,96 @@ for(let i = 0; i < plannedProcesses.length; i++) {
 **Result:**
 - Queue table now shows: Running → Oldest Queued → ... → Newest Queued
 - More intuitive visual hierarchy for task management
+
+### Commit 58: Fix Concurrency in List Refresh Operations (2026-02-22)
+**Purpose:** Fix race condition where followed users list refresh bypasses the queue, allowing concurrent operations and preventing proper pause/stop functionality
+
+**Root Cause Analysis:**
+
+1. **`refreshFollowedList` bypassed the queue (Critical)**
+   - In `background.js`, `refreshFollowedList` was called directly instead of being enqueued:
+     ```javascript
+     // BEFORE (bug):
+     } else if (message.action === "refreshFollowedList") {
+       if (!programController.isFollowedListRefreshInProgress) {
+         programController.refreshFollowedList();  // Direct call!
+       }
+     }
+     ```
+   - Compare to `refreshMutedList` which properly uses the queue
+
+2. **Missing `REFRESH_FOLLOWED_LIST` in queue.js functions**
+   - `getTaskCategory()` - missing case
+   - `getTaskComplexity()` - missing case
+   - `getTaskPriority()` - missing case
+   - `generateUnifiedDescription()` - missing case (showed wrong description)
+
+3. **Missing `REFRESH_FOLLOWED_LIST` in resumableOperation.js**
+   - `banSourceMap` didn't include it, so stopping a paused followed list refresh wouldn't properly complete the task in queue
+
+**Impact of Bug:**
+| Scenario | Result Without Fix |
+|----------|-------------------|
+| Click followed refresh + early stop + click muted refresh | Both run concurrently |
+| Early stop during followed refresh | Operation may continue |
+| Multiple refresh clicks | Race conditions |
+| Pause followed refresh + stop | Task stuck in queue |
+
+**Changes:**
+
+**1. `background.js` - Enqueue `refreshFollowedList`**
+```javascript
+// AFTER (fixed):
+} else if (message.action === "refreshFollowedList") {
+  if (!programController.isFollowedListRefreshInProgress) {
+    const handler = () => programController.refreshFollowedList();
+    
+    const metadata = {
+      operationNotes: "Takip edilen kullanıcı listesini sunucudan yeniler",
+      requiresUserInteraction: false,
+      targetTypes: [enums.TargetType.USER],
+      sourceTitle: "Takip Edilen Kullanıcı Listesi"
+    };
+    
+    const wrapperProcessHandler = createWrapperProcessHandler(handler, enums.BanSource.REFRESH_FOLLOWED_LIST, metadata, getDisplayMode(message.action));
+    handleProcessQueue(wrapperProcessHandler, 'Followed list refresh enqueued.');
+  }
+}
+```
+
+- Also added `"refreshFollowedList"` to `getDisplayMode()` function
+
+**2. `queue.js` - Add `REFRESH_FOLLOWED_LIST` to all relevant functions**
+- `getTaskCategory()`: Added case returning `TaskCategory.REFRESH`
+- `getTaskComplexity()`: Added case returning `TaskComplexity.HEAVY`
+- `getTaskPriority()`: Added case returning `TaskPriority.LOW`
+- `generateUnifiedDescription()`: Added case with description "Takip Edilenler Listesi Yenile"
+
+**3. `resumableOperation.js` - Add to `banSourceMap`**
+```javascript
+const banSourceMap = {
+  ...
+  'REFRESH_FOLLOWED_LIST': enums.BanSource.REFRESH_FOLLOWED_LIST
+};
+```
+
+**Files Modified:**
+- `background.js` - Enqueue refreshFollowedList, add to getDisplayMode
+- `queue.js` - Add REFRESH_FOLLOWED_LIST to category/complexity/priority/description
+- `resumableOperation.js` - Add REFRESH_FOLLOWED_LIST to banSourceMap
+- `AGENTS.md` - This documentation
+
+**Result:**
+- All three list refresh operations (muted, blocked, followed) now properly use the queue
+- New tasks are queued when an operation is running or paused
+- Early stop button works correctly during followed list refresh
+- CSV export enabled after pause or early stop
+- Consistent behavior across all list refresh operations
+
+**Expected Behavior After Fix:**
+| Scenario | Button State | Action |
+|----------|--------------|--------|
+| No operation | Enabled | Task starts immediately |
+| Operation running | Enabled | Task added to queue |
+| Operation paused | Enabled | Task added to queue |
+| Same button's task running | Disabled | Prevented by flag check |
