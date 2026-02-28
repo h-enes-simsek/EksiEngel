@@ -471,6 +471,9 @@ function showPausedOperationBanner(operation) {
         <button id="bannerResumeBtn" class="banner-btn banner-btn-resume">
           ▶️ Devam Et
         </button>
+        <button id="bannerCancelBtn" class="banner-btn banner-btn-cancel">
+          🛑 İptal
+        </button>
         <button id="bannerDismissBtn" class="banner-btn banner-btn-dismiss">
           ✕ Kapat
         </button>
@@ -485,6 +488,7 @@ function showPausedOperationBanner(operation) {
   // Add event listeners
   const resumeBtn = banner.querySelector('#bannerResumeBtn');
   const dismissBtn = banner.querySelector('#bannerDismissBtn');
+  const cancelBtn = banner.querySelector('#bannerCancelBtn');
   
   if (resumeBtn) {
     resumeBtn.addEventListener('click', async () => {
@@ -492,6 +496,23 @@ function showPausedOperationBanner(operation) {
       resumeBtn.innerHTML = '⏳ Devam ediliyor...';
       await handleResumeOperation();
       hidePausedOperationBanner();
+    });
+  }
+
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', async () => {
+      cancelBtn.disabled = true;
+      cancelBtn.innerHTML = '⏳ İptal ediliyor...';
+      try {
+        await sendEarlyStopWithRetry();
+        hidePausedOperationBanner();
+        notificationHandler.showStatusMessage('İşlem iptal edildi.', 'success');
+      } catch (err) {
+        console.error('Failed to cancel operation:', err);
+        notificationHandler.showStatusMessage('İşlem iptal edilemedi.', 'error');
+        cancelBtn.disabled = false;
+        cancelBtn.innerHTML = '🛑 İptal';
+      }
     });
   }
   

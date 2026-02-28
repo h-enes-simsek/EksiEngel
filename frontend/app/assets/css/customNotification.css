@@ -1029,6 +1029,7 @@ body {
 
 .paused-operation-banner .banner-btn-resume { background: var(--success-color); color: white; }
 .paused-operation-banner .banner-btn-dismiss { background: rgba(0, 0, 0, 0.1); color: #92400e; }
+.paused-operation-banner .banner-btn-cancel { background: var(--danger-color); color: white; }
 
 /* İşlemler Grid */
 .islemler-card { border-left: 3px solid var(--color-purple); }
