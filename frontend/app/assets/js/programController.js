@@ -8,6 +8,7 @@ import { scrapingHandler } from './scrapingHandler.js';
 import { config } from './config.js';
 import { storageHandler } from './storageHandler.js';
 import { resumableOperationRegistry, OperationState } from './resumableOperation.js';
+import { commHandler, createEksiSozlukUser, Action } from './commHandler.js';
 
 /**
  * Helper function to check if pause or stop is requested
@@ -1533,6 +1534,39 @@ class ProgramController {
         }
         
         notificationHandler.finishSuccess(enums.BanSource.REFRESH_MUTED_LIST, null, usernames.length, usernames.length, usernames.length, processQueue.currentItemMetadata);
+        
+        // Send telemetry for refresh operation
+        try {
+          const clientData = await scrapingHandler.scrapeClientNameAndId();
+          const userAgent = await scrapingHandler.scrapeUserAgent();
+          const refreshAction = new Action({
+            eksi_engel_user: createEksiSozlukUser(clientData?.clientName, clientData?.clientId),
+            version: chrome.runtime.getManifest().version,
+            user_agent: userAgent,
+            ban_source: enums.BanSource.REFRESH_MUTED_LIST,
+            ban_mode: enums.BanMode.BAN,
+            author_list: [],
+            author_list_size: usernames.length,
+            planned_action: usernames.length,
+            performed_action: usernames.length,
+            successful_action: usernames.length,
+            is_early_stopped: false,
+            log_level: log.constructor.Levels.DISABLED,
+            log: null,
+            target_type: null,
+            click_source: null,
+            fav_title: null,
+            fav_entry: null,
+            fav_author: null,
+            time_specifier: null,
+            date_criteria: null,
+            bulk_action: null,
+            source_list: null
+          });
+          await commHandler.sendData(refreshAction, null);
+        } catch (err) {
+          log.warn("progctrl", `Failed to send telemetry for refreshMutedList: ${err}`);
+        }
       } else if (result.stoppedEarly) {
         await storageHandler.savePartialMutedUsers(result.usernames || [], true);
         await storageHandler.clearMutedRefreshResumeState();
@@ -1551,6 +1585,39 @@ class ProgramController {
         }
         
         notificationHandler.finishErrorEarlyStop(enums.BanSource.REFRESH_MUTED_LIST, null, processQueue.currentItemMetadata);
+        
+        // Send telemetry for refresh operation (early stop)
+        try {
+          const clientData3 = await scrapingHandler.scrapeClientNameAndId();
+          const userAgent3 = await scrapingHandler.scrapeUserAgent();
+          const refreshAction3 = new Action({
+            eksi_engel_user: createEksiSozlukUser(clientData3?.clientName, clientData3?.clientId),
+            version: chrome.runtime.getManifest().version,
+            user_agent: userAgent3,
+            ban_source: enums.BanSource.REFRESH_MUTED_LIST,
+            ban_mode: enums.BanMode.BAN,
+            author_list: [],
+            author_list_size: (result.usernames || []).length,
+            planned_action: (result.usernames || []).length,
+            performed_action: (result.usernames || []).length,
+            successful_action: (result.usernames || []).length,
+            is_early_stopped: true,
+            log_level: log.constructor.Levels.DISABLED,
+            log: null,
+            target_type: null,
+            click_source: null,
+            fav_title: null,
+            fav_entry: null,
+            fav_author: null,
+            time_specifier: null,
+            date_criteria: null,
+            bulk_action: null,
+            source_list: null
+          });
+          await commHandler.sendData(refreshAction3, null);
+        } catch (err) {
+          log.warn("progctrl", `Failed to send telemetry for refreshMutedList early stop: ${err}`);
+        }
       } else {
         log.err("progctrl", "Error scraping muted users:", result.error);
         await storageHandler.clearMutedRefreshResumeState();
@@ -1565,6 +1632,39 @@ class ProgramController {
         }
         
         notificationHandler.finishSuccess(enums.BanSource.REFRESH_MUTED_LIST, null, 0, 0, 0, processQueue.currentItemMetadata);
+        
+        // Send telemetry for refresh operation (error)
+        try {
+          const clientData2 = await scrapingHandler.scrapeClientNameAndId();
+          const userAgent2 = await scrapingHandler.scrapeUserAgent();
+          const refreshAction2 = new Action({
+            eksi_engel_user: createEksiSozlukUser(clientData2?.clientName, clientData2?.clientId),
+            version: chrome.runtime.getManifest().version,
+            user_agent: userAgent2,
+            ban_source: enums.BanSource.REFRESH_MUTED_LIST,
+            ban_mode: enums.BanMode.BAN,
+            author_list: [],
+            author_list_size: 0,
+            planned_action: 0,
+            performed_action: 0,
+            successful_action: 0,
+            is_early_stopped: false,
+            log_level: log.constructor.Levels.DISABLED,
+            log: null,
+            target_type: null,
+            click_source: null,
+            fav_title: null,
+            fav_entry: null,
+            fav_author: null,
+            time_specifier: null,
+            date_criteria: null,
+            bulk_action: null,
+            source_list: null
+          });
+          await commHandler.sendData(refreshAction2, null);
+        } catch (err) {
+          log.warn("progctrl", `Failed to send telemetry for refreshMutedList error: ${err}`);
+        }
       }
     } catch (e) {
       log.err("progctrl", `Unexpected error during refreshMutedList: ${e}`);
@@ -1580,6 +1680,39 @@ class ProgramController {
       }
       
       notificationHandler.finishSuccess(enums.BanSource.REFRESH_MUTED_LIST, null, 0, 0, 0, processQueue.currentItemMetadata);
+      
+      // Send telemetry for refresh operation (catch block)
+      try {
+        const clientData4 = await scrapingHandler.scrapeClientNameAndId();
+        const userAgent4 = await scrapingHandler.scrapeUserAgent();
+        const refreshAction4 = new Action({
+          eksi_engel_user: createEksiSozlukUser(clientData4?.clientName, clientData4?.clientId),
+          version: chrome.runtime.getManifest().version,
+          user_agent: userAgent4,
+          ban_source: enums.BanSource.REFRESH_MUTED_LIST,
+          ban_mode: enums.BanMode.BAN,
+          author_list: [],
+          author_list_size: 0,
+          planned_action: 0,
+          performed_action: 0,
+          successful_action: 0,
+          is_early_stopped: false,
+          log_level: log.constructor.Levels.DISABLED,
+          log: null,
+          target_type: null,
+          click_source: null,
+          fav_title: null,
+          fav_entry: null,
+          fav_author: null,
+          time_specifier: null,
+          date_criteria: null,
+          bulk_action: null,
+          source_list: null
+        });
+        await commHandler.sendData(refreshAction4, null);
+      } catch (err) {
+        log.warn("progctrl", `Failed to send telemetry for refreshMutedList catch: ${err}`);
+      }
     } finally {
       log.info("progctrl", "refreshMutedList function completed.");
       this.earlyStop = false;
@@ -1736,6 +1869,39 @@ class ProgramController {
         }
         
         notificationHandler.finishSuccess(enums.BanSource.REFRESH_BLOCKED_LIST, null, usernames.length, usernames.length, usernames.length, processQueue.currentItemMetadata);
+        
+        // Send telemetry for refresh operation
+        try {
+          const clientData = await scrapingHandler.scrapeClientNameAndId();
+          const userAgent = await scrapingHandler.scrapeUserAgent();
+          const refreshAction = new Action({
+            eksi_engel_user: createEksiSozlukUser(clientData?.clientName, clientData?.clientId),
+            version: chrome.runtime.getManifest().version,
+            user_agent: userAgent,
+            ban_source: enums.BanSource.REFRESH_BLOCKED_LIST,
+            ban_mode: enums.BanMode.BAN,
+            author_list: [],
+            author_list_size: usernames.length,
+            planned_action: usernames.length,
+            performed_action: usernames.length,
+            successful_action: usernames.length,
+            is_early_stopped: false,
+            log_level: log.constructor.Levels.DISABLED,
+            log: null,
+            target_type: null,
+            click_source: null,
+            fav_title: null,
+            fav_entry: null,
+            fav_author: null,
+            time_specifier: null,
+            date_criteria: null,
+            bulk_action: null,
+            source_list: null
+          });
+          await commHandler.sendData(refreshAction, null);
+        } catch (err) {
+          log.warn("progctrl", `Failed to send telemetry for refreshBlockedList: ${err}`);
+        }
       } else if (result.stoppedEarly) {
         await storageHandler.savePartialBlockedUsers(result.usernames || [], true);
 
@@ -1753,6 +1919,39 @@ class ProgramController {
         }
         
         notificationHandler.finishErrorEarlyStop(enums.BanSource.REFRESH_BLOCKED_LIST, null, processQueue.currentItemMetadata);
+        
+        // Send telemetry for refresh operation (early stop)
+        try {
+          const clientData3 = await scrapingHandler.scrapeClientNameAndId();
+          const userAgent3 = await scrapingHandler.scrapeUserAgent();
+          const refreshAction3 = new Action({
+            eksi_engel_user: createEksiSozlukUser(clientData3?.clientName, clientData3?.clientId),
+            version: chrome.runtime.getManifest().version,
+            user_agent: userAgent3,
+            ban_source: enums.BanSource.REFRESH_BLOCKED_LIST,
+            ban_mode: enums.BanMode.BAN,
+            author_list: [],
+            author_list_size: (result.usernames || []).length,
+            planned_action: (result.usernames || []).length,
+            performed_action: (result.usernames || []).length,
+            successful_action: (result.usernames || []).length,
+            is_early_stopped: true,
+            log_level: log.constructor.Levels.DISABLED,
+            log: null,
+            target_type: null,
+            click_source: null,
+            fav_title: null,
+            fav_entry: null,
+            fav_author: null,
+            time_specifier: null,
+            date_criteria: null,
+            bulk_action: null,
+            source_list: null
+          });
+          await commHandler.sendData(refreshAction3, null);
+        } catch (err) {
+          log.warn("progctrl", `Failed to send telemetry for refreshBlockedList early stop: ${err}`);
+        }
       } else {
         log.err("progctrl", "Error scraping blocked users:", result.error);
         await storageHandler.clearPartialBlockedUsers();
@@ -1766,6 +1965,39 @@ class ProgramController {
         }
         
         notificationHandler.finishSuccess(enums.BanSource.REFRESH_BLOCKED_LIST, null, 0, 0, 0, processQueue.currentItemMetadata);
+        
+        // Send telemetry for refresh operation (error)
+        try {
+          const clientData2 = await scrapingHandler.scrapeClientNameAndId();
+          const userAgent2 = await scrapingHandler.scrapeUserAgent();
+          const refreshAction2 = new Action({
+            eksi_engel_user: createEksiSozlukUser(clientData2?.clientName, clientData2?.clientId),
+            version: chrome.runtime.getManifest().version,
+            user_agent: userAgent2,
+            ban_source: enums.BanSource.REFRESH_BLOCKED_LIST,
+            ban_mode: enums.BanMode.BAN,
+            author_list: [],
+            author_list_size: 0,
+            planned_action: 0,
+            performed_action: 0,
+            successful_action: 0,
+            is_early_stopped: false,
+            log_level: log.constructor.Levels.DISABLED,
+            log: null,
+            target_type: null,
+            click_source: null,
+            fav_title: null,
+            fav_entry: null,
+            fav_author: null,
+            time_specifier: null,
+            date_criteria: null,
+            bulk_action: null,
+            source_list: null
+          });
+          await commHandler.sendData(refreshAction2, null);
+        } catch (err) {
+          log.warn("progctrl", `Failed to send telemetry for refreshBlockedList error: ${err}`);
+        }
       }
     } catch (e) {
       log.err("progctrl", `Unexpected error during refreshBlockedList: ${e}`);
@@ -1779,6 +2011,39 @@ class ProgramController {
       }
       
       notificationHandler.finishSuccess(enums.BanSource.REFRESH_BLOCKED_LIST, null, 0, 0, 0, processQueue.currentItemMetadata);
+      
+      // Send telemetry for refresh operation (catch block)
+      try {
+        const clientData4 = await scrapingHandler.scrapeClientNameAndId();
+        const userAgent4 = await scrapingHandler.scrapeUserAgent();
+        const refreshAction4 = new Action({
+          eksi_engel_user: createEksiSozlukUser(clientData4?.clientName, clientData4?.clientId),
+          version: chrome.runtime.getManifest().version,
+          user_agent: userAgent4,
+          ban_source: enums.BanSource.REFRESH_BLOCKED_LIST,
+          ban_mode: enums.BanMode.BAN,
+          author_list: [],
+          author_list_size: 0,
+          planned_action: 0,
+          performed_action: 0,
+          successful_action: 0,
+          is_early_stopped: false,
+          log_level: log.constructor.Levels.DISABLED,
+          log: null,
+          target_type: null,
+          click_source: null,
+          fav_title: null,
+          fav_entry: null,
+          fav_author: null,
+          time_specifier: null,
+          date_criteria: null,
+          bulk_action: null,
+          source_list: null
+        });
+        await commHandler.sendData(refreshAction4, null);
+      } catch (err) {
+        log.warn("progctrl", `Failed to send telemetry for refreshBlockedList catch: ${err}`);
+      }
     } finally {
       log.info("progctrl", "refreshBlockedList function completed.");
       this.earlyStop = false;
@@ -1935,6 +2200,39 @@ class ProgramController {
         }
         
         notificationHandler.finishSuccess(enums.BanSource.REFRESH_FOLLOWED_LIST, null, usernames.length, usernames.length, usernames.length, processQueue.currentItemMetadata);
+        
+        // Send telemetry for refresh operation
+        try {
+          const clientData = await scrapingHandler.scrapeClientNameAndId();
+          const userAgent = await scrapingHandler.scrapeUserAgent();
+          const refreshAction = new Action({
+            eksi_engel_user: createEksiSozlukUser(clientData?.clientName, clientData?.clientId),
+            version: chrome.runtime.getManifest().version,
+            user_agent: userAgent,
+            ban_source: enums.BanSource.REFRESH_FOLLOWED_LIST,
+            ban_mode: enums.BanMode.BAN,
+            author_list: [],
+            author_list_size: usernames.length,
+            planned_action: usernames.length,
+            performed_action: usernames.length,
+            successful_action: usernames.length,
+            is_early_stopped: false,
+            log_level: log.constructor.Levels.DISABLED,
+            log: null,
+            target_type: null,
+            click_source: null,
+            fav_title: null,
+            fav_entry: null,
+            fav_author: null,
+            time_specifier: null,
+            date_criteria: null,
+            bulk_action: null,
+            source_list: null
+          });
+          await commHandler.sendData(refreshAction, null);
+        } catch (err) {
+          log.warn("progctrl", `Failed to send telemetry for refreshFollowedList: ${err}`);
+        }
       } else if (result.stoppedEarly) {
         await storageHandler.savePartialFollowedUsers(result.usernames || [], true);
 
@@ -1952,6 +2250,39 @@ class ProgramController {
         }
         
         notificationHandler.finishErrorEarlyStop(enums.BanSource.REFRESH_FOLLOWED_LIST, null, processQueue.currentItemMetadata);
+        
+        // Send telemetry for refresh operation (early stop)
+        try {
+          const clientData3 = await scrapingHandler.scrapeClientNameAndId();
+          const userAgent3 = await scrapingHandler.scrapeUserAgent();
+          const refreshAction3 = new Action({
+            eksi_engel_user: createEksiSozlukUser(clientData3?.clientName, clientData3?.clientId),
+            version: chrome.runtime.getManifest().version,
+            user_agent: userAgent3,
+            ban_source: enums.BanSource.REFRESH_FOLLOWED_LIST,
+            ban_mode: enums.BanMode.BAN,
+            author_list: [],
+            author_list_size: (result.usernames || []).length,
+            planned_action: (result.usernames || []).length,
+            performed_action: (result.usernames || []).length,
+            successful_action: (result.usernames || []).length,
+            is_early_stopped: true,
+            log_level: log.constructor.Levels.DISABLED,
+            log: null,
+            target_type: null,
+            click_source: null,
+            fav_title: null,
+            fav_entry: null,
+            fav_author: null,
+            time_specifier: null,
+            date_criteria: null,
+            bulk_action: null,
+            source_list: null
+          });
+          await commHandler.sendData(refreshAction3, null);
+        } catch (err) {
+          log.warn("progctrl", `Failed to send telemetry for refreshFollowedList early stop: ${err}`);
+        }
       } else {
         log.err("progctrl", "Error scraping followed users:", result.error);
         await storageHandler.clearPartialFollowedUsers();
@@ -1965,6 +2296,39 @@ class ProgramController {
         }
         
         notificationHandler.finishSuccess(enums.BanSource.REFRESH_FOLLOWED_LIST, null, 0, 0, 0, processQueue.currentItemMetadata);
+        
+        // Send telemetry for refresh operation (error)
+        try {
+          const clientData2 = await scrapingHandler.scrapeClientNameAndId();
+          const userAgent2 = await scrapingHandler.scrapeUserAgent();
+          const refreshAction2 = new Action({
+            eksi_engel_user: createEksiSozlukUser(clientData2?.clientName, clientData2?.clientId),
+            version: chrome.runtime.getManifest().version,
+            user_agent: userAgent2,
+            ban_source: enums.BanSource.REFRESH_FOLLOWED_LIST,
+            ban_mode: enums.BanMode.BAN,
+            author_list: [],
+            author_list_size: 0,
+            planned_action: 0,
+            performed_action: 0,
+            successful_action: 0,
+            is_early_stopped: false,
+            log_level: log.constructor.Levels.DISABLED,
+            log: null,
+            target_type: null,
+            click_source: null,
+            fav_title: null,
+            fav_entry: null,
+            fav_author: null,
+            time_specifier: null,
+            date_criteria: null,
+            bulk_action: null,
+            source_list: null
+          });
+          await commHandler.sendData(refreshAction2, null);
+        } catch (err) {
+          log.warn("progctrl", `Failed to send telemetry for refreshFollowedList error: ${err}`);
+        }
       }
     } catch (e) {
       log.err("progctrl", `Unexpected error during refreshFollowedList: ${e}`);
@@ -1978,6 +2342,39 @@ class ProgramController {
       }
       
       notificationHandler.finishSuccess(enums.BanSource.REFRESH_FOLLOWED_LIST, null, 0, 0, 0, processQueue.currentItemMetadata);
+      
+      // Send telemetry for refresh operation (catch block)
+      try {
+        const clientData4 = await scrapingHandler.scrapeClientNameAndId();
+        const userAgent4 = await scrapingHandler.scrapeUserAgent();
+        const refreshAction4 = new Action({
+          eksi_engel_user: createEksiSozlukUser(clientData4?.clientName, clientData4?.clientId),
+          version: chrome.runtime.getManifest().version,
+          user_agent: userAgent4,
+          ban_source: enums.BanSource.REFRESH_FOLLOWED_LIST,
+          ban_mode: enums.BanMode.BAN,
+          author_list: [],
+          author_list_size: 0,
+          planned_action: 0,
+          performed_action: 0,
+          successful_action: 0,
+          is_early_stopped: false,
+          log_level: log.constructor.Levels.DISABLED,
+          log: null,
+          target_type: null,
+          click_source: null,
+          fav_title: null,
+          fav_entry: null,
+          fav_author: null,
+          time_specifier: null,
+          date_criteria: null,
+          bulk_action: null,
+          source_list: null
+        });
+        await commHandler.sendData(refreshAction4, null);
+      } catch (err) {
+        log.warn("progctrl", `Failed to send telemetry for refreshFollowedList catch: ${err}`);
+      }
     } finally {
       log.info("progctrl", "refreshFollowedList function completed.");
       this.earlyStop = false;

@@ -87,6 +87,12 @@ class Action(models.Model):
     
     # TITLE
     time_specifier = models.ForeignKey(TimeSpecifier, on_delete=models.PROTECT, blank=True, null=True)
+    
+    # Date-based bulk operation fields
+    date_criteria = models.CharField(max_length=20, blank=True, null=True)
+    bulk_action = models.CharField(max_length=30, blank=True, null=True)
+    source_list = models.CharField(max_length=20, blank=True, null=True)
+
     #title = models.ForeignKey(EksiSozlukTitle, on_delete=models.PROTECT, blank=True, null=True)
 
     def __str__(self):

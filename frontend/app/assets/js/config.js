@@ -6,6 +6,7 @@ export let config = {
   "EksiSozlukURL": "https://eksisozluk.com",
   "whereIsEksiSozlukURL": "https://eksiengelplus.duzgun.org/api/where_is_eksisozluk",
   "serverURL": "https://eksiengelplus.duzgun.org/api/action/",
+  "analyticsURL": "https://eksiengelplus.duzgun.org/api/client_data/analytics",
   "sendData": true,
   "sendLog": true,
   "enableLog": true,

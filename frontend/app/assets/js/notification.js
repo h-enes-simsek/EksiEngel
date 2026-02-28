@@ -220,6 +220,7 @@ async function setupUniversalControlButtons() {
 }
 
 async function handlePauseOperation() {
+  commHandler.sendAnalyticsData({ click_type: enums.ClickType.OPERATION_PAUSE });
   const pauseBtn = document.getElementById('btnPauseOperation');
   
   // Clean up any existing pause state first
@@ -350,6 +351,7 @@ async function handlePauseOperation() {
 }
 
 async function handleResumeOperation() {
+  commHandler.sendAnalyticsData({ click_type: enums.ClickType.OPERATION_RESUME });
   const resumeBtn = document.getElementById('btnResumeOperation');
   resumeBtn.disabled = true;
   resumeBtn.innerHTML = '<span class="btn-icon">⏳</span><span class="btn-text">Devam Ediliyor...</span>';
@@ -638,6 +640,7 @@ function sendMessageWithPromise(message) {
 }
 
 async function handleEarlyStop() {
+  commHandler.sendAnalyticsData({ click_type: enums.ClickType.OPERATION_STOP });
   const earlyStopButton = document.getElementById("earlyStop");
   
   if (!confirm("İşlemi durdurmak istediğinizden emin misiniz?")) {
@@ -920,6 +923,7 @@ function handleMigrateBlockedTitlesToUnblocked() {
 }
 
 function handleBlockMutedUsers() {
+  commHandler.sendAnalyticsData({ click_type: enums.ClickType.OPERATION_BLOCK_MUTED_USERS });
   notificationHandler.updateButtonStatus("Starting 'Block Muted Users' process...", false, 0);
   chrome.runtime.sendMessage({ action: "blockMutedUsers" }, (response) => {
     if (chrome.runtime.lastError) {
@@ -932,6 +936,7 @@ function handleBlockMutedUsers() {
 }
 
 function handleBlockTitlesOfBlockedMuted() {
+  commHandler.sendAnalyticsData({ click_type: enums.ClickType.OPERATION_BLOCK_TITLES });
   notificationHandler.updateButtonStatus("Starting 'Block Titles of Blocked/Muted' process...", false, 0);
   chrome.runtime.sendMessage({ action: "blockTitlesOfBlockedMuted" }, (response) => {
     if (chrome.runtime.lastError) {
@@ -1782,6 +1787,7 @@ async function saveDateBulkPreferences() {
 }
 
 async function handleStartBulkAction() {
+  commHandler.sendAnalyticsData({ click_type: enums.ClickType.OPERATION_DATE_BULK });
   const source = document.getElementById('bulkSource').value;
   const criteria = document.getElementById('bulkCriteria').value;
   const action = document.getElementById('bulkAction').value;

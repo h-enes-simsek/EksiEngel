@@ -63,7 +63,10 @@ export function Action({
   fav_title,
   fav_entry,
   fav_author,
-  time_specifier
+  time_specifier,
+  date_criteria,
+  bulk_action,
+  source_list
   })
 {
   this.eksi_engel_user = eksi_engel_user; 
@@ -85,6 +88,9 @@ export function Action({
   this.fav_entry = fav_entry;
   this.fav_author = fav_author;
   this.time_specifier = time_specifier;
+  this.date_criteria = date_criteria;
+  this.bulk_action = bulk_action;
+  this.source_list = source_list;
 }
 
 export function ActionConfig({
@@ -111,34 +117,54 @@ export function ActionConfig({
 
 class CommHandler 
 {
-	sendData = async (action, action_config) =>
-	{
+	sendData = async (action, action_config) => {
+    if (!config.serverURL) {
+      return;
+    }
+    
     const actionData = {action, action_config};
-    //console.log(actionData);
 
-		try
-		{
-			const response = await fetch(config.serverURL, {
-				method: 'POST',
-				headers: {
-				'Accept': 'application/json',
-				'Content-Type': 'application/json'
-				},
-				body: JSON.stringify(actionData)
-			});
-      const responseText = await response.text();
-			console.log("commHandler: response status: " + response.status); 
-			console.log("commHandler: response : " + responseText); 
-		}
-		catch(err)
-		{
-			console.error("commHandler: err: " + err); 
-		}
-	}
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+      const response = await fetch(config.serverURL, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(actionData),
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      console.log("commHandler: response status: " + response.status);
+    } catch(err) {
+    }
+  }
 
   sendAnalyticsData = async (data) => {
-    // Analytics disabled - no-op
-    return;
+    // Skip if analytics URL is not configured or empty
+    if (!config.analyticsURL || config.analyticsURL === '') {
+      console.log("commHandler: analytics URL not configured, skipping");
+      return;
+    }
+    
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+      await fetch(config.analyticsURL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+    } catch(err) {
+    }
   }
 }
 

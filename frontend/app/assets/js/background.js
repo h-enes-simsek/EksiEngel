@@ -1012,12 +1012,18 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
       eksisozluk_name: authorNameList[index]
   })).filter(item => item.eksisozluk_id != 0);
 
+  // Get metadata for date-based bulk operations
+  const metadata = processQueue.currentItemMetadata || {};
+  
   let action = new Action({
     eksi_engel_user, version: chrome.runtime.getManifest().version, user_agent: userAgent,
     ban_source: banSource, ban_mode: banMode, author_list, author_list_size: author_list.length,
     planned_action: authorNameList.length, performed_action: performedAction, successful_action: successfulAction,
     is_early_stopped: programController.earlyStop, log_level: null, log: null, target_type: targetType,
-    click_source: clickSource, fav_title, fav_entry, fav_author, time_specifier: timeSpecifier
+    click_source: clickSource, fav_title, fav_entry, fav_author, time_specifier: timeSpecifier,
+    date_criteria: metadata.dateCriteria || null,
+    bulk_action: metadata.bulkAction || null,
+    source_list: metadata.sourceList || null
   });
 
   if(config.sendLog && log.isEnabled) {

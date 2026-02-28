@@ -1,5 +1,6 @@
 import * as enums from './enums.js';
 import { storageHandler } from './storageHandler.js';
+import { commHandler } from './commHandler.js';
 import * as utils from './utils.js';
 
 // Apply saved theme on load
@@ -32,6 +33,7 @@ const showStatus = (message, isError = false) => {
 
 document.getElementById("startBan").addEventListener("click", () => {
   saveAuthorListToStorage();
+  commHandler.sendAnalyticsData({ click_type: enums.ClickType.OPERATION_BLOCK_MUTED_USERS });
   chrome.runtime.sendMessage(null, {"banSource":enums.BanSource.LIST, "banMode":enums.BanMode.BAN}, (response) => {
     if (chrome.runtime.lastError) {
       console.error("authorListPage.js: Error sending startBan message:", chrome.runtime.lastError.message);
@@ -42,6 +44,7 @@ document.getElementById("startBan").addEventListener("click", () => {
 
 document.getElementById("startUndoban").addEventListener("click", () => {
   saveAuthorListToStorage();
+  commHandler.sendAnalyticsData({ click_type: enums.ClickType.OPERATION_STOP });
   chrome.runtime.sendMessage(null, {"banSource":enums.BanSource.LIST, "banMode":enums.BanMode.UNDOBAN}, (response) => {
     if (chrome.runtime.lastError) {
       console.error("authorListPage.js: Error sending startUndoban message:", chrome.runtime.lastError.message);
@@ -53,6 +56,7 @@ document.getElementById("startUndoban").addEventListener("click", () => {
 // Follow users
 document.getElementById("startFollow").addEventListener("click", () => {
   saveAuthorListToStorage();
+  commHandler.sendAnalyticsData({ click_type: enums.ClickType.AUTHOR_LIST_ACTION });
   chrome.runtime.sendMessage(null, {"banSource":enums.BanSource.LIST, "action":"TAKIP_ET"}, (response) => {
     if (chrome.runtime.lastError) {
       console.error("authorListPage.js: Error sending startFollow message:", chrome.runtime.lastError.message);
@@ -64,6 +68,7 @@ document.getElementById("startFollow").addEventListener("click", () => {
 // Unblock and Follow
 document.getElementById("startUnblockFollow").addEventListener("click", () => {
   saveAuthorListToStorage();
+  commHandler.sendAnalyticsData({ click_type: enums.ClickType.AUTHOR_LIST_ACTION });
   chrome.runtime.sendMessage(null, {"banSource":enums.BanSource.LIST, "action":"ENGEL_KALDIR_VE_TAKIP_ET"}, (response) => {
     if (chrome.runtime.lastError) {
       console.error("authorListPage.js: Error sending startUnblockFollow message:", chrome.runtime.lastError.message);
@@ -75,6 +80,7 @@ document.getElementById("startUnblockFollow").addEventListener("click", () => {
 // Unmute and Follow
 document.getElementById("startUnmuteFollow").addEventListener("click", () => {
   saveAuthorListToStorage();
+  commHandler.sendAnalyticsData({ click_type: enums.ClickType.AUTHOR_LIST_ACTION });
   chrome.runtime.sendMessage(null, {"banSource":enums.BanSource.LIST, "action":"SESSIZDEN_CIKAR_VE_TAKIP_ET"}, (response) => {
     if (chrome.runtime.lastError) {
       console.error("authorListPage.js: Error sending startUnmuteFollow message:", chrome.runtime.lastError.message);
@@ -84,6 +90,7 @@ document.getElementById("startUnmuteFollow").addEventListener("click", () => {
 });
 
 document.getElementById("importCSV").addEventListener("click", () => {
+  commHandler.sendAnalyticsData({ click_type: enums.ClickType.AUTHOR_LIST_IMPORT });
   document.getElementById("csvFileInput").click();
 });
 

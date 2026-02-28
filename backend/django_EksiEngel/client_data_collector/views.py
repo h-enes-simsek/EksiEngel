@@ -71,13 +71,17 @@ def analytics(request):
         else:
             return HttpResponse('Empty Request', status=400)
         try:
-            # create a row in ClientData table
+            # create a row in ClientAnalytic table
+            click_type_value = data.get("click_type")
+            click_type_obj, _ = ClickType.objects.get_or_create(
+                click_type=click_type_value if click_type_value else "UNKNOWN"
+            )
             ClientAnalytic.objects.create(
-                date = timezone.now(),
-                user_agent = data.get("user_agent"),
-                client_name = data.get("client_name"),
-                client_uid = data.get("client_uid"),
-                click_type = ClickType.objects.get(click_type = data.get("click_type")),
+                date=timezone.now(),
+                user_agent=data.get("user_agent", "unknown"),
+                client_name=data.get("client_name", "unknown"),
+                client_uid=data.get("client_uid", 0),
+                click_type=click_type_obj,
             )
             return HttpResponse('OK', status=200)
         except Exception as e:

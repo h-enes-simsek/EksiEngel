@@ -42,57 +42,71 @@ document.addEventListener('DOMContentLoaded', async function () {
   // add onclick function to two state radio buttons
   document.getElementById("sendDataEnabled").addEventListener("click", function(element) {
     sendDataSwitchOnClick();
+    commHandler.sendAnalyticsData({ click_type: enums.ClickType.SETTINGS_TOGGLE });
   });
   document.getElementById("sendDataDisabled").addEventListener("click", function(element) {
     sendDataSwitchOnClick();
+    commHandler.sendAnalyticsData({ click_type: enums.ClickType.SETTINGS_TOGGLE });
   });
 
   // add onclick function to two state radio buttons
   document.getElementById("titleBanEnabled").addEventListener("click", function(element) {
     titleBanSwitchOnClick();
+    commHandler.sendAnalyticsData({ click_type: enums.ClickType.SETTINGS_TOGGLE });
   });
   document.getElementById("titleBanDisabled").addEventListener("click", function(element) {
     titleBanSwitchOnClick();
+    commHandler.sendAnalyticsData({ click_type: enums.ClickType.SETTINGS_TOGGLE });
   });
   
   // add onclick function to two state radio buttons
   document.getElementById("noobBanEnabled").addEventListener("click", function(element) {
     noobBanSwitchOnClick();
+    commHandler.sendAnalyticsData({ click_type: enums.ClickType.SETTINGS_TOGGLE });
   });
   document.getElementById("noobBanDisabled").addEventListener("click", function(element) {
     noobBanSwitchOnClick();
+    commHandler.sendAnalyticsData({ click_type: enums.ClickType.SETTINGS_TOGGLE });
   });
   
   // add onclick function to two state radio buttons
   document.getElementById("muteEnabled").addEventListener("click", function(element) {
     muteSwitchOnClick();
+    commHandler.sendAnalyticsData({ click_type: enums.ClickType.SETTINGS_TOGGLE });
   });
   document.getElementById("muteDisabled").addEventListener("click", function(element) {
     muteSwitchOnClick();
+    commHandler.sendAnalyticsData({ click_type: enums.ClickType.SETTINGS_TOGGLE });
   });
     
   // add onclick function to two state radio buttons
   document.getElementById("protectFollowedUsersEnabled").addEventListener("click", function(element) {
     protectFollowedUsersSwitchOnClick();
+    commHandler.sendAnalyticsData({ click_type: enums.ClickType.SETTINGS_TOGGLE });
   });
   document.getElementById("protectFollowedUsersDisabled").addEventListener("click", function(element) {
     protectFollowedUsersSwitchOnClick();
+    commHandler.sendAnalyticsData({ click_type: enums.ClickType.SETTINGS_TOGGLE });
   });
 
   // add onclick function to two state radio buttons
   document.getElementById("onlyRequiredActionsEnabled").addEventListener("click", function(element) {
     onlyRequiredActionsSwitchOnClick();
+    commHandler.sendAnalyticsData({ click_type: enums.ClickType.SETTINGS_TOGGLE });
   });
   document.getElementById("onlyRequiredActionsDisabled").addEventListener("click", function(element) {
     onlyRequiredActionsSwitchOnClick();
+    commHandler.sendAnalyticsData({ click_type: enums.ClickType.SETTINGS_TOGGLE });
   });
 
   // add onclick function to two state radio buttons
   document.getElementById("banPremiumIconsEnabled").addEventListener("click", function(element) {
     banPremiumIconsSwitchOnClick();
+    commHandler.sendAnalyticsData({ click_type: enums.ClickType.SETTINGS_TOGGLE });
   });
   document.getElementById("banPremiumIconsDisabled").addEventListener("click", function(element) {
     banPremiumIconsSwitchOnClick();
+    commHandler.sendAnalyticsData({ click_type: enums.ClickType.SETTINGS_TOGGLE });
   });
 
   // Storage management
@@ -190,6 +204,7 @@ async function handleClearStoredData() {
   try {
     await storageHandler.clearPersistedData();
     await updateStorageUsageDisplay();
+    commHandler.sendAnalyticsData({ click_type: enums.ClickType.SETTINGS_TOGGLE });
     alert("Saklanan veriler temizlendi.");
   } catch (error) {
     console.error('Failed to clear stored data:', error);
@@ -237,6 +252,7 @@ function setupThemeToggle() {
     lightBtn.addEventListener('click', () => {
       applyTheme('light');
       updateThemeButtons('light');
+      commHandler.sendAnalyticsData({ click_type: enums.ClickType.SETTINGS_TOGGLE });
     });
   }
   
@@ -244,6 +260,7 @@ function setupThemeToggle() {
     darkBtn.addEventListener('click', () => {
       applyTheme('dark');
       updateThemeButtons('dark');
+      commHandler.sendAnalyticsData({ click_type: enums.ClickType.SETTINGS_TOGGLE });
     });
   }
 }
@@ -398,6 +415,8 @@ function showRuleForm() {
   
   document.getElementById('ruleFormSection').style.display = 'block';
   document.getElementById('addNewRuleBtn').style.display = 'none';
+  
+  commHandler.sendAnalyticsData({ click_type: enums.ClickType.SETTINGS_TOGGLE });
 }
 
 function hideRuleForm() {
@@ -450,6 +469,7 @@ async function deleteRule(ruleId) {
     await saveConfig(config);
     
     renderRulesList();
+    commHandler.sendAnalyticsData({ click_type: enums.ClickType.SETTINGS_TOGGLE });
     alert('Kural silindi');
     
   } catch (error) {
@@ -510,6 +530,7 @@ async function saveRule() {
     
     renderRulesList();
     hideRuleForm();
+    commHandler.sendAnalyticsData({ click_type: enums.ClickType.SETTINGS_TOGGLE });
     alert(editingRuleId ? 'Kural güncellendi' : 'Kural eklendi');
     
   } catch (error) {
@@ -557,6 +578,7 @@ async function clearDateFilterCache() {
   try {
     await storageHandler.clearRegistrationDateCache();
     await loadDateFilterCacheStats();
+    commHandler.sendAnalyticsData({ click_type: enums.ClickType.SETTINGS_TOGGLE });
     alert('Önbellek temizlendi');
     
   } catch (error) {

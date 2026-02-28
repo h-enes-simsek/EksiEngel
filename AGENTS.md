@@ -2517,3 +2517,83 @@ const banSourceMap = {
 | Operation running | Enabled | Task added to queue |
 | Operation paused | Enabled | Task added to queue |
 | Same button's task running | Disabled | Prevented by flag check |
+
+---
+
+### Commit 59: Telemetry Extension (2026-02-28)
+**Purpose:** Add telemetry data collection for analytics - track operations, click events, and date-based bulk actions
+
+**Changes:**
+
+**1. Backend - Action Model (`api/models.py`)**
+- Added 3 new fields to `Action` model:
+  - `date_criteria`: Date filter criteria (NEWER_THAN, OLDER_THAN, etc.)
+  - `bulk_action`: Bulk action type (ENGELLE, SESSIZE_AL, etc.)
+  - `source_list`: Source list (MUTED_USERS, BLOCKED_USERS, AUTHOR_LIST)
+
+**2. Frontend - Config (`config.js`)**
+- Added `analyticsURL` for click analytics endpoint
+
+**3. Frontend - CommHandler (`commHandler.js`)**
+- Enabled `sendAnalyticsData()` with 5-second timeout
+- Added timeout to `sendData()` (5 seconds)
+- Added `date_criteria`, `bulk_action`, `source_list` to `Action` constructor
+
+**4. Frontend - Program Controller (`programController.js`)**
+- Added telemetry sending to `refreshMutedList()` (success, early stop, error, catch)
+- Added telemetry sending to `refreshBlockedList()` (same cases)
+- Added telemetry sending to `refreshFollowedList()` (same cases)
+
+**5. Frontend - Background (`background.js`)**
+- Added date criteria fields to Action object for DATE_BASED_BULK operations
+
+**6. Frontend - Click Tracking**
+- Added 15 new ClickType values to `enums.js`
+- Added click tracking to `notification.js`: pause, resume, stop, block muted, block titles, bulk action
+- Added click tracking to `faq.js`: settings toggles, theme changes, date filter rules
+- Added click tracking to `authorListPage.js`: action buttons, CSV import
+
+**Error Handling:**
+- 5-second timeout for all telemetry requests
+- Fire-and-forget (silent fail) - operations continue regardless of server availability
+- No queuing/retry - data loss acceptable for reliability
+
+**Files Modified:**
+- `backend/django_EksiEngel/api/models.py` - Added 3 new fields
+- `frontend/app/assets/js/config.js` - Added analyticsURL
+- `frontend/app/assets/js/commHandler.js` - Enabled analytics, added timeout
+- `frontend/app/assets/js/programController.js` - Added telemetry to refresh methods
+- `frontend/app/assets/js/background.js` - Pass date criteria to Action
+- `frontend/app/assets/js/notification.js` - Added click tracking
+- `frontend/app/assets/js/faq.js` - Added click tracking
+- `frontend/app/assets/js/authorListPage.js` - Added click tracking
+- `frontend/app/assets/js/enums.js` - Added ClickType values
+
+**Analytics Queries:**
+
+Most blocked users:
+```python
+Action.objects.filter(ban_mode__ban_mode='BAN').values('author_list__eksisozluk_name').annotate(c=Count('id')).order_by('-c')[:50]
+```
+
+Most popular ban source:
+```python
+Action.objects.values('ban_source__ban_source').annotate(c=Count('id')).order_by('-c')
+```
+
+Date filter usage:
+```python
+Action.objects.exclude(date_criteria__isnull=True).values('date_criteria', 'bulk_action', 'source_list').annotate(c=Count('id'))
+```
+
+Click analytics:
+```python
+ClientAnalytic.objects.values('click_type__click_type').annotate(c=Count('id')).order_by('-c')
+```
+
+**Result:**
+- All blocking/unblocking operations now send telemetry to server
+- List refresh operations (muted, blocked, followed) now send telemetry
+- Date-based bulk operations include criteria, action, and source information
+- Click analytics track which features users use
+- Server unreachable = silent fail (no impact on user experience)
