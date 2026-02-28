@@ -643,7 +643,8 @@ function getOperationTypeDisplay(type) {
     'BLOCK_MUTED_USERS': 'Sessizleri Engelleme',
     'BLOCK_TITLES': 'Başlık Engelleme',
     'REFRESH_MUTED_LIST': 'Sessiz Liste Yenileme',
-    'REFRESH_BLOCKED_LIST': 'Engelli Liste Yenileme'
+    'REFRESH_BLOCKED_LIST': 'Engelli Liste Yenileme',
+    'REFRESH_FOLLOWED_LIST': 'Takip Edilenler Listesi Yenileniyor',
   };
   return typeMap[type] || type || 'Bilinmeyen İşlem';
 }
