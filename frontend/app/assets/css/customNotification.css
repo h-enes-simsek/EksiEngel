@@ -306,6 +306,7 @@ body {
     border-radius: 10px;
     font-size: 0.8rem;
     box-shadow: var(--shadow-sm);
+    margin-right: 8px;
 }
 
 .stat-mini b { font-weight: 700; }
@@ -342,7 +343,26 @@ body {
     display: flex;
     flex-wrap: wrap;
     gap: 5px;
-    justify-content: center;
+    justify-content: flex-start;
+    position: relative;
+}
+
+/* Stats buttons container - push to left */
+.stats-buttons-left {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-right: auto;
+}
+
+/* Control buttons container - centered */
+.control-buttons-center {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
 }
 
 /* Button Styles */

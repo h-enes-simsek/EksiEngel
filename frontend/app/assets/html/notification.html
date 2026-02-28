@@ -58,14 +58,6 @@
       <p id="progressText" class="progress-detail"></p>
     </div>
 
-    <!-- Ultra Compact Stats Row -->
-    <div class="status-stats-row">
-      <span class="stat-mini" title="İşlenen">⚡<b id="performedAction">0</b></span>
-      <span class="stat-mini" title="Başarılı">✅<b id="successfulAction">0</b></span>
-      <span class="stat-mini" title="Kalan">⏱️<b id="remainingAction">0</b></span>
-      <span id="currentOperationDescription" class="op-desc" style="display: none;">-</span>
-    </div>
-
     <div class="error-section" id="errorSection" style="display: none;">
       <div class="error-content">
         <span class="error-icon">⚠️</span>
@@ -74,10 +66,20 @@
     </div>
 
     <div class="action-section" id="universalControls">
-      <button id="btnPauseOperation" class="btn btn-warning btn-tiny" title="Duraklat">⏸️</button>
-      <button id="btnResumeOperation" class="btn btn-success btn-tiny" title="Devam Et">▶️</button>
-      <button id="earlyStop" class="btn btn-danger btn-tiny" title="Durdur">🛑</button>
+      <!-- Stats buttons on the left -->
+      <div class="stats-buttons-left">
+        <span class="stat-mini" title="İşlenen">⚡<b id="performedAction">0</b></span>
+        <span class="stat-mini" title="Başarılı">✅<b id="successfulAction">0</b></span>
+        <span class="stat-mini" title="Kalan">⏱️<b id="remainingAction">0</b></span>
+        <span id="currentOperationDescription" class="op-desc" style="display: none;">-</span>
+      </div>
       
+      <!-- Control buttons - centered -->
+      <div class="control-buttons-center">
+        <button id="btnPauseOperation" class="btn btn-warning btn-tiny" title="Duraklat">⏸️</button>
+        <button id="btnResumeOperation" class="btn btn-success btn-tiny" title="Devam Et">▶️</button>
+        <button id="earlyStop" class="btn btn-danger btn-tiny" title="Durdur">🛑</button>
+      </div>
     </div>
     
     <div class="operation-status-display" id="operationStatusDisplay" style="display: none;">
