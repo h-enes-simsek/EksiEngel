@@ -1,7 +1,9 @@
 from django.contrib import admin
-from .models import BanSource, BanMode, TargetType, ClickSource, LogLevel, ClientData
+from .models import BanSource, BanMode, TargetType, ClickSource, LogLevel, ClientData, ClientAnalytic, ClickType
 
 admin.site.register(ClientData)
+admin.site.register(ClientAnalytic)
+admin.site.register(ClickType)
 
 class BanSourceAdmin(admin.ModelAdmin):
     list_display = ('pk', '__str__',)
