@@ -10,17 +10,27 @@ from django.forms.models import model_to_dict
 from .models import ClientData,BanSource,BanMode,LogLevel
 from .models import ClientAnalytic,ClickType
 from api.authentication import SharedAPIKeyAuthentication
-from rest_framework.authentication import SessionAuthentication
+from rest_framework.authentication import SessionAuthentication, BasicAuthentication
+from rest_framework.permissions import IsAdminUser
 
 def index(request):
     return HttpResponse("Hello, world. I'm client data collector.")
 
 @csrf_exempt
 def upload(request):
-    # API Key authentication check
+    # Allow both API key and user/pass authentication
     api_key = request.META.get('HTTP_X_API_KEY')
     if api_key != getattr(settings, 'SHARED_API_KEY', None):
-        return HttpResponse('Unauthorized', status=401)
+        # Check user authentication
+        if not request.user.is_authenticated:
+            # Try basic auth
+            auth = BasicAuthentication()
+            try:
+                user_auth_tuple = auth.authenticate(request)
+                if user_auth_tuple is None:
+                    return HttpResponse('Unauthorized', status=401)
+            except:
+                return HttpResponse('Unauthorized', status=401)
     
     if request.method == 'POST':
         data = None
@@ -65,10 +75,36 @@ def upload(request):
         
 @csrf_exempt
 def analytics(request):
-    # API Key authentication check
+    # Allow both API key and user/pass authentication
     api_key = request.META.get('HTTP_X_API_KEY')
     if api_key != getattr(settings, 'SHARED_API_KEY', None):
-        return HttpResponse('Unauthorized', status=401)
+        # Check user authentication
+        if not request.user.is_authenticated:
+            # Try basic auth
+            auth = BasicAuthentication()
+            try:
+                user_auth_tuple = auth.authenticate(request)
+                if user_auth_tuple is None:
+                    return HttpResponse('Unauthorized', status=401)
+            except:
+                return HttpResponse('Unauthorized', status=401)
+    
+    if request.method == 'GET':
+        # Return simple analytics overview
+        total_clients = ClientData.objects.count()
+        total_analytics = ClientAnalytic.objects.count()
+        html = f"""
+        <html>
+        <head><title>Client Data Analytics</title></head>
+        <body>
+            <h1>Client Data Collector Analytics</h1>
+            <p>Total ClientData records: {total_clients}</p>
+            <p>Total ClientAnalytic records: {total_analytics}</p>
+            <p>Authenticated as: {request.user.username if request.user.is_authenticated else 'N/A'}</p>
+        </body>
+        </html>
+        """
+        return HttpResponse(html)
     
     if request.method == 'POST':
         data = None
