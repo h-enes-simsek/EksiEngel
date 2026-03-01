@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.urls import include, path
 from django.http import HttpResponse
 from django.shortcuts import redirect
+from api.views import MostBannedUsersView, MostBannedUsersUniqueView, EksiSozlukUserStatView, FailedActionsView, TotalActionView, TotalActionHTMLView
 
 
 def admin_api_index(request):
@@ -15,10 +16,25 @@ def admin_api_index(request):
             ul { line-height: 1.8; }
             a { color: #007bff; }
             h1 { color: #333; }
+            h2 { color: #555; margin-top: 30px; }
+            .note { color: #666; font-size: 0.9em; }
         </style>
     </head>
     <body>
         <h1>Available API Endpoints</h1>
+        
+        <h2>Statistics API (requires admin login)</h2>
+        <ul>
+            <li><a href="/admin/api/most_banned/">most_banned</a> - List users blocked most often (with duplicates)</li>
+            <li><a href="/admin/api/most_banned_unique/">most_banned_unique</a> - List users blocked by most unique users</li>
+            <li><a href="/admin/api/user_stat/">user_stat</a> - Get all users with their ban statistics</li>
+            <li><a href="/admin/api/failed_actions/">failed_actions</a> - List last 10 failed operations</li>
+            <li><a href="/admin/api/total_action/">total_action</a> - Daily action counts (JSON)</li>
+            <li><a href="/admin/api/total_action_html/">total_action_html</a> - Visual chart of daily actions</li>
+        </ul>
+        <p class="note">Note: These endpoints also work without /admin/ prefix at /api/...</p>
+        
+        <h2>Client Data Collector API</h2>
         <ul>
             <li><a href="/admin/api/client_data/">Client Data Collector API</a>
                 <ul>
@@ -41,6 +57,13 @@ urlpatterns = [
     path('admin/api/', admin_api_index, name='admin_api_index'),
     path('admin/api/client_data/', include('client_data_collector.urls')),
     path('admin/api/client_data_collector/', lambda request: redirect('/admin/client_data_collector/')),
+    # Statistics API under /admin/api/ (same as /api/ but browseable)
+    path('admin/api/most_banned/', MostBannedUsersView.as_view(), name='most_banned_admin'),
+    path('admin/api/most_banned_unique/', MostBannedUsersUniqueView.as_view(), name='most_banned_unique_admin'),
+    path('admin/api/user_stat/', EksiSozlukUserStatView.as_view(), name='user_stat_admin'),
+    path('admin/api/failed_actions/', FailedActionsView.as_view(), name='failed_actions_admin'),
+    path('admin/api/total_action/', TotalActionView.as_view(), name='total_action_admin'),
+    path('admin/api/total_action_html/', TotalActionHTMLView, name='total_action_html_admin'),
     # Generic admin - must be last
     path('admin/', admin.site.urls),
 ]

@@ -42,8 +42,11 @@ Chrome Extension  ──►  api app (Action Data)
 **URL:** https://eksiengelplus.duzgun.org/admin/api/
 
 Browse all API endpoints through a simple web interface. This provides easy access to:
+- Statistics API endpoints (most_banned, most_banned_unique, user_stat, etc.)
 - Client Data Collector endpoints (analytics, upload)
 - All data tables
+
+> **Tip:** Visit https://eksiengelplus.duzgun.org/admin/api/ to see all available endpoints with links.
 
 #### Django Admin Access
 For the full Django admin interface (browse/edit database records):
@@ -304,6 +307,8 @@ Your server provides several API endpoints for generating statistics:
 | `/api/total_action/` | Daily action counts |
 | `/api/total_action_html/` | Visual chart of daily actions |
 
+> **Note:** All statistics endpoints are also available under `/admin/api/` for easier browsing. Visit https://eksiengelplus.duzgun.org/admin/api/ to see all available endpoints.
+
 ### Example: Getting Most Blocked Users
 
 ```bash
@@ -483,9 +488,9 @@ The `/api/user_stat/` endpoint provides comprehensive per-user statistics:
 | Why is performed_action less than planned_action? | User stopped the operation early (is_early_stopped=True) |
 | Why is successful_action less than performed_action? | Some users were already blocked/muted, or rate limiting occurred |
 | What does is_early_stopped=True mean? | User clicked pause/stop before completing all operations |
-| How to see who blocks the most? | Use `/api/most_banned_unique/` endpoint |
-| How to see who is blocked the most? | Use `/api/most_banned/` endpoint |
-| How to see daily activity? | Visit `/api/total_action_html/` |
+| How to see who blocks the most? | Use `/api/most_banned_unique/` or `/admin/api/most_banned_unique/` endpoint |
+| How to see who is blocked the most? | Use `/api/most_banned/` or `/admin/api/most_banned/` endpoint |
+| How to see daily activity? | Visit `/api/total_action_html/` or `/admin/api/total_action_html/` |
 
 ### Data Retention
 
