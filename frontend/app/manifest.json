@@ -27,7 +27,11 @@
   ],
 	"content_scripts": [
 	  {
-	    "matches": ["*://*/*"],
+	    "matches": [
+	      "*://*eksisozluk*/*",
+	      "*://eksisozluk.com/*",
+	      "*://www.eksisozluk.com/*"
+	    ],
 	    "js": ["assets/js/script.js"],
 	    "type": "module"
 	  }
