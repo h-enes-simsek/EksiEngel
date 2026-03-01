@@ -2,41 +2,26 @@ import * as enums from './enums.js';
 import * as utils from './utils.js';
 import {log} from './log.js';
 
+// Shared API key - embedded directly in the extension (not accessible to websites)
+const SHARED_API_KEY = "cbjhsabj=iuhfnkenkfjnbekvbkjhdsbkjucbviujsdvnk./.d876fwuj*/8*f";
+
 /**
- * Load API key from .env file at runtime
- * @returns {Promise<string>} The API key from .env file
+ * Get the shared API key
+ * @returns {string} The shared API key
  */
-async function loadApiKeyFromEnv() {
-  try {
-    // Use chrome.runtime.getURL for proper extension path resolution
-    const envUrl = chrome.runtime.getURL('.env');
-    const response = await fetch(envUrl);
-    if (!response.ok) {
-      log.warn('config', '.env dosyası yüklenemedi, API anahtarı kullanılmayacak');
-      return '';
-    }
-    const envContent = await response.text();
-    const apiKeyMatch = envContent.match(/^API_KEY=(.+)$/m);
-    if (apiKeyMatch && apiKeyMatch[1]) {
-      const apiKey = apiKeyMatch[1].trim();
-      log.info('config', 'API anahtarı .env dosyasından yüklendi');
-      return apiKey;
-    }
-    log.warn('config', '.env dosyasında API_KEY bulunamadı');
-    return '';
-  } catch (error) {
-    log.error('config', '.env dosyası yüklenirken hata: ' + error.message);
-    return '';
-  }
+function getApiKey() {
+  return SHARED_API_KEY;
 }
 
-// Default config - apiKey loaded from .env at runtime
+export {getApiKey};
+
+// Default config - apiKey loaded from getApiKey()
 let defaultConfig = {
   "EksiSozlukURL": "https://eksisozluk.com",
   "whereIsEksiSozlukURL": "https://eksiengelplus.duzgun.org/api/where_is_eksisozluk",
   "serverURL": "https://eksiengelplus.duzgun.org/api/action/",
   "analyticsURL": "https://eksiengelplus.duzgun.org/admin/api/client_data/analytics",
-  "apiKey": "",  // Loaded from .env at runtime
+  "apiKey": getApiKey(),
   "sendData": true,
   "sendLog": true,
   "enableLog": true,
@@ -99,20 +84,15 @@ export async function saveConfig(config) {
 export async function handleConfig() {
   const c = await getConfig();
   
-  // Load API key from .env file at runtime
-  const envApiKey = await loadApiKeyFromEnv();
-  if (envApiKey) {
-    config.apiKey = envApiKey;
-  }
+  // Set API key from getApiKey()
+  config.apiKey = getApiKey();
   
   if (c) {
     log.info("config", "Config restored from storage");
-    // Merge stored config with runtime-loaded API key from .env
+    // Merge stored config
     Object.assign(config, c);
-    // Ensure API key from .env takes precedence if available
-    if (envApiKey) {
-      config.apiKey = envApiKey;
-    }
+    // Ensure API key is set
+    config.apiKey = getApiKey();
     if (!config.dateFilterRules || config.dateFilterRules.length === 0) {
       log.info("config", "Applying default date filter rules");
       config.dateFilterRules = createDefaultDateFilterRules();

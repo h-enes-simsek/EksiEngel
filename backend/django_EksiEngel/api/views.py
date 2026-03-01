@@ -2,6 +2,7 @@ from django.db.models import Count, Exists, OuterRef, Q, F
 from rest_framework import generics
 from rest_framework import views, status
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
+from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 from rest_framework.response import Response
 from django.http import HttpResponse
 from .serializers import CollectActionDataSerializer, EksiSozlukUserStatViewSerializer, MostBannedUsersSerializer, MostBannedUsersUniqueSerializer, WriteActionViewSerializer, TotalActionViewSerializer
@@ -26,6 +27,7 @@ class WhereIsEksiSozlukView(views.APIView):
 class CollectActionDataView(views.APIView):
     permission_classes = [AllowAny]
     authentication_classes = (SharedAPIKeyAuthentication, CsrfExemptSessionAuthentication)
+    throttle_classes = [AnonRateThrottle, UserRateThrottle]
     
     # for debug
     def get(self, request, format=None):

@@ -3,10 +3,13 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 from .models import ClientData, BanSource, BanMode, LogLevel
 from .models import ClientAnalytic, ClickType
@@ -63,7 +66,8 @@ def upload(request):
             )
             return Response('OK', status=status.HTTP_201_CREATED)
         except Exception as e:
-            return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
+            logger.error(f"ClientData upload error: {str(e)}")
+            return Response('Veri işlenirken bir hata oluştu', status=status.HTTP_400_BAD_REQUEST)
     else:
         return Response('Method Not Allowed', status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
@@ -71,7 +75,7 @@ def upload(request):
 @csrf_exempt
 @api_view(['GET', 'POST'])
 @authentication_classes([SharedAPIKeyAuthentication, CsrfExemptSessionAuthentication, BasicAuthentication])
-@permission_classes([AllowAny])
+@permission_classes([IsAdminUser])
 def analytics(request):
     if request.method == 'GET':
         # Return simple analytics overview
@@ -106,6 +110,7 @@ def analytics(request):
             )
             return Response('OK', status=status.HTTP_201_CREATED)
         except Exception as e:
-            return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
+            logger.error(f"Analytics upload error: {str(e)}")
+            return Response('Veri işlenirken bir hata oluştu', status=status.HTTP_400_BAD_REQUEST)
     else:
         return Response('Method Not Allowed', status=status.HTTP_405_METHOD_NOT_ALLOWED)
