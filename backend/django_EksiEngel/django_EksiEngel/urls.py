@@ -1,7 +1,8 @@
 from django.contrib import admin
 from django.urls import include, path
 from django.http import HttpResponse
-from django.shortcuts import redirect
+from django.shortcuts import render
+from django.conf import settings
 from api.views import MostBannedUsersView, MostBannedUsersUniqueView, EksiSozlukUserStatView, FailedActionsView, TotalActionView, TotalActionHTMLView
 
 
@@ -50,7 +51,14 @@ def admin_api_index(request):
     return HttpResponse(html)
 
 
+def landing_page(request):
+    """Serve the landing page at root URL."""
+    return render(request, 'landing/index.html')
+
+
 urlpatterns = [
+    # Landing page at root
+    path('', landing_page, name='landing'),
     path("api/", include("api.urls")),
     path("where_is_eksisozluk/", include("where_is_eksisozluk.urls")),
     # Admin API section - MUST come BEFORE admin.site.urls
