@@ -66,7 +66,7 @@
         let chart;
 
         // Fetch data and initialize the chart
-        fetch('https://eksiengel.hesimsek.com/api/total_action/')
+        fetch('/api/total_action/')
             .then(response => response.json())
             .then(data => {
                 if (!data.length) {

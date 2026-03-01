@@ -1036,7 +1036,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
 
   let action_config = new ActionConfig({
     eksi_sozluk_url: config.EksiSozlukURL, send_data: config.sendData, enable_noob_ban: config.enableNoobBan,
-    enable_mute: config.enableTitleBan, enable_anaylsis_before_operations: config.enableAnalysisBeforeOperation,
+    enable_mute: config.enableMute, enable_title_ban: config.enableTitleBan, enable_anaylsis_before_operations: config.enableAnalysisBeforeOperation,
     enable_only_required_actions: config.enableOnlyRequiredActions,
     enable_protect_followed_users: config.enableProtectFollowedUsers, ban_premium_icons: config.banPremiumIcons
   });

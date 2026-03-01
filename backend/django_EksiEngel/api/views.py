@@ -78,6 +78,8 @@ class FailedActionsView(generics.ListAPIView):
                
 # List Total Action Number day by day
 class TotalActionView(generics.ListAPIView):
+    permission_classes = [IsAdminUser]
+    authentication_classes = (CsrfExemptSessionAuthentication, BasicAuthentication)
     serializer_class = TotalActionViewSerializer
 
     def get_queryset(self):

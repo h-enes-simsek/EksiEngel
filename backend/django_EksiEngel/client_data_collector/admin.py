@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import BanSource, BanMode, TargetType, ClickSource, LogLevel, ClientData, ClientAnalytic, ClickType
+from .models import BanSource, BanMode, TargetType, ClickSource, LogLevel, ClientData, ClientAnalytic, ClickType, Config
 
 admin.site.register(ClientData)
 admin.site.register(ClientAnalytic)
@@ -21,3 +21,5 @@ admin.site.register(BanMode, BanModeAdmin)
 admin.site.register(TargetType, TargetTypeAdmin)
 admin.site.register(ClickSource, ClickSourceAdmin)
 admin.site.register(LogLevel, LogLevelAdmin)
+
+admin.site.register(Config)
