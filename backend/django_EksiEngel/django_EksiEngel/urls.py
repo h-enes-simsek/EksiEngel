@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.urls import include, path
 from django.http import HttpResponse
+from django.shortcuts import redirect
 
 
 def admin_api_index(request):
@@ -19,12 +20,13 @@ def admin_api_index(request):
     <body>
         <h1>Available API Endpoints</h1>
         <ul>
-            <li><a href="/admin/api/client_data/">Client Data Collector</a>
+            <li><a href="/admin/api/client_data/">Client Data Collector API</a>
                 <ul>
                     <li><a href="/admin/api/client_data/analytics">analytics (GET/POST)</a></li>
                     <li><a href="/admin/api/client_data/upload">upload (POST)</a></li>
                 </ul>
             </li>
+            <li><a href="/admin/client_data_collector/">Client Data Collector (Django Admin)</a></li>
         </ul>
     </body>
     </html>
@@ -39,4 +41,6 @@ urlpatterns = [
     # Admin API section - browsable API endpoints
     path('admin/api/', admin_api_index, name='admin_api_index'),
     path('admin/api/client_data/', include('client_data_collector.urls')),
+    # Redirect /admin/api/client_data_collector/ to Django admin
+    path('admin/api/client_data_collector/', lambda request: redirect('/admin/client_data_collector/')),
 ]
