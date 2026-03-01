@@ -9,6 +9,7 @@ from .models import Action, ActionConfig, EksiSozlukUser
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication 
 from django.db.models.functions import TruncDay
 from django.shortcuts import render
+from .authentication import SharedAPIKeyAuthentication
 
 class CsrfExemptSessionAuthentication(SessionAuthentication):
 
@@ -24,7 +25,7 @@ class WhereIsEksiSozlukView(views.APIView):
         
 class CollectActionDataView(views.APIView):
     permission_classes = [AllowAny]
-    authentication_classes = (CsrfExemptSessionAuthentication, BasicAuthentication)
+    authentication_classes = (SharedAPIKeyAuthentication, CsrfExemptSessionAuthentication)
     
     # for debug
     def get(self, request, format=None):

@@ -3,17 +3,25 @@ from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
+from django.conf import settings
 import json
 from django.forms.models import model_to_dict
 
 from .models import ClientData,BanSource,BanMode,LogLevel
 from .models import ClientAnalytic,ClickType
+from api.authentication import SharedAPIKeyAuthentication
+from rest_framework.authentication import SessionAuthentication
 
 def index(request):
     return HttpResponse("Hello, world. I'm client data collector.")
 
 @csrf_exempt
 def upload(request):
+    # API Key authentication check
+    api_key = request.META.get('HTTP_X_API_KEY')
+    if api_key != getattr(settings, 'SHARED_API_KEY', None):
+        return HttpResponse('Unauthorized', status=401)
+    
     if request.method == 'POST':
         data = None
         if(request.POST):
@@ -57,6 +65,11 @@ def upload(request):
         
 @csrf_exempt
 def analytics(request):
+    # API Key authentication check
+    api_key = request.META.get('HTTP_X_API_KEY')
+    if api_key != getattr(settings, 'SHARED_API_KEY', None):
+        return HttpResponse('Unauthorized', status=401)
+    
     if request.method == 'POST':
         data = None
         if(request.POST):
