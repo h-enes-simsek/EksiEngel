@@ -7,6 +7,7 @@ export let config = {
   "whereIsEksiSozlukURL": "https://eksiengelplus.duzgun.org/api/where_is_eksisozluk",
   "serverURL": "https://eksiengelplus.duzgun.org/api/action/",
   "analyticsURL": "https://eksiengelplus.duzgun.org/api/client_data/analytics",
+  "apiKey": "__API_KEY__",
   "sendData": true,
   "sendLog": true,
   "enableLog": true,

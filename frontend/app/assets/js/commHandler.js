@@ -132,7 +132,8 @@ class CommHandler
         method: 'POST',
         headers: {
           'Accept': 'application/json',
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'X-API-Key': config.apiKey
         },
         body: JSON.stringify(actionData),
         signal: controller.signal
@@ -157,7 +158,10 @@ class CommHandler
 
       await fetch(config.analyticsURL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-API-Key': config.apiKey
+        },
         body: JSON.stringify(data),
         signal: controller.signal
       });
