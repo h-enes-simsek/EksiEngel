@@ -333,16 +333,27 @@
         dropdownMenu.dataset[processedMark] = "true"; // Mark as processed to avoid repeated attempts
         return;
       }
-      
+
       // Create new buttons as list items
       let newButtonBanUser = document.createElement("li");
       newButtonBanUser.innerHTML = `<a href="javascript:void(0);"><img src=${eksiEngelIconURL} style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px;"> yazarı engelle</a>`;
-      
+
+      // Update button label based on enableMute config (after buttons are created)
+      getConfig().then(config => {
+        const banLabel = config?.enableMute ? "yazarı sessize al" : "yazarı engelle";
+        newButtonBanUser.innerHTML = `<a href="javascript:void(0);"><img src=${eksiEngelIconURL} style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px;"> ${banLabel}</a>`;
+      });
+
       let newButtonBanFav = document.createElement("li");
       newButtonBanFav.innerHTML = `<a href="javascript:void(0);"><img src=${eksiEngelIconURL} style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px;"> favlayanları engelle</a>`;
       
       let newButtonBanFollow = document.createElement("li");
+      // Set initial label, then update based on config
       newButtonBanFollow.innerHTML = `<a href="javascript:void(0);"><img src=${eksiEngelIconURL} style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px;"> takipçilerini engelle</a>`;
+      getConfig().then(config => {
+        const followLabel = config?.enableMute ? "takipçilerini sessize al" : "takipçilerini engelle";
+        newButtonBanFollow.innerHTML = `<a href="javascript:void(0);"><img src=${eksiEngelIconURL} style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px;"> ${followLabel}</a>`;
+      });
 
       // Insert buttons in the dropdown menu
       if (lastRelevantItem) {
@@ -411,7 +422,7 @@
   };
 
   // Function to process Relation Buttons (on profile pages)
-  const processRelationButtons = (profileButtonsContainer) => {
+  const processRelationButtons = async (profileButtonsContainer) => {
       // Profile pages might reload content differently. We target a container.
       // Let's assume the container is '.profile-buttons' or similar.
       // We need to re-run the logic if the *content* of this container changes significantly.
@@ -432,6 +443,9 @@
           // Check if we are actually on a profile page ('/biri/')
           let page = window.location.pathname.split('/')[1];
           if (page !== "biri") return; // Only run on profile pages
+
+          // Get config for dynamic button labels
+          const config = await getConfig();
 
           // Attempt CSS fix (might fail if element doesn't exist yet)
           try {
@@ -475,16 +489,17 @@
                       buttonRelation.remove();
                   } else {
                       if (isBanned == "true") { // Handle UNDOBAN case (always TargetType.USER for unblocking)
-                          newButton.innerHTML = `<a><span><img src=${eksiEngelIconURL}> engellemeyi bırak</span></a>`;
-                          newButton.addEventListener("click", function(){ EksiEngel_sendMessage(enums.BanSource.SINGLE, enums.BanMode.UNDOBAN, null, authorName, authorId, enums.TargetType.USER, enums.ClickSource.PROFILE) });
-                      } else { // Handle BAN case (check config for MUTE vs USER)
-                          newButton.innerHTML = `<a><span><img src=${eksiEngelIconURL}> engelle</span></a>`;
-                          newButton.addEventListener("click", async function(){
-                              const config = await getConfig();
-                              const targetType = config?.enableMute ? enums.TargetType.MUTE : enums.TargetType.USER;
-                              EksiEngel_sendMessage(enums.BanSource.SINGLE, enums.BanMode.BAN, null, authorName, authorId, targetType, enums.ClickSource.PROFILE);
-                          });
-                      }
+                           const undoLabel = config?.enableMute ? "sessizden çıkar" : "engellemeyi bırak";
+                           newButton.innerHTML = `<a><span><img src=${eksiEngelIconURL}> ${undoLabel}</span></a>`;
+                           newButton.addEventListener("click", function(){ EksiEngel_sendMessage(enums.BanSource.SINGLE, enums.BanMode.UNDOBAN, null, authorName, authorId, enums.TargetType.USER, enums.ClickSource.PROFILE) });
+                       } else { // Handle BAN case (check config for MUTE vs USER)
+                           const banLabel = config?.enableMute ? "sessize al" : "engelle";
+                           newButton.innerHTML = `<a><span><img src=${eksiEngelIconURL}> ${banLabel}</span></a>`;
+                           newButton.addEventListener("click", function(){
+                               const targetType = config?.enableMute ? enums.TargetType.MUTE : enums.TargetType.USER;
+                               EksiEngel_sendMessage(enums.BanSource.SINGLE, enums.BanMode.BAN, null, authorName, authorId, targetType, enums.ClickSource.PROFILE);
+                           });
+                       }
                       parentListItem.parentNode.append(newButton);
                   }
               } else if (nameOfTheButton == "başlıklarını engelle") {
@@ -497,16 +512,6 @@
                   }
                   parentListItem.parentNode.append(newButton);
                   buttonRelationTitleBan = newButton; // Mark where to add "block followers"
-
-              } else if (nameOfTheButton == "sessize al") {
-                  if (isBanned == "true") {
-                      newButton.innerHTML = `<a><span><img src=${eksiEngelIconURL}> sessizden çıkar</span></a>`;
-                      newButton.addEventListener("click", function(){ EksiEngel_sendMessage(enums.BanSource.SINGLE, enums.BanMode.UNDOBAN, null, authorName, authorId, enums.TargetType.MUTE, enums.ClickSource.PROFILE) });
-                  } else {
-                      newButton.innerHTML = `<a><span><img src=${eksiEngelIconURL}> sessize al</span></a>`;
-                      newButton.addEventListener("click", function(){ EksiEngel_sendMessage(enums.BanSource.SINGLE, enums.BanMode.BAN, null, authorName, authorId, enums.TargetType.MUTE, enums.ClickSource.PROFILE) });
-                  }
-                  parentListItem.parentNode.append(newButton);
               }
           });
 
@@ -514,7 +519,8 @@
           if (buttonRelationTitleBan) {
               let newButtonFollow = document.createElement("li");
               newButtonFollow.classList.add('eksiengel-injected-button');
-              newButtonFollow.innerHTML = `<a><span><img src=${eksiEngelIconURL}> takipçilerini engelle</span></a>`;
+              const followLabel = config?.enableMute ? "takipçilerini sessize al" : "takipçilerini engelle";
+              newButtonFollow.innerHTML = `<a><span><img src=${eksiEngelIconURL}> ${followLabel}</span></a>`;
               newButtonFollow.addEventListener("click", function(){ EksiEngel_sendMessage(enums.BanSource.FOLLOW, enums.BanMode.BAN, null, authorName, authorId, null, enums.ClickSource.PROFILE) });
               buttonRelationTitleBan.parentNode.insertBefore(newButtonFollow, buttonRelationTitleBan.nextSibling); // Insert after
           }
