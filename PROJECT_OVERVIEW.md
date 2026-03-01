@@ -148,7 +148,7 @@ EksiEngel/
 | App | Path | Purpose |
 |-----|------|---------|
 | **api** | `/api/` | Action analytics, blocked user statistics |
-| **client_data_collector** | `/client_data_collector/` | Client-side analytics, usage patterns |
+| **client_data_collector** | `/admin/api/client_data/` | Client-side analytics, usage patterns |
 | **where_is_eksisozluk** | `/where_is_eksisozluk/` | URL status monitoring |
 
 ### API Endpoints
@@ -157,8 +157,8 @@ EksiEngel/
 |----------|---------|
 | `/api/action/` | Log blocking/unblocking actions |
 | `/api/where_is_eksisozluk/` | Get current Ekşi Sözlük URL |
-| `/client_data_collector/analytics/` | UI interaction analytics |
-| `/client_data_collector/upload_v2/` | Configuration and usage data |
+| `/admin/api/client_data/analytics` | UI interaction analytics (GET/POST) |
+| `/admin/api/client_data/upload` | Configuration and usage data (POST) |
 
 ## Key Features
 

@@ -5,7 +5,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from rest_framework.authentication import SessionAuthentication
+from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 import json
 
 from .models import ClientData, BanSource, BanMode, LogLevel
@@ -25,7 +25,7 @@ def index(request):
 
 @csrf_exempt
 @api_view(['POST'])
-@authentication_classes([SharedAPIKeyAuthentication, CsrfExemptSessionAuthentication])
+@authentication_classes([SharedAPIKeyAuthentication, CsrfExemptSessionAuthentication, BasicAuthentication])
 @permission_classes([AllowAny])
 def upload(request):
     if request.method == 'POST':
@@ -70,7 +70,7 @@ def upload(request):
 
 @csrf_exempt
 @api_view(['GET', 'POST'])
-@authentication_classes([SharedAPIKeyAuthentication, CsrfExemptSessionAuthentication])
+@authentication_classes([SharedAPIKeyAuthentication, CsrfExemptSessionAuthentication, BasicAuthentication])
 @permission_classes([AllowAny])
 def analytics(request):
     if request.method == 'GET':

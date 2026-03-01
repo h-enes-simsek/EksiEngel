@@ -35,7 +35,7 @@ let defaultConfig = {
   "EksiSozlukURL": "https://eksisozluk.com",
   "whereIsEksiSozlukURL": "https://eksiengelplus.duzgun.org/api/where_is_eksisozluk",
   "serverURL": "https://eksiengelplus.duzgun.org/api/action/",
-  "analyticsURL": "https://eksiengelplus.duzgun.org/client_data_collector/analytics",
+  "analyticsURL": "https://eksiengelplus.duzgun.org/admin/api/client_data/analytics",
   "apiKey": "",  // Loaded from .env at runtime
   "sendData": true,
   "sendLog": true,
