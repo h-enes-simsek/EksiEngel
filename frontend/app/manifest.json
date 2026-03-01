@@ -76,7 +76,8 @@
         "assets/js/authorListPage.js",
 				"assets/js/queue.js",
 				"assets/js/programController.js",
-				"assets/js/script.js"
+				"assets/js/script.js",
+        ".env"
       ],
       "matches": [
         "http://*/*",
