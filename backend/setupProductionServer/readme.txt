@@ -131,8 +131,8 @@ After=network.target
 [Service]
 User=root
 Group=www-data
-WorkingDirectory=/var/www/EksiEngel/backend/django_EksiEngel
-ExecStart=/var/www/EksiEngel/backend/VENV_Django_4_1_EksiEngel/bin/gunicorn \
+WorkingDirectory=/var/www/EksiEngelPlus/backend/django_EksiEngel
+ExecStart=/var/www/EksiEngelPlus/backend/VENV_Django_4_1_EksiEngel/bin/gunicorn \
           --access-logfile - \
           --workers 3 \
           --bind unix:/run/gunicorn.sock \
@@ -181,7 +181,7 @@ server {
     server_name eksiengel.hesimsek.com www.eksiengel.hesimsek.com;
     location = /favicon.ico { access_log off; log_not_found off; }
     location /static/ {
-        root /var/www/EksiEngel/server/djangoRelated/django_EksiEngel;
+        root /var/www/EksiEngelPlus/backend/django_EksiEngel;
     }
 
     location / {
