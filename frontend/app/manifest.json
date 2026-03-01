@@ -28,9 +28,7 @@
 	"content_scripts": [
 	  {
 	    "matches": [
-	      "*://*eksisozluk*/*",
-	      "*://eksisozluk.com/*",
-	      "*://www.eksisozluk.com/*"
+	      "*://eksisozluk.com/*"
 	    ],
 	    "js": ["assets/js/script.js"],
 	    "type": "module"
