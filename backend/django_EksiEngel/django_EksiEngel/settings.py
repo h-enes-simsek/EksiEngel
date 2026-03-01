@@ -18,7 +18,7 @@ SECRET_KEY = env("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = (env("DEBUG") == "True")
 
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=[".eksiengelplus.duzgun.org", "localhost", "127.0.0.1"])
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=[".eksiengelplus.duzgun.org", "ekisengelplus.duzgun.org", "localhost", "127.0.0.1", "*"])
 
 # Application definition
 
@@ -136,3 +136,6 @@ SHARED_API_KEY = env("SHARED_API_KEY")
 # Rate limiting settings
 RATELIMIT_USE_CACHE = 'default'
 RATELIMIT_DEFAULT_RATE = '100/m'
+
+# CSRF settings
+CSRF_TRUSTED_ORIGINS = ["https://eksiengelplus.duzgun.org", "http://localhost:8000"]
