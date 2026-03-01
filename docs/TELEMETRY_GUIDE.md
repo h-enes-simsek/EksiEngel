@@ -45,6 +45,16 @@ Browse all API endpoints through a simple web interface. This provides easy acce
 - Client Data Collector endpoints (analytics, upload)
 - All data tables
 
+#### Django Admin Access
+For the full Django admin interface (browse/edit database records):
+- **URL:** https://eksiengelplus.duzgun.org/admin/client_data_collector/
+- **Short URL:** https://eksiengelplus.duzgun.org/admin/api/client_data_collector/ (redirects)
+
+This gives you full CRUD access to:
+- ClientData - Raw client data submissions
+- ClientAnalytic - Click/feature usage tracking
+- All lookup tables (BanSource, BanMode, ClickType, etc.)
+
 #### Authentication
 Access requires one of:
 - **X-API-Key header**: For programmatic access
@@ -53,10 +63,11 @@ Access requires one of:
 Example with curl:
 ```bash
 # View analytics in browser
-curl -u username:password https://eksiengelplus.duzgun.org/admin/api/client_data/analytics
+curl -u coh:YOUR_PASSWORD https://eksiengelplus.duzgun.org/admin/api/client_data/analytics
 
-# Or with API key
-curl -H "X-API-Key: your-api-key" https://eksiengelplus.duzgun.org/admin/api/client_data/analytics
+# Or with API key (key format from .env: SHARED_API_KEY)
+curl -H "X-API-Key: cbjhsabj=iuhfnkenkfjnbekvbkjhdsbkjucbviujsdvnk./.d876fwuj*/8*f" \
+  https://eksiengelplus.duzgun.org/admin/api/client_data/analytics
 ```
 
 ---
