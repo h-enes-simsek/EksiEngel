@@ -149,36 +149,78 @@ class AutoQueue extends Queue {
 
   async _initializePersistedQueue() {
     try {
+      const lastResult = await storageHandler.getLastOperationResult();
+      
+      // If previous operation was STOPPED, clear any stale queue data
+      // This prevents stale/invalid items from being restored after user cancels
+      if (lastResult && lastResult.result === 'STOPPED') {
+        console.log("Queue: Previous operation was STOPPED, clearing stale queue data");
+        await storageHandler.saveQueueData([]);
+        this._items = [];
+        this._isInitialized = true;
+        return;
+      }
+      
       const persistedItems = await storageHandler.getQueueData();
-      if (persistedItems && Array.isArray(persistedItems)) {
-        // Validate items - remove non-executable ones silently
-        const validItems = [];
-        for (const item of persistedItems) {
-          // Check if item has required properties for reconstruction
-          if (item.action && typeof item.action.banSource !== 'undefined') {
-            validItems.push(item);
-          } else {
-            console.warn("Queue: Removing invalid item (missing required properties)");
-          }
-        }
+      
+      // Handle edge cases: no items, not an array, or empty
+      if (!persistedItems || !Array.isArray(persistedItems) || persistedItems.length === 0) {
+        console.log("Queue: No persisted queue items found");
+        this._items = [];
+        this._isInitialized = true;
+        return;
+      }
+      
+      // Validate items - remove non-executable ones
+      const validItems = [];
+      for (const item of persistedItems) {
+        // Check if item has required properties for reconstruction
+        // Also verify banSource is not null/undefined
+        const hasValidAction = item && item.action && 
+          typeof item.action.banSource !== 'undefined' && 
+          item.action.banSource !== null;
         
-        this._items = validItems;
-        console.log(`Queue: Restored ${this._items.length} valid items from storage (${persistedItems.length - validItems.length} invalid items removed)`);
-        
-        // Only auto-start if previous operation completed successfully
-        if (this._items.length > 0) {
-          const lastResult = await storageHandler.getLastOperationResult();
-          const shouldAutoStart = !lastResult || lastResult.result === 'COMPLETED';
+        if (hasValidAction) {
+          validItems.push(item);
+        } else {
+          // Log detailed info about what's missing for debugging
+          const missingProps = [];
+          if (!item) missingProps.push('item is null/undefined');
+          if (!item?.action) missingProps.push('item.action is missing');
+          if (item?.action && typeof item.action.banSource === 'undefined') missingProps.push('item.action.banSource is undefined');
+          if (item?.action && item.action.banSource === null) missingProps.push('item.action.banSource is null');
           
-          if (shouldAutoStart) {
-            // Delay to allow other components to initialize
-            setTimeout(() => {
-              console.log("Queue: Auto-starting queue processing after restoration (previous: COMPLETED or none)");
-              this.dequeue();
-            }, 1000);
-          } else {
-            console.log(`Queue: Not auto-starting - previous operation result was: ${lastResult?.result}`);
-          }
+          console.debug(`Queue: Removing invalid item - missing: ${missingProps.join(', ')}`, item);
+        }
+      }
+      
+      // If ALL items were invalid, clear the queue to prevent repeated warnings
+      if (validItems.length === 0 && persistedItems.length > 0) {
+        console.log("Queue: All items were invalid, clearing queue storage");
+        await storageHandler.saveQueueData([]);
+        this._items = [];
+        this._isInitialized = true;
+        return;
+      }
+      
+      this._items = validItems;
+      const invalidCount = persistedItems.length - validItems.length;
+      if (invalidCount > 0) {
+        console.log(`Queue: Restored ${this._items.length} valid items from storage (${invalidCount} invalid items removed)`);
+      }
+      
+      // Only auto-start if previous operation completed successfully
+      if (this._items.length > 0) {
+        const shouldAutoStart = !lastResult || lastResult.result === 'COMPLETED';
+        
+        if (shouldAutoStart) {
+          // Delay to allow other components to initialize
+          setTimeout(() => {
+            console.log("Queue: Auto-starting queue processing after restoration (previous: COMPLETED or none)");
+            this.dequeue();
+          }, 1000);
+        } else {
+          console.log(`Queue: Not auto-starting - previous operation result was: ${lastResult?.result}`);
         }
       }
     } catch (error) {
@@ -191,7 +233,39 @@ class AutoQueue extends Queue {
   async _saveQueueState() {
     if (!this._isInitialized) return;
     try {
-      const itemsData = this._items.map(item => ({ action: item.action, resolve: undefined, reject: undefined }));
+      // Filter out invalid items before saving (defensive check)
+      const validItems = this._items.filter(item => {
+        const isValid = item && item.action && 
+          typeof item.action.banSource !== 'undefined' && 
+          item.action.banSource !== null;
+        
+        if (!isValid) {
+          // Log what's invalid for debugging
+          const issue = !item ? 'item is falsy' : 
+            !item.action ? 'item.action is falsy' : 
+            typeof item.action.banSource === 'undefined' ? 'banSource is undefined' : 
+            item.action.banSource === null ? 'banSource is null' : 'unknown';
+          console.debug(`Queue: Filtering out invalid item before save: ${issue}`, item);
+        }
+        
+        return isValid;
+      });
+      
+      if (validItems.length !== this._items.length) {
+        console.warn(`Queue: Filtering out ${this._items.length - validItems.length} invalid items before saving`);
+        this._items = validItems;
+      }
+      
+      // Log what we're about to save (limited info for privacy)
+      const saveInfo = validItems.map(item => ({
+        hasAction: !!item?.action,
+        banSource: item?.action?.banSource,
+        hasResolve: !!item?.resolve,
+        hasReject: !!item?.reject
+      }));
+      console.log(`Queue: Saving ${validItems.length} items to storage:`, saveInfo);
+      
+      const itemsData = validItems.map(item => ({ action: item.action, resolve: undefined, reject: undefined }));
       await storageHandler.saveQueueData(itemsData);
     } catch (error) {
       console.warn('Queue: Failed to save queue state:', error);
