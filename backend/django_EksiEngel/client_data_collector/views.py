@@ -18,19 +18,33 @@ def index(request):
 
 @csrf_exempt
 def upload(request):
-    # Allow both API key and user/pass authentication
+    # Check for API key authentication first
     api_key = request.META.get('HTTP_X_API_KEY')
-    if api_key != getattr(settings, 'SHARED_API_KEY', None):
-        # Check user authentication
-        if not request.user.is_authenticated:
-            # Try basic auth
+    authenticated = False
+    
+    if api_key == getattr(settings, 'SHARED_API_KEY', None):
+        # Valid API key
+        authenticated = True
+    else:
+        # Try session authentication (for logged-in browser users)
+        if request.user.is_authenticated:
+            authenticated = True
+        else:
+            # Try basic authentication
             auth = BasicAuthentication()
             try:
                 user_auth_tuple = auth.authenticate(request)
-                if user_auth_tuple is None:
-                    return HttpResponse('Unauthorized', status=401)
+                if user_auth_tuple is not None:
+                    request.user = user_auth_tuple[0]
+                    authenticated = True
             except:
-                return HttpResponse('Unauthorized', status=401)
+                pass
+    
+    if not authenticated:
+        # Return 401 with Basic Auth challenge header
+        response = HttpResponse('Unauthorized', status=401)
+        response['WWW-Authenticate'] = 'Basic realm="EksiEngel"'
+        return response
     
     if request.method == 'POST':
         data = None
@@ -75,19 +89,33 @@ def upload(request):
         
 @csrf_exempt
 def analytics(request):
-    # Allow both API key and user/pass authentication
+    # Check for API key authentication first
     api_key = request.META.get('HTTP_X_API_KEY')
-    if api_key != getattr(settings, 'SHARED_API_KEY', None):
-        # Check user authentication
-        if not request.user.is_authenticated:
-            # Try basic auth
+    authenticated = False
+    
+    if api_key == getattr(settings, 'SHARED_API_KEY', None):
+        # Valid API key
+        authenticated = True
+    else:
+        # Try session authentication (for logged-in browser users)
+        if request.user.is_authenticated:
+            authenticated = True
+        else:
+            # Try basic authentication
             auth = BasicAuthentication()
             try:
                 user_auth_tuple = auth.authenticate(request)
-                if user_auth_tuple is None:
-                    return HttpResponse('Unauthorized', status=401)
+                if user_auth_tuple is not None:
+                    request.user = user_auth_tuple[0]
+                    authenticated = True
             except:
-                return HttpResponse('Unauthorized', status=401)
+                pass
+    
+    if not authenticated:
+        # Return 401 with Basic Auth challenge header
+        response = HttpResponse('Unauthorized', status=401)
+        response['WWW-Authenticate'] = 'Basic realm="EksiEngel"'
+        return response
     
     if request.method == 'GET':
         # Return simple analytics overview
