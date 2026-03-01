@@ -3,7 +3,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
-from rest_framework.permissions import AllowAny, IsAdminUser
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 import json
@@ -75,9 +75,16 @@ def upload(request):
 @csrf_exempt
 @api_view(['GET', 'POST'])
 @authentication_classes([SharedAPIKeyAuthentication, CsrfExemptSessionAuthentication, BasicAuthentication])
-@permission_classes([IsAdminUser])
 def analytics(request):
+    # POST is allowed with API key authentication (for extension to send analytics)
+    # GET requires admin access (for viewing analytics)
+    
     if request.method == 'GET':
+        # Require admin for GET
+        from rest_framework.permissions import IsAdminUser
+        if not request.user.is_authenticated or not request.user.is_staff:
+            return Response('Bu sayfaya erişim yetkiniz yok', status=status.HTTP_403_FORBIDDEN)
+        
         # Return simple analytics overview
         total_clients = ClientData.objects.count()
         total_analytics = ClientAnalytic.objects.count()
