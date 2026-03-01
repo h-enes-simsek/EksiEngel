@@ -1,11 +1,11 @@
 <div float="left">
-<h2><img src="frontend/app/assets/img/eksiengel48.png" width="48" height="48"> Ekşi Engel</h2>
+<h2><img src="frontend/app/assets/img/eksiengel48.png" width="48" height="48"> Ekşi Engel Plus</h2>
 </div>
 Google Chrome extension that allows mass blocking of authors for the social media platform Ekşi Sözlük.
 
 <h3>Features</h3>
 
-Ekşi Engel can perform the following actions:
+Ekşi Engel Plus can perform the following actions:
 
 - Block everyone who favorited a specific post
 - Block everyone who follows a specific author
@@ -48,7 +48,7 @@ Easily migrate between blocked and muted status in bulk:
 
 <h3>Ekşi Sözlük Block Types</h3>
 
-Ekşi Sözlük has three different block types, and Ekşi Engel supports them all:
+Ekşi Sözlük has three different block types, and Ekşi Engel Plus supports them all:
 
 - **Engelle (Ban):** Block an author
 - **Başlık Engelle (Title Ban):** Block all pages created by an author
@@ -75,15 +75,15 @@ The extension dynamically changes menu labels based on your configuration:
 
 <h3>Rate Limiting</h3>
 
-Ekşi Sözlük limits blocking speed (usually 6 operations per minute). Ekşi Engel automatically performs the maximum allowed operations per minute and waits during cooldown periods. Multiple operations are queued and executed sequentially.
+Ekşi Sözlük limits blocking speed (usually 6 operations per minute). Ekşi Engel Plus automatically performs the maximum allowed operations per minute and waits during cooldown periods. Multiple operations are queued and executed sequentially.
 
 <h3>Server Part</h3>
 
-As long as it is allowed in the settings menu, log data and list of blocked users are sent to Ekşi Engel servers. This data is used to obtain statistics on the most blocked authors.
+As long as it is allowed in the settings menu, log data and list of blocked users are sent to Ekşi Engel Plus servers. This data is used to obtain statistics on the most blocked authors.
 
 <h3>Links</h3>
 
-Ekşi Engel in Chrome Webstore: [link](https://chrome.google.com/webstore/detail/ek%C5%9Fi-engel/cpfbfacaggnedffhdgdgmhkobijckkha)
+Ekşi Engel Plus in Chrome Webstore: [link (WIP)](https://chrome.google.com/webstore/detail/ek%C5%9Fi-engel-plus/)
 
 Version notes: Extension içindeki versiyon notlarına bakın  
 
