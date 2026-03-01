@@ -4,6 +4,7 @@ from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 from django.conf import settings
+from django.contrib.auth import authenticate, login
 import json
 from django.forms.models import model_to_dict
 
@@ -13,38 +14,49 @@ from api.authentication import SharedAPIKeyAuthentication
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from rest_framework.permissions import IsAdminUser
 
+
+def check_auth(request):
+    """Check authentication using API key, session, or basic auth"""
+    # Check for API key
+    api_key = request.META.get('HTTP_X_API_KEY')
+    if api_key == getattr(settings, 'SHARED_API_KEY', None):
+        return True, None
+    
+    # Check session authentication (browser logged in)
+    if request.user.is_authenticated and request.user.is_active:
+        return True, None
+    
+    # Check Basic Auth header
+    auth_header = request.META.get('HTTP_AUTHORIZATION', '')
+    if auth_header.startswith('Basic '):
+        import base64
+        try:
+            encoded = auth_header[6:]
+            decoded = base64.b64decode(encoded).decode('utf-8')
+            username, password = decoded.split(':', 1)
+            user = authenticate(username=username, password=password)
+            if user is not None and user.is_active:
+                # Set the user on the request
+                request.user = user
+                return True, None
+        except Exception:
+            pass
+    
+    # Not authenticated - return 401 with Basic Auth challenge
+    response = HttpResponse('Unauthorized', status=401)
+    response['WWW-Authenticate'] = 'Basic realm="EksiEngel"'
+    return False, response
+
+
 def index(request):
     return HttpResponse("Hello, world. I'm client data collector.")
 
 @csrf_exempt
 def upload(request):
-    # Check for API key authentication first
-    api_key = request.META.get('HTTP_X_API_KEY')
-    authenticated = False
-    
-    if api_key == getattr(settings, 'SHARED_API_KEY', None):
-        # Valid API key
-        authenticated = True
-    else:
-        # Try session authentication (for logged-in browser users)
-        if request.user.is_authenticated:
-            authenticated = True
-        else:
-            # Try basic authentication
-            auth = BasicAuthentication()
-            try:
-                user_auth_tuple = auth.authenticate(request)
-                if user_auth_tuple is not None:
-                    request.user = user_auth_tuple[0]
-                    authenticated = True
-            except:
-                pass
-    
+    # Check authentication
+    authenticated, error_response = check_auth(request)
     if not authenticated:
-        # Return 401 with Basic Auth challenge header
-        response = HttpResponse('Unauthorized', status=401)
-        response['WWW-Authenticate'] = 'Basic realm="EksiEngel"'
-        return response
+        return error_response
     
     if request.method == 'POST':
         data = None
@@ -89,33 +101,10 @@ def upload(request):
         
 @csrf_exempt
 def analytics(request):
-    # Check for API key authentication first
-    api_key = request.META.get('HTTP_X_API_KEY')
-    authenticated = False
-    
-    if api_key == getattr(settings, 'SHARED_API_KEY', None):
-        # Valid API key
-        authenticated = True
-    else:
-        # Try session authentication (for logged-in browser users)
-        if request.user.is_authenticated:
-            authenticated = True
-        else:
-            # Try basic authentication
-            auth = BasicAuthentication()
-            try:
-                user_auth_tuple = auth.authenticate(request)
-                if user_auth_tuple is not None:
-                    request.user = user_auth_tuple[0]
-                    authenticated = True
-            except:
-                pass
-    
+    # Check authentication
+    authenticated, error_response = check_auth(request)
     if not authenticated:
-        # Return 401 with Basic Auth challenge header
-        response = HttpResponse('Unauthorized', status=401)
-        response['WWW-Authenticate'] = 'Basic realm="EksiEngel"'
-        return response
+        return error_response
     
     if request.method == 'GET':
         # Return simple analytics overview
