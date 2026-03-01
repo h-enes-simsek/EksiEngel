@@ -27,4 +27,5 @@ context_portal/
 .clinerules-default
 .roomodes.json:Zone.Identifier
 .clinerules
+*:Zone.Identifier
 AGENTS.md

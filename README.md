@@ -3,49 +3,85 @@
 </div>
 Google Chrome extension that allows mass blocking of authors for the social media platform Ekşi Sözlük.
 
-<h3>Briefly Features</h3>
+<h3>Features</h3>
 
-Ekşi Engel can perform the following actions.
+Ekşi Engel can perform the following actions:
 
-- To block everyone who favorited a specific post
+- Block everyone who favorited a specific post
+- Block everyone who follows a specific author
+- Block everyone who posted on a specific topic
+- Block/unblock authors entered as a list
+- Unblock all blocked authors
 
-- To block everyone who follows a specific author
+<h3>Date-Based User Filtering</h3>
 
-- To block everyone who posted on a specific topic
+Filter users by their account registration date before blocking. This helps protect legacy accounts or block newly created accounts.
 
-- To block/unblock authors entered as a list
+- **Default Filter:** Block accounts **NEWER_THAN 3650 days** (10 years)
+- Filter criteria: NEWER_THAN, OLDER_THAN, BEFORE_DATE, AFTER_DATE
+- Automatic registration date caching with 30-day TTL for performance
+- Configurable per-operation or via global filter rules
 
-- To unblock all blocked authors
+<h3>Date-Based Bulk Actions</h3>
 
+Perform bulk operations on your blocked/muted users based on account age:
 
-## New: Muted User List Management
+- **Default Configuration:** OLDER_THAN 3650 days → Unmute users
+- Source options: Blocked users list, Muted users list, or custom author list
+- Actions: Block, Mute, Unblock, Unmute, Follow, or Unblock+Follow, Mute+Follow
 
-You can now view, refresh, and export your list of muted users directly from the extension popup.
+<h3>Advanced Migration System</h3>
 
-- **View Muted User Count:** See the total number of users you have muted.
-- **Refresh Muted List:** Scrape your Ekşi Sözlük muted users page to get the most up-to-date list.
-- **Export Muted List (CSV):** Download a CSV file containing the usernames of all muted users.
+Easily migrate between blocked and muted status in bulk:
 
-Ekşi Sözlük has three different block types, and Ekşi Engel supports them all.
+- Migrate blocked users to muted status
+- Migrate muted users to blocked status
+- Block all muted users in bulk
+- Block titles of blocked/muted users
+- Unblock all users and remove all mutes
 
-- The ban on an author
+<h3>Operation Controls</h3>
 
-- The ban on all pages that were created by an author
- 
-- The mute on an author
-After the authors to be blocked/unblocked are received from the user, the blocking/unblocking process is performed respectively for the accounts in the list.
+- **Pause/Resume:** Checkpoint-based pause and resume for long operations
+- **Queue System:** Queue multiple operations that execute automatically
+- **Real-time Progress:** Live progress tracking with success/failure counts
 
-Operations take place in a newly opened tab, while the user can navigate freely in other tabs. In addition, the user is informed about the ongoing process and how many authors have been successfully blocked.
+<h3>Ekşi Sözlük Block Types</h3>
 
-Ekşi Sözlük put a limit on the blocking speed in January 2023. Different types of blocks might have different limits, but usually the limit is 6 operations per minute. To overcome this problem, Ekşi Engel performs the maximum number of allowed operations per minute and waits during cooldown period. Furthermore, users do not have to wait to start a new blocking operation during another is running. A queue holds the incoming requests made by the user.
+Ekşi Sözlük has three different block types, and Ekşi Engel supports them all:
+
+- **Engelle (Ban):** Block an author
+- **Başlık Engelle (Title Ban):** Block all pages created by an author
+- **Sessize Al (Mute):** Mute an author
+
+<h3>Dynamic UI Labels</h3>
+
+The extension dynamically changes menu labels based on your configuration:
+
+- When **Mute enabled** (default): Shows "sessize al" / "sessizden çıkar"
+- When **Mute disabled**: Shows "engelle" / "engellemeyi bırak"
+- Menu options adapt: "Engelli kullanıcıları sessize al" vs "Engelli kullanıcıları engelle"
+
+<h3>Default Configuration</h3>
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| enableMute | true | Mute instead of block by default |
+| enableDateFilter | false | Date-based filtering disabled by default |
+| dateFilterRules | Block NEWER_THAN 3650 days | Default filter rule |
+| sendData | true | Analytics enabled |
+| enableProtectFollowedUsers | true | Don't block followed users |
+| enableTitleBan | false | Title blocking disabled |
+
+<h3>Rate Limiting</h3>
+
+Ekşi Sözlük limits blocking speed (usually 6 operations per minute). Ekşi Engel automatically performs the maximum allowed operations per minute and waits during cooldown periods. Multiple operations are queued and executed sequentially.
 
 <h3>Server Part</h3>
 
-As long as it is allowed in the settings menu, log data and list of blocked users are sent to Ekşi Engel servers.
+As long as it is allowed in the settings menu, log data and list of blocked users are sent to Ekşi Engel servers. This data is used to obtain statistics on the most blocked authors.
 
-This data is planned to be used later to obtain the information of the most blocked authors and to block these authors via the extension.
-
-<h3>Links and Images</h3>
+<h3>Links</h3>
 
 Ekşi Engel in Chrome Webstore: [link](https://chrome.google.com/webstore/detail/ek%C5%9Fi-engel/cpfbfacaggnedffhdgdgmhkobijckkha)
 
