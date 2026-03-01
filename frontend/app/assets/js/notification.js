@@ -74,7 +74,8 @@ async function restorePersistedData() {
           item.performedAction,
           item.plannedAction,
           item.errorStatus,
-          item.operationMetadata || null
+          item.operationMetadata || null,
+          item.timestamp || null
         );
       }
     }
@@ -1414,7 +1415,7 @@ if (currentOperationDescriptionElement) {
   }
 });
 
-async function insertCompletedProcessesTable(banSource, successfulAction, performedAction, plannedAction, errorStatus, operationMetadata = null) {
+async function insertCompletedProcessesTable(banSource, successfulAction, performedAction, plannedAction, errorStatus, operationMetadata = null, timestamp = null) {
   let table = document.getElementById("completedProcesses").getElementsByTagName('tbody')[0];
   let row = table.insertRow(0);
   let cell1 = row.insertCell(0);
@@ -1423,8 +1424,8 @@ async function insertCompletedProcessesTable(banSource, successfulAction, perfor
   let cell4 = row.insertCell(3);
   let cell5 = row.insertCell(4);
   let cell6 = row.insertCell(5);
-  let d = new Date();
-  cell1.innerHTML = d.getHours() + ":" + d.getMinutes();
+  const d = timestamp ? new Date(timestamp) : new Date();
+  cell1.innerHTML = String(d.getHours()).padStart(2, '0') + ":" + String(d.getMinutes()).padStart(2, '0');
   
   const taskCategory = getTaskCategory(banSource);
   const categoryDisplayName = getCategoryDisplayName(taskCategory);

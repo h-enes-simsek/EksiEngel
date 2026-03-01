@@ -175,7 +175,7 @@ chrome.runtime.onMessage.addListener(function messageListener_Popup(message, sen
         };
         wrapperProcessHandler.banSource = banSource;
         wrapperProcessHandler.banMode = displayMode;
-        wrapperProcessHandler.creationDateInStr = new Date().getHours() + ":" + new Date().getMinutes();
+        wrapperProcessHandler.creationDateInStr = String(new Date().getHours()).padStart(2, '0') + ":" + String(new Date().getMinutes()).padStart(2, '0');
         wrapperProcessHandler.metadata = metadata;
         return wrapperProcessHandler;
       };
@@ -432,7 +432,7 @@ chrome.runtime.onMessage.addListener(function messageListener_Popup(message, sen
       let wrapperProcessHandler = processHandler.bind(null, obj.banSource, obj.banMode, obj.entryUrl, obj.authorName, obj.authorId, obj.targetType, obj.clickSource, obj.titleName, obj.titleId, obj.timeSpecifier);
       wrapperProcessHandler.banSource = obj.banSource;
       wrapperProcessHandler.banMode = obj.banMode;
-      wrapperProcessHandler.creationDateInStr = new Date().getHours() + ":" + new Date().getMinutes();
+      wrapperProcessHandler.creationDateInStr = String(new Date().getHours()).padStart(2, '0') + ":" + String(new Date().getMinutes()).padStart(2, '0');
       
       wrapperProcessHandler.metadata = {
         actionDescription: getActionDescription(obj.banSource, obj),
