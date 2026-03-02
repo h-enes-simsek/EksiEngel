@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gizlilik Politikası - EksiEngelPlus</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .logo img {
+            width: 64px;
+            height: 64px;
+        }
+        .logo h1 {
+            font-size: 2rem;
+            color: #2E7D32;
+        }
+        .logo h1 span {
+            color: #4CAF50;
+        }
+        .lang-switch {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .lang-btn {
+            padding: 8px 16px;
+            border: 2px solid #4CAF50;
+            background: white;
+            color: #4CAF50;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .lang-btn:hover, .lang-btn.active {
+            background: #4CAF50;
+            color: white;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+        .card h2 {
+            color: #2E7D32;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #4CAF50;
+        }
+        .card h3 {
+            color: #4CAF50;
+            margin: 25px 0 10px 0;
+        }
+        .card p, .card ul {
+            color: #555;
+            margin-bottom: 15px;
+        }
+        .card ul {
+            margin-left: 20px;
+        }
+        .card li {
+            margin-bottom: 8px;
+        }
+        .card a {
+            color: #4CAF50;
+            text-decoration: none;
+        }
+        .card a:hover {
+            text-decoration: underline;
+        }
+        footer {
+            text-align: center;
+            padding: 30px;
+            color: white;
+        }
+        footer a {
+            color: white;
+            text-decoration: underline;
+        }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #2E7D32;
+            text-decoration: none;
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            background: white;
+            border-radius: 20px;
+        }
+        .back-link:hover {
+            background: #2E7D32;
+            color: white;
+        }
+        @media (max-width: 768px) {
+            .logo h1 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-link">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+            <span data-tr="Ana Sayfaya Dön" data-en="Back to Home"></span>
+        </a>
+
+        <header>
+            <div class="logo">
+                <img src="https://raw.githubusercontent.com/crimeofheart/EksiEngelPlus/master/frontend/app/assets/img/eksiengel128.png" alt="EksiEngelPlus">
+                <h1>Eksi<span>Engel</span>Plus</h1>
+            </div>
+            <div class="lang-switch">
+                <button class="lang-btn active" onclick="setLanguage('tr')">Türkçe</button>
+                <button class="lang-btn" onclick="setLanguage('en')">English</button>
+            </div>
+        </header>
+
+        <section class="card">
+            <h2 data-tr="Gizlilik Politikası" data-en="Privacy Policy"></h2>
+            
+            <p data-tr="EksiEngelPlus olarak, gizliliğiniz bizim için önemlidir. Bu gizlilik politikası, eklentinin nasıl çalıştığı ve verilerinizi nasıl işlediği hakkında sizi bilgilendirmek amacıyla hazırlanmıştır." data-en="At EksiEngelPlus, your privacy is important to us. This privacy policy is designed to inform you about how the extension works and processes your data."></p>
+
+            <h3 data-tr="Toplanan Veriler" data-en="Data Collected"></h3>
+            <p data-tr="EksiEngelPlus eklentisi aşağıdaki verileri işler:" data-en="The EksiEngelPlus extension processes the following data:"></p>
+            <ul>
+                <li data-tr="Ekşi Sözlük kullanıcı adları ve engelleme listeleri - Yalnızca yerel olarak tarayıcınızda saklanır" data-en="Ekşi Sözlük usernames and block lists - Stored only locally in your browser"></li>
+                <li data-tr="Eklenti ayarları ve tercihleri - Tarayıcı depolama alanında saklanır" data-en="Extension settings and preferences - Stored in browser storage"></li>
+                <li data-tr="İşlem geçmişi - Yerel olarak saklanır" data-en="Operation history - Stored locally"></li>
+            </ul>
+
+            <h3 data-tr="Veri Kullanımı" data-en="Data Usage"></h3>
+            <p data-tr="Toplanan veriler yalnızca aşağıdaki amaçlar için kullanılır:" data-en="Collected data is used only for the following purposes:"></p>
+            <ul>
+                <li data-tr="Ekşi Sözlük'te toplu engelleme işlemlerini gerçekleştirmek" data-en="Performing bulk blocking operations on Ekşi Sözlük"></li>
+                <li data-tr="Engellenen kullanıcı listelerini yönetmek" data-en="Managing blocked user lists"></li>
+                <li data-tr="Eklenti ayarlarını ve tercihlerini hatırlamak" data-en="Remembering extension settings and preferences"></li>
+                <li data-tr="İşlem geçmişini görüntülemek" data-en="Displaying operation history"></li>
+            </ul>
+
+            <h3 data-tr="Veri Paylaşımı" data-en="Data Sharing"></h3>
+            <p data-tr="EksiEngelPlus, kullanıcı verilerinizi üçüncü taraflarla PAYLAŞMAZ. Hiçbir reklamcılık ağı, analiz servisi veya diğer üçüncü taraflar bu eklenti aracılığıyla veri toplamaz." data-en="EksiEngelPlus does NOT share your user data with third parties. No advertising networks, analytics services, or other third parties collect data through this extension."></p>
+
+            <h3 data-tr="Üçüncü Taraf Bağlantıları" data-en="Third-Party Links"></h3>
+            <p data-tr="Bu eklenti, Ekşi Sözlük web sitesi ile etkileşim halindedir. Ekşi Sözlük'ün gizlilik politikası bu eklentiden bağımsızdır ve bizim kontrolümüzde değildir." data-en="This extension interacts with the Ekşi Sözlük website. Ekşi Sözlük's privacy policy is independent of this extension and is not under our control."></p>
+
+            <h3 data-tr="Çerezler" data-en="Cookies"></h3>
+            <p data-tr="EksiEngelPlus eklentisi çerez kullanmaz. Eklenti verileri yalnızca tarayıcınızın yerel depolama alanında saklar." data-en="The EksiEngelPlus extension does not use cookies. The extension stores data only in your browser's local storage."></p>
+
+            <h3 data-tr="Güvenlik" data-en="Security"></h3>
+            <p data-tr="Tüm veriler yerel olarak tarayıcınızda saklandığı için, verileriniz bizim sunucularımızda bulunmaz. Yerel depolama verilerinize yalnızca siz erişebilirsiniz." data-en="Since all data is stored locally in your browser, your data is not present on our servers. Only you can access the data in your local storage."></p>
+
+            <h3 data-tr="Değişiklikler" data-en="Changes"></h3>
+            <p data-tr="Bu gizlilik politikası zaman zaman güncellenebilir. Önemli değişiklikler olması durumunda eklenti açıklamasında veya sitemizde bilgi verilecektir." data-en="This privacy policy may be updated from time to time. In case of significant changes, information will be provided in the extension description or on our website."></p>
+
+            <h3 data-tr="İletişim" data-en="Contact"></h3>
+            <p data-tr="Bu gizlilik politikası hakkında herhangi bir sorunuz varsa, lütfen GitHub üzerinden bizimle iletişime geçin:" data-en="If you have any questions about this privacy policy, please contact us via GitHub:"></p>
+            <p><a href="https://github.com/crimeofheart/EksiEngelPlus" target="_blank">github.com/crimeofheart/EksiEngelPlus</a></p>
+
+            <h3 data-tr="Son Güncelleme" data-en="Last Updated"></h3>
+            <p data-tr="Bu gizlilik politikası en son Mart 2026'da güncellenmiştir." data-en="This privacy policy was last updated in March 2026."></p>
+        </section>
+
+        <footer>
+            <p data-tr="© 2026 EksiEngelPlus. Tüm hakları saklıdır." data-en="© 2026 EksiEngelPlus. All rights reserved."></p>
+            <p data-tr="Bu eklenti Ekşi Sözlük ile bağlantılı değildir." data-en="This extension is not affiliated with Ekşi Sözlük."></p>
+        </footer>
+    </div>
+
+    <script>
+        function setLanguage(lang) {
+            document.querySelectorAll('[data-tr]').forEach(el => {
+                el.innerHTML = el.getAttribute('data-' + lang);
+            });
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            document.documentElement.lang = lang;
+            localStorage.setItem('preferred_language', lang);
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedLang = localStorage.getItem('preferred_language') || 'tr';
+            setLanguage(savedLang);
+        });
+    </script>
+</body>
+</html>

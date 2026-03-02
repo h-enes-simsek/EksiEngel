@@ -4,6 +4,7 @@
 	"author": "crimeofheart",
   "version": "0.1",
   "description": "Ekşi Sözlük'te toplu olarak engelleme/başlıklarını engelleme işlemi yapın.",
+  "homepage_url": "https://eksiengelplus.duzgun.org/",
   "icons": {
     "16": "assets/img/eksiengel16.png",
     "32": "assets/img/eksiengel32.png",
