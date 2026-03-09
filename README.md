@@ -83,7 +83,7 @@ As long as it is allowed in the settings menu, log data and list of blocked user
 
 <h3>Links</h3>
 
-Ekşi Engel Plus in Chrome Webstore: [link (WIP)](https://chrome.google.com/webstore/detail/ek%C5%9Fi-engel-plus/)
+Ekşi Engel Plus in Chrome Webstore: [link](https://chromewebstore.google.com/detail/eksiengelplus/cakplcekfmnpelnchanlpoieoiodepdh)
 
 Version notes: Extension içindeki versiyon notlarına bakın  
 
