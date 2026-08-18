@@ -1,3 +1,11 @@
+const ENABLE_DEBUG_LOGS = false;
+
+function debugLog(...args) {
+  if (ENABLE_DEBUG_LOGS) {
+    console.log(...args);
+  }
+}
+
 (async () => {
   let eksiEngelIconURL = chrome.runtime.getURL('assets/img/eksiengel16.png');
   const src = chrome.runtime.getURL("assets/js/enums.js");
@@ -47,11 +55,11 @@
         let lastError = chrome.runtime.lastError;
         if(lastError)
         {
-          //console.log("Eksi Engel: could not establish a connection with a page");
+          debugLog("Eksi Engel: could not establish a connection with a page");
         }
         else
         {
-          //console.log("Eksi Engel: established a connection with a page");
+          debugLog("Eksi Engel: established a connection with a page");
           
           // notify the user about their action with using eksisozluk notification API, known classes: class="success" and class="error"
           let ul = document.createElement("ul"); 
@@ -71,17 +79,17 @@
     {
       if (document.querySelectorAll(selector).length) 
       {
-        //console.log("Eksi Engel: observation stopped immediately for: " + debugComment);
+        debugLog("Eksi Engel: observation stopped immediately for: " + debugComment);
         return resolve(document.querySelectorAll(selector));
       }
 
-      //console.log("Eksi Engel: observation started for: " + debugComment);
+      debugLog("Eksi Engel: observation started for: " + debugComment);
       
       const observer = new MutationObserver(mutations => 
       {
         if (document.querySelectorAll(selector).length) 
         {
-          //console.log("Eksi Engel: observation stopped for: " + debugComment);
+          debugLog("Eksi Engel: observation stopped for: " + debugComment);
           resolve(document.querySelectorAll(selector));
           observer.disconnect();
         }
@@ -119,11 +127,11 @@
       }
       catch (err)
       {
-        //console.log("Eksi Engel: handleYellowIcons: " + err);
+        debugLog("Eksi Engel: handleYellowIcons: " + err);
       }
     }
 
-    //console.log("Eksi Engel: handleYellowIcons: done");
+    debugLog("Eksi Engel: handleYellowIcons: done");
   }
 
   async function handleGreenIcons (config) {
@@ -148,11 +156,11 @@
       }
       catch (err)
       {
-        //console.log("Eksi Engel: handleGreenIcons: " + err);
+        debugLog("Eksi Engel: handleGreenIcons: " + err);
       }
     }
 
-    //console.log("Eksi Engel: handleGreenIcons: done");
+    debugLog("Eksi Engel: handleGreenIcons: done");
   }
 
   (async function handleIcons () {
