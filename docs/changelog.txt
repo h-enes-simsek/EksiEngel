@@ -270,6 +270,7 @@ bug fix: Ekşi Engel serverı taşındığı için URL adresleri güncel değild
 
 v3.3
 gönderim: yayın: 
+bug fix: correct UNDOBANALL function arguments
 where_is_eksisozluk endpoint kaldirildi. DBde degisiklik yok.
 eksiengel artik sadece predefined url uzerinde calisacak tum websiteleri uzerinde degil.
 admin panelinde bir Action, ActionConfig veya EksiSozlukEntry'e göz atılmak istendiğinde ForeignKeylerden dolayı tüm veriler drop-down list için serverdan fetch ediliyordu. salt okunur hale getirilerek bunun önüne geçildi. ayrıca Action içideki yazar listesi, sadece ilgili yazarları fetch edecek şekilde filtrelendi.

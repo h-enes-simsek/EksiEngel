@@ -482,7 +482,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
         }); 
         
         if(!programController.earlyStop)
-          res = await relationHandler.performAction(banMode, banMode, value.authorId, value.isBannedUser, value.isBannedTitle, value.isBannedMute);
+          res = await relationHandler.performAction(banMode, value.authorId, value.isBannedUser, value.isBannedTitle, value.isBannedMute);
       }
       
       // send message to notification page
