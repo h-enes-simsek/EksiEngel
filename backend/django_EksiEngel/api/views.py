@@ -15,13 +15,6 @@ class CsrfExemptSessionAuthentication(SessionAuthentication):
     def enforce_csrf(self, request):
         return  # To not perform the csrf check previously happening
 
-class WhereIsEksiSozlukView(views.APIView):
-    permission_classes = [AllowAny]
-    authentication_classes = (CsrfExemptSessionAuthentication, BasicAuthentication)
-
-    def get(self, request, format=None):
-        return HttpResponse("https://eksisozluk.com")
-        
 class CollectActionDataView(views.APIView):
     permission_classes = [AllowAny]
     authentication_classes = (CsrfExemptSessionAuthentication, BasicAuthentication)

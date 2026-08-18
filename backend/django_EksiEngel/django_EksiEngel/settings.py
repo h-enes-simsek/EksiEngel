@@ -23,7 +23,6 @@ ALLOWED_HOSTS = [".eksiengel.hesimsek.com", "107.172.80.226", "localhost"]
 INSTALLED_APPS = [
     'corsheaders',
     'client_data_collector.apps.ClientDataCollectorConfig',
-    'where_is_eksisozluk.apps.WhereIsEksisozlukConfig',
     'api.apps.ApiConfig',
     'django.contrib.admin',
     'django.contrib.auth',

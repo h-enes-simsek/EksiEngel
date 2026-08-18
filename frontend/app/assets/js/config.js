@@ -5,7 +5,6 @@ import {log} from './log.js';
 export let config = 
 {
   "EksiSozlukURL":       "https://eksisozluk.com",
-  "whereIsEksiSozlukURL":"https://eksiengel.hesimsek.com/api/where_is_eksisozluk",
   "serverURL":           "https://eksiengel.hesimsek.com/api/action/",
 
   "sendData":           true,                             /* send data to server */   

@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Ekşi Engel",
 	"author": "Hasan Enes Şimşek",
-  "version": "3.2",
+  "version": "3.3",
   "description": "Ekşi Sözlük'te toplu olarak engelleme/başlıklarını engelleme işlemi yapın.",
   "icons": {
     "16": "assets/img/eksiengel16.png",
@@ -24,9 +24,15 @@
     "tabs",
     "storage"
   ],
+  "host_permissions": [
+    "https://eksisozluk.com/*",
+    "https://eksiengel.hesimsek.com/*"
+  ],
 	"content_scripts": [
    {
-     "matches": ["*://*/*"],
+     "matches": [
+       "https://eksisozluk.com/*"
+     ],
      "js": ["assets/js/script.js"]
    }
 	],
@@ -77,8 +83,7 @@
 				"assets/js/script.js"
       ],
       "matches": [
-        "http://*/*",
-        "https://*/*"
+        "https://eksisozluk.com/*"
       ]
     }
   ]

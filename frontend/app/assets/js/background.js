@@ -9,7 +9,7 @@ import {relationHandler} from './relationHandler.js';
 import {scrapingHandler} from './scrapingHandler.js';
 import {processQueue} from './queue.js';
 import {programController} from './programController.js';
-import {handleEksiSozlukURL} from './urlHandler.js';
+import {isEksiSozlukAccessible} from './urlHandler.js';
 import { notificationHandler } from './notificationHandler.js';
 
 log.info("bg", "initialized");
@@ -68,8 +68,8 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
   relationHandler.reset(); // reset the counters to reuse
 
   notificationHandler.notifyControlAccess();
-  const isEksiSozlukAccessible = await handleEksiSozlukURL();
-  if(!isEksiSozlukAccessible)
+  const urlAccessible = await isEksiSozlukAccessible();
+  if(!urlAccessible)
   {
     log.err("bg", "Program has been finished (finishErrorAccess)");
     notificationHandler.finishErrorAccess(banSource, banMode);
