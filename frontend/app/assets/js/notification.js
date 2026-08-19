@@ -20,7 +20,7 @@ function insertCompletedProcessesTable(banSource, banMode, successfulAction, per
   let cell6 = row.insertCell(5);
   let cell7 = row.insertCell(6);
   let d = new Date();
-  cell1.innerHTML = d.getHours() + ":" + d.getMinutes(); 
+  cell1.innerHTML = d.getHours() + ":" + d.getMinutes() + ":" + d.getSeconds();
   cell2.innerHTML = banSource;
   cell3.innerHTML = banMode;
   cell4.innerHTML = successfulAction;
