@@ -89,6 +89,30 @@ class NotificationHandler
       "giriş yapılmadı", 
       0, 0, 0);
   }
+  finishErrorConfigurationLoading = (banSource, banMode) => {
+    this.#finish(banSource, banMode,
+      "Ayarlar yüklenemedi.",
+      "ayarlar yüklenemedi",
+      0, 0, 0);
+  }
+  finishErrorUserListLoading = (banSource, banMode) => {
+    this.#finish(banSource, banMode,
+      "Yazar listesi yüklenemedi.",
+      "yazar listesi yüklenemedi",
+      0, 0, 0);
+  }
+  finishErrorUserListCleaning = (banSource, banMode) => {
+    this.#finish(banSource, banMode,
+      "Yazar listesi temizlenemedi.",
+      "yazar listesi temizlenemedi",
+      0, 0, 0);
+  }
+  finishErrorManifestVersionRetrieval = (banSource, banMode) => {
+    this.#finish(banSource, banMode,
+      "Eklenti sürüm bilgisi alınamadı.",
+      "eklenti sürüm bilgisi alınamadı",
+      0, 0, 0);
+  }
   finishErrorNoAccount = (banSource, banMode) => {
     this.#finish(banSource, banMode,
       "Engellenecek yazar listesi boş.",

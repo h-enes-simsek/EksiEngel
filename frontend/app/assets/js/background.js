@@ -32,715 +32,732 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
 
 async function processHandler(banSource, banMode, entryUrl, singleAuthorName, singleAuthorId, targetType, clickSource, titleName, titleId, timeSpecifier)
 {
-  log.info("bg", "Process has been started with " + 
-           "banSource: "          + banSource + 
-           ", banMode: "          + banMode + 
-           ", entryUrl: "         + entryUrl + 
-           ", singleAuthorName: " + singleAuthorName + 
-           ", singleAuthorId: "   + singleAuthorId +
-           ", targetType: "       + targetType +
-           ", clickSource: "      + clickSource +
-           ", titleName: "        + titleName +
-           ", titleId: "          + titleId
-           );
-  
-  // create a notification page if not exist
-  try
-  {
-    let tab2 = await chrome.tabs.get(g_notificationTabId);
-  }
-  catch(e)
-  {
-    // not exist, so create one
-    try
-    {
-      let tab = await chrome.tabs.create({ active: false, url: chrome.runtime.getURL("assets/html/notification.html") });
-      g_notificationTabId = tab.id;
-    }
-    catch(createError)
-    {
-      log.err("bg", "Failed to create notification tab: " + createError);
-      return;
-    }
-  }
-  programController.tabId = g_notificationTabId;
-  notificationHandler.updatePlannedProcessesList(processQueue.itemAttributes);
-
+  let processFinishReason = enums.ProcessFinishReason.NOT_SET;
   let authorNameList = [];
   let authorIdList = [];
   let entryMetaData = {};
-  
+  let userAgent = null;
+  let clientName = null;
+  let clientId = null;
+
   try
   {
-    await handleConfig(); // load config
-  }
-  catch(e)
-  {
-    return;
-  }
-  relationHandler.reset(); // reset the counters to reuse
+    log.info("bg", "Process has been started with " + 
+            "banSource: "          + banSource + 
+            ", banMode: "          + banMode + 
+            ", entryUrl: "         + entryUrl + 
+            ", singleAuthorName: " + singleAuthorName + 
+            ", singleAuthorId: "   + singleAuthorId +
+            ", targetType: "       + targetType +
+            ", clickSource: "      + clickSource +
+            ", titleName: "        + titleName +
+            ", titleId: "          + titleId
+            );
 
-  notificationHandler.notifyControlAccess();
-  const urlAccessible = await isEksiSozlukAccessible();
-  if(!urlAccessible)
-  {
-    log.err("bg", "Program has been finished (finishErrorAccess)");
-    notificationHandler.finishErrorAccess(banSource, banMode);
-    return;
-  }
-
-  notificationHandler.notifyControlLogin();
-  let userAgent = await scrapingHandler.scrapeUserAgent();
-  const {clientName, clientId} = await scrapingHandler.scrapeClientNameAndId(); 
-  if(!clientName)
-  {
-    log.err("bg", "Program has been finished (finishErrorLogin)");
-    notificationHandler.finishErrorLogin(banSource, banMode);
-    return;
-  }
-  
-  if(banSource === enums.BanSource.SINGLE)
-  {
-    notificationHandler.notifyOngoing(0, 0, 1);
-    
-    let res = await relationHandler.performAction(banMode, singleAuthorId, targetType == enums.TargetType.USER, targetType == enums.TargetType.TITLE, targetType == enums.TargetType.MUTE);
-    authorIdList.push(singleAuthorId);
-    authorNameList.push(singleAuthorName);
-    
-    if(res.resultType == enums.ResultType.FAIL)
+    // create a notification page if not exist
+    try
     {
-      // performAction failed because to too many request
-
-      // while waiting cooldown, send periodic notifications to user 
-      // this also provides that chrome doesn't kill the extension for being idle
-      await new Promise(async resolve => 
+      let tab2 = await chrome.tabs.get(g_notificationTabId);
+    }
+    catch(e)
+    {
+      // not exist, so create one
+      try
       {
-        // wait 1 minute (+2 sec to ensure)
-        let waitTimeInSec = 62;
-        for(let i = 1; i <= waitTimeInSec; i++)
-        {
-          if(programController.earlyStop)
-            break;
-          
-          notificationHandler.notifyCooldown(waitTimeInSec-i);
-          
-          // wait 1 sec
-          await new Promise(resolve2 => { setTimeout(resolve2, 1000); }); 
-        }
-          
-        resolve();        
-      }); 
-      
-      if(!programController.earlyStop)
-        res = await relationHandler.performAction(banMode, singleAuthorId, targetType == enums.TargetType.USER, targetType == enums.TargetType.TITLE, targetType == enums.TargetType.MUTE);
+        let tab = await chrome.tabs.create({ active: false, url: chrome.runtime.getURL("assets/html/notification.html") });
+        g_notificationTabId = tab.id;
+      }
+      catch(createError)
+      {
+        log.err("bg", "Failed to create notification tab: " + createError);
+        processFinishReason = enums.ProcessFinishReason.NOTIFICATION_TAB_CREATION;
+        return;
+      }
     }
-    
-    notificationHandler.notifyOngoing(res.successfulAction, res.performedAction, authorNameList.length);
-  }
-  else if(banSource === enums.BanSource.LIST)
-  {
+    programController.tabId = g_notificationTabId;
+    notificationHandler.updatePlannedProcessesList(processQueue.itemAttributes);
+
     try
     {
-      authorNameList = await utils.getUserList(); // names will be loaded from storage
+      await handleConfig(); // load config
     }
     catch(e)
     {
+      processFinishReason = enums.ProcessFinishReason.CONFIGURATION_LOADING;
+      notificationHandler.finishErrorConfigurationLoading(banSource, banMode);
       return;
     }
-    try
+    relationHandler.reset(); // reset the counters to reuse
+
+    notificationHandler.notifyControlAccess();
+    const urlAccessible = await isEksiSozlukAccessible();
+    if(!urlAccessible)
     {
-      utils.cleanUserList(authorNameList);
-    }
-    catch(e)
-    {
-      return;
-    }
-    
-    // stop if there is no user
-    log.info("bg", "number of user to ban " + authorNameList.length);
-    if(authorNameList.length === 0)
-    {
-      notificationHandler.finishErrorNoAccount(banSource, banMode);
-      log.err("bg", "Program has been finished (finishErrorNoAccount)");
+      log.err("bg", "Program has been finished (finishErrorAccess)");
+      notificationHandler.finishErrorAccess(banSource, banMode);
+      processFinishReason = enums.ProcessFinishReason.EKSI_SOZLUK_UNREACHABLE;
       return;
     }
 
-    notificationHandler.notifyOngoing(0, 0, authorNameList.length);
-    
-    for (let i = 0; i < authorNameList.length; i++)
+    notificationHandler.notifyControlLogin();
+    userAgent = await scrapingHandler.scrapeUserAgent();
+    ({clientName, clientId} = await scrapingHandler.scrapeClientNameAndId());
+    if(!clientName)
     {
-      if(programController.earlyStop)
-        break;
+      log.err("bg", "Program has been finished (finishErrorLogin)");
+      notificationHandler.finishErrorLogin(banSource, banMode);
+      processFinishReason = enums.ProcessFinishReason.CLIENT_NOT_LOGGED_IN;
+      return;
+    }
+    
+    if(banSource === enums.BanSource.SINGLE)
+    {
+      notificationHandler.notifyOngoing(0, 0, 1);
       
-      let authorId = await scrapingHandler.scrapeAuthorIdFromAuthorProfilePage(authorNameList[i]);
-      authorIdList.push(authorId);
+      let res = await relationHandler.performAction(banMode, singleAuthorId, targetType == enums.TargetType.USER, targetType == enums.TargetType.TITLE, targetType == enums.TargetType.MUTE);
+      authorIdList.push(singleAuthorId);
+      authorNameList.push(singleAuthorName);
       
-      let res;
-      if(banMode == enums.BanMode.BAN)
-        res = await relationHandler.performAction(banMode, authorId, !config.enableMute, config.enableTitleBan, config.enableMute);
+      if(res.resultType == enums.ResultType.FAIL)
+      {
+        // performAction failed because to too many request
+
+        // while waiting cooldown, send periodic notifications to user 
+        // this also provides that chrome doesn't kill the extension for being idle
+        await new Promise(async resolve => 
+        {
+          // wait 1 minute (+2 sec to ensure)
+          let waitTimeInSec = 62;
+          for(let i = 1; i <= waitTimeInSec; i++)
+          {
+            if(programController.earlyStop)
+              break;
+            
+            notificationHandler.notifyCooldown(waitTimeInSec-i);
+            
+            // wait 1 sec
+            await new Promise(resolve2 => { setTimeout(resolve2, 1000); }); 
+          }
+            
+          resolve();        
+        }); 
+        
+        if(!programController.earlyStop)
+          res = await relationHandler.performAction(banMode, singleAuthorId, targetType == enums.TargetType.USER, targetType == enums.TargetType.TITLE, targetType == enums.TargetType.MUTE);
+      }
+      
+      notificationHandler.notifyOngoing(res.successfulAction, res.performedAction, authorNameList.length);
+    }
+    else if(banSource === enums.BanSource.LIST)
+    {
+      try
+      {
+        authorNameList = await utils.getUserList(); // names will be loaded from storage
+      }
+      catch(e)
+      {
+        processFinishReason = enums.ProcessFinishReason.USER_LIST_LOADING;
+        notificationHandler.finishErrorUserListLoading(banSource, banMode);
+        return;
+      }
+      try
+      {
+        utils.cleanUserList(authorNameList);
+      }
+      catch(e)
+      {
+        processFinishReason = enums.ProcessFinishReason.USER_LIST_CLEANING;
+        notificationHandler.finishErrorUserListCleaning(banSource, banMode);
+        return;
+      }
+      
+      // stop if there is no user
+      log.info("bg", "number of user to ban " + authorNameList.length);
+      if(authorNameList.length === 0)
+      {
+        notificationHandler.finishErrorNoAccount(banSource, banMode);
+        log.err("bg", "Program has been finished (finishErrorNoAccount)");
+        processFinishReason = enums.ProcessFinishReason.NO_ACCOUNTS_FOUND;
+        return;
+      }
+
+      notificationHandler.notifyOngoing(0, 0, authorNameList.length);
+      
+      for (let i = 0; i < authorNameList.length; i++)
+      {
+        if(programController.earlyStop)
+          break;
+        
+        let authorId = await scrapingHandler.scrapeAuthorIdFromAuthorProfilePage(authorNameList[i]);
+        authorIdList.push(authorId);
+        
+        let res;
+        if(banMode == enums.BanMode.BAN)
+          res = await relationHandler.performAction(banMode, authorId, !config.enableMute, config.enableTitleBan, config.enableMute);
+        else
+          res = await relationHandler.performAction(banMode, authorId, true, true, true);
+        
+        if(res.resultType == enums.ResultType.FAIL)
+        {
+          // performAction failed because to too many request
+
+          // while waiting cooldown, send periodic notifications to user 
+          // this also provides that chrome doesn't kill the extension for being idle
+          await new Promise(async resolve => 
+          {
+            // wait 1 minute (+2 sec to ensure)
+            let waitTimeInSec = 62;
+            for(let i = 1; i <= waitTimeInSec; i++)
+            {
+              if(programController.earlyStop)
+                break;
+              
+              // send message to notification page
+              notificationHandler.notifyCooldown(waitTimeInSec-i);
+              
+              // wait 1 sec
+              await new Promise(resolve2 => { setTimeout(resolve2, 1000); }); 
+            }
+              
+            resolve();        
+          }); 
+          
+          if(!programController.earlyStop)
+          {
+            if(banMode == enums.BanMode.BAN)
+              res = await relationHandler.performAction(banMode, authorId, !config.enableMute, config.enableTitleBan, config.enableMute);
+            else
+              res = await relationHandler.performAction(banMode, authorId, true, true, true);
+          }
+        }
+
+        // send message to notification page
+        notificationHandler.notifyOngoing(res.successfulAction, res.performedAction, authorNameList.length);
+      }
+      
+    }
+    else if(banSource === enums.BanSource.FAV)
+    {
+      notificationHandler.notifyScrapeFavs();
+
+      entryMetaData = await scrapingHandler.scrapeMetaDataFromEntryPage(entryUrl);
+      let scrapedRelations = await scrapingHandler.scrapeAuthorNamesFromFavs(entryUrl); // names will be scraped
+      
+      log.info("bg", "number of user to ban (before analysis): " + scrapedRelations.size);
+      
+      // stop if there is no user
+      if(scrapedRelations.size === 0)
+      {
+        notificationHandler.finishErrorNoAccount(banSource, banMode);
+        log.err("bg", "Program has been finished (finishErrorNoAccount)");
+        processFinishReason = enums.ProcessFinishReason.NO_ACCOUNTS_FOUND;
+        return;
+      }
+      
+      // analysis before operation 
+      if(config.enableAnalysisBeforeOperation && config.enableProtectFollowedUsers && banMode == enums.BanMode.BAN)
+      {
+        // scrape the authors that ${clientName} follows
+        notificationHandler.notifyScrapeFollowings();
+        let mapFollowing = await scrapingHandler.scrapeFollowing(clientName);
+        
+        // remove the authors that ${clientName} follows from the list to protect    
+        notificationHandler.notifyAnalysisProtectFollowedUsers();  
+        for (let name of scrapedRelations.keys()) {
+          if (mapFollowing.has(name))
+            scrapedRelations.delete(name);
+        }
+      }
+      if(config.enableAnalysisBeforeOperation && config.enableOnlyRequiredActions)
+      {
+        // Note: Ekşi Sözlük API response doesn't include blocked authors, but it includes authors who muted and title blocked
+        // This condition doesn't provide a simplification of the following algorithm
+        
+        // scrape the authors that ${clientName} blocked
+        notificationHandler.notifyScrapeBanned();
+        let mapBlocked = await scrapingHandler.scrapeAuthorNamesFromBannedAuthorPage();
+        
+        // update the list with info obtained from mapBlocked
+        notificationHandler.notifyAnalysisOnlyRequiredActions();
+        for (let name of scrapedRelations.keys()) {
+          if (mapBlocked.has(name))
+          {
+            scrapedRelations.get(name).isBannedUser = mapBlocked.get(name).isBannedUser;
+            scrapedRelations.get(name).isBannedTitle = mapBlocked.get(name).isBannedTitle;
+            scrapedRelations.get(name).isBannedMute = mapBlocked.get(name).isBannedMute;
+          }
+        }
+      }
+      
+      log.info("bg", "number of user to ban (after analysis): " + scrapedRelations.size);
+      
+      // stop if there is no user
+      if(scrapedRelations.size === 0)
+      {
+        notificationHandler.finishErrorNoAccount(banSource, banMode);
+        log.err("bg", "Program has been finished (finishErrorNoAccount)");
+        processFinishReason = enums.ProcessFinishReason.NO_ACCOUNTS_AFTER_FILTERING;
+        return;
+      }
+      
+      authorNameList = Array.from(scrapedRelations, ([name, value]) => name);
+
+      notificationHandler.notifyOngoing(0, 0, authorNameList.length);
+      
+      for (const [name, value] of scrapedRelations)
+      {
+        if(programController.earlyStop)
+          break;
+        let authorId = await scrapingHandler.scrapeAuthorIdFromAuthorProfilePage(name);
+        let res = await relationHandler.performAction(banMode, 
+                                                      authorId,
+                                                      (!value.isBannedUser && !config.enableMute),
+                                                      (!value.isBannedTitle && config.enableTitleBan), 
+                                                      (!value.isBannedMute && config.enableMute));
+        
+        
+        authorIdList.push(authorId);
+        
+        if(res.resultType == enums.ResultType.FAIL)
+        {
+          // performAction failed because to too many request
+
+          // while waiting cooldown, send periodic notifications to user 
+          // this also provides that chrome doesn't kill the extension for being idle
+          await new Promise(async resolve => 
+          {
+            // wait 1 minute (+2 sec to ensure)
+            let waitTimeInSec = 62;
+            for(let i = 1; i <= waitTimeInSec; i++)
+            {
+              if(programController.earlyStop)
+                break;
+              
+              // send message to notification page
+              notificationHandler.notifyCooldown(waitTimeInSec-i);
+              
+              // wait 1 sec
+              await new Promise(resolve2 => { setTimeout(resolve2, 1000); }); 
+            }
+              
+            resolve();        
+          }); 
+          
+          if(!programController.earlyStop)
+          {
+            res = await relationHandler.performAction(banMode, 
+                                                      authorId,
+                                                      (!value.isBannedUser && !config.enableMute),
+                                                      (!value.isBannedTitle && config.enableTitleBan), 
+                                                      (!value.isBannedMute && config.enableMute));
+          }
+
+        }
+        
+        // send message to notification page
+        notificationHandler.notifyOngoing(res.successfulAction, res.performedAction, authorNameList.length);
+      }
+    }
+    else if(banSource === enums.BanSource.FOLLOW)
+    {
+      notificationHandler.notifyScrapeFollowers();
+
+      let scrapedRelations = await scrapingHandler.scrapeFollower(singleAuthorName);
+      log.info("bg", "number of user to ban (before analysis): " + scrapedRelations.size);
+      
+      // stop if there is no user
+      if(scrapedRelations.size === 0)
+      {
+        notificationHandler.finishErrorNoAccount(banSource, banMode);
+        log.err("bg", "Program has been finished (error_NoAccount)");
+        processFinishReason = enums.ProcessFinishReason.NO_ACCOUNTS_FOUND;
+        return;
+      }
+      
+      // analysis before operation 
+      if(config.enableAnalysisBeforeOperation && config.enableProtectFollowedUsers && banMode == enums.BanMode.BAN)
+      {
+        // scrape the authors that ${clientName} follows
+        notificationHandler.notifyScrapeFollowings();
+        let mapFollowing = await scrapingHandler.scrapeFollowing(clientName);
+        
+        // remove the authors that ${clientName} follows from the list to protect  
+        notificationHandler.notifyAnalysisProtectFollowedUsers();    
+        for (let name of scrapedRelations.keys()) {
+          if (mapFollowing.has(name))
+            scrapedRelations.delete(name);
+        }
+      }
+      if(config.enableAnalysisBeforeOperation && config.enableOnlyRequiredActions)
+      {
+        // scrape the authors that ${clientName} blocked
+        notificationHandler.notifyScrapeBanned();
+        let mapBlocked = await scrapingHandler.scrapeAuthorNamesFromBannedAuthorPage();
+        
+        // update the list with info obtained from mapBlocked
+        notificationHandler.notifyAnalysisOnlyRequiredActions();
+        for (let name of scrapedRelations.keys()) {
+          if (mapBlocked.has(name))
+          {
+            scrapedRelations.get(name).isBannedUser = mapBlocked.get(name).isBannedUser;
+            scrapedRelations.get(name).isBannedTitle = mapBlocked.get(name).isBannedTitle;
+            scrapedRelations.get(name).isBannedMute = mapBlocked.get(name).isBannedMute;
+          }
+        }
+      }
+        
+      log.info("bg", "number of user to ban (after analysis): " + scrapedRelations.size);
+      
+      // stop if there is no user
+      if(scrapedRelations.size === 0)
+      {
+        notificationHandler.finishErrorNoAccount(banSource, banMode);
+        log.err("bg", "Program has been finished (error_NoAccount)");
+        processFinishReason = enums.ProcessFinishReason.NO_ACCOUNTS_AFTER_FILTERING;
+        return;
+      }
+
+      authorNameList = Array.from(scrapedRelations, ([name, value]) => name);
+      authorIdList = Array.from(scrapedRelations, ([name, value]) => value.authorId);
+
+      notificationHandler.notifyOngoing(0, 0, authorNameList.length);
+      
+      
+      
+      for (const [name, value] of scrapedRelations)
+      {
+        if(programController.earlyStop)
+          break;
+        
+        // value.isBannedUser and others are null if analysis is not enabled
+        let res = await relationHandler.performAction(banMode, 
+                                                      value.authorId, 
+                                                      (!value.isBannedUser && !config.enableMute), 
+                                                      (!value.isBannedTitle && config.enableTitleBan), 
+                                                      (!value.isBannedMute && config.enableMute));
+        
+        if(res.resultType == enums.ResultType.FAIL)
+        {
+          // performAction failed because to too many request
+
+          // while waiting cooldown, send periodic notifications to user 
+          // this also provides that chrome doesn't kill the extension for being idle
+          await new Promise(async resolve => 
+          {
+            // wait 1 minute (+2 sec to ensure)
+            let waitTimeInSec = 62;
+            for(let j = 1; j <= waitTimeInSec; j++)
+            {
+              if(programController.earlyStop)
+                break;
+              
+              // send message to notification page
+              notificationHandler.notifyCooldown(waitTimeInSec-j);
+              
+              // wait 1 sec
+              await new Promise(resolve2 => { setTimeout(resolve2, 1000); }); 
+            }
+              
+            resolve();        
+          }); 
+          
+          if(!programController.earlyStop)
+          {
+            // value.isBannedUser and others are null if analysis is not enabled
+            res = await relationHandler.performAction(banMode, 
+                                                      value.authorId, 
+                                                      (!value.isBannedUser && !config.enableMute),
+                                                      (!value.isBannedTitle && config.enableTitleBan), 
+                                                      (!value.isBannedMute && config.enableMute));
+          }
+        }
+        
+        // send message to notification page
+        notificationHandler.notifyOngoing(res.successfulAction, res.performedAction, authorIdList.length);
+      }
+
+      
+    }
+    else if(banSource === enums.BanSource.UNDOBANALL)
+    {
+      let scrapedRelations = await scrapingHandler.scrapeAuthorNamesFromBannedAuthorPage(); // names and ids will be scraped
+      
+      // stop if there is no user
+      log.info("bg", "number of user to ban " + scrapedRelations.size);
+      if(scrapedRelations.size === 0)
+      {
+        notificationHandler.finishErrorNoAccount(banSource, banMode);
+        log.err("bg", "Program has been finished (error_NoAccount)");
+        processFinishReason = enums.ProcessFinishReason.NO_ACCOUNTS_FOUND;
+        return;
+      }
+
+      authorNameList = Array.from(scrapedRelations, ([name, value]) => name);
+      authorIdList = Array.from(scrapedRelations, ([name, value]) => value.authorId);
+
+      notificationHandler.notifyOngoing(0, 0, authorNameList.length);
+      
+      for (const [name, value] of scrapedRelations)
+      {
+        if(programController.earlyStop)
+          break;
+        
+        let res = await relationHandler.performAction(banMode, value.authorId, value.isBannedUser, value.isBannedTitle, value.isBannedMute);
+        
+        if(res.resultType == enums.ResultType.FAIL)
+        {
+          // performAction failed because to too many request
+
+          // while waiting cooldown, send periodic notifications to user 
+          // this also provides that chrome doesn't kill the extension for being idle
+          await new Promise(async resolve => 
+          {
+            // wait 1 minute (+2 sec to ensure)
+            let waitTimeInSec = 62;
+            for(let j = 1; j <= waitTimeInSec; j++)
+            {
+              if(programController.earlyStop)
+                break;
+              
+              // send message to notification page
+              notificationHandler.notifyCooldown(waitTimeInSec-j);
+              
+              // wait 1 sec
+              await new Promise(resolve2 => { setTimeout(resolve2, 1000); }); 
+            }
+              
+            resolve();        
+          }); 
+          
+          if(!programController.earlyStop)
+            res = await relationHandler.performAction(banMode, value.authorId, value.isBannedUser, value.isBannedTitle, value.isBannedMute);
+        }
+        
+        // send message to notification page
+        notificationHandler.notifyOngoing(res.successfulAction, res.performedAction, authorIdList.length);
+      }
+    }
+    
+    else if(banSource === enums.BanSource.TITLE)
+    {
+      notificationHandler.notifyScrapeTitle();
+
+      // scrapedRelations does not hold duplicated records, scraping handler is responsible to keep it clean
+      let scrapedRelations = await scrapingHandler.scrapeAuthorsFromTitle(titleName, titleId, timeSpecifier);
+      log.info("bg", "number of user to ban (before analysis): " + scrapedRelations.size);
+      
+      // stop if there is no user
+      if(scrapedRelations.size === 0)
+      {
+        notificationHandler.finishErrorNoAccount(banSource, banMode);
+        log.err("bg", "Program has been finished (error_NoAccount)");
+        processFinishReason = enums.ProcessFinishReason.NO_ACCOUNTS_FOUND;
+        return;
+      }
+      
+      // analysis before operation 
+      if(config.enableAnalysisBeforeOperation && config.enableProtectFollowedUsers && banMode == enums.BanMode.BAN)
+      {
+        // scrape the authors that ${clientName} follows
+        notificationHandler.notifyScrapeFollowings();
+        let mapFollowing = await scrapingHandler.scrapeFollowing(clientName);
+        
+        // remove the authors that ${clientName} follows from the list to protect  
+        notificationHandler.notifyAnalysisProtectFollowedUsers();    
+        for (let name of scrapedRelations.keys()) {
+          if (mapFollowing.has(name))
+            scrapedRelations.delete(name);
+        }
+      }
+      if(config.enableAnalysisBeforeOperation && config.enableOnlyRequiredActions)
+      {
+        // scrape the authors that ${clientName} blocked
+        notificationHandler.notifyScrapeBanned();
+        let mapBlocked = await scrapingHandler.scrapeAuthorNamesFromBannedAuthorPage();
+        
+        // update the list with info obtained from mapBlocked
+        notificationHandler.notifyAnalysisOnlyRequiredActions();
+        for (let name of scrapedRelations.keys()) {
+          if (mapBlocked.has(name))
+          {
+            scrapedRelations.get(name).isBannedUser = mapBlocked.get(name).isBannedUser;
+            scrapedRelations.get(name).isBannedTitle = mapBlocked.get(name).isBannedTitle;
+            scrapedRelations.get(name).isBannedMute = mapBlocked.get(name).isBannedMute;
+          }
+        }
+      }
+        
+      log.info("bg", "number of user to ban (after analysis): " + scrapedRelations.size);
+      
+      // stop if there is no user
+      if(scrapedRelations.size === 0)
+      {
+        notificationHandler.finishErrorNoAccount(banSource, banMode);
+        log.err("bg", "Program has been finished (error_NoAccount)");
+        processFinishReason = enums.ProcessFinishReason.NO_ACCOUNTS_AFTER_FILTERING;
+        return;
+      }
+
+      authorNameList = Array.from(scrapedRelations, ([name, value]) => name);
+      authorIdList = Array.from(scrapedRelations, ([name, value]) => value.authorId);
+
+      notificationHandler.notifyOngoing(0, 0, authorNameList.length);
+      
+      for (const [name, value] of scrapedRelations)
+      {
+        if(programController.earlyStop)
+          break;
+        
+        // value.isBannedUser and others are null if analysis is not enabled
+        let res = await relationHandler.performAction(banMode, 
+                                                      value.authorId, 
+                                                      (!value.isBannedUser && !config.enableMute), 
+                                                      (!value.isBannedTitle && config.enableTitleBan), 
+                                                      (!value.isBannedMute && config.enableMute));
+        
+        if(res.resultType == enums.ResultType.FAIL)
+        {
+          // performAction failed because to too many request
+
+          // while waiting cooldown, send periodic notifications to user 
+          // this also provides that chrome doesn't kill the extension for being idle
+          await new Promise(async resolve => 
+          {
+            // wait 1 minute (+2 sec to ensure)
+            let waitTimeInSec = 62;
+            for(let j = 1; j <= waitTimeInSec; j++)
+            {
+              if(programController.earlyStop)
+                break;
+              
+              // send message to notification page
+              notificationHandler.notifyCooldown(waitTimeInSec-j);
+              
+              // wait 1 sec
+              await new Promise(resolve2 => { setTimeout(resolve2, 1000); }); 
+            }
+              
+            resolve();        
+          }); 
+          
+          if(!programController.earlyStop)
+          {
+            // value.isBannedUser and others are null if analysis is not enabled
+            res = await relationHandler.performAction(banMode, 
+                                                      value.authorId, 
+                                                      (!value.isBannedUser && !config.enableMute),
+                                                      (!value.isBannedTitle && config.enableTitleBan), 
+                                                      (!value.isBannedMute && config.enableMute));
+          }
+        }
+        
+        // send message to notification page
+        notificationHandler.notifyOngoing(res.successfulAction, res.performedAction, authorIdList.length);
+      }
+    }
+    
+    processFinishReason = enums.ProcessFinishReason.SUCCESS;
+    
+  }
+  finally
+  {
+
+    // if early stop was generated, erase planned processes in notification page
+    if(programController.earlyStop)
+    {
+      log.info("bg", "(updatePlannedProcessesList just before finished) notification page's queue will be updated.");
+      notificationHandler.updatePlannedProcessesList(""); // erase the processes in the planned processes table
+      // add the remaining processes to completed process table
+      let remainingProcessesArray = processQueue.itemAttributes;
+      for (const element of remainingProcessesArray)
+        notificationHandler.finishErrorEarlyStop(element.banSource, element.banMode);
+      processQueue.clear(); // clear the remaining planned processes in the queue 
+    }
+    
+    if(processFinishReason === enums.ProcessFinishReason.SUCCESS) 
+    {
+
+      let successfulAction = relationHandler.successfulAction;
+      let performedAction = relationHandler.performedAction;
+      
+      let eksi_engel_user = createEksiSozlukUser(clientName, clientId);
+      let fav_author = createEksiSozlukUser(entryMetaData.authorName, entryMetaData.authorId);
+      let fav_title = createEksiSozlukTitle(entryMetaData.titleName, entryMetaData.titleId);
+      let fav_entry = createEksiSozlukEntry(fav_title /* TODO */, entryMetaData.entryId);
+
+      // TODO: extremely inefficient solution, delete authorNameList and authorId arrays
+      let author_list = authorIdList.map((id, index) => {
+        return {
+          eksisozluk_id: id,
+          eksisozluk_name: authorNameList[index]
+        }
+      });
+      // filter id==0 authors (these authors only come with BanSource::LIST)
+      author_list = author_list.filter(function(item){
+        const {eksisozluk_id, eksisozluk_name} = item;
+        return eksisozluk_id != 0;  
+      });
+
+      notificationHandler.finishSuccess(banSource, banMode, successfulAction, performedAction, authorNameList.length);
+      
+      
+      log.info("bg", "Program has been finished (successful:" + successfulAction + ", performed:" + performedAction + ", planned:" + authorNameList.length + ")");
+
+      let action = new Action({
+        eksi_engel_user:  eksi_engel_user,
+        version:          chrome.runtime.getManifest().version,
+        user_agent:       userAgent,
+        ban_source:       banSource,
+        ban_mode:         banMode,
+        author_list:      author_list,
+        author_list_size: author_list.length,
+        planned_action:   authorNameList.length,
+        performed_action: performedAction,
+        successful_action:successfulAction,
+        is_early_stopped: programController.earlyStop,
+        log_level:        null,  // will be set later
+        log:              null,  // will be set later
+        target_type:      targetType,
+        click_source:     clickSource,
+        fav_title:        fav_title,
+        fav_entry:        fav_entry,
+        fav_author:       fav_author,
+        time_specifier:   timeSpecifier
+      });
+
+      // set action.log_level and action.log
+      if(config.sendLog && log.isEnabled)
+      {
+        action.log_level = log.level;
+        action.log = log.getData().toString();
+      }
       else
-        res = await relationHandler.performAction(banMode, authorId, true, true, true);
-      
-      if(res.resultType == enums.ResultType.FAIL)
       {
-        // performAction failed because to too many request
-
-        // while waiting cooldown, send periodic notifications to user 
-        // this also provides that chrome doesn't kill the extension for being idle
-        await new Promise(async resolve => 
-        {
-          // wait 1 minute (+2 sec to ensure)
-          let waitTimeInSec = 62;
-          for(let i = 1; i <= waitTimeInSec; i++)
-          {
-            if(programController.earlyStop)
-              break;
-            
-            // send message to notification page
-            notificationHandler.notifyCooldown(waitTimeInSec-i);
-            
-            // wait 1 sec
-            await new Promise(resolve2 => { setTimeout(resolve2, 1000); }); 
-          }
-            
-          resolve();        
-        }); 
-        
-        if(!programController.earlyStop)
-        {
-          if(banMode == enums.BanMode.BAN)
-            res = await relationHandler.performAction(banMode, authorId, !config.enableMute, config.enableTitleBan, config.enableMute);
-          else
-            res = await relationHandler.performAction(banMode, authorId, true, true, true);
-        }
+        action.log_level = log.constructor.Levels.DISABLED; 
+        action.log = null;
       }
 
-      // send message to notification page
-      notificationHandler.notifyOngoing(res.successfulAction, res.performedAction, authorNameList.length);
+      let action_config = new ActionConfig({
+        eksi_sozluk_url: config.EksiSozlukURL,
+        send_data: config.sendData,
+        enable_noob_ban: config.enableNoobBan,
+        enable_mute: config.enableMute,
+        enable_title_ban: config.enableTitleBan,
+        enable_anaylsis_before_operations: config.enableAnalysisBeforeOperation,
+        enable_only_required_actions: config.enableOnlyRequiredActions,
+        enable_protect_followed_users: config.enableProtectFollowedUsers,
+        ban_premium_icons: config.banPremiumIcons
+      });
+
+      if(config.sendData)
+        await commHandler.sendData(action, action_config);
+
     }
     
+    // common cleanup
+    programController.earlyStop = false; // reset to reuse
+    log.resetData();
   }
-  else if(banSource === enums.BanSource.FAV)
-  {
-    notificationHandler.notifyScrapeFavs();
-
-    entryMetaData = await scrapingHandler.scrapeMetaDataFromEntryPage(entryUrl);
-    let scrapedRelations = await scrapingHandler.scrapeAuthorNamesFromFavs(entryUrl); // names will be scraped
-    
-    log.info("bg", "number of user to ban (before analysis): " + scrapedRelations.size);
-    
-    // stop if there is no user
-    if(scrapedRelations.size === 0)
-    {
-      notificationHandler.finishErrorNoAccount(banSource, banMode);
-      log.err("bg", "Program has been finished (finishErrorNoAccount)");
-      return;
-    }
-    
-    // analysis before operation 
-    if(config.enableAnalysisBeforeOperation && config.enableProtectFollowedUsers && banMode == enums.BanMode.BAN)
-    {
-      // scrape the authors that ${clientName} follows
-      notificationHandler.notifyScrapeFollowings();
-      let mapFollowing = await scrapingHandler.scrapeFollowing(clientName);
-      
-      // remove the authors that ${clientName} follows from the list to protect    
-      notificationHandler.notifyAnalysisProtectFollowedUsers();  
-      for (let name of scrapedRelations.keys()) {
-        if (mapFollowing.has(name))
-          scrapedRelations.delete(name);
-      }
-    }
-    if(config.enableAnalysisBeforeOperation && config.enableOnlyRequiredActions)
-    {
-      // Note: Ekşi Sözlük API response doesn't include blocked authors, but it includes authors who muted and title blocked
-      // This condition doesn't provide a simplification of the following algorithm
-      
-      // scrape the authors that ${clientName} blocked
-      notificationHandler.notifyScrapeBanned();
-      let mapBlocked = await scrapingHandler.scrapeAuthorNamesFromBannedAuthorPage();
-      
-      // update the list with info obtained from mapBlocked
-      notificationHandler.notifyAnalysisOnlyRequiredActions();
-      for (let name of scrapedRelations.keys()) {
-        if (mapBlocked.has(name))
-        {
-          scrapedRelations.get(name).isBannedUser = mapBlocked.get(name).isBannedUser;
-          scrapedRelations.get(name).isBannedTitle = mapBlocked.get(name).isBannedTitle;
-          scrapedRelations.get(name).isBannedMute = mapBlocked.get(name).isBannedMute;
-        }
-      }
-    }
-    
-    log.info("bg", "number of user to ban (after analysis): " + scrapedRelations.size);
-    
-    // stop if there is no user
-    if(scrapedRelations.size === 0)
-    {
-      notificationHandler.finishErrorNoAccount(banSource, banMode);
-      log.err("bg", "Program has been finished (finishErrorNoAccount)");
-      return;
-    }
-    
-    authorNameList = Array.from(scrapedRelations, ([name, value]) => name);
-
-    notificationHandler.notifyOngoing(0, 0, authorNameList.length);
-    
-    for (const [name, value] of scrapedRelations)
-    {
-      if(programController.earlyStop)
-        break;
-      let authorId = await scrapingHandler.scrapeAuthorIdFromAuthorProfilePage(name);
-      let res = await relationHandler.performAction(banMode, 
-                                                    authorId,
-                                                    (!value.isBannedUser && !config.enableMute),
-                                                    (!value.isBannedTitle && config.enableTitleBan), 
-                                                    (!value.isBannedMute && config.enableMute));
-      
-      
-      authorIdList.push(authorId);
-      
-      if(res.resultType == enums.ResultType.FAIL)
-      {
-        // performAction failed because to too many request
-
-        // while waiting cooldown, send periodic notifications to user 
-        // this also provides that chrome doesn't kill the extension for being idle
-        await new Promise(async resolve => 
-        {
-          // wait 1 minute (+2 sec to ensure)
-          let waitTimeInSec = 62;
-          for(let i = 1; i <= waitTimeInSec; i++)
-          {
-            if(programController.earlyStop)
-              break;
-            
-            // send message to notification page
-            notificationHandler.notifyCooldown(waitTimeInSec-i);
-            
-            // wait 1 sec
-            await new Promise(resolve2 => { setTimeout(resolve2, 1000); }); 
-          }
-            
-          resolve();        
-        }); 
-        
-        if(!programController.earlyStop)
-        {
-          res = await relationHandler.performAction(banMode, 
-                                                    authorId,
-                                                    (!value.isBannedUser && !config.enableMute),
-                                                    (!value.isBannedTitle && config.enableTitleBan), 
-                                                    (!value.isBannedMute && config.enableMute));
-        }
-
-      }
-      
-      // send message to notification page
-      notificationHandler.notifyOngoing(res.successfulAction, res.performedAction, authorNameList.length);
-    }
-  }
-  else if(banSource === enums.BanSource.FOLLOW)
-  {
-    notificationHandler.notifyScrapeFollowers();
-
-    let scrapedRelations = await scrapingHandler.scrapeFollower(singleAuthorName);
-    log.info("bg", "number of user to ban (before analysis): " + scrapedRelations.size);
-    
-    // stop if there is no user
-    if(scrapedRelations.size === 0)
-    {
-      notificationHandler.finishErrorNoAccount(banSource, banMode);
-      log.err("bg", "Program has been finished (error_NoAccount)");
-      return;
-    }
-    
-    // analysis before operation 
-    if(config.enableAnalysisBeforeOperation && config.enableProtectFollowedUsers && banMode == enums.BanMode.BAN)
-    {
-      // scrape the authors that ${clientName} follows
-      notificationHandler.notifyScrapeFollowings();
-      let mapFollowing = await scrapingHandler.scrapeFollowing(clientName);
-      
-      // remove the authors that ${clientName} follows from the list to protect  
-      notificationHandler.notifyAnalysisProtectFollowedUsers();    
-      for (let name of scrapedRelations.keys()) {
-        if (mapFollowing.has(name))
-          scrapedRelations.delete(name);
-      }
-    }
-    if(config.enableAnalysisBeforeOperation && config.enableOnlyRequiredActions)
-    {
-      // scrape the authors that ${clientName} blocked
-      notificationHandler.notifyScrapeBanned();
-      let mapBlocked = await scrapingHandler.scrapeAuthorNamesFromBannedAuthorPage();
-      
-      // update the list with info obtained from mapBlocked
-      notificationHandler.notifyAnalysisOnlyRequiredActions();
-      for (let name of scrapedRelations.keys()) {
-        if (mapBlocked.has(name))
-        {
-          scrapedRelations.get(name).isBannedUser = mapBlocked.get(name).isBannedUser;
-          scrapedRelations.get(name).isBannedTitle = mapBlocked.get(name).isBannedTitle;
-          scrapedRelations.get(name).isBannedMute = mapBlocked.get(name).isBannedMute;
-        }
-      }
-    }
-      
-    log.info("bg", "number of user to ban (after analysis): " + scrapedRelations.size);
-    
-    // stop if there is no user
-    if(scrapedRelations.size === 0)
-    {
-      notificationHandler.finishErrorNoAccount(banSource, banMode);
-      log.err("bg", "Program has been finished (error_NoAccount)");
-      return;
-    }
-
-    authorNameList = Array.from(scrapedRelations, ([name, value]) => name);
-    authorIdList = Array.from(scrapedRelations, ([name, value]) => value.authorId);
-
-    notificationHandler.notifyOngoing(0, 0, authorNameList.length);
-    
-    
-    
-    for (const [name, value] of scrapedRelations)
-    {
-      if(programController.earlyStop)
-        break;
-      
-      // value.isBannedUser and others are null if analysis is not enabled
-      let res = await relationHandler.performAction(banMode, 
-                                                    value.authorId, 
-                                                    (!value.isBannedUser && !config.enableMute), 
-                                                    (!value.isBannedTitle && config.enableTitleBan), 
-                                                    (!value.isBannedMute && config.enableMute));
-      
-      if(res.resultType == enums.ResultType.FAIL)
-      {
-        // performAction failed because to too many request
-
-        // while waiting cooldown, send periodic notifications to user 
-        // this also provides that chrome doesn't kill the extension for being idle
-        await new Promise(async resolve => 
-        {
-          // wait 1 minute (+2 sec to ensure)
-          let waitTimeInSec = 62;
-          for(let j = 1; j <= waitTimeInSec; j++)
-          {
-            if(programController.earlyStop)
-              break;
-            
-            // send message to notification page
-            notificationHandler.notifyCooldown(waitTimeInSec-j);
-            
-            // wait 1 sec
-            await new Promise(resolve2 => { setTimeout(resolve2, 1000); }); 
-          }
-            
-          resolve();        
-        }); 
-        
-        if(!programController.earlyStop)
-        {
-          // value.isBannedUser and others are null if analysis is not enabled
-          res = await relationHandler.performAction(banMode, 
-                                                    value.authorId, 
-                                                    (!value.isBannedUser && !config.enableMute),
-                                                    (!value.isBannedTitle && config.enableTitleBan), 
-                                                    (!value.isBannedMute && config.enableMute));
-        }
-      }
-      
-      // send message to notification page
-      notificationHandler.notifyOngoing(res.successfulAction, res.performedAction, authorIdList.length);
-    }
-
-    
-  }
-  else if(banSource === enums.BanSource.UNDOBANALL)
-  {
-    let scrapedRelations = await scrapingHandler.scrapeAuthorNamesFromBannedAuthorPage(); // names and ids will be scraped
-    
-    // stop if there is no user
-    log.info("bg", "number of user to ban " + scrapedRelations.size);
-    if(scrapedRelations.size === 0)
-    {
-      notificationHandler.finishErrorNoAccount(banSource, banMode);
-      log.err("bg", "Program has been finished (error_NoAccount)");
-      return;
-    }
-
-    authorNameList = Array.from(scrapedRelations, ([name, value]) => name);
-    authorIdList = Array.from(scrapedRelations, ([name, value]) => value.authorId);
-
-    notificationHandler.notifyOngoing(0, 0, authorNameList.length);
-    
-    for (const [name, value] of scrapedRelations)
-    {
-      if(programController.earlyStop)
-        break;
-      
-      let res = await relationHandler.performAction(banMode, value.authorId, value.isBannedUser, value.isBannedTitle, value.isBannedMute);
-      
-      if(res.resultType == enums.ResultType.FAIL)
-      {
-        // performAction failed because to too many request
-
-        // while waiting cooldown, send periodic notifications to user 
-        // this also provides that chrome doesn't kill the extension for being idle
-        await new Promise(async resolve => 
-        {
-          // wait 1 minute (+2 sec to ensure)
-          let waitTimeInSec = 62;
-          for(let j = 1; j <= waitTimeInSec; j++)
-          {
-            if(programController.earlyStop)
-              break;
-            
-            // send message to notification page
-            notificationHandler.notifyCooldown(waitTimeInSec-j);
-            
-            // wait 1 sec
-            await new Promise(resolve2 => { setTimeout(resolve2, 1000); }); 
-          }
-            
-          resolve();        
-        }); 
-        
-        if(!programController.earlyStop)
-          res = await relationHandler.performAction(banMode, value.authorId, value.isBannedUser, value.isBannedTitle, value.isBannedMute);
-      }
-      
-      // send message to notification page
-      notificationHandler.notifyOngoing(res.successfulAction, res.performedAction, authorIdList.length);
-    }
-  }
-  
-  else if(banSource === enums.BanSource.TITLE)
-  {
-    notificationHandler.notifyScrapeTitle();
-
-    // scrapedRelations does not hold duplicated records, scraping handler is responsible to keep it clean
-    let scrapedRelations = await scrapingHandler.scrapeAuthorsFromTitle(titleName, titleId, timeSpecifier);
-    log.info("bg", "number of user to ban (before analysis): " + scrapedRelations.size);
-    
-    // stop if there is no user
-    if(scrapedRelations.size === 0)
-    {
-      notificationHandler.finishErrorNoAccount(banSource, banMode);
-      log.err("bg", "Program has been finished (error_NoAccount)");
-      return;
-    }
-    
-    // analysis before operation 
-    if(config.enableAnalysisBeforeOperation && config.enableProtectFollowedUsers && banMode == enums.BanMode.BAN)
-    {
-      // scrape the authors that ${clientName} follows
-      notificationHandler.notifyScrapeFollowings();
-      let mapFollowing = await scrapingHandler.scrapeFollowing(clientName);
-      
-      // remove the authors that ${clientName} follows from the list to protect  
-      notificationHandler.notifyAnalysisProtectFollowedUsers();    
-      for (let name of scrapedRelations.keys()) {
-        if (mapFollowing.has(name))
-          scrapedRelations.delete(name);
-      }
-    }
-    if(config.enableAnalysisBeforeOperation && config.enableOnlyRequiredActions)
-    {
-      // scrape the authors that ${clientName} blocked
-      notificationHandler.notifyScrapeBanned();
-      let mapBlocked = await scrapingHandler.scrapeAuthorNamesFromBannedAuthorPage();
-      
-      // update the list with info obtained from mapBlocked
-      notificationHandler.notifyAnalysisOnlyRequiredActions();
-      for (let name of scrapedRelations.keys()) {
-        if (mapBlocked.has(name))
-        {
-          scrapedRelations.get(name).isBannedUser = mapBlocked.get(name).isBannedUser;
-          scrapedRelations.get(name).isBannedTitle = mapBlocked.get(name).isBannedTitle;
-          scrapedRelations.get(name).isBannedMute = mapBlocked.get(name).isBannedMute;
-        }
-      }
-    }
-      
-    log.info("bg", "number of user to ban (after analysis): " + scrapedRelations.size);
-    
-    // stop if there is no user
-    if(scrapedRelations.size === 0)
-    {
-      notificationHandler.finishErrorNoAccount(banSource, banMode);
-      log.err("bg", "Program has been finished (error_NoAccount)");
-      return;
-    }
-
-    authorNameList = Array.from(scrapedRelations, ([name, value]) => name);
-    authorIdList = Array.from(scrapedRelations, ([name, value]) => value.authorId);
-
-    notificationHandler.notifyOngoing(0, 0, authorNameList.length);
-    
-    for (const [name, value] of scrapedRelations)
-    {
-      if(programController.earlyStop)
-        break;
-      
-      // value.isBannedUser and others are null if analysis is not enabled
-      let res = await relationHandler.performAction(banMode, 
-                                                    value.authorId, 
-                                                    (!value.isBannedUser && !config.enableMute), 
-                                                    (!value.isBannedTitle && config.enableTitleBan), 
-                                                    (!value.isBannedMute && config.enableMute));
-      
-      if(res.resultType == enums.ResultType.FAIL)
-      {
-        // performAction failed because to too many request
-
-        // while waiting cooldown, send periodic notifications to user 
-        // this also provides that chrome doesn't kill the extension for being idle
-        await new Promise(async resolve => 
-        {
-          // wait 1 minute (+2 sec to ensure)
-          let waitTimeInSec = 62;
-          for(let j = 1; j <= waitTimeInSec; j++)
-          {
-            if(programController.earlyStop)
-              break;
-            
-            // send message to notification page
-            notificationHandler.notifyCooldown(waitTimeInSec-j);
-            
-            // wait 1 sec
-            await new Promise(resolve2 => { setTimeout(resolve2, 1000); }); 
-          }
-            
-          resolve();        
-        }); 
-        
-        if(!programController.earlyStop)
-        {
-          // value.isBannedUser and others are null if analysis is not enabled
-          res = await relationHandler.performAction(banMode, 
-                                                    value.authorId, 
-                                                    (!value.isBannedUser && !config.enableMute),
-                                                    (!value.isBannedTitle && config.enableTitleBan), 
-                                                    (!value.isBannedMute && config.enableMute));
-        }
-      }
-      
-      // send message to notification page
-      notificationHandler.notifyOngoing(res.successfulAction, res.performedAction, authorIdList.length);
-    }
-  }
-  
-  let successfulAction = relationHandler.successfulAction;
-  let performedAction = relationHandler.performedAction;
-  
-  let eksi_engel_user = createEksiSozlukUser(clientName, clientId);
-  let fav_author = createEksiSozlukUser(entryMetaData.authorName, entryMetaData.authorId);
-  let fav_title = createEksiSozlukTitle(entryMetaData.titleName, entryMetaData.titleId);
-  let fav_entry = createEksiSozlukEntry(fav_title /* TODO */, entryMetaData.entryId);
-
-  // TODO: extremely inefficient solution, delete authorNameList and authorId arrays
-  let author_list = authorIdList.map((id, index) => {
-    return {
-      eksisozluk_id: id,
-      eksisozluk_name: authorNameList[index]
-    }
-  });
-  // filter id==0 authors (these authors only come with BanSource::LIST)
-  author_list = author_list.filter(function(item){
-    const {eksisozluk_id, eksisozluk_name} = item;
-    return eksisozluk_id != 0;  
-  });
-
-  let version;
-  try
-  {
-    version = chrome.runtime.getManifest().version;
-  }
-  catch(e)
-  {
-    return;
-  }
-
-  let action = new Action({
-    eksi_engel_user:  eksi_engel_user,
-    version:          version,
-    user_agent:       userAgent,
-    ban_source:       banSource,
-    ban_mode:         banMode,
-    author_list:      author_list,
-    author_list_size: author_list.length,
-    planned_action:   authorNameList.length,
-    performed_action: performedAction,
-    successful_action:successfulAction,
-    is_early_stopped: programController.earlyStop,
-    log_level:        null,
-    log:              null,
-    target_type:      targetType,
-    click_source:     clickSource,
-    fav_title:        fav_title,
-    fav_entry:        fav_entry,
-    fav_author:       fav_author,
-    time_specifier:   timeSpecifier
-  });
-
-  // log_level and log
-  if(config.sendLog && log.isEnabled)
-  {
-    let logData;
-    try
-    {
-      logData = log.getData().toString();
-    }
-    catch(e)
-    {
-      return;
-    }
-
-    action.log_level = log.level;
-    action.log = logData;
-  }
-  else
-  {
-    action.log_level = log.constructor.Levels.DISABLED; 
-    action.log = null;
-  }
-
-  let action_config = new ActionConfig({
-    eksi_sozluk_url: config.EksiSozlukURL,
-    send_data: config.sendData,
-    enable_noob_ban: config.enableNoobBan,
-    enable_mute: config.enableMute,
-    enable_title_ban: config.enableTitleBan,
-    enable_anaylsis_before_operations: config.enableAnalysisBeforeOperation,
-    enable_only_required_actions: config.enableOnlyRequiredActions,
-    enable_protect_followed_users: config.enableProtectFollowedUsers,
-    ban_premium_icons: config.banPremiumIcons
-  });
-
-  if(config.sendData)
-    await commHandler.sendData(action, action_config);
-
-  notificationHandler.finishSuccess(banSource, banMode, successfulAction, performedAction, authorNameList.length);
-  
-  // if early stop was generated, erase planned processes in notification page
-  if(programController.earlyStop)
-  {
-    log.info("bg", "(updatePlannedProcessesList just before finished) notification page's queue will be updated.");
-    notificationHandler.updatePlannedProcessesList(""); // erase the processes in the planned processes table
-    // add the remaining processes to completed process table
-    let remainingProcessesArray = processQueue.itemAttributes;
-    for (const element of remainingProcessesArray)
-      notificationHandler.finishErrorEarlyStop(element.banSource, element.banMode);
-    processQueue.clear(); // clear the remaining planned processes in the queue 
-  }
-  
-  log.info("bg", "Program has been finished (successfull:" + successfulAction + ", performed:" + performedAction + ", planned:" + authorNameList.length + ")");
-
-  programController.earlyStop = false; // reset to reuse
-  log.resetData();
 }
 
 // this listener fired every time when the extension installed or updated.
