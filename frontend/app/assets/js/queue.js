@@ -8,6 +8,8 @@ class AutoQueue
   }
   
   get item() { return this._items; }
+
+  get size() { return this._items.length; }
   
   get itemAttributes() 
   { 

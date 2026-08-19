@@ -28,8 +28,6 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
   wrapperProcessHandler.banMode = obj.banMode;
   wrapperProcessHandler.creationDateInStr = new Date().getHours() + ":" + new Date().getMinutes(); 
   processQueue.enqueue(wrapperProcessHandler);
-  log.info("bg", "number of waiting processes in the queue: " + processQueue.size);
-  notificationHandler.updatePlannedProcessesList(processQueue.itemAttributes);
 });
 
 async function processHandler(banSource, banMode, entryUrl, singleAuthorName, singleAuthorId, targetType, clickSource, titleName, titleId, timeSpecifier)
@@ -54,8 +52,16 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
   catch(e)
   {
     // not exist, so create one
-    let tab = await chrome.tabs.create({ active: false, url: chrome.runtime.getURL("assets/html/notification.html") });
-    g_notificationTabId = tab.id;
+    try
+    {
+      let tab = await chrome.tabs.create({ active: false, url: chrome.runtime.getURL("assets/html/notification.html") });
+      g_notificationTabId = tab.id;
+    }
+    catch(createError)
+    {
+      log.err("bg", "Failed to create notification tab: " + createError);
+      return;
+    }
   }
   programController.tabId = g_notificationTabId;
   notificationHandler.updatePlannedProcessesList(processQueue.itemAttributes);
@@ -64,7 +70,14 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
   let authorIdList = [];
   let entryMetaData = {};
   
-  await handleConfig(); // load config
+  try
+  {
+    await handleConfig(); // load config
+  }
+  catch(e)
+  {
+    return;
+  }
   relationHandler.reset(); // reset the counters to reuse
 
   notificationHandler.notifyControlAccess();
@@ -126,8 +139,22 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
   }
   else if(banSource === enums.BanSource.LIST)
   {
-    authorNameList = await utils.getUserList(); // names will be loaded from storage
-    utils.cleanUserList(authorNameList);
+    try
+    {
+      authorNameList = await utils.getUserList(); // names will be loaded from storage
+    }
+    catch(e)
+    {
+      return;
+    }
+    try
+    {
+      utils.cleanUserList(authorNameList);
+    }
+    catch(e)
+    {
+      return;
+    }
     
     // stop if there is no user
     log.info("bg", "number of user to ban " + authorNameList.length);
@@ -627,9 +654,19 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
     return eksisozluk_id != 0;  
   });
 
+  let version;
+  try
+  {
+    version = chrome.runtime.getManifest().version;
+  }
+  catch(e)
+  {
+    return;
+  }
+
   let action = new Action({
     eksi_engel_user:  eksi_engel_user,
-    version:          chrome.runtime.getManifest().version,
+    version:          version,
     user_agent:       userAgent,
     ban_source:       banSource,
     ban_mode:         banMode,
@@ -652,8 +689,18 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
   // log_level and log
   if(config.sendLog && log.isEnabled)
   {
+    let logData;
+    try
+    {
+      logData = log.getData().toString();
+    }
+    catch(e)
+    {
+      return;
+    }
+
     action.log_level = log.level;
-    action.log = log.getData().toString();
+    action.log = logData;
   }
   else
   {
