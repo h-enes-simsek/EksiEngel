@@ -1,18 +1,9 @@
-// queue implementation
-class Queue 
-{
-  constructor() { this._items = []; }
-  enqueue(item) { this._items.push(item); }
-  dequeue()     { return this._items.shift(); }
-  get size()    { return this._items.length; }
-}
-
 // queue implementation that executes promises automatically
-class AutoQueue extends Queue 
+class AutoQueue 
 {
   constructor() 
   {
-    super();
+    this._items = [];
     this._pendingPromise = false;
   }
   
@@ -42,7 +33,7 @@ class AutoQueue extends Queue
   enqueue(action) 
   {
     return new Promise((resolve, reject) => {
-      super.enqueue({ action, resolve, reject });
+      this._items.push({ action, resolve, reject });
       this.dequeue();
     });
   }
@@ -51,7 +42,7 @@ class AutoQueue extends Queue
   {
     if (this._pendingPromise) return false;
 
-    let item = super.dequeue();
+    let item = this._items.shift();
 
     if (!item) return false;
 
