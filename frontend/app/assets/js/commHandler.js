@@ -32,13 +32,13 @@ export function createEksiSozlukEntry(eksisozluk_title, eksisozluk_id)
 
 function EksiSozlukUser(eksisozluk_name, eksisozluk_id)
 {
-  this.eksisozluk_name = eksisozluk_name;
-  this.eksisozluk_id = eksisozluk_id;
+  this.eksisozluk_name = String(eksisozluk_name);
+  this.eksisozluk_id = String(eksisozluk_id);
 }
 
 export function createEksiSozlukUser(eksisozluk_name, eksisozluk_id)
 {
-  if(!eksisozluk_name || !eksisozluk_id)
+  if(!eksisozluk_name || !eksisozluk_id || String(eksisozluk_id) === "0")
     return null;
   
   return new EksiSozlukUser(eksisozluk_name, eksisozluk_id);

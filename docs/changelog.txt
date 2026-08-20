@@ -276,6 +276,12 @@ bug fix: Ekşi Engel serverı taşındığı için URL adresleri güncel değild
 
 v3.3
 gönderim: yayın: 
+TODO bug fix: early stop, scraping handler i durdurmuyordu. (relation handler eskiden de duruyordu)
+dokumantasyon guncellendi: early stop ve scraping konulari incelendi.
+bug fix: add notify for scraping process while gathering all authors for case UNDOBANALL
+tum frontend yenilendi.
+refactor: bircok eski kod.
+yeni req-lock.txt versionlu dependcensileri, req.txt versiyonsuz olanlari tutacak.
 bug fix: correct UNDOBANALL function arguments
 where_is_eksisozluk endpoint kaldirildi. DBde degisiklik yok.
 eksiengel artik sadece predefined url uzerinde calisacak tum websiteleri uzerinde degil.

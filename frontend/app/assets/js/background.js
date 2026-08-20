@@ -28,6 +28,10 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
   wrapperProcessHandler.banMode = obj.banMode;
   wrapperProcessHandler.creationDateInStr = new Date().getHours() + ":" + new Date().getMinutes(); 
   processQueue.enqueue(wrapperProcessHandler);
+  log.info("bg", "number of waiting processes in the queue: " + processQueue.size);
+
+  // update notification page. otherwise, the user cannot see the planned processes immediately after new request.
+  notificationHandler.updatePlannedProcessesList(processQueue.itemAttributes); 
 });
 
 async function processHandler(banSource, banMode, entryUrl, singleAuthorName, singleAuthorId, targetType, clickSource, titleName, titleId, timeSpecifier)
@@ -100,9 +104,9 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
     }
 
     notificationHandler.notifyControlLogin();
-    userAgent = await scrapingHandler.scrapeUserAgent();
+    userAgent = scrapingHandler.scrapeUserAgent();
     ({clientName, clientId} = await scrapingHandler.scrapeClientNameAndId());
-    if(!clientName)
+    if(!clientName || !clientId)
     {
       log.err("bg", "Program has been finished (finishErrorLogin)");
       notificationHandler.finishErrorLogin(banSource, banMode);
@@ -194,16 +198,15 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
         if(programController.earlyStop)
           break;
         
-        let authorId = await scrapingHandler.scrapeAuthorIdFromAuthorProfilePage(authorName);
-        let author = createEksiSozlukUser(authorName, authorId);
+        let author = createEksiSozlukUser(authorName, await scrapingHandler.scrapeAuthorIdFromAuthorProfilePage(authorName));
         if(author)
           authorList.push(author);
         
         let res;
         if(banMode == enums.BanMode.BAN)
-          res = await relationHandler.performAction(banMode, authorId, !config.enableMute, config.enableTitleBan, config.enableMute);
+          res = await relationHandler.performAction(banMode, author.eksisozluk_id, !config.enableMute, config.enableTitleBan, config.enableMute);
         else
-          res = await relationHandler.performAction(banMode, authorId, true, true, true);
+          res = await relationHandler.performAction(banMode, author.eksisozluk_id, true, true, true);
         
         if(res.resultType == enums.ResultType.FAIL)
         {
@@ -233,9 +236,9 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
           if(!programController.earlyStop)
           {
             if(banMode == enums.BanMode.BAN)
-              res = await relationHandler.performAction(banMode, authorId, !config.enableMute, config.enableTitleBan, config.enableMute);
+              res = await relationHandler.performAction(banMode, author.eksisozluk_id, !config.enableMute, config.enableTitleBan, config.enableMute);
             else
-              res = await relationHandler.performAction(banMode, authorId, true, true, true);
+              res = await relationHandler.performAction(banMode, author.eksisozluk_id, true, true, true);
           }
         }
 

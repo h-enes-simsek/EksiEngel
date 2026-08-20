@@ -297,8 +297,10 @@ th, td { padding: 10px 12px !important; border: 0 !important; border-bottom: 1px
 .documentation-page .grid-container { min-width: 900px; padding: 0 !important; gap: 1px; border: 1px solid var(--color-border) !important; border-radius: var(--radius-md); overflow: hidden; background: var(--color-border); box-shadow: var(--shadow-sm); }
 .documentation-page .six-column { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); }
 .documentation-page .seven-column { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.documentation-page .eight-column { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); }
 .documentation-page .grid-item { padding: 12px !important; border: 0 !important; background: var(--color-surface); }
 .documentation-page .grid-item:nth-child(-n+7) { background: var(--color-brand-dark); color: #fff; font-weight: 700; }
+.documentation-page .eight-column .grid-item:nth-child(8) { background: var(--color-brand-dark); color: #fff; font-weight: 700; }
 
 .tooltip::after, .tooltip::before { background-color: var(--color-ink) !important; }
 
