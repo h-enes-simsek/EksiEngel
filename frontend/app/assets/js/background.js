@@ -491,6 +491,8 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
     }
     else if(banSource === enums.BanSource.UNDOBANALL)
     {
+      notificationHandler.notifyScrapeUndobanAll();
+
       let scrapedRelations = await scrapingHandler.scrapeAuthorNamesFromBannedAuthorPage(); // names and ids will be scraped
       
       // stop if there is no user

@@ -58,6 +58,9 @@ class NotificationHandler
   notifyScrapeBanned = () => {
     this.#notify("Engellediğiniz yazarlar toplanıyor.");
   }
+  notifyScrapeUndobanAll = () => {
+    this.#notify("Engeli kaldırılacak yazarlar toplanıyor.");
+  }
   notifyAnalysisProtectFollowedUsers = () => {
     this.#notify("Takip ettiğiniz yazarlar, engellenecek yazarlar listesinden çıkarılıyor.");
   }
