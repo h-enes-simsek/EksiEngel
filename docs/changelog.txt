@@ -1,6 +1,12 @@
 Versiyon notları (son kullanıcı için)
 -------------------------------------------------
 
+v3.3
+yayin: mevcut surum
+yeni ozellik: eksi sozlukun domaini engellendigi icin getirilen onlemler kaldirildi, bundan dolayi artik gereksiz hale gelen genis izinler kaldirildi
+yeni özellik: tum arayuz yeniden dizayn edildi.
+bug fix: undobanall fonksiyonu duzgun calismiyordu.
+
 v3.2
 yayın: 09.04.2024
 bug fix: Ekşi Engel serverı taşındığı için URL adresleri güncel değildi.

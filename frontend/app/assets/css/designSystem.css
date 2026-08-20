@@ -193,10 +193,56 @@ textarea:focus { border-color: var(--color-brand) !important; box-shadow: 0 0 0 
 }
 .settings-page #semsiye { display: block; width: min(150px, 35%) !important; margin: 36px auto !important; opacity: .8; }
 .info-page #semsiye { display: block; width: min(225px, 52.5%) !important; margin: 36px auto !important; opacity: .8; }
-.settings-page #howToUse { padding-top: 12px; }
-.settings-page #entryMenu, .settings-page #authorMenu { max-width: 100%; height: auto; margin: 12px 0 24px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); }
+.settings-page .guide { padding-top: 12px; }
+.settings-page .guide-header { max-width: 620px; margin: 0 auto 26px; text-align: center; }
+.settings-page .guide-kicker, .settings-page .guide-method {
+  color: var(--color-brand-dark);
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.settings-page .guide-header h3 { margin: 6px 0 8px; font-size: clamp(1.55rem, 3vw, 2rem); }
+.settings-page .guide-header p { margin: 0; color: var(--color-muted); }
 .settings-page #questionMark { position: relative; top: 3px; width: 20px; }
-.settings-page li { margin-bottom: 12px; }
+.settings-page .guide-layout { display: grid; gap: 18px; }
+.settings-page .guide-card {
+  padding: clamp(18px, 3vw, 28px);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: #fafbf8;
+  box-shadow: var(--shadow-sm);
+}
+.settings-page .guide-card h4 { margin: 5px 0 6px; font-size: 1.2rem; }
+.settings-page .guide-card > p { margin: 0 0 20px; color: var(--color-muted); }
+.settings-page .guide-screenshots { display: grid; grid-template-columns: 1fr; gap: 22px; }
+.settings-page .guide-screenshots figure { width: min(100%, 720px); margin: 0 auto; }
+.settings-page .guide-screenshots img { display: block; width: 100%; height: auto; border: 1px solid var(--color-border); border-radius: 10px; box-shadow: var(--shadow-sm); }
+.settings-page .guide-screenshots figcaption { padding-top: 8px; color: var(--color-muted); font-size: .82rem; font-weight: 650; text-align: center; }
+.settings-page .guide-steps { margin: 20px 0 0; padding: 0; list-style: none; counter-reset: guide-step; }
+.settings-page .guide-steps li { position: relative; display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 12px; margin: 0; padding: 0 0 22px; counter-increment: guide-step; }
+.settings-page .guide-steps li:not(:last-child)::after { content: ""; position: absolute; top: 38px; bottom: 4px; left: 16px; width: 1px; background: var(--color-border); }
+.settings-page .guide-steps li::before {
+  content: counter(guide-step);
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--color-brand-soft);
+  color: var(--color-brand-dark);
+  font-size: .82rem;
+  font-weight: 850;
+}
+.settings-page .guide-steps h6 { margin: 3px 0 4px; font-size: .92rem; }
+.settings-page .guide-steps p { margin: 0; color: var(--color-muted); }
+.settings-page .inline-app-icon { width: 24px; height: 24px; vertical-align: middle; }
+.settings-page .guide-operations { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.settings-page .guide-operation { padding: 18px; border: 1px solid #d5dfc5; border-radius: 10px; background: var(--color-brand-soft); }
+.settings-page .guide-operation-label { color: var(--color-brand-dark); font-size: .68rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.settings-page .guide-operation > h5 { margin: 4px 0 10px; font-size: 1rem; }
+.settings-page .guide-operation > p { margin: 0; color: var(--color-muted); }
+.settings-page .guide-operation .guide-steps { margin-top: 14px; }
 
 .notice {
   margin: 28px 0;
@@ -208,6 +254,20 @@ textarea:focus { border-color: var(--color-brand) !important; box-shadow: 0 0 0 
 }
 
 .info-page tr > td:first-child { overflow: hidden; white-space: nowrap; vertical-align: top; font-weight: 750; }
+.info-page .release-version th {
+  padding: 13px 16px;
+  border-bottom: 1px solid #cdd9b8;
+  background: var(--color-brand-soft);
+  color: var(--color-brand-dark);
+  font-size: 1rem;
+  letter-spacing: .01em;
+  text-align: left;
+}
+.info-page .release-version-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.info-page .release-version-number { font-weight: 800; }
+.info-page .release-date { color: var(--color-muted); font-size: .78rem; font-weight: 650; letter-spacing: 0; }
+.info-page .release-group + .release-group .release-version th { border-top: 10px solid var(--color-canvas); }
+.info-page .release-group td:first-child { width: 92px; color: var(--color-brand-dark); text-transform: capitalize; }
 
 /* Progress page */
 .progress-page { padding: 48px clamp(16px, 6vw, 80px); }
@@ -243,6 +303,8 @@ th, td { padding: 10px 12px !important; border: 0 !important; border-bottom: 1px
 .tooltip::after, .tooltip::before { background-color: var(--color-ink) !important; }
 
 @media (max-width: 640px) {
+  .settings-page .guide-screenshots { grid-template-columns: 1fr; }
+  .settings-page .guide-operations { grid-template-columns: 1fr; }
   .author-list-page #inputContainer { flex-wrap: wrap; }
   .progress-page { padding-inline: 16px; }
 }
