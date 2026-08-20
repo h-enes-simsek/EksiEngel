@@ -3,78 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <title>Ekşi Engel</title>
-  <link rel="stylesheet" href="../css/buttons.css">
-  <link rel="stylesheet" href="../css/footer.css">
+  <link rel="stylesheet" href="../css/designSystem.css">
 
-<style>
-.content {
-  width: 80vw;
-  line-height: 1.4;
-  background-color: #000;
-  color: #fff;
-  text-align: center;
-  margin-left: auto; 
-  margin-right: auto; 
-  margin-top: 5vh; 
-}
-@media screen and (min-width: 32em) {
-  .content {
-    width: 50vw;
-  }
-}
-textarea {
-  width: 100%;
-  height: 30vh;
-  padding: 1em;
-  font-size: 1.5em;
-  text-align: left;
-  border: 1px solid #000;
-  resize: none;
-}
-.boxSizing-borderBox {
-  box-sizing: border-box;
-}
-
-#inputContainer {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-}
-#howToUse {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  text-decoration: none;
-  margin-left: 5px;
-}
-
-#startBan, #startUndoban {
-  font-family: 'Montserrat', sans-serif;
-  margin: 2px;
-  font-size: 100%;
-}
-#status {
-  text-align: center;
-}
-body {
-  font-size: 100%;
-}
-</style>
 </head>
-<body>
+<body class="author-list-page">
 
-<section class="content">
-  Engellenecek veya Engeli Kaldırılacak Yazar Listesi
+<section class="content page-card">
+  <h1 class="brand-title"><strong>Ekşi Engel</strong></h1>
+  <label for="userList">Engellenecek veya engeli kaldırılacak yazar listesi</label>
    <textarea class="boxSizing-borderBox" placeholder="ornek_yazar_1&#10;ornek_yazar_2&#10;ornek_yazar_3&#10;" id="userList"></textarea>
 </section>
-
-<br><br>
 
 <div id="inputContainer">
 <input type="button" id="startBan" value="Engelle" class="btn btn-dark">
 <input type="button" id="startUndoban" value="Engeli Kaldır" class="btn btn-dark">
-<a href="faq.html" id="howToUse"><img src="../img/questionicon.svg" style="width:35px" id="questionMark"></img></a>
+<a href="faq.html" id="howToUse"><img src="../img/questionicon.svg" id="questionMark" alt="Yardım"></a>
 
 </div>
 <p id="status"></p>

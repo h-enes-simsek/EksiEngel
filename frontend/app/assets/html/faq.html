@@ -3,82 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <title>Nasıl Kullanılır</title>
-  <link rel="stylesheet" href="../css/buttons.css">
   <link rel="stylesheet" href="../css/switchButtons.css">
   <link rel="stylesheet" href="../css/tooltip.css">
+  <link rel="stylesheet" href="../css/designSystem.css">
   <script type="module" src="../js/faq.js"></script>
-<style>
-.content {
-  font-family: 'Montserrat', sans-serif;
-  width: 80vw;
-  line-height: 1.4;
-  margin-left: auto; 
-  margin-right: auto; 
-  margin-top: 5vh;
-}
-@media screen and (min-width: 32em) {
-  .content {
-    width: 60vw;
-  }
-}
-body {
-  font-size: 100%;
-}
-.grid-container.two-column {
-  display: grid;
-  grid-template-columns: 240px auto;
-  padding: 10px;
-}
-.grid-container.three-column {
-  display: grid;
-  grid-template-columns: auto auto auto;
-  padding: 10px;
-}
-.grid-item {
-  padding: 10px;
-}
-#semsiye {
-	display: block;
-	margin: 0 auto;
-	width: 20%;
-}
-#entryMenu, #authorMenu {
-	display: block;
-	max-height: 30%;
-}
-li{
-margin-bottom: 8px;
-}
-.footer {
-  position: fixed;
-  left: 25vw;
-  bottom: 0;
-  width: 50vw;
-  text-align: center;
-}
-.footer > hr {
-  width: 50vw;
-  border: 1px solid black;
-  background-color: black;
-}
-.footerText {
-  display: inline;
-  font-family: 'Montserrat', sans-serif;
-  font-size: 15px;
-}
-</style>
 </head>
-<body>
+<body class="settings-page">
 
-<section class="content">
+<section class="content page-card">
 
-  <h3 style="text-align: center;">
-    <b style="color:green">Ekşi Engel</b> <img src="../img/eksiengel16.png"> 
+  <h3 class="brand-title">
+    <b>Ekşi Engel</b> <img src="../img/eksiengel32.png" alt="">
   </h3>
 
-  <p>Versiyon notları için <a style="color:black" target="_blank" href="welcome.html">tıklayın</a></p>
+  <p>Versiyon notları için <a target="_blank" href="welcome.html">tıklayın</a></p>
 
-  <h3 style="text-align: center;">
+  <h3 class="section-title">
     Ayarlar
   </h3>
   
@@ -86,7 +26,7 @@ margin-bottom: 8px;
   <div class="grid-container two-column">
   
     <div class="grid-item">
-      <div id="muteSwitch" class="switch-toggle switch-3 switch-candy" style="display:inline-flex;width:132px;">
+      <div id="muteSwitch" class="switch-toggle switch-3 switch-candy">
         <input id="muteDisabled" value="muteDisabled" name="state-d-mute" type="radio" checked="">
         <label for="muteDisabled">Engel</label>
 
@@ -102,10 +42,10 @@ margin-bottom: 8px;
     Sessize alınan görebilir ve mesaj atabilir dolayısıyla sessize alındığını fark edemez.
     Başlıklarını engelle işlemi bu iki seçenekten bağımsızdır.
     Ekşi Engel, bu ayardan bağımsız olarak başlıkları engelliyor." 
-    style="text-align: left;" id="muteSwitchText">Engelle veya sessize al.</a>
+    id="muteSwitchText">Engelle veya sessize al.</a>
 
     <div class="grid-item">
-      <div id="titleBanSwitch" class="switch-toggle switch-3 switch-candy" style="display:inline-flex;width:132px;">
+      <div id="titleBanSwitch" class="switch-toggle switch-3 switch-candy">
         <input id="titleBanDisabled" value="titleBanDisabled" name="state-d-title" type="radio" checked="">
         <label for="titleBanDisabled">Kapalı</label>
 
@@ -116,10 +56,10 @@ margin-bottom: 8px;
       </div>
     </div>
     <a class="grid-item tooltip bottom" tip="" 
-    style="text-align: left;" id="titleBanSwitchText">Başlıklarını da engelle.</a>
+    id="titleBanSwitchText">Başlıklarını da engelle.</a>
 
     <div class="grid-item">
-      <div id="noobBanSwitch" class="switch-toggle switch-3 switch-candy" style="display:inline-flex;width:132px;">
+      <div id="noobBanSwitch" class="switch-toggle switch-3 switch-candy">
         <input id="noobBanDisabled" value="noobBanDisabled" name="state-d-noob" type="radio" checked="">
         <label for="noobBanDisabled">Kapalı</label>
 
@@ -131,10 +71,10 @@ margin-bottom: 8px;
     </div>
     <a class="grid-item tooltip bottom" tip="Bu ayar sadece favori engeli için geçerlidir.
     Diğer işlemler yapılırken yazarın çaylak olup olmadığına bakılmaz." 
-    style="text-align: left;" id="noobBanSwitchText">Çaylak yazarları da engelle.</a>
+    id="noobBanSwitchText">Çaylak yazarları da engelle.</a>
 
     <div class="grid-item">
-      <div id="protectFollowedUsersSwitch" class="switch-toggle switch-3 switch-candy" style="display:inline-flex;width:132px;">
+      <div id="protectFollowedUsersSwitch" class="switch-toggle switch-3 switch-candy">
         <input id="protectFollowedUsersDisabled" value="protectFollowedUsersDisabled" name="state-d-protectFollowedUsers" type="radio" checked="checked">
         <label for="protectFollowedUsersDisabled">Kapalı</label>
 
@@ -146,10 +86,10 @@ margin-bottom: 8px;
     </div>
     <a class="grid-item tooltip bottom" tip="Bu ayar sadece favori ve takipçi engeli için geçerlidir.
     Aktifken sizin takip ettiğiniz yazarlar engellenmez." 
-    style="text-align: left;" id="protectFollowedUsersSwitchText">Takip ettiğim yazarları engelleme.</a>
+    id="protectFollowedUsersSwitchText">Takip ettiğim yazarları engelleme.</a>
 
     <div class="grid-item">
-      <div id="onlyRequiredActionsSwitch" class="switch-toggle switch-3 switch-candy" style="display:inline-flex;width:132px;">
+      <div id="onlyRequiredActionsSwitch" class="switch-toggle switch-3 switch-candy">
         <input id="onlyRequiredActionsDisabled" value="onlyRequiredActionsDisabled" name="state-d-onlyRequiredActions" type="radio" checked="">
         <label for="onlyRequiredActionsDisabled">Kapalı</label>
 
@@ -161,10 +101,10 @@ margin-bottom: 8px;
     </div>
     <a class="grid-item tooltip bottom" tip="Bu ayar sadece favori ve takipçi engeli için geçerlidir.
     Aktifken sadece gerekli işlemleri yapılır, yani engellenmiş yazar tekrar engellenmeye çalışılmaz." 
-    style="text-align: left;" id="onlyRequiredActions">Sadece gerekli işlemleri yap.</a>
+    id="onlyRequiredActions">Sadece gerekli işlemleri yap.</a>
 
     <div class="grid-item">
-      <div id="banPremiumIconsSwitch" class="switch-toggle switch-3 switch-candy" style="display:inline-flex;width:132px;">
+      <div id="banPremiumIconsSwitch" class="switch-toggle switch-3 switch-candy">
         <input id="banPremiumIconsDisabled" value="banPremiumIconsDisabled" name="state-d-banPremiumIcons" type="radio" checked="">
         <label for="banPremiumIconsDisabled">Kapalı</label>
 
@@ -175,10 +115,10 @@ margin-bottom: 8px;
       </div>
     </div>
     <a class="grid-item tooltip bottom" tip="Sadece ikonları gizler, hesabı ya da entryleri değil. Yeşil tik: doğrulanmış hesap, sarı tik: reklamsız özelliği satın almış premium hesap." 
-    style="text-align: left;" id="banPremiumIcons">Yeşil ve sarı tikleri gizle.</a>
+    id="banPremiumIcons">Yeşil ve sarı tikleri gizle.</a>
     
     <div class="grid-item">
-      <div id="sendDataSwitch" class="switch-toggle switch-3 switch-candy" style="display:inline-flex;width:132px;">
+      <div id="sendDataSwitch" class="switch-toggle switch-3 switch-candy">
         <input id="sendDataDisabled" value="sendDataDisabled" name="state-d-sendData" type="radio" checked="">
         <label for="sendDataDisabled">Kapalı</label>
 
@@ -190,16 +130,16 @@ margin-bottom: 8px;
     </div>
     <a class="grid-item tooltip bottom" tip="Engellediğiniz yazarların listesini Ekşi Engel sunucularına gönderin. 
     Böylece en çok engellenen yazarları belirleyip yayınlayabiliriz." 
-    style="text-align: left;" id="sendData">Toplanan verileri Ekşi Engel sunucularına gönder.</a>
+    id="sendData">Toplanan verileri Ekşi Engel sunucularına gönder.</a>
     
   </div>
   
   <img src="../img/semsiye.png" id="semsiye">
 
   <div id="howToUse">
-  <h3 style="text-align: center;">
+  <h3 class="section-title">
     Kullanım Klavuzu
-    <img src="../img/questionicon.svg" style="width:20px; position: relative; top: 3px;" id="questionMark">
+    <img src="../img/questionicon.svg" id="questionMark" alt="">
   </h3>
 	<ul>
 		<li>Ekşi Sözlük Arayüzü Üzerinden Kullanımı</li>
@@ -217,16 +157,16 @@ margin-bottom: 8px;
 		
 			<ol>
           <li>
-            Eklenti simgesine <img src="../img/eksiengel16.png"> tıklayarak eklenti menüsünü açın.
+            Eklenti simgesine <img src="../img/eksiengel32.png" alt=""> tıklayarak eklenti menüsünü açın.
             <br>
-            <b style="text-decoration: none; color:black;">Gireceğim Listedeki Yazarları Engelle / Engelini Kaldır</b> butonuna tıklayın. 
+            <b>Gireceğim Listedeki Yazarları Engelle / Engelini Kaldır</b> butonuna tıklayın.
             <br>
-            Elinizdeki yazar listesini metin kutusuna yapıştırıp, <b style="text-decoration: none; color:black;">Engelle</b> veya <b style="text-decoration: none; color:black;">Engeli Kaldır</b> butonuna tıklayın.
+            Elinizdeki yazar listesini metin kutusuna yapıştırıp, <b>Engelle</b> veya <b>Engeli Kaldır</b> butonuna tıklayın.
           </li>
           <li>
-            Eklenti simgesine <img src="../img/eksiengel16.png"> tıklayarak eklenti menüsünü açın.
+            Eklenti simgesine <img src="../img/eksiengel32.png" alt=""> tıklayarak eklenti menüsünü açın.
             <br>
-            <b style="text-decoration: none; color:black;">Tüm Engellerimi Kaldır</b> butonuna tıklayın.  
+            <b>Tüm Engellerimi Kaldır</b> butonuna tıklayın.
           </li>
       </ol>
 	</ul>

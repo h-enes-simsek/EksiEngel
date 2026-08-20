@@ -1,6 +1,6 @@
 .tooltip {
 	position: relative;
-  white-space: pre;
+  white-space: normal;
 }
 
 .tooltip::after {
@@ -11,6 +11,7 @@
   padding: 10px 15px;
   position: absolute;
   text-align: center;
+  white-space: pre-line;
   z-index: 999;
 }
 
