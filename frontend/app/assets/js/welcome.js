@@ -1,4 +1,3 @@
-console.log("welcome.js: has been started.");
 
 // Add new releases or change records here; the table is generated automatically.
 const releases = [

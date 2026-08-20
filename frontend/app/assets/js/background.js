@@ -33,8 +33,8 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
 async function processHandler(banSource, banMode, entryUrl, singleAuthorName, singleAuthorId, targetType, clickSource, titleName, titleId, timeSpecifier)
 {
   let processFinishReason = enums.ProcessFinishReason.NOT_SET;
-  let authorNameList = [];
-  let authorIdList = [];
+  let authorList = [];
+  let plannedAction = 0;
   let entryMetaData = {};
   let userAgent = null;
   let clientName = null;
@@ -112,11 +112,14 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
     
     if(banSource === enums.BanSource.SINGLE)
     {
-      notificationHandler.notifyOngoing(0, 0, 1);
+      let author = createEksiSozlukUser(singleAuthorName, singleAuthorId);
+      if(author)
+        authorList.push(author);
+
+      plannedAction = authorList.length;
+      notificationHandler.notifyOngoing(0, 0, plannedAction);
       
       let res = await relationHandler.performAction(banMode, singleAuthorId, targetType == enums.TargetType.USER, targetType == enums.TargetType.TITLE, targetType == enums.TargetType.MUTE);
-      authorIdList.push(singleAuthorId);
-      authorNameList.push(singleAuthorName);
       
       if(res.resultType == enums.ResultType.FAIL)
       {
@@ -146,13 +149,14 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
           res = await relationHandler.performAction(banMode, singleAuthorId, targetType == enums.TargetType.USER, targetType == enums.TargetType.TITLE, targetType == enums.TargetType.MUTE);
       }
       
-      notificationHandler.notifyOngoing(res.successfulAction, res.performedAction, authorNameList.length);
+      notificationHandler.notifyOngoing(res.successfulAction, res.performedAction, plannedAction);
     }
     else if(banSource === enums.BanSource.LIST)
     {
+      let authorNames;
       try
       {
-        authorNameList = await utils.getUserList(); // names will be loaded from storage
+        authorNames = await utils.getUserList(); // names will be loaded from storage
       }
       catch(e)
       {
@@ -162,7 +166,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
       }
       try
       {
-        utils.cleanUserList(authorNameList);
+        utils.cleanUserList(authorNames);
       }
       catch(e)
       {
@@ -171,9 +175,11 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
         return;
       }
       
+      plannedAction = authorNames.length;
+
       // stop if there is no user
-      log.info("bg", "number of user to ban " + authorNameList.length);
-      if(authorNameList.length === 0)
+      log.info("bg", "number of user to ban " + plannedAction);
+      if(plannedAction === 0)
       {
         notificationHandler.finishErrorNoAccount(banSource, banMode);
         log.err("bg", "Program has been finished (finishErrorNoAccount)");
@@ -181,15 +187,17 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
         return;
       }
 
-      notificationHandler.notifyOngoing(0, 0, authorNameList.length);
+      notificationHandler.notifyOngoing(0, 0, plannedAction);
       
-      for (let i = 0; i < authorNameList.length; i++)
+      for (const authorName of authorNames)
       {
         if(programController.earlyStop)
           break;
         
-        let authorId = await scrapingHandler.scrapeAuthorIdFromAuthorProfilePage(authorNameList[i]);
-        authorIdList.push(authorId);
+        let authorId = await scrapingHandler.scrapeAuthorIdFromAuthorProfilePage(authorName);
+        let author = createEksiSozlukUser(authorName, authorId);
+        if(author)
+          authorList.push(author);
         
         let res;
         if(banMode == enums.BanMode.BAN)
@@ -232,7 +240,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
         }
 
         // send message to notification page
-        notificationHandler.notifyOngoing(res.successfulAction, res.performedAction, authorNameList.length);
+        notificationHandler.notifyOngoing(res.successfulAction, res.performedAction, plannedAction);
       }
       
     }
@@ -300,9 +308,8 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
         return;
       }
       
-      authorNameList = Array.from(scrapedRelations, ([name, value]) => name);
-
-      notificationHandler.notifyOngoing(0, 0, authorNameList.length);
+      plannedAction = scrapedRelations.size;
+      notificationHandler.notifyOngoing(0, 0, plannedAction);
       
       for (const [name, value] of scrapedRelations)
       {
@@ -316,7 +323,9 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
                                                       (!value.isBannedMute && config.enableMute));
         
         
-        authorIdList.push(authorId);
+        let author = createEksiSozlukUser(name, authorId);
+        if(author)
+          authorList.push(author);
         
         if(res.resultType == enums.ResultType.FAIL)
         {
@@ -355,7 +364,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
         }
         
         // send message to notification page
-        notificationHandler.notifyOngoing(res.successfulAction, res.performedAction, authorNameList.length);
+        notificationHandler.notifyOngoing(res.successfulAction, res.performedAction, plannedAction);
       }
     }
     else if(banSource === enums.BanSource.FOLLOW)
@@ -417,10 +426,12 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
         return;
       }
 
-      authorNameList = Array.from(scrapedRelations, ([name, value]) => name);
-      authorIdList = Array.from(scrapedRelations, ([name, value]) => value.authorId);
+      plannedAction = scrapedRelations.size;
+      authorList = Array.from(scrapedRelations, ([name, value]) =>
+        createEksiSozlukUser(name, value.authorId)
+      ).filter(author => author !== null);
 
-      notificationHandler.notifyOngoing(0, 0, authorNameList.length);
+      notificationHandler.notifyOngoing(0, 0, plannedAction);
       
       
       
@@ -473,7 +484,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
         }
         
         // send message to notification page
-        notificationHandler.notifyOngoing(res.successfulAction, res.performedAction, authorIdList.length);
+        notificationHandler.notifyOngoing(res.successfulAction, res.performedAction, plannedAction);
       }
 
       
@@ -492,10 +503,12 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
         return;
       }
 
-      authorNameList = Array.from(scrapedRelations, ([name, value]) => name);
-      authorIdList = Array.from(scrapedRelations, ([name, value]) => value.authorId);
+      plannedAction = scrapedRelations.size;
+      authorList = Array.from(scrapedRelations, ([name, value]) =>
+        createEksiSozlukUser(name, value.authorId)
+      ).filter(author => author !== null);
 
-      notificationHandler.notifyOngoing(0, 0, authorNameList.length);
+      notificationHandler.notifyOngoing(0, 0, plannedAction);
       
       for (const [name, value] of scrapedRelations)
       {
@@ -534,7 +547,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
         }
         
         // send message to notification page
-        notificationHandler.notifyOngoing(res.successfulAction, res.performedAction, authorIdList.length);
+        notificationHandler.notifyOngoing(res.successfulAction, res.performedAction, plannedAction);
       }
     }
     
@@ -598,10 +611,12 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
         return;
       }
 
-      authorNameList = Array.from(scrapedRelations, ([name, value]) => name);
-      authorIdList = Array.from(scrapedRelations, ([name, value]) => value.authorId);
+      plannedAction = scrapedRelations.size;
+      authorList = Array.from(scrapedRelations, ([name, value]) =>
+        createEksiSozlukUser(name, value.authorId)
+      ).filter(author => author !== null);
 
-      notificationHandler.notifyOngoing(0, 0, authorNameList.length);
+      notificationHandler.notifyOngoing(0, 0, plannedAction);
       
       for (const [name, value] of scrapedRelations)
       {
@@ -652,7 +667,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
         }
         
         // send message to notification page
-        notificationHandler.notifyOngoing(res.successfulAction, res.performedAction, authorIdList.length);
+        notificationHandler.notifyOngoing(res.successfulAction, res.performedAction, plannedAction);
       }
     }
     
@@ -683,25 +698,12 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
       let eksi_engel_user = createEksiSozlukUser(clientName, clientId);
       let fav_author = createEksiSozlukUser(entryMetaData.authorName, entryMetaData.authorId);
       let fav_title = createEksiSozlukTitle(entryMetaData.titleName, entryMetaData.titleId);
-      let fav_entry = createEksiSozlukEntry(fav_title /* TODO */, entryMetaData.entryId);
+      let fav_entry = createEksiSozlukEntry(fav_title, entryMetaData.entryId);
 
-      // TODO: extremely inefficient solution, delete authorNameList and authorId arrays
-      let author_list = authorIdList.map((id, index) => {
-        return {
-          eksisozluk_id: id,
-          eksisozluk_name: authorNameList[index]
-        }
-      });
-      // filter id==0 authors (these authors only come with BanSource::LIST)
-      author_list = author_list.filter(function(item){
-        const {eksisozluk_id, eksisozluk_name} = item;
-        return eksisozluk_id != 0;  
-      });
-
-      notificationHandler.finishSuccess(banSource, banMode, successfulAction, performedAction, authorNameList.length);
+      notificationHandler.finishSuccess(banSource, banMode, successfulAction, performedAction, plannedAction);
       
       
-      log.info("bg", "Program has been finished (successful:" + successfulAction + ", performed:" + performedAction + ", planned:" + authorNameList.length + ")");
+      log.info("bg", "Program has been finished (successful:" + successfulAction + ", performed:" + performedAction + ", planned:" + plannedAction + ")");
 
       let action = new Action({
         eksi_engel_user:  eksi_engel_user,
@@ -709,9 +711,9 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
         user_agent:       userAgent,
         ban_source:       banSource,
         ban_mode:         banMode,
-        author_list:      author_list,
-        author_list_size: author_list.length,
-        planned_action:   authorNameList.length,
+        author_list:      authorList,
+        author_list_size: authorList.length,
+        planned_action:   plannedAction,
         performed_action: performedAction,
         successful_action:successfulAction,
         is_early_stopped: programController.earlyStop,
