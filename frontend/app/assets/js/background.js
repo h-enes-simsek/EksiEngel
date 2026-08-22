@@ -11,9 +11,15 @@ import {processQueue} from './queue.js';
 import {programController} from './programController.js';
 import {isEksiSozlukAccessible} from './urlHandler.js';
 import { notificationHandler } from './notificationHandler.js';
+import {createJobRequest} from './jobs/jobRequest.js';
+import {JobManager} from './jobs/jobManager.js';
 
 log.info("bg", "initialized");
 let g_notificationTabId = 0;
+const jobManager = new JobManager({
+  queue: processQueue,
+  executeJob: job => processHandler(job.request)
+});
 
 chrome.runtime.onMessage.addListener(async function messageListener_Popup(message, sender, sendResponse) {
   sendResponse({status: 'ok'}); // added to suppress 'message port closed before a response was received' error
@@ -21,21 +27,31 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
 	const obj = utils.filterMessage(message, "banSource", "banMode");
 	if(obj.resultType === enums.ResultType.FAIL)
 		return;
-	
-  log.info("bg", "a new process added to the queue, banSource: " + obj.banSource + ", banMode: " + obj.banMode);
-  let wrapperProcessHandler = processHandler.bind(null, obj.banSource, obj.banMode, obj.entryUrl, obj.authorName, obj.authorId, obj.targetType, obj.clickSource, obj.titleName, obj.titleId, obj.timeSpecifier);
-  wrapperProcessHandler.banSource = obj.banSource;
-  wrapperProcessHandler.banMode = obj.banMode;
-  wrapperProcessHandler.creationDateInStr = new Date().getHours() + ":" + new Date().getMinutes(); 
-  processQueue.enqueue(wrapperProcessHandler);
-  log.info("bg", "number of waiting processes in the queue: " + processQueue.size);
+
+  const request = createJobRequest(obj);
+  log.info("bg", "a new process added to the queue, banSource: " + request.banSource + ", banMode: " + request.banMode);
+  jobManager.enqueue(request);
+  log.info("bg", "number of waiting processes in the queue: " + jobManager.waitingCount);
 
   // update notification page. otherwise, the user cannot see the planned processes immediately after new request.
-  notificationHandler.updatePlannedProcessesList(processQueue.itemAttributes); 
+  notificationHandler.updatePlannedProcessesList(jobManager.waitingJobAttributes);
 });
 
-async function processHandler(banSource, banMode, entryUrl, singleAuthorName, singleAuthorId, targetType, clickSource, titleName, titleId, timeSpecifier)
+async function processHandler(request)
 {
+  const {
+    banSource,
+    banMode,
+    entryUrl,
+    authorName: singleAuthorName,
+    authorId: singleAuthorId,
+    targetType,
+    clickSource,
+    titleName,
+    titleId,
+    timeSpecifier
+  } = request;
+
   let processFinishReason = enums.ProcessFinishReason.NOT_SET;
   let authorList = [];
   let plannedAction = 0;
@@ -79,7 +95,7 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
       }
     }
     programController.tabId = g_notificationTabId;
-    notificationHandler.updatePlannedProcessesList(processQueue.itemAttributes);
+    notificationHandler.updatePlannedProcessesList(jobManager.waitingJobAttributes);
 
     try
     {
@@ -688,10 +704,10 @@ async function processHandler(banSource, banMode, entryUrl, singleAuthorName, si
       log.info("bg", "(updatePlannedProcessesList just before finished) notification page's queue will be updated.");
       notificationHandler.updatePlannedProcessesList(""); // erase the processes in the planned processes table
       // add the remaining processes to completed process table
-      let remainingProcessesArray = processQueue.itemAttributes;
+      let remainingProcessesArray = jobManager.waitingJobAttributes;
       for (const element of remainingProcessesArray)
         notificationHandler.finishErrorEarlyStop(element.banSource, element.banMode);
-      processQueue.clear(); // clear the remaining planned processes in the queue 
+      jobManager.clearWaiting(); // clear the remaining planned processes in the queue
     }
     
     if(processFinishReason === enums.ProcessFinishReason.SUCCESS) 
