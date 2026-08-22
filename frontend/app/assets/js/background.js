@@ -4,7 +4,7 @@ import * as enums from './enums.js';
 import * as utils from './utils.js';
 import {config, getConfig, saveConfig, handleConfig} from './config.js';
 import {log} from './log.js';
-import {Action, createEksiSozlukEntry, createEksiSozlukTitle, createEksiSozlukUser, commHandler, ActionConfig} from './commHandler.js';
+import {createEksiSozlukUser, commHandler} from './commHandler.js';
 import {relationHandler} from './relationHandler.js';
 import {scrapingHandler} from './scrapingHandler.js';
 import {processQueue} from './queue.js';
@@ -13,6 +13,7 @@ import {isEksiSozlukAccessible} from './urlHandler.js';
 import { notificationHandler } from './notificationHandler.js';
 import {createJobRequest} from './jobs/jobRequest.js';
 import {JobManager} from './jobs/jobManager.js';
+import {createJobTelemetry, JobTelemetryReporter} from './jobs/jobTelemetry.js';
 import {fakeScrapingHandler} from './testing/fakeScrapingHandler.js';
 import {fakeRelationHandler} from './testing/fakeRelationHandler.js';
 
@@ -24,12 +25,19 @@ let g_notificationTabId = 0;
 
 const activeScrapingHandler = DEV_USE_FAKE_HANDLERS ? fakeScrapingHandler : scrapingHandler;
 const activeRelationHandler = DEV_USE_FAKE_HANDLERS ? fakeRelationHandler : relationHandler;
+const handleJobTelemetryError = error => console.error("job telemetry failed: " + error);
+const jobTelemetryReporter = new JobTelemetryReporter({
+  isEnabled: () => config.sendData && !DEV_USE_FAKE_HANDLERS,
+  send: telemetry => commHandler.sendData(telemetry.action, telemetry.actionConfig),
+  onError: handleJobTelemetryError
+});
 
 const jobManager = new JobManager({
   queue: processQueue,
   executeJob: job => processHandler(job.request, {
     scrapingHandler: activeScrapingHandler,
-    relationHandler: activeRelationHandler
+    relationHandler: activeRelationHandler,
+    telemetryReporter: jobTelemetryReporter
   })
 });
 
@@ -52,7 +60,7 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
   notificationHandler.updatePlannedProcessesList(jobManager.waitingJobAttributes);
 });
 
-async function processHandler(request, {scrapingHandler, relationHandler})
+async function processHandler(request, {scrapingHandler, relationHandler, telemetryReporter})
 {
   const {
     banSource,
@@ -730,66 +738,50 @@ async function processHandler(request, {scrapingHandler, relationHandler})
 
       let successfulAction = relationHandler.successfulAction;
       let performedAction = relationHandler.performedAction;
-      
-      let eksi_engel_user = createEksiSozlukUser(clientName, clientId);
-      let fav_author = createEksiSozlukUser(entryMetaData.authorName, entryMetaData.authorId);
-      let fav_title = createEksiSozlukTitle(entryMetaData.titleName, entryMetaData.titleId);
-      let fav_entry = createEksiSozlukEntry(fav_title, entryMetaData.entryId);
 
       notificationHandler.finishSuccess(banSource, banMode, successfulAction, performedAction, plannedAction);
       
       
       log.info("bg", "Program has been finished (successful:" + successfulAction + ", performed:" + performedAction + ", planned:" + plannedAction + ")");
 
-      let action = new Action({
-        eksi_engel_user:  eksi_engel_user,
-        version:          chrome.runtime.getManifest().version,
-        user_agent:       userAgent,
-        ban_source:       banSource,
-        ban_mode:         banMode,
-        author_list:      authorList,
-        author_list_size: authorList.length,
-        planned_action:   plannedAction,
-        performed_action: performedAction,
-        successful_action:successfulAction,
-        is_early_stopped: programController.earlyStop,
-        log_level:        null,  // will be set later
-        log:              null,  // will be set later
-        target_type:      targetType,
-        click_source:     clickSource,
-        fav_title:        fav_title,
-        fav_entry:        fav_entry,
-        fav_author:       fav_author,
-        time_specifier:   timeSpecifier
-      });
-
-      // set action.log_level and action.log
-      if(config.sendLog && log.isEnabled)
+      try
       {
-        action.log_level = log.level;
-        action.log = log.getData().toString();
+        let telemetryLogLevel;
+        let telemetryLogData;
+        if(config.sendLog && log.isEnabled)
+        {
+          telemetryLogLevel = log.level;
+          telemetryLogData = log.getData().toString();
+        }
+        else
+        {
+          telemetryLogLevel = log.constructor.Levels.DISABLED;
+          telemetryLogData = null;
+        }
+
+        const telemetry = createJobTelemetry({
+          request,
+          authorList,
+          entryMetaData,
+          userAgent,
+          clientName,
+          clientId,
+          successfulAction,
+          performedAction,
+          plannedAction,
+          earlyStopped: programController.earlyStop,
+          version: chrome.runtime.getManifest().version,
+          logLevel: telemetryLogLevel,
+          logData: telemetryLogData,
+          settings: config
+        });
+
+        telemetryReporter.submit(telemetry);
       }
-      else
+      catch(error)
       {
-        action.log_level = log.constructor.Levels.DISABLED; 
-        action.log = null;
+        handleJobTelemetryError(error);
       }
-
-      let action_config = new ActionConfig({
-        eksi_sozluk_url: config.EksiSozlukURL,
-        send_data: config.sendData,
-        enable_noob_ban: config.enableNoobBan,
-        enable_mute: config.enableMute,
-        enable_title_ban: config.enableTitleBan,
-        enable_anaylsis_before_operations: config.enableAnalysisBeforeOperation,
-        enable_only_required_actions: config.enableOnlyRequiredActions,
-        enable_protect_followed_users: config.enableProtectFollowedUsers,
-        ban_premium_icons: config.banPremiumIcons
-      });
-
-      // Never send hardcoded fake actions to the production telemetry endpoint.
-      if(config.sendData && !DEV_USE_FAKE_HANDLERS)
-        await commHandler.sendData(action, action_config);
 
     }
     
