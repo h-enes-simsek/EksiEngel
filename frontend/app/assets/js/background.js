@@ -13,13 +13,28 @@ import {isEksiSozlukAccessible} from './urlHandler.js';
 import { notificationHandler } from './notificationHandler.js';
 import {createJobRequest} from './jobs/jobRequest.js';
 import {JobManager} from './jobs/jobManager.js';
+import {fakeScrapingHandler} from './testing/fakeScrapingHandler.js';
+import {fakeRelationHandler} from './testing/fakeRelationHandler.js';
+
+// Development-only switch. Keep disabled in production builds.
+const DEV_USE_FAKE_HANDLERS = true;
 
 log.info("bg", "initialized");
 let g_notificationTabId = 0;
+
+const activeScrapingHandler = DEV_USE_FAKE_HANDLERS ? fakeScrapingHandler : scrapingHandler;
+const activeRelationHandler = DEV_USE_FAKE_HANDLERS ? fakeRelationHandler : relationHandler;
+
 const jobManager = new JobManager({
   queue: processQueue,
-  executeJob: job => processHandler(job.request)
+  executeJob: job => processHandler(job.request, {
+    scrapingHandler: activeScrapingHandler,
+    relationHandler: activeRelationHandler
+  })
 });
+
+if(DEV_USE_FAKE_HANDLERS)
+  log.warn("bg", "development fake scraping and relation handlers are enabled");
 
 chrome.runtime.onMessage.addListener(async function messageListener_Popup(message, sender, sendResponse) {
   sendResponse({status: 'ok'}); // added to suppress 'message port closed before a response was received' error
@@ -37,7 +52,7 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
   notificationHandler.updatePlannedProcessesList(jobManager.waitingJobAttributes);
 });
 
-async function processHandler(request)
+async function processHandler(request, {scrapingHandler, relationHandler})
 {
   const {
     banSource,
@@ -772,7 +787,8 @@ async function processHandler(request)
         ban_premium_icons: config.banPremiumIcons
       });
 
-      if(config.sendData)
+      // Never send hardcoded fake actions to the production telemetry endpoint.
+      if(config.sendData && !DEV_USE_FAKE_HANDLERS)
         await commHandler.sendData(action, action_config);
 
     }
