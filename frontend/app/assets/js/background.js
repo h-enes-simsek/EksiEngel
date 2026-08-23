@@ -5,7 +5,7 @@ import * as utils from './utils.js';
 import {config, getConfig, saveConfig, handleConfig} from './config.js';
 import {log} from './log.js';
 import {createEksiSozlukUser, commHandler} from './commHandler.js';
-import {relationHandler} from './relationHandler.js';
+import {relationHandler, RelationActionStatus} from './relationHandler.js';
 import {scrapingHandler} from './scrapingHandler.js';
 import {processQueue} from './queue.js';
 import {programController} from './programController.js';
@@ -164,9 +164,9 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
       
       let res = await relationHandler.performAction(banMode, singleAuthorId, targetType == enums.TargetType.USER, targetType == enums.TargetType.TITLE, targetType == enums.TargetType.MUTE);
       
-      if(res.resultType == enums.ResultType.FAIL)
+      if(res.status == RelationActionStatus.RATE_LIMITED)
       {
-        // performAction failed because to too many request
+        // performAction was rate limited
 
         // while waiting cooldown, send periodic notifications to user 
         // this also provides that chrome doesn't kill the extension for being idle
@@ -247,9 +247,9 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
         else
           res = await relationHandler.performAction(banMode, author.eksisozluk_id, true, true, true);
         
-        if(res.resultType == enums.ResultType.FAIL)
+        if(res.status == RelationActionStatus.RATE_LIMITED)
         {
-          // performAction failed because to too many request
+          // performAction was rate limited
 
           // while waiting cooldown, send periodic notifications to user 
           // this also provides that chrome doesn't kill the extension for being idle
@@ -369,9 +369,9 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
         if(author)
           authorList.push(author);
         
-        if(res.resultType == enums.ResultType.FAIL)
+        if(res.status == RelationActionStatus.RATE_LIMITED)
         {
-          // performAction failed because to too many request
+          // performAction was rate limited
 
           // while waiting cooldown, send periodic notifications to user 
           // this also provides that chrome doesn't kill the extension for being idle
@@ -489,9 +489,9 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
                                                       (!value.isBannedTitle && config.enableTitleBan), 
                                                       (!value.isBannedMute && config.enableMute));
         
-        if(res.resultType == enums.ResultType.FAIL)
+        if(res.status == RelationActionStatus.RATE_LIMITED)
         {
-          // performAction failed because to too many request
+          // performAction was rate limited
 
           // while waiting cooldown, send periodic notifications to user 
           // this also provides that chrome doesn't kill the extension for being idle
@@ -561,9 +561,9 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
         
         let res = await relationHandler.performAction(banMode, value.authorId, value.isBannedUser, value.isBannedTitle, value.isBannedMute);
         
-        if(res.resultType == enums.ResultType.FAIL)
+        if(res.status == RelationActionStatus.RATE_LIMITED)
         {
-          // performAction failed because to too many request
+          // performAction was rate limited
 
           // while waiting cooldown, send periodic notifications to user 
           // this also provides that chrome doesn't kill the extension for being idle
@@ -674,9 +674,9 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
                                                       (!value.isBannedTitle && config.enableTitleBan), 
                                                       (!value.isBannedMute && config.enableMute));
         
-        if(res.resultType == enums.ResultType.FAIL)
+        if(res.status == RelationActionStatus.RATE_LIMITED)
         {
-          // performAction failed because to too many request
+          // performAction was rate limited
 
           // while waiting cooldown, send periodic notifications to user 
           // this also provides that chrome doesn't kill the extension for being idle

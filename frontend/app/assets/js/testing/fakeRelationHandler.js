@@ -1,4 +1,4 @@
-import * as enums from '../enums.js';
+import {RelationActionStatus} from '../relationHandler.js';
 
 const ARTIFICIAL_DELAY_MS = 500;
 
@@ -34,14 +34,13 @@ export class FakeRelationHandler
 
     this.actions.push(action);
     this.performedAction++;
-
-    if(id != 0)
-      this.successfulAction++;
+    this.successfulAction++;
 
     console.info("[fake-relation] performAction", action);
 
     return {
-      resultType: enums.ResultType.SUCCESS,
+      status: RelationActionStatus.COMPLETED,
+      actionSucceeded: true,
       successfulAction: this.successfulAction,
       performedAction: this.performedAction
     };

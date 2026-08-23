@@ -45,12 +45,6 @@ export const ProcessFinishReason = {
   NO_ACCOUNTS_AFTER_FILTERING:"NO_ACCOUNTS_AFTER_FILTERING",
 };
 
-export const ResultTypeHttpReq = {
-  SUCCESS:      "SUCCESS",
-  FAIL:         "FAIL",
-  TOO_MANY_REQ: "TOO_MANY_REQ",
-};
-
 export const ClickType = {
   EXTENSION_ICON:  "EXTENSION_ICON",                          /* user has pressed extension icon */
   EXTENSION_MENU_BAN_LIST: "EXTENSION_MENU_BAN_LIST",         /* user has pressed list ban button in extension menu */

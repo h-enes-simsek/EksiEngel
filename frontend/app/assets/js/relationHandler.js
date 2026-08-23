@@ -4,6 +4,17 @@ import * as utils from './utils.js'
 import {programController} from './programController.js';
 import {config} from './config.js';
 
+export const RelationActionStatus = {
+  COMPLETED:    "COMPLETED",
+  RATE_LIMITED: "RATE_LIMITED",
+};
+
+const RelationRequestOutcome = {
+  SUCCEEDED:    "SUCCEEDED",
+  FAILED:       "FAILED",
+  RATE_LIMITED: "RATE_LIMITED",
+};
+
 // a class to manage relations (ban/undoban users/users' titles)
 class RelationHandler
 {
@@ -16,7 +27,12 @@ class RelationHandler
     {
       // action failed
       this.performedAction++;
-      return {resultType: enums.ResultType.SUCCESS, successfulAction: this.successfulAction, performedAction: this.performedAction};
+      return {
+        status: RelationActionStatus.COMPLETED,
+        actionSucceeded: false,
+        successfulAction: this.successfulAction,
+        performedAction: this.performedAction
+      };
     }
 
     let resUser, resTitle, resMute;
@@ -39,22 +55,35 @@ class RelationHandler
       resMute = await this.#performHTTPRequest(banMode, enums.TargetType.MUTE, id, urlMute);
     }
     
-    if((isTargetUser  && resUser == enums.ResultTypeHttpReq.TOO_MANY_REQ)  || 
-       (isTargetTitle && resTitle == enums.ResultTypeHttpReq.TOO_MANY_REQ) ||
-       (isTargetMute  && resMute == enums.ResultTypeHttpReq.TOO_MANY_REQ)  )
+    if((isTargetUser  && resUser == RelationRequestOutcome.RATE_LIMITED)  ||
+       (isTargetTitle && resTitle == RelationRequestOutcome.RATE_LIMITED) ||
+       (isTargetMute  && resMute == RelationRequestOutcome.RATE_LIMITED)  )
     {
-      // too many request has been made, don't count this action and return false
-      return {resultType: enums.ResultType.FAIL, successfulAction: this.successfulAction, performedAction: this.performedAction};
+      // Too many requests have been made. Do not count this action; it can be retried after cooldown.
+      return {
+        status: RelationActionStatus.RATE_LIMITED,
+        actionSucceeded: null,
+        successfulAction: this.successfulAction,
+        performedAction: this.performedAction
+      };
     }
     else
     {
       this.performedAction++;
-      if((!isTargetUser  || resUser == enums.ResultTypeHttpReq.SUCCESS)  && 
-         (!isTargetTitle || resTitle == enums.ResultTypeHttpReq.SUCCESS) &&
-         (!isTargetMute  || resMute == enums.ResultTypeHttpReq.SUCCESS)  )
+      const actionSucceeded =
+        (!isTargetUser  || resUser == RelationRequestOutcome.SUCCEEDED) &&
+        (!isTargetTitle || resTitle == RelationRequestOutcome.SUCCEEDED) &&
+        (!isTargetMute  || resMute == RelationRequestOutcome.SUCCEEDED);
+
+      if(actionSucceeded)
         this.successfulAction++;
      
-      return {resultType: enums.ResultType.SUCCESS, successfulAction: this.successfulAction, performedAction: this.performedAction};
+      return {
+        status: RelationActionStatus.COMPLETED,
+        actionSucceeded,
+        successfulAction: this.successfulAction,
+        performedAction: this.performedAction
+      };
     }
   }
   
@@ -88,8 +117,8 @@ class RelationHandler
   #performHTTPRequest = async (banMode, targetType, id, url) =>
 	{
     if(id <= 0)
-      return enums.ResultTypeHttpReq.FAIL;
-		let res = enums.ResultTypeHttpReq.FAIL;
+      return RelationRequestOutcome.FAILED;
+		let res = RelationRequestOutcome.FAILED;
     try 
     {
       let response = await fetch(url, {
@@ -107,7 +136,7 @@ class RelationHandler
         {
           //const responseText = await response.text();
           //log.err("relation", "url: " + url + " response: " + responseText);
-          return enums.ResultTypeHttpReq.TOO_MANY_REQ;
+          return RelationRequestOutcome.RATE_LIMITED;
         }
         else
         {
@@ -115,7 +144,7 @@ class RelationHandler
           // dont re-try the operation, assume it was failed.
           const responseText = await response.text();
           log.err("relation", "url: " + url + " response: " + responseText);
-          return enums.ResultTypeHttpReq.FAIL; 
+          return RelationRequestOutcome.FAILED;
         }
           
         
@@ -125,18 +154,18 @@ class RelationHandler
       
       // for enums.BanMode.BAN result is number. Probably 0 is success, 2 is already banned
       if(banMode === enums.BanMode.BAN && typeof responseJson === "number" && (responseJson === 0 || responseJson === 2))
-        res = enums.ResultTypeHttpReq.SUCCESS; 
+        res = RelationRequestOutcome.SUCCEEDED;
       // for enums.BanMode.UNDOBAN result is object and it has 'result' key.
       else if(banMode === enums.BanMode.UNDOBAN && typeof responseJson === "object" && responseJson.result === true)
-        res = enums.ResultTypeHttpReq.SUCCESS; 
+        res = RelationRequestOutcome.SUCCEEDED;
       else
-        res = enums.ResultTypeHttpReq.FAIL;
+        res = RelationRequestOutcome.FAILED;
       // log.info("relation", "banMode: " + banMode + ", targetType: " + targetType + ", id: " + id + ", response text: " + responseText);
     }
     catch(err)
     {
       log.err("relation", err);
-      res = enums.ResultTypeHttpReq.FAIL; 
+      res = RelationRequestOutcome.FAILED;
     }
     return res;
 	}
