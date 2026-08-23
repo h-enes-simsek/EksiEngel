@@ -14,5 +14,6 @@
 # py cache
 **/__pycache__
 
-# test folder (no need for now)
-/test
+# Node dependencies
+node_modules/
+package-lock.json
