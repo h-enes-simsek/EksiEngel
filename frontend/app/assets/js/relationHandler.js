@@ -1,7 +1,5 @@
 import {log} from './log.js';
 import * as enums from './enums.js';
-import * as utils from './utils.js'
-import {programController} from './programController.js';
 import {config} from './config.js';
 
 export const RelationActionStatus = {
@@ -18,20 +16,14 @@ const RelationRequestOutcome = {
 // a class to manage relations (ban/undoban users/users' titles)
 class RelationHandler
 {
-  successfulAction;
-  performedAction;
-  
   async performAction(banMode, id, isTargetUser, isTargetTitle, isTargetMute)
   {
     if(id == 0)
     {
       // action failed
-      this.performedAction++;
       return {
         status: RelationActionStatus.COMPLETED,
-        actionSucceeded: false,
-        successfulAction: this.successfulAction,
-        performedAction: this.performedAction
+        actionSucceeded: false
       };
     }
 
@@ -62,37 +54,22 @@ class RelationHandler
       // Too many requests have been made. Do not count this action; it can be retried after cooldown.
       return {
         status: RelationActionStatus.RATE_LIMITED,
-        actionSucceeded: null,
-        successfulAction: this.successfulAction,
-        performedAction: this.performedAction
+        actionSucceeded: null
       };
     }
     else
     {
-      this.performedAction++;
       const actionSucceeded =
         (!isTargetUser  || resUser == RelationRequestOutcome.SUCCEEDED) &&
         (!isTargetTitle || resTitle == RelationRequestOutcome.SUCCEEDED) &&
         (!isTargetMute  || resMute == RelationRequestOutcome.SUCCEEDED);
-
-      if(actionSucceeded)
-        this.successfulAction++;
      
       return {
         status: RelationActionStatus.COMPLETED,
-        actionSucceeded,
-        successfulAction: this.successfulAction,
-        performedAction: this.performedAction
+        actionSucceeded
       };
     }
   }
-  
-  // reset the internal variables to reuse
-	reset = () =>
-	{
-		this.successfulAction = 0;
-    this.performedAction = 0;
-	}
   
 	#prepareHTTPRequest = (banMode, targetType, id) =>
 	{

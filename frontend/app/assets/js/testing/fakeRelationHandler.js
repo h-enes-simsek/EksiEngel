@@ -9,17 +9,6 @@ function waitForArtificialDelay()
 
 export class FakeRelationHandler
 {
-  successfulAction = 0;
-  performedAction = 0;
-  actions = [];
-
-  reset = () =>
-  {
-    this.successfulAction = 0;
-    this.performedAction = 0;
-    this.actions = [];
-  }
-
   async performAction(banMode, id, isTargetUser, isTargetTitle, isTargetMute)
   {
     await waitForArtificialDelay();
@@ -32,17 +21,11 @@ export class FakeRelationHandler
       isTargetMute
     };
 
-    this.actions.push(action);
-    this.performedAction++;
-    this.successfulAction++;
-
     console.info("[fake-relation] performAction", action);
 
     return {
       status: RelationActionStatus.COMPLETED,
-      actionSucceeded: true,
-      successfulAction: this.successfulAction,
-      performedAction: this.performedAction
+      actionSucceeded: true
     };
   }
 }

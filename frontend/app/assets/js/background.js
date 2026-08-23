@@ -78,10 +78,23 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
   let processFinishReason = enums.ProcessFinishReason.NOT_SET;
   let authorList = [];
   let plannedAction = 0;
+  let successfulAction = 0;
+  let performedAction = 0;
   let entryMetaData = {};
   let userAgent = null;
   let clientName = null;
   let clientId = null;
+
+  function recordRelationResult(result)
+  {
+    if(result.status === RelationActionStatus.COMPLETED)
+    {
+      performedAction++;
+
+      if(result.actionSucceeded)
+        successfulAction++;
+    }
+  }
 
   try
   {
@@ -130,8 +143,6 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
       notificationHandler.finishErrorConfigurationLoading(banSource, banMode);
       return;
     }
-    relationHandler.reset(); // reset the counters to reuse
-
     notificationHandler.notifyControlAccess();
     const urlAccessible = await isEksiSozlukAccessible();
     if(!urlAccessible)
@@ -192,7 +203,8 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
           res = await relationHandler.performAction(banMode, singleAuthorId, targetType == enums.TargetType.USER, targetType == enums.TargetType.TITLE, targetType == enums.TargetType.MUTE);
       }
       
-      notificationHandler.notifyOngoing(res.successfulAction, res.performedAction, plannedAction);
+      recordRelationResult(res);
+      notificationHandler.notifyOngoing(successfulAction, performedAction, plannedAction);
     }
     else if(banSource === enums.BanSource.LIST)
     {
@@ -282,7 +294,8 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
         }
 
         // send message to notification page
-        notificationHandler.notifyOngoing(res.successfulAction, res.performedAction, plannedAction);
+        recordRelationResult(res);
+        notificationHandler.notifyOngoing(successfulAction, performedAction, plannedAction);
       }
       
     }
@@ -406,7 +419,8 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
         }
         
         // send message to notification page
-        notificationHandler.notifyOngoing(res.successfulAction, res.performedAction, plannedAction);
+        recordRelationResult(res);
+        notificationHandler.notifyOngoing(successfulAction, performedAction, plannedAction);
       }
     }
     else if(banSource === enums.BanSource.FOLLOW)
@@ -526,7 +540,8 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
         }
         
         // send message to notification page
-        notificationHandler.notifyOngoing(res.successfulAction, res.performedAction, plannedAction);
+        recordRelationResult(res);
+        notificationHandler.notifyOngoing(successfulAction, performedAction, plannedAction);
       }
 
       
@@ -591,7 +606,8 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
         }
         
         // send message to notification page
-        notificationHandler.notifyOngoing(res.successfulAction, res.performedAction, plannedAction);
+        recordRelationResult(res);
+        notificationHandler.notifyOngoing(successfulAction, performedAction, plannedAction);
       }
     }
     
@@ -711,7 +727,8 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
         }
         
         // send message to notification page
-        notificationHandler.notifyOngoing(res.successfulAction, res.performedAction, plannedAction);
+        recordRelationResult(res);
+        notificationHandler.notifyOngoing(successfulAction, performedAction, plannedAction);
       }
     }
     
@@ -735,10 +752,6 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
     
     if(processFinishReason === enums.ProcessFinishReason.SUCCESS) 
     {
-
-      let successfulAction = relationHandler.successfulAction;
-      let performedAction = relationHandler.performedAction;
-
       notificationHandler.finishSuccess(banSource, banMode, successfulAction, performedAction, plannedAction);
       
       
