@@ -8,7 +8,8 @@ class ProgramController
   constructor() 
   { 
     this._earlyStop = false;
-    this._tabId = 0; 
+    this._tabId = 0;
+    this._activeAbortController = null;
   }
   
   get isActive()
@@ -30,6 +31,20 @@ class ProgramController
   {
     return this._earlyStop;
   }
+
+  setActiveAbortController(abortController)
+  {
+    this._activeAbortController = abortController;
+
+    if(this._earlyStop)
+      this._activeAbortController.abort();
+  }
+
+  clearActiveAbortController(abortController)
+  {
+    if(this._activeAbortController === abortController)
+      this._activeAbortController = null;
+  }
     
   set earlyStop(val)
   {
@@ -43,6 +58,7 @@ class ProgramController
     if(val)
     {
       log.info("progctrl", "early stop received, number of waiting processes in the queue: " + processQueue.size);
+      this._activeAbortController?.abort();
     }
     else
     {

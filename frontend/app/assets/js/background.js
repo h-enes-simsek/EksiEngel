@@ -75,6 +75,13 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
     timeSpecifier
   } = request;
 
+  const abortController = new AbortController();
+  const performRelationAction = (...args) => relationHandler.performAction(
+    ...args,
+    {signal: abortController.signal}
+  );
+  programController.setActiveAbortController(abortController);
+
   let processFinishReason = enums.ProcessFinishReason.NOT_SET;
   let authorList = [];
   let plannedAction = 0;
@@ -87,13 +94,11 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
 
   function recordRelationResult(result)
   {
-    if(result.status === RelationActionStatus.COMPLETED)
-    {
+    if(result.actionPerformed)
       performedAction++;
 
-      if(result.actionSucceeded)
-        successfulAction++;
-    }
+    if(result.actionSucceeded)
+      successfulAction++;
   }
 
   try
@@ -173,9 +178,9 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
       plannedAction = authorList.length;
       notificationHandler.notifyOngoing(0, 0, plannedAction);
       
-      let res = await relationHandler.performAction(banMode, singleAuthorId, targetType == enums.TargetType.USER, targetType == enums.TargetType.TITLE, targetType == enums.TargetType.MUTE);
+      let res = await performRelationAction(banMode, singleAuthorId, targetType == enums.TargetType.USER, targetType == enums.TargetType.TITLE, targetType == enums.TargetType.MUTE);
       
-      if(res.status == RelationActionStatus.RATE_LIMITED)
+      if(res.status == RelationActionStatus.RETRY_REQUIRED)
       {
         // performAction was rate limited
 
@@ -200,7 +205,7 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
         }); 
         
         if(!programController.earlyStop)
-          res = await relationHandler.performAction(banMode, singleAuthorId, targetType == enums.TargetType.USER, targetType == enums.TargetType.TITLE, targetType == enums.TargetType.MUTE);
+          res = await performRelationAction(banMode, singleAuthorId, targetType == enums.TargetType.USER, targetType == enums.TargetType.TITLE, targetType == enums.TargetType.MUTE);
       }
       
       recordRelationResult(res);
@@ -255,11 +260,11 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
         
         let res;
         if(banMode == enums.BanMode.BAN)
-          res = await relationHandler.performAction(banMode, author.eksisozluk_id, !config.enableMute, config.enableTitleBan, config.enableMute);
+          res = await performRelationAction(banMode, author.eksisozluk_id, !config.enableMute, config.enableTitleBan, config.enableMute);
         else
-          res = await relationHandler.performAction(banMode, author.eksisozluk_id, true, true, true);
+          res = await performRelationAction(banMode, author.eksisozluk_id, true, true, true);
         
-        if(res.status == RelationActionStatus.RATE_LIMITED)
+        if(res.status == RelationActionStatus.RETRY_REQUIRED)
         {
           // performAction was rate limited
 
@@ -287,9 +292,9 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
           if(!programController.earlyStop)
           {
             if(banMode == enums.BanMode.BAN)
-              res = await relationHandler.performAction(banMode, author.eksisozluk_id, !config.enableMute, config.enableTitleBan, config.enableMute);
+              res = await performRelationAction(banMode, author.eksisozluk_id, !config.enableMute, config.enableTitleBan, config.enableMute);
             else
-              res = await relationHandler.performAction(banMode, author.eksisozluk_id, true, true, true);
+              res = await performRelationAction(banMode, author.eksisozluk_id, true, true, true);
           }
         }
 
@@ -371,7 +376,7 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
         if(programController.earlyStop)
           break;
         let authorId = await scrapingHandler.scrapeAuthorIdFromAuthorProfilePage(name);
-        let res = await relationHandler.performAction(banMode, 
+        let res = await performRelationAction(banMode,
                                                       authorId,
                                                       (!value.isBannedUser && !config.enableMute),
                                                       (!value.isBannedTitle && config.enableTitleBan), 
@@ -382,7 +387,7 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
         if(author)
           authorList.push(author);
         
-        if(res.status == RelationActionStatus.RATE_LIMITED)
+        if(res.status == RelationActionStatus.RETRY_REQUIRED)
         {
           // performAction was rate limited
 
@@ -409,7 +414,7 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
           
           if(!programController.earlyStop)
           {
-            res = await relationHandler.performAction(banMode, 
+            res = await performRelationAction(banMode,
                                                       authorId,
                                                       (!value.isBannedUser && !config.enableMute),
                                                       (!value.isBannedTitle && config.enableTitleBan), 
@@ -497,13 +502,13 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
           break;
         
         // value.isBannedUser and others are null if analysis is not enabled
-        let res = await relationHandler.performAction(banMode, 
+        let res = await performRelationAction(banMode,
                                                       value.authorId, 
                                                       (!value.isBannedUser && !config.enableMute), 
                                                       (!value.isBannedTitle && config.enableTitleBan), 
                                                       (!value.isBannedMute && config.enableMute));
         
-        if(res.status == RelationActionStatus.RATE_LIMITED)
+        if(res.status == RelationActionStatus.RETRY_REQUIRED)
         {
           // performAction was rate limited
 
@@ -531,7 +536,7 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
           if(!programController.earlyStop)
           {
             // value.isBannedUser and others are null if analysis is not enabled
-            res = await relationHandler.performAction(banMode, 
+            res = await performRelationAction(banMode,
                                                       value.authorId, 
                                                       (!value.isBannedUser && !config.enableMute),
                                                       (!value.isBannedTitle && config.enableTitleBan), 
@@ -574,9 +579,9 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
         if(programController.earlyStop)
           break;
         
-        let res = await relationHandler.performAction(banMode, value.authorId, value.isBannedUser, value.isBannedTitle, value.isBannedMute);
+        let res = await performRelationAction(banMode, value.authorId, value.isBannedUser, value.isBannedTitle, value.isBannedMute);
         
-        if(res.status == RelationActionStatus.RATE_LIMITED)
+        if(res.status == RelationActionStatus.RETRY_REQUIRED)
         {
           // performAction was rate limited
 
@@ -602,7 +607,7 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
           }); 
           
           if(!programController.earlyStop)
-            res = await relationHandler.performAction(banMode, value.authorId, value.isBannedUser, value.isBannedTitle, value.isBannedMute);
+            res = await performRelationAction(banMode, value.authorId, value.isBannedUser, value.isBannedTitle, value.isBannedMute);
         }
         
         // send message to notification page
@@ -684,13 +689,13 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
           break;
         
         // value.isBannedUser and others are null if analysis is not enabled
-        let res = await relationHandler.performAction(banMode, 
+        let res = await performRelationAction(banMode,
                                                       value.authorId, 
                                                       (!value.isBannedUser && !config.enableMute), 
                                                       (!value.isBannedTitle && config.enableTitleBan), 
                                                       (!value.isBannedMute && config.enableMute));
         
-        if(res.status == RelationActionStatus.RATE_LIMITED)
+        if(res.status == RelationActionStatus.RETRY_REQUIRED)
         {
           // performAction was rate limited
 
@@ -718,7 +723,7 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
           if(!programController.earlyStop)
           {
             // value.isBannedUser and others are null if analysis is not enabled
-            res = await relationHandler.performAction(banMode, 
+            res = await performRelationAction(banMode,
                                                       value.authorId, 
                                                       (!value.isBannedUser && !config.enableMute),
                                                       (!value.isBannedTitle && config.enableTitleBan), 
@@ -799,6 +804,7 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
     }
     
     // common cleanup
+    programController.clearActiveAbortController(abortController);
     programController.earlyStop = false; // reset to reuse
     log.resetData();
   }

@@ -3,72 +3,91 @@ import * as enums from './enums.js';
 import {config} from './config.js';
 
 export const RelationActionStatus = {
-  COMPLETED:    "COMPLETED",
-  RATE_LIMITED: "RATE_LIMITED",
+  COMPLETED:      "COMPLETED",
+  RETRY_REQUIRED: "RETRY_REQUIRED",
+  ABORTED:        "ABORTED",
 };
 
 const RelationRequestOutcome = {
   SUCCEEDED:    "SUCCEEDED",
   FAILED:       "FAILED",
   RATE_LIMITED: "RATE_LIMITED",
+  ABORTED:      "ABORTED",
 };
+
+/**
+ * A completed action has been evaluated conclusively and is counted as
+ * performed even when it did not require a request, such as an invalid id.
+ * Retry-required and aborted actions are not performed, and their success is
+ * unknown.
+ *
+ * @typedef {Object} RelationActionResult
+ * @property {string} status
+ * @property {boolean} actionPerformed
+ * @property {boolean|null} actionSucceeded
+ */
+
+function createCompletedResult(actionSucceeded)
+{
+  return {
+    status: RelationActionStatus.COMPLETED,
+    actionPerformed: true,
+    actionSucceeded
+  };
+}
+
+function createIncompleteResult(status)
+{
+  return {
+    status,
+    actionPerformed: false,
+    actionSucceeded: null
+  };
+}
 
 // a class to manage relations (ban/undoban users/users' titles)
 class RelationHandler
 {
-  async performAction(banMode, id, isTargetUser, isTargetTitle, isTargetMute)
+  async performAction(banMode, id, isTargetUser, isTargetTitle, isTargetMute, {signal} = {})
   {
-    if(id == 0)
+    if(signal?.aborted)
+      return createIncompleteResult(RelationActionStatus.ABORTED);
+
+    // An invalid id still concludes the queued action, but unsuccessfully.
+    if(id <= 0)
+      return createCompletedResult(false);
+
+    const targets = [];
+    if(isTargetUser)
+      targets.push(enums.TargetType.USER);
+    if(isTargetTitle)
+      targets.push(enums.TargetType.TITLE);
+    if(isTargetMute)
+      targets.push(enums.TargetType.MUTE);
+
+    let actionSucceeded = true;
+    for(const targetType of targets)
     {
-      // action failed
-      return {
-        status: RelationActionStatus.COMPLETED,
-        actionSucceeded: false
-      };
+      if(signal?.aborted)
+        return createIncompleteResult(RelationActionStatus.ABORTED);
+
+      const url = this.#prepareHTTPRequest(banMode, targetType, id);
+      const outcome = await this.#performHTTPRequest(banMode, targetType, id, url, signal);
+
+      if(outcome === RelationRequestOutcome.ABORTED)
+        return createIncompleteResult(RelationActionStatus.ABORTED);
+
+      if(outcome === RelationRequestOutcome.RATE_LIMITED)
+      {
+        // Do not count this action; it can be retried after cooldown.
+        return createIncompleteResult(RelationActionStatus.RETRY_REQUIRED);
+      }
+
+      if(outcome !== RelationRequestOutcome.SUCCEEDED)
+        actionSucceeded = false;
     }
 
-    let resUser, resTitle, resMute;
-    if(isTargetUser)
-    {
-      // enums.TargetType.USER
-      let urlUser = this.#prepareHTTPRequest(banMode, enums.TargetType.USER, id);
-      resUser = await this.#performHTTPRequest(banMode, enums.TargetType.USER, id, urlUser);
-    }
-    if(isTargetTitle)
-    {
-      // enums.TargetType.TITLE
-      let urlTitle = this.#prepareHTTPRequest(banMode, enums.TargetType.TITLE, id);
-      resTitle = await this.#performHTTPRequest(banMode, enums.TargetType.TITLE, id, urlTitle);
-    }
-    if(isTargetMute)
-    {
-      // enums.TargetType.MUTE
-      let urlMute = this.#prepareHTTPRequest(banMode, enums.TargetType.MUTE, id);
-      resMute = await this.#performHTTPRequest(banMode, enums.TargetType.MUTE, id, urlMute);
-    }
-    
-    if((isTargetUser  && resUser == RelationRequestOutcome.RATE_LIMITED)  ||
-       (isTargetTitle && resTitle == RelationRequestOutcome.RATE_LIMITED) ||
-       (isTargetMute  && resMute == RelationRequestOutcome.RATE_LIMITED)  )
-    {
-      // Too many requests have been made. Do not count this action; it can be retried after cooldown.
-      return {
-        status: RelationActionStatus.RATE_LIMITED,
-        actionSucceeded: null
-      };
-    }
-    else
-    {
-      const actionSucceeded =
-        (!isTargetUser  || resUser == RelationRequestOutcome.SUCCEEDED) &&
-        (!isTargetTitle || resTitle == RelationRequestOutcome.SUCCEEDED) &&
-        (!isTargetMute  || resMute == RelationRequestOutcome.SUCCEEDED);
-     
-      return {
-        status: RelationActionStatus.COMPLETED,
-        actionSucceeded
-      };
-    }
+    return createCompletedResult(actionSucceeded);
   }
   
 	#prepareHTTPRequest = (banMode, targetType, id) =>
@@ -91,20 +110,25 @@ class RelationHandler
     return url;
 	}
   
-  #performHTTPRequest = async (banMode, targetType, id, url) =>
+  #performHTTPRequest = async (banMode, targetType, id, url, signal) =>
 	{
     if(id <= 0)
       return RelationRequestOutcome.FAILED;
+
+    if(signal?.aborted)
+      return RelationRequestOutcome.ABORTED;
+
 		let res = RelationRequestOutcome.FAILED;
     try 
     {
       let response = await fetch(url, {
         method: 'POST',
-           headers: {
+        headers: {
             'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
             'x-requested-with': 'XMLHttpRequest'
           },
-        body: "id=" + id
+        body: "id=" + id,
+        signal
       });
       if(!response.ok)
       {
@@ -141,6 +165,9 @@ class RelationHandler
     }
     catch(err)
     {
+      if(signal?.aborted || err?.name === "AbortError")
+        return RelationRequestOutcome.ABORTED;
+
       log.err("relation", err);
       res = RelationRequestOutcome.FAILED;
     }
