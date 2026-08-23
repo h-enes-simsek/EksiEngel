@@ -55,5 +55,3 @@ export class FakeRelationHandler
     };
   }
 }
-
-export const fakeRelationHandler = new FakeRelationHandler();

@@ -46,7 +46,7 @@ function createIncompleteResult(status)
 }
 
 // a class to manage relations (ban/undoban users/users' titles)
-class RelationHandler
+export class RelationHandler
 {
   async performAction(banMode, id, isTargetUser, isTargetTitle, isTargetMute, {signal} = {})
   {
@@ -174,5 +174,3 @@ class RelationHandler
     return res;
 	}
 }
-
-export let relationHandler = new RelationHandler();

@@ -5,7 +5,7 @@ import * as utils from './utils.js';
 import {config, getConfig, saveConfig, handleConfig} from './config.js';
 import {log} from './log.js';
 import {createEksiSozlukUser, commHandler} from './commHandler.js';
-import {relationHandler, RelationActionStatus} from './relationHandler.js';
+import {RelationHandler, RelationActionStatus} from './relationHandler.js';
 import {scrapingHandler} from './scrapingHandler.js';
 import {processQueue} from './queue.js';
 import {programController} from './programController.js';
@@ -15,7 +15,7 @@ import {createJobRequest} from './jobs/jobRequest.js';
 import {JobManager} from './jobs/jobManager.js';
 import {createJobTelemetry, JobTelemetryReporter} from './jobs/jobTelemetry.js';
 import {fakeScrapingHandler} from './testing/fakeScrapingHandler.js';
-import {fakeRelationHandler} from './testing/fakeRelationHandler.js';
+import {FakeRelationHandler} from './testing/fakeRelationHandler.js';
 
 // Development-only switch. Keep disabled in production builds.
 const DEV_USE_FAKE_HANDLERS = true;
@@ -23,6 +23,8 @@ const DEV_USE_FAKE_HANDLERS = true;
 log.info("bg", "initialized");
 let g_notificationTabId = 0;
 
+const relationHandler = new RelationHandler();
+const fakeRelationHandler = new FakeRelationHandler();
 const activeScrapingHandler = DEV_USE_FAKE_HANDLERS ? fakeScrapingHandler : scrapingHandler;
 const activeRelationHandler = DEV_USE_FAKE_HANDLERS ? fakeRelationHandler : relationHandler;
 const handleJobTelemetryError = error => console.error("job telemetry failed: " + error);
