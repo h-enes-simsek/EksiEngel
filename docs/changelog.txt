@@ -320,6 +320,7 @@ performans analizi yapılmalı
     obje içinde array silindiğinde reflerin durumu ne oluyor?
 
 DÜŞÜK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
+JSDOM yerine boyutu kucuk html parser ya da "mv3 offscreen" kullanilir.  
 kullanıcılar doğrulanmadığı için alınan veriler güvenli değil.
 sayfa kapatıldığında iki kere earlyStop sinyali üretiliyor. Buga neden olmuyor. Muhtemelen notification sayfasına bilgi gönderme 
 işlemi asenkron olmadığı için buna neden oluyor.
