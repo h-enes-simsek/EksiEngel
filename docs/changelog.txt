@@ -276,7 +276,8 @@ bug fix: Ekşi Engel serverı taşındığı için URL adresleri güncel değild
 
 v3.3
 gönderim: yayın: 
-TODO bug fix: early stop, scraping handler i durdurmuyordu. (relation handler eskiden de duruyordu)
+abortcontroller bircok modulde kullanildi
+gereksiz tabs permisson kaldirildi
 dokumantasyon guncellendi: early stop ve scraping konulari incelendi.
 bug fix: add notify for scraping process while gathering all authors for case UNDOBANALL
 tum frontend yenilendi.

@@ -21,7 +21,6 @@
     "default_popup": "assets/html/popup.html"
   },
   "permissions": [
-    "tabs",
     "storage"
   ],
   "host_permissions": [
