@@ -164,7 +164,7 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
       return;
     }
     notificationHandler.notifyControlAccess();
-    const urlAccessible = await isEksiSozlukAccessible();
+    const urlAccessible = await isEksiSozlukAccessible({signal: abortController.signal});
     if(!urlAccessible)
     {
       log.err("bg", "Program has been finished (finishErrorAccess)");

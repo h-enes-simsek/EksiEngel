@@ -3,11 +3,11 @@ import {log} from './log.js';
 
 // Check if the configured EksiSozluk URL is currently accessible
 // return: true if URL is accessible, false if not
-export async function isEksiSozlukAccessible()
+export async function isEksiSozlukAccessible({signal} = {})
 {
   try 
   {
-    let response = await fetch(config.EksiSozlukURL);
+    let response = await fetch(config.EksiSozlukURL, {signal});
     let isAccessible = response.status === 200;
     log.info("url", "is EksiSozluk accessible: " + isAccessible + " at " + config.EksiSozlukURL);
 
@@ -20,6 +20,9 @@ export async function isEksiSozlukAccessible()
   } 
   catch (err) 
   {
+    if(signal?.aborted)
+      throw err;
+
     log.warn("url", "Error checking EksiSozluk accessibility: " + err);
     return false;
   }
