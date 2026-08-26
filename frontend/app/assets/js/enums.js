@@ -35,6 +35,8 @@ export const ResultType = {
 export const ProcessFinishReason = {
   NOT_SET:                    "NOT_SET",
   SUCCESS:                    "SUCCESS",
+  CANCELLED:                  "CANCELLED",
+  UNEXPECTED_ERROR:           "UNEXPECTED_ERROR",
   NOTIFICATION_TAB_CREATION:  "NOTIFICATION_TAB_CREATION",
   CONFIGURATION_LOADING:      "CONFIGURATION_LOADING",
   EKSI_SOZLUK_UNREACHABLE:    "EKSI_SOZLUK_UNREACHABLE",

@@ -6,10 +6,10 @@ import {log} from './log.js';
 class ProgramController
 {
   constructor() 
-  { 
+  {
     this._earlyStop = false;
     this._tabId = 0;
-    this._activeAbortController = null;
+    this._cancelActiveJob = null;
   }
   
   get isActive()
@@ -32,18 +32,12 @@ class ProgramController
     return this._earlyStop;
   }
 
-  setActiveAbortController(abortController)
+  setCancelActiveJobHandler(cancelActiveJob)
   {
-    this._activeAbortController = abortController;
+    if(typeof cancelActiveJob !== 'function')
+      throw new TypeError('cancelActiveJob must be a function');
 
-    if(this._earlyStop)
-      this._activeAbortController.abort();
-  }
-
-  clearActiveAbortController(abortController)
-  {
-    if(this._activeAbortController === abortController)
-      this._activeAbortController = null;
+    this._cancelActiveJob = cancelActiveJob;
   }
     
   set earlyStop(val)
@@ -58,7 +52,7 @@ class ProgramController
     if(val)
     {
       log.info("progctrl", "early stop received, number of waiting processes in the queue: " + processQueue.size);
-      this._activeAbortController?.abort();
+      this._cancelActiveJob?.();
     }
     else
     {

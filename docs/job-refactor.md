@@ -9,8 +9,8 @@ changes whenever possible.
 - [x] Replace `processHandler` positional parameters with an explicit `JobRequest`.
 - [x] Queue explicit job records instead of decorated functions.
 - [x] Add a `JobManager` around the existing process handler.
-- [ ] Add one `AbortController` and terminal result per active job. *(controller added; terminal job result deferred)*
-- [ ] Propagate cancellation through fetches, pagination, and cooldown delays. *(relation and scraping fetches plus scraping pagination added; cooldown delays deferred)*
+- [x] Add one `AbortController` and terminal result per active job.
+- [x] Propagate cancellation through fetches, pagination, and cooldown delays.
 - [x] Move telemetry outside the critical job lifecycle.
 - [ ] Extract the shared relation execution and retry loop.
 - [ ] Extract source collectors, beginning with `SINGLE` and `LIST`.
@@ -25,8 +25,14 @@ state and logs are reset. Delivery is submitted through `JobTelemetryReporter`
 without being awaited by the process handler, so a slow telemetry request no
 longer prevents the queue from starting its next job. Delivery remains
 best-effort until service-worker persistence is implemented. Cancellation is
-being added incrementally: each active process now owns an `AbortController`,
-and relation actions report whether they were performed and whether they
-succeeded. Relation and scraping requests use the controller, and the new
-scraping handler propagates cancellation through bounded pagination. Terminal
-job results and abortable cooldown delays are deferred.
+being added incrementally: `JobManager` now creates one `AbortController` when
+a queued job becomes active, passes its signal into process execution, and
+clears the private active execution after settlement. `ProgramController`
+temporarily remains as the Chrome-message bridge but delegates cancellation to
+`JobManager`. Relation actions report whether they were performed and whether
+they succeeded. Relation and scraping requests use the active job's signal, and
+the scraping handler propagates cancellation through bounded pagination.
+Every process exit now resolves the queue completion promise with an immutable
+terminal result using one authoritative `finishReason`; cancellation and
+unexpected errors have explicit reasons. Relation and scraping fetches,
+pagination, action loops, and cooldown timers now share the active job's signal.

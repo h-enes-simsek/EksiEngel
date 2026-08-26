@@ -7,6 +7,7 @@ export class JobManager
   {
     this._queue = queue;
     this._executeJob = executeJob;
+    this._activeExecution = null;
   }
 
   enqueue(request)
@@ -14,10 +15,43 @@ export class JobManager
     const job = createJob(request);
     const completion = this._queue.enqueue(
       job,
-      queuedJob => this._executeJob(queuedJob)
+      queuedJob => this._executeQueuedJob(queuedJob)
     );
 
     return {job, completion};
+  }
+
+  async _executeQueuedJob(job)
+  {
+    const activeExecution = {
+      job,
+      abortController: new AbortController(),
+      result: null
+    };
+    this._activeExecution = activeExecution;
+
+    try
+    {
+      activeExecution.result = await this._executeJob(job, {
+        signal: activeExecution.abortController.signal
+      });
+      return activeExecution.result;
+    }
+    finally
+    {
+      if(this._activeExecution === activeExecution)
+        this._activeExecution = null;
+    }
+  }
+
+  cancelActive(reason)
+  {
+    const abortController = this._activeExecution?.abortController;
+    if(!abortController || abortController.signal.aborted)
+      return false;
+
+    abortController.abort(reason);
+    return true;
   }
 
   clearWaiting()
@@ -38,5 +72,10 @@ export class JobManager
   get isRunning()
   {
     return this._queue.isRunning;
+  }
+
+  get activeJob()
+  {
+    return this._activeExecution?.job ?? null;
   }
 }

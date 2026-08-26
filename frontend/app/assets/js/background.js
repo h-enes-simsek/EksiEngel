@@ -11,6 +11,8 @@ import {processQueue} from './queue.js';
 import {programController} from './programController.js';
 import {isEksiSozlukAccessible} from './urlHandler.js';
 import { notificationHandler } from './notificationHandler.js';
+import {createJobResult} from './jobs/job.js';
+import {waitForCooldown} from './jobs/cooldown.js';
 import {createJobRequest} from './jobs/jobRequest.js';
 import {JobManager} from './jobs/jobManager.js';
 import {createJobTelemetry, JobTelemetryReporter} from './jobs/jobTelemetry.js';
@@ -49,12 +51,14 @@ function entryIdFromUrl(entryUrl)
 
 const jobManager = new JobManager({
   queue: processQueue,
-  executeJob: job => processHandler(job.request, {
+  executeJob: (job, {signal}) => processHandler(job, {
+    signal,
     scrapingHandler: activeScrapingHandler,
     relationHandler: activeRelationHandler,
     telemetryReporter: jobTelemetryReporter
   })
 });
+programController.setCancelActiveJobHandler(() => jobManager.cancelActive());
 
 if(DEV_USE_FAKE_HANDLERS)
   log.warn("bg", "development fake scraping and relation handlers are enabled");
@@ -75,8 +79,9 @@ chrome.runtime.onMessage.addListener(async function messageListener_Popup(messag
   notificationHandler.updatePlannedProcessesList(jobManager.waitingJobAttributes);
 });
 
-async function processHandler(request, {scrapingHandler, relationHandler, telemetryReporter})
+async function processHandler(job, {signal, scrapingHandler, relationHandler, telemetryReporter})
 {
+  const {request} = job;
   const {
     banSource,
     banMode,
@@ -90,12 +95,14 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
     timeSpecifier
   } = request;
 
-  const abortController = new AbortController();
   const performRelationAction = (...args) => relationHandler.performAction(
     ...args,
-    {signal: abortController.signal}
+    {signal}
   );
-  programController.setActiveAbortController(abortController);
+  const waitForRelationCooldown = () => waitForCooldown({
+    signal,
+    onTick: remainingSeconds => notificationHandler.notifyCooldown(remainingSeconds)
+  });
 
   let processFinishReason = enums.ProcessFinishReason.NOT_SET;
   let authorList = [];
@@ -106,6 +113,7 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
   let userAgent = null;
   let clientName = null;
   let clientId = null;
+  let errorMessage = null;
 
   function recordRelationResult(result)
   {
@@ -116,7 +124,7 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
       successfulAction++;
   }
 
-  try
+  const run = async () =>
   {
     log.info("bg", "Process has been started with " + 
             "banSource: "          + banSource + 
@@ -164,7 +172,7 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
       return;
     }
     notificationHandler.notifyControlAccess();
-    const urlAccessible = await isEksiSozlukAccessible({signal: abortController.signal});
+    const urlAccessible = await isEksiSozlukAccessible({signal});
     if(!urlAccessible)
     {
       log.err("bg", "Program has been finished (finishErrorAccess)");
@@ -175,7 +183,7 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
 
     notificationHandler.notifyControlLogin();
     userAgent = navigator.userAgent;
-    const currentAccount = await scrapingHandler.getCurrentAccount({signal: abortController.signal});
+    const currentAccount = await scrapingHandler.getCurrentAccount({signal});
     clientName = currentAccount?.authorName ?? null;
     clientId = currentAccount?.authorId ?? null;
     if(!clientName || !clientId)
@@ -192,7 +200,7 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
       if(author)
         authorList.push(author);
 
-      plannedAction = authorList.length;
+      plannedAction = 1;
       notificationHandler.notifyOngoing(0, 0, plannedAction);
       
       let res = await performRelationAction(banMode, singleAuthorId, targetType == enums.TargetType.USER, targetType == enums.TargetType.TITLE, targetType == enums.TargetType.MUTE);
@@ -200,29 +208,8 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
       if(res.status == RelationActionStatus.RETRY_REQUIRED)
       {
         // performAction was rate limited
-
-        // while waiting cooldown, send periodic notifications to user 
-        // this also provides that chrome doesn't kill the extension for being idle
-        await new Promise(async resolve => 
-        {
-          // wait 1 minute (+2 sec to ensure)
-          let waitTimeInSec = 62;
-          for(let i = 1; i <= waitTimeInSec; i++)
-          {
-            if(programController.earlyStop)
-              break;
-            
-            notificationHandler.notifyCooldown(waitTimeInSec-i);
-            
-            // wait 1 sec
-            await new Promise(resolve2 => { setTimeout(resolve2, 1000); }); 
-          }
-            
-          resolve();        
-        }); 
-        
-        if(!programController.earlyStop)
-          res = await performRelationAction(banMode, singleAuthorId, targetType == enums.TargetType.USER, targetType == enums.TargetType.TITLE, targetType == enums.TargetType.MUTE);
+        await waitForRelationCooldown();
+        res = await performRelationAction(banMode, singleAuthorId, targetType == enums.TargetType.USER, targetType == enums.TargetType.TITLE, targetType == enums.TargetType.MUTE);
       }
       
       recordRelationResult(res);
@@ -268,10 +255,7 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
       
       for (const authorName of authorNames)
       {
-        if(programController.earlyStop)
-          break;
-        
-        const scrapedAuthor = await scrapingHandler.getAuthor(authorName, {signal: abortController.signal});
+        const scrapedAuthor = await scrapingHandler.getAuthor(authorName, {signal});
         let author = createEksiSozlukUser(authorName, scrapedAuthor?.authorId);
         if(author)
           authorList.push(author);
@@ -285,35 +269,11 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
         if(res.status == RelationActionStatus.RETRY_REQUIRED)
         {
           // performAction was rate limited
-
-          // while waiting cooldown, send periodic notifications to user 
-          // this also provides that chrome doesn't kill the extension for being idle
-          await new Promise(async resolve => 
-          {
-            // wait 1 minute (+2 sec to ensure)
-            let waitTimeInSec = 62;
-            for(let i = 1; i <= waitTimeInSec; i++)
-            {
-              if(programController.earlyStop)
-                break;
-              
-              // send message to notification page
-              notificationHandler.notifyCooldown(waitTimeInSec-i);
-              
-              // wait 1 sec
-              await new Promise(resolve2 => { setTimeout(resolve2, 1000); }); 
-            }
-              
-            resolve();        
-          }); 
-          
-          if(!programController.earlyStop)
-          {
-            if(banMode == enums.BanMode.BAN)
-              res = await performRelationAction(banMode, author.eksisozluk_id, !config.enableMute, config.enableTitleBan, config.enableMute);
-            else
-              res = await performRelationAction(banMode, author.eksisozluk_id, true, true, true);
-          }
+          await waitForRelationCooldown();
+          if(banMode == enums.BanMode.BAN)
+            res = await performRelationAction(banMode, author.eksisozluk_id, !config.enableMute, config.enableTitleBan, config.enableMute);
+          else
+            res = await performRelationAction(banMode, author.eksisozluk_id, true, true, true);
         }
 
         // send message to notification page
@@ -327,13 +287,13 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
       notificationHandler.notifyScrapeFavs();
 
       const entryId = entryIdFromUrl(entryUrl);
-      entryMetaData = await scrapingHandler.getEntryMetadata(entryId, {signal: abortController.signal});
+      entryMetaData = await scrapingHandler.getEntryMetadata(entryId, {signal});
       if(!entryMetaData)
         log.warn("bg", `Entry ${entryId} metadata could not be retrieved.`);
 
       let scrapedRelations = await scrapingHandler.listEntryFavoriters(entryId, {
         includeNovices: config.enableNoobBan,
-        signal: abortController.signal
+        signal
       });
       
       log.info("bg", "number of user to ban (before analysis): " + scrapedRelations.size);
@@ -352,7 +312,7 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
       {
         // scrape the authors that ${clientName} follows
         notificationHandler.notifyScrapeFollowings();
-        let mapFollowing = await scrapingHandler.listFollowing(clientName, {signal: abortController.signal});
+        let mapFollowing = await scrapingHandler.listFollowing(clientName, {signal});
         
         // remove the authors that ${clientName} follows from the list to protect    
         notificationHandler.notifyAnalysisProtectFollowedUsers();  
@@ -368,7 +328,7 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
         
         // scrape the authors that ${clientName} blocked
         notificationHandler.notifyScrapeBanned();
-        let mapBlocked = await scrapingHandler.listOwnRelations({}, {signal: abortController.signal});
+        let mapBlocked = await scrapingHandler.listOwnRelations({}, {signal});
         
         // update the list with info obtained from mapBlocked
         notificationHandler.notifyAnalysisOnlyRequiredActions();
@@ -398,9 +358,7 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
       
       for (const [name, value] of scrapedRelations)
       {
-        if(programController.earlyStop)
-          break;
-        let authorId = (await scrapingHandler.getAuthor(name, {signal: abortController.signal}))?.authorId;
+        let authorId = (await scrapingHandler.getAuthor(name, {signal}))?.authorId;
         if(!authorId)
           continue;
         let res = await performRelationAction(banMode,
@@ -417,36 +375,12 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
         if(res.status == RelationActionStatus.RETRY_REQUIRED)
         {
           // performAction was rate limited
-
-          // while waiting cooldown, send periodic notifications to user 
-          // this also provides that chrome doesn't kill the extension for being idle
-          await new Promise(async resolve => 
-          {
-            // wait 1 minute (+2 sec to ensure)
-            let waitTimeInSec = 62;
-            for(let i = 1; i <= waitTimeInSec; i++)
-            {
-              if(programController.earlyStop)
-                break;
-              
-              // send message to notification page
-              notificationHandler.notifyCooldown(waitTimeInSec-i);
-              
-              // wait 1 sec
-              await new Promise(resolve2 => { setTimeout(resolve2, 1000); }); 
-            }
-              
-            resolve();        
-          }); 
-          
-          if(!programController.earlyStop)
-          {
-            res = await performRelationAction(banMode,
-                                                      authorId,
-                                                      (!value.isBlockedUser && !config.enableMute),
-                                                      (!value.areTitlesBlocked && config.enableTitleBan),
-                                                      (!value.isMuted && config.enableMute));
-          }
+          await waitForRelationCooldown();
+          res = await performRelationAction(banMode,
+                                                    authorId,
+                                                    (!value.isBlockedUser && !config.enableMute),
+                                                    (!value.areTitlesBlocked && config.enableTitleBan),
+                                                    (!value.isMuted && config.enableMute));
 
         }
         
@@ -459,7 +393,7 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
     {
       notificationHandler.notifyScrapeFollowers();
 
-      let scrapedRelations = await scrapingHandler.listFollowers(singleAuthorName, {signal: abortController.signal});
+      let scrapedRelations = await scrapingHandler.listFollowers(singleAuthorName, {signal});
       log.info("bg", "number of user to ban (before analysis): " + scrapedRelations.size);
       
       // stop if there is no user
@@ -476,7 +410,7 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
       {
         // scrape the authors that ${clientName} follows
         notificationHandler.notifyScrapeFollowings();
-        let mapFollowing = await scrapingHandler.listFollowing(clientName, {signal: abortController.signal});
+        let mapFollowing = await scrapingHandler.listFollowing(clientName, {signal});
         
         // remove the authors that ${clientName} follows from the list to protect  
         notificationHandler.notifyAnalysisProtectFollowedUsers();    
@@ -489,7 +423,7 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
       {
         // scrape the authors that ${clientName} blocked
         notificationHandler.notifyScrapeBanned();
-        let mapBlocked = await scrapingHandler.listOwnRelations({}, {signal: abortController.signal});
+        let mapBlocked = await scrapingHandler.listOwnRelations({}, {signal});
         
         // update the list with info obtained from mapBlocked
         notificationHandler.notifyAnalysisOnlyRequiredActions();
@@ -525,7 +459,7 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
       
       for (const [name, value] of scrapedRelations)
       {
-        if(programController.earlyStop)
+        if(signal.aborted)
           break;
         
         // Relation flags are null if analysis is not enabled.
@@ -538,37 +472,13 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
         if(res.status == RelationActionStatus.RETRY_REQUIRED)
         {
           // performAction was rate limited
-
-          // while waiting cooldown, send periodic notifications to user 
-          // this also provides that chrome doesn't kill the extension for being idle
-          await new Promise(async resolve => 
-          {
-            // wait 1 minute (+2 sec to ensure)
-            let waitTimeInSec = 62;
-            for(let j = 1; j <= waitTimeInSec; j++)
-            {
-              if(programController.earlyStop)
-                break;
-              
-              // send message to notification page
-              notificationHandler.notifyCooldown(waitTimeInSec-j);
-              
-              // wait 1 sec
-              await new Promise(resolve2 => { setTimeout(resolve2, 1000); }); 
-            }
-              
-            resolve();        
-          }); 
-          
-          if(!programController.earlyStop)
-          {
-            // Relation flags are null if analysis is not enabled.
-            res = await performRelationAction(banMode,
-                                                      value.authorId, 
-                                                      (!value.isBlockedUser && !config.enableMute),
-                                                      (!value.areTitlesBlocked && config.enableTitleBan),
-                                                      (!value.isMuted && config.enableMute));
-          }
+          await waitForRelationCooldown();
+          // Relation flags are null if analysis is not enabled.
+          res = await performRelationAction(banMode,
+                                                    value.authorId,
+                                                    (!value.isBlockedUser && !config.enableMute),
+                                                    (!value.areTitlesBlocked && config.enableTitleBan),
+                                                    (!value.isMuted && config.enableMute));
         }
         
         // send message to notification page
@@ -582,7 +492,7 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
     {
       notificationHandler.notifyScrapeUndobanAll();
 
-      let scrapedRelations = await scrapingHandler.listOwnRelations({}, {signal: abortController.signal});
+      let scrapedRelations = await scrapingHandler.listOwnRelations({}, {signal});
       
       // stop if there is no user
       log.info("bg", "number of user to ban " + scrapedRelations.size);
@@ -603,7 +513,7 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
       
       for (const [name, value] of scrapedRelations)
       {
-        if(programController.earlyStop)
+        if(signal.aborted)
           break;
         
         let res = await performRelationAction(banMode, value.authorId, value.isBlockedUser, value.areTitlesBlocked, value.isMuted);
@@ -611,30 +521,8 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
         if(res.status == RelationActionStatus.RETRY_REQUIRED)
         {
           // performAction was rate limited
-
-          // while waiting cooldown, send periodic notifications to user 
-          // this also provides that chrome doesn't kill the extension for being idle
-          await new Promise(async resolve => 
-          {
-            // wait 1 minute (+2 sec to ensure)
-            let waitTimeInSec = 62;
-            for(let j = 1; j <= waitTimeInSec; j++)
-            {
-              if(programController.earlyStop)
-                break;
-              
-              // send message to notification page
-              notificationHandler.notifyCooldown(waitTimeInSec-j);
-              
-              // wait 1 sec
-              await new Promise(resolve2 => { setTimeout(resolve2, 1000); }); 
-            }
-              
-            resolve();        
-          }); 
-          
-          if(!programController.earlyStop)
-            res = await performRelationAction(banMode, value.authorId, value.isBlockedUser, value.areTitlesBlocked, value.isMuted);
+          await waitForRelationCooldown();
+          res = await performRelationAction(banMode, value.authorId, value.isBlockedUser, value.areTitlesBlocked, value.isMuted);
         }
         
         // send message to notification page
@@ -652,7 +540,7 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
         titleName,
         titleId,
         period: timeSpecifier
-      }, {signal: abortController.signal});
+      }, {signal});
       log.info("bg", "number of user to ban (before analysis): " + scrapedRelations.size);
       
       // stop if there is no user
@@ -669,7 +557,7 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
       {
         // scrape the authors that ${clientName} follows
         notificationHandler.notifyScrapeFollowings();
-        let mapFollowing = await scrapingHandler.listFollowing(clientName, {signal: abortController.signal});
+        let mapFollowing = await scrapingHandler.listFollowing(clientName, {signal});
         
         // remove the authors that ${clientName} follows from the list to protect  
         notificationHandler.notifyAnalysisProtectFollowedUsers();    
@@ -682,7 +570,7 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
       {
         // scrape the authors that ${clientName} blocked
         notificationHandler.notifyScrapeBanned();
-        let mapBlocked = await scrapingHandler.listOwnRelations({}, {signal: abortController.signal});
+        let mapBlocked = await scrapingHandler.listOwnRelations({}, {signal});
         
         // update the list with info obtained from mapBlocked
         notificationHandler.notifyAnalysisOnlyRequiredActions();
@@ -716,7 +604,7 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
       
       for (const [name, value] of scrapedRelations)
       {
-        if(programController.earlyStop)
+        if(signal.aborted)
           break;
         
         // Relation flags are null if analysis is not enabled.
@@ -729,37 +617,13 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
         if(res.status == RelationActionStatus.RETRY_REQUIRED)
         {
           // performAction was rate limited
-
-          // while waiting cooldown, send periodic notifications to user 
-          // this also provides that chrome doesn't kill the extension for being idle
-          await new Promise(async resolve => 
-          {
-            // wait 1 minute (+2 sec to ensure)
-            let waitTimeInSec = 62;
-            for(let j = 1; j <= waitTimeInSec; j++)
-            {
-              if(programController.earlyStop)
-                break;
-              
-              // send message to notification page
-              notificationHandler.notifyCooldown(waitTimeInSec-j);
-              
-              // wait 1 sec
-              await new Promise(resolve2 => { setTimeout(resolve2, 1000); }); 
-            }
-              
-            resolve();        
-          }); 
-          
-          if(!programController.earlyStop)
-          {
-            // Relation flags are null if analysis is not enabled.
-            res = await performRelationAction(banMode,
-                                                      value.authorId, 
-                                                      (!value.isBlockedUser && !config.enableMute),
-                                                      (!value.areTitlesBlocked && config.enableTitleBan),
-                                                      (!value.isMuted && config.enableMute));
-          }
+          await waitForRelationCooldown();
+          // Relation flags are null if analysis is not enabled.
+          res = await performRelationAction(banMode,
+                                                    value.authorId,
+                                                    (!value.isBlockedUser && !config.enableMute),
+                                                    (!value.areTitlesBlocked && config.enableTitleBan),
+                                                    (!value.isMuted && config.enableMute));
         }
         
         // send message to notification page
@@ -768,16 +632,26 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
       }
     }
     
-    processFinishReason = enums.ProcessFinishReason.SUCCESS;
+    processFinishReason = signal.aborted
+      ? enums.ProcessFinishReason.CANCELLED
+      : enums.ProcessFinishReason.SUCCESS;
+  };
+
+  try
+  {
+    await run();
   }
   catch(error)
   {
-    if(abortController.signal.aborted)
+    if(signal.aborted)
     {
+      processFinishReason = enums.ProcessFinishReason.CANCELLED;
       log.info("bg", "Early stop signal stopped the process.");
     }
     else
     {
+      processFinishReason = enums.ProcessFinishReason.UNEXPECTED_ERROR;
+      errorMessage = error instanceof Error ? error.message : String(error);
       log.err("bg", "Error thrown: " + error);
     }
   }
@@ -843,12 +717,23 @@ async function processHandler(request, {scrapingHandler, relationHandler, teleme
       }
 
     }
+    else if(processFinishReason === enums.ProcessFinishReason.CANCELLED)
+    {
+      notificationHandler.finishErrorEarlyStop(banSource, banMode);
+    }
     
     // common cleanup
-    programController.clearActiveAbortController(abortController);
     programController.earlyStop = false; // reset to reuse
     log.resetData();
   }
+
+  return createJobResult(job, {
+    finishReason: processFinishReason,
+    successfulAction,
+    performedAction,
+    plannedAction,
+    errorMessage
+  });
 }
 
 // this listener fired every time when the extension installed or updated.
