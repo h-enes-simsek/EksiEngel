@@ -51,7 +51,7 @@ let NetworkError;
 let OwnRelationKind;
 let PaginationError;
 let ParseError;
-let TitlePeriod;
+let TimeSpecifier;
 
 beforeAll(async () =>
 {
@@ -62,9 +62,9 @@ beforeAll(async () =>
     NetworkError,
     OwnRelationKind,
     PaginationError,
-    ParseError,
-    TitlePeriod
+    ParseError
   } = await import('../../app/assets/js/scrapingHandlerNew.js'));
+  ({TimeSpecifier} = await import('../../app/assets/js/enums.js'));
 });
 
 const authorProfileHtml = readFileSync(
@@ -311,7 +311,11 @@ describe('EksiScrapingHandler construction and validation', () =>
     ['empty following name', handler => handler.listFollowing(' ')],
     ['missing title query', handler => handler.listTitleAuthors()],
     ['non-numeric title id', handler => handler.listTitleAuthors({titleName: 'title', titleId: 'x'})],
-    ['unsupported title period', handler => handler.listTitleAuthors({titleName: 'title', titleId: '1', period: 'week'})]
+    ['unsupported title period', handler => handler.listTitleAuthors({
+      titleName: 'title',
+      titleId: '1',
+      period: TimeSpecifier.LAST_1_W
+    })]
   ])('rejects %s before fetching', async (_caseName, invoke) =>
   {
     const fetchImpl = vi.fn();
@@ -324,6 +328,25 @@ describe('EksiScrapingHandler construction and validation', () =>
 
 describe('EksiScrapingHandler request and error contract', () =>
 {
+  it('calls the default fetch with the service-worker global as its receiver', async () =>
+  {
+    const fetchImpl = vi.fn(function()
+    {
+      if(this !== globalThis)
+        throw new TypeError('Illegal invocation');
+
+      return Promise.resolve(textResponse('<input id="who" value="1">'));
+    });
+    vi.stubGlobal('fetch', fetchImpl);
+    const handler = new EksiScrapingHandler();
+
+    await expect(handler.getAuthor('author')).resolves.toEqual({
+      authorName: 'author',
+      authorId: '1'
+    });
+    expect(fetchImpl).toHaveBeenCalledOnce();
+  });
+
   it('uses the legacy request headers for JSON endpoints', async () =>
   {
     const fetchImpl = vi.fn().mockResolvedValue(jsonResponse([]));
@@ -979,7 +1002,7 @@ describe('EksiScrapingHandler.listTitleAuthors', () =>
     await handler.listTitleAuthors({
       titleName: 'Daily Title',
       titleId: '99',
-      period: TitlePeriod.LAST_24_HOURS
+      period: TimeSpecifier.LAST_24_H
     });
 
     expect(requestedUrl(fetchImpl).search).toBe('?a=dailynice&p=1');

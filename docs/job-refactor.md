@@ -10,7 +10,7 @@ changes whenever possible.
 - [x] Queue explicit job records instead of decorated functions.
 - [x] Add a `JobManager` around the existing process handler.
 - [ ] Add one `AbortController` and terminal result per active job. *(controller added; terminal job result deferred)*
-- [ ] Propagate cancellation through fetches, pagination, and cooldown delays. *(relation fetches added; pagination and cooldown delays deferred)*
+- [ ] Propagate cancellation through fetches, pagination, and cooldown delays. *(relation and scraping fetches plus scraping pagination added; cooldown delays deferred)*
 - [x] Move telemetry outside the critical job lifecycle.
 - [ ] Extract the shared relation execution and retry loop.
 - [ ] Extract source collectors, beginning with `SINGLE` and `LIST`.
@@ -27,5 +27,6 @@ longer prevents the queue from starting its next job. Delivery remains
 best-effort until service-worker persistence is implemented. Cancellation is
 being added incrementally: each active process now owns an `AbortController`,
 and relation actions report whether they were performed and whether they
-succeeded. Relation request cancellation is wired through the controller;
-terminal job results, pagination, and abortable cooldown delays are deferred.
+succeeded. Relation and scraping requests use the controller, and the new
+scraping handler propagates cancellation through bounded pagination. Terminal
+job results and abortable cooldown delays are deferred.

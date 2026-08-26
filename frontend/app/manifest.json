@@ -63,7 +63,7 @@
         "assets/html/welcome.html",
         "assets/js/commHandler.js",
         "assets/js/relationHandler.js",
-        "assets/js/scrapingHandler.js",
+        "assets/js/scrapingHandlerNew.js",
         "assets/js/config.js",
         "assets/js/enums.js",
         "assets/js/log.js",

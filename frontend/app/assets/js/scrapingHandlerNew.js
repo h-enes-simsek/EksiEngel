@@ -1,10 +1,8 @@
 import {JSDOM} from './jsdom.js';
+import {TimeSpecifier} from './enums.js';
 
 /**
  * New Ekşi Sözlük scraping design.
- *
- * This module is intentionally not connected to background.js yet. It contains
- * the complete handler so integration can be performed as a separate step.
  *
  * Design rules:
  * - The caller owns AbortController; this handler only accepts AbortSignal.
@@ -23,11 +21,6 @@ export const OwnRelationKind = Object.freeze({
   BLOCKED_USER: 'blocked-user',
   BLOCKED_TITLES: 'blocked-titles',
   MUTED: 'muted'
-});
-
-export const TitlePeriod = Object.freeze({
-  ALL: 'all',
-  LAST_24_HOURS: 'last-24-hours'
 });
 
 const OWN_RELATION_ENDPOINT_CODES = Object.freeze({
@@ -256,7 +249,7 @@ export class EksiScrapingHandler
   #defaultLimits;
 
   constructor({
-    fetchImpl = globalThis.fetch,
+    fetchImpl = (...args) => globalThis.fetch(...args),
     baseUrl = DEFAULT_BASE_URL,
     parseHtml = defaultParseHtml,
     maxPages = DEFAULT_MAX_PAGES,
@@ -585,14 +578,14 @@ export class EksiScrapingHandler
    * @returns {Promise<Map<string, AuthorRelation>>}
    */
   async listTitleAuthors(
-    {titleName, titleId, period = TitlePeriod.ALL} = {},
+    {titleName, titleId, period = TimeSpecifier.ALL} = {},
     options = {}
   )
   {
     const normalizedTitleName = requireNonEmptyString(titleName, 'titleName').replace(/\s+/g, '-');
     const normalizedTitleId = requireNumericId(titleId, 'titleId');
 
-    if(!Object.values(TitlePeriod).includes(period))
+    if(period !== TimeSpecifier.ALL && period !== TimeSpecifier.LAST_24_H)
       throw new TypeError('period is unsupported');
 
     this.#validateOptions(options);
@@ -600,7 +593,7 @@ export class EksiScrapingHandler
     const authors = await this.#collectPages({
       fetchPage: async (pageIndex, {signal: pageSignal}) =>
       {
-        const searchParameters = period === TitlePeriod.LAST_24_HOURS
+        const searchParameters = period === TimeSpecifier.LAST_24_H
           ? {a: 'dailynice', p: pageIndex}
           : {p: pageIndex};
 

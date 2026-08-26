@@ -1,29 +1,47 @@
 // Hardcoded records used when DEV_USE_FAKE_HANDLERS is enabled in background.js.
 const ARTIFICIAL_DELAY_MS = 3000;
 
-function waitForArtificialDelay()
+function waitForArtificialDelay(signal)
 {
-  return new Promise(resolve => setTimeout(resolve, ARTIFICIAL_DELAY_MS));
+  if(signal?.aborted)
+    return Promise.reject(signal.reason);
+
+  return new Promise((resolve, reject) =>
+  {
+    const timeoutId = setTimeout(() =>
+    {
+      signal?.removeEventListener('abort', handleAbort);
+      resolve();
+    }, ARTIFICIAL_DELAY_MS);
+
+    function handleAbort()
+    {
+      clearTimeout(timeoutId);
+      reject(signal.reason);
+    }
+
+    signal?.addEventListener('abort', handleAbort, {once: true});
+  });
 }
 
 function createRelation({
   authorName,
   authorId = null,
-  isBannedUser = null,
-  isBannedTitle = null,
-  isBannedMute = null,
-  doIFollow = null,
-  doTheyFollowMe = null
+  isBlockedUser = null,
+  areTitlesBlocked = null,
+  isMuted = null,
+  isFollowedByCurrentUser = null,
+  followsCurrentUser = null
 })
 {
   return {
     authorId,
     authorName,
-    isBannedUser,
-    isBannedTitle,
-    isBannedMute,
-    doIFollow,
-    doTheyFollowMe
+    isBlockedUser,
+    areTitlesBlocked,
+    isMuted,
+    isFollowedByCurrentUser,
+    followsCurrentUser
   };
 }
 
@@ -35,22 +53,17 @@ const authorIds = {
 
 export class FakeScrapingHandler
 {
-  scrapeUserAgent = () =>
+  async getCurrentAccount({signal} = {})
   {
-    return "EksiEngel/FakeScrapingHandler";
+    await waitForArtificialDelay(signal);
+    return {authorName: "fake-client", authorId: "9000"};
   }
 
-  scrapeClientNameAndId = async () =>
+  async getEntryMetadata(entryId, {signal} = {})
   {
-    await waitForArtificialDelay();
-    return {clientName: "fake-client", clientId: "9000"};
-  }
-
-  scrapeMetaDataFromEntryPage = async (entryUrl) =>
-  {
-    await waitForArtificialDelay();
+    await waitForArtificialDelay(signal);
     return {
-      entryId: "5000",
+      entryId: String(entryId),
       authorId: "1001",
       authorName: "fake-author-one",
       titleId: "6000",
@@ -58,9 +71,9 @@ export class FakeScrapingHandler
     };
   }
 
-  async scrapeAuthorNamesFromFavs(entryUrl)
+  async listEntryFavoriters(_entryId, {signal} = {})
   {
-    await waitForArtificialDelay();
+    await waitForArtificialDelay(signal);
     return new Map([
       ["fake-author-one", createRelation({authorName: "fake-author-one"})],
       ["fake-author-two", createRelation({authorName: "fake-author-two"})],
@@ -68,30 +81,30 @@ export class FakeScrapingHandler
     ]);
   }
 
-  async scrapeAuthorNamesFromBannedAuthorPage()
+  async listOwnRelations(_query = {}, {signal} = {})
   {
-    await waitForArtificialDelay();
+    await waitForArtificialDelay(signal);
     return new Map([
       ["fake-author-one", createRelation({
         authorName: "fake-author-one",
         authorId: authorIds["fake-author-one"],
-        isBannedUser: true,
-        isBannedTitle: false,
-        isBannedMute: false
+        isBlockedUser: true,
+        areTitlesBlocked: false,
+        isMuted: false
       })],
       ["fake-author-two", createRelation({
         authorName: "fake-author-two",
         authorId: authorIds["fake-author-two"],
-        isBannedUser: false,
-        isBannedTitle: true,
-        isBannedMute: true
+        isBlockedUser: false,
+        areTitlesBlocked: true,
+        isMuted: true
       })]
     ]);
   }
 
-  async scrapeFollower(authorName)
+  async listFollowers(_authorName, {signal} = {})
   {
-    await waitForArtificialDelay();
+    await waitForArtificialDelay(signal);
     return new Map([
       ["fake-author-one", createRelation({authorName: "fake-author-one", authorId: authorIds["fake-author-one"]})],
       ["fake-author-two", createRelation({authorName: "fake-author-two", authorId: authorIds["fake-author-two"]})],
@@ -99,28 +112,31 @@ export class FakeScrapingHandler
     ]);
   }
 
-  async scrapeFollowing(authorName)
+  async listFollowing(_authorName, {signal} = {})
   {
-    await waitForArtificialDelay();
+    await waitForArtificialDelay(signal);
     return new Map([
       ["fake-followed-author", createRelation({
         authorName: "fake-followed-author",
         authorId: authorIds["fake-followed-author"],
-        doIFollow: true,
-        doTheyFollowMe: false
+        isFollowedByCurrentUser: true,
+        followsCurrentUser: false
       })]
     ]);
   }
 
-  scrapeAuthorIdFromAuthorProfilePage = async (authorName) =>
+  async getAuthor(authorName, {signal} = {})
   {
-    await waitForArtificialDelay();
-    return authorIds[authorName] ?? "1999";
+    await waitForArtificialDelay(signal);
+    return {
+      authorName,
+      authorId: authorIds[authorName] ?? "1999"
+    };
   }
 
-  async scrapeAuthorsFromTitle(titleName, titleId, timeSpecifier)
+  async listTitleAuthors(_query, {signal} = {})
   {
-    await waitForArtificialDelay();
+    await waitForArtificialDelay(signal);
     return new Map([
       ["fake-author-one", createRelation({authorName: "fake-author-one", authorId: authorIds["fake-author-one"]})],
       ["fake-author-two", createRelation({authorName: "fake-author-two", authorId: authorIds["fake-author-two"]})],
@@ -128,5 +144,3 @@ export class FakeScrapingHandler
     ]);
   }
 }
-
-export const fakeScrapingHandler = new FakeScrapingHandler();
