@@ -63,7 +63,7 @@ beforeAll(async () =>
     OwnRelationKind,
     PaginationError,
     ParseError
-  } = await import('../../app/assets/js/scrapingHandlerNew.js'));
+  } = await import('../../app/assets/js/scrapingHandler.js'));
   ({TimeSpecifier} = await import('../../app/assets/js/enums.js'));
 });
 

@@ -6,7 +6,7 @@ import {config, getConfig, saveConfig, handleConfig} from './config.js';
 import {log} from './log.js';
 import {createEksiSozlukUser, commHandler} from './commHandler.js';
 import {RelationHandler, RelationActionStatus} from './relationHandler.js';
-import {EksiScrapingHandler} from './scrapingHandlerNew.js';
+import {EksiScrapingHandler} from './scrapingHandler.js';
 import {processQueue} from './queue.js';
 import {programController} from './programController.js';
 import {isEksiSozlukAccessible} from './urlHandler.js';

@@ -2,7 +2,7 @@ import {JSDOM} from './jsdom.js';
 import {TimeSpecifier} from './enums.js';
 
 /**
- * New Ekşi Sözlük scraping design.
+ * Ekşi Sözlük scraping design.
  *
  * Design rules:
  * - The caller owns AbortController; this handler only accepts AbortSignal.
