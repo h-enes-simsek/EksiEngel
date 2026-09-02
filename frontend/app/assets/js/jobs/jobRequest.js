@@ -16,6 +16,7 @@
  * @property {string} [titleName]
  * @property {string} [titleId]
  * @property {string} [timeSpecifier]
+ * @property {string} [authorListText]
  */
 
 /**
@@ -37,6 +38,7 @@ export function createJobRequest(message)
     clickSource: message.clickSource,
     titleName: message.titleName,
     titleId: message.titleId,
-    timeSpecifier: message.timeSpecifier
+    timeSpecifier: message.timeSpecifier,
+    authorListText: message.authorListText
   };
 }

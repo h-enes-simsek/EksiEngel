@@ -63,33 +63,13 @@ describe('configuration storage', () =>
   });
 });
 
-describe('user-list storage', () =>
-{
-  it('returns an empty list only when the userList key is missing', async () =>
-  {
-    stubStorage({get: vi.fn().mockResolvedValue({})});
-    const {getUserList} = await import('../../app/assets/js/utils.js');
-
-    await expect(getUserList()).resolves.toEqual([]);
-  });
-
-  it('propagates user-list read failures', async () =>
-  {
-    const storageError = new Error('user list read failed');
-    stubStorage({get: vi.fn().mockRejectedValue(storageError)});
-    const {getUserList} = await import('../../app/assets/js/utils.js');
-
-    await expect(getUserList()).rejects.toBe(storageError);
-  });
-});
-
 describe('author-list page storage', () =>
 {
-  it('shows an error instead of saved feedback when the write fails', async () =>
+  function createAuthorListPageElements(listValue = 'first-author')
   {
     const listeners = {};
     const elements = {
-      userList: {value: 'first-author'},
+      userList: {value: listValue},
       startBan: {
         addEventListener: (_event, listener) => { listeners.startBan = listener; }
       },
@@ -98,6 +78,67 @@ describe('author-list page storage', () =>
       },
       status: {innerHTML: '', style: {display: ''}}
     };
+
+    return {listeners, elements};
+  }
+
+  it('waits for storage and sends the saved list snapshot in the ban request', async () =>
+  {
+    const {listeners, elements} = createAuthorListPageElements('first-author\nsecond-author');
+    let finishStorageWrite;
+    const storageWrite = new Promise(resolve => { finishStorageWrite = resolve; });
+    const set = vi.fn().mockReturnValue(storageWrite);
+    const sendMessage = vi.fn().mockResolvedValue({status: 'ok'});
+
+    stubStorage({set});
+    chrome.runtime.sendMessage = sendMessage;
+    vi.stubGlobal('document', {
+      getElementById: id => elements[id]
+    });
+    vi.stubGlobal('setInterval', vi.fn());
+
+    await import('../../app/assets/js/authorListPage.js');
+    const submission = listeners.startBan();
+
+    expect(set).toHaveBeenCalledWith({userList: 'first-author\nsecond-author'});
+    expect(sendMessage).not.toHaveBeenCalled();
+
+    finishStorageWrite();
+    await submission;
+
+    expect(sendMessage).toHaveBeenCalledWith(null, {
+      banSource: '4',
+      banMode: '1',
+      authorListText: 'first-author\nsecond-author'
+    });
+  });
+
+  it('captures a separate list value for each submission', async () =>
+  {
+    const {listeners, elements} = createAuthorListPageElements('first-author');
+    const sendMessage = vi.fn().mockResolvedValue({status: 'ok'});
+
+    stubStorage({set: vi.fn().mockResolvedValue()});
+    chrome.runtime.sendMessage = sendMessage;
+    vi.stubGlobal('document', {
+      getElementById: id => elements[id]
+    });
+    vi.stubGlobal('setInterval', vi.fn());
+
+    await import('../../app/assets/js/authorListPage.js');
+    await listeners.startBan();
+    elements.userList.value = 'second-author';
+    await listeners.startUndoban();
+
+    expect(sendMessage.mock.calls).toEqual([
+      [null, {banSource: '4', banMode: '1', authorListText: 'first-author'}],
+      [null, {banSource: '4', banMode: '2', authorListText: 'second-author'}]
+    ]);
+  });
+
+  it('shows an error and does not enqueue when the write fails', async () =>
+  {
+    const {listeners, elements} = createAuthorListPageElements();
     const storageError = new Error('user list write failed');
     const alert = vi.fn();
 
@@ -109,11 +150,10 @@ describe('author-list page storage', () =>
     vi.spyOn(console, 'error').mockImplementation(() => {});
 
     await import('../../app/assets/js/authorListPage.js');
-    listeners.startBan();
-    await Promise.resolve();
-    await Promise.resolve();
+    await listeners.startBan();
 
     expect(alert).toHaveBeenCalledWith('Yazar listesi yerel hafızaya kaydedilemedi.');
     expect(elements.status.innerHTML).toBe('');
+    expect(chrome.runtime.sendMessage).not.toHaveBeenCalled();
   });
 });

@@ -26,20 +26,6 @@ export function cleanUserList(arr)
   }
 }
 
-// get userList from storage api
-// output: array (if no saved list exists, returns empty array)
-export async function getUserList()
-{
-  const items = await chrome.storage.local.get("userList");
-
-  if(items != undefined && items.userList != undefined && items.userList.length != 0)
-  {
-    return items.userList.split("\n");
-  }
-
-  return [];
-}
-
 export function filterMessage(message, ...keys)
 {
 	// message: object

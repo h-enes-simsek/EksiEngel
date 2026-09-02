@@ -397,9 +397,9 @@ storage access are different outcomes.
 - `config.js` now uses the promise-based storage API. A missing configuration
   still returns `false`, while read and write failures reject. `handleConfig()`
   also awaits the initial default-config write so that its failure propagates.
-- `utils.getUserList()` now returns an empty array only when no saved list
-  exists; storage read failures reject and reach the runner's existing
-  `USER_LIST_LOADING` error path.
+- `utils.getUserList()` initially distinguished missing data from storage read
+  failures, then was removed once task 1.2 made the accepted LIST request the
+  sole operative input.
 - `authorListPage.js` now shows saved feedback only after the storage write
   resolves. A rejected write is logged and reported to the user with an alert.
 - The content script's duplicate configuration reader was updated as well, so
@@ -434,6 +434,18 @@ Recommended request addition:
 
 The existing cleaning logic can remain in the runner initially. This is an
 input snapshot change, not a request-validation project.
+
+**Implementation status: completed.**
+
+- `authorListPage.js` now captures the textarea once, awaits the convenience
+  storage write, and sends that same text in the LIST job request only after
+  the write succeeds.
+- `JobRequest` now carries `authorListText`, and LIST execution splits and
+  cleans that captured value instead of rereading the shared `userList` key.
+- Focused tests verify save-before-enqueue ordering, failed-save behavior, and
+  distinct snapshots for consecutive LIST submissions. The complete frontend
+  test suite passed with 121 tests after removal of the obsolete storage-reader
+  tests.
 
 #### 1.3 Snapshot settings for each accepted job
 

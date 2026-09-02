@@ -1,30 +1,36 @@
 import * as enums from './enums.js';
 
-async function saveAuthorListToStorage()
+async function submitAuthorList(banMode)
 {
-	let userListString = document.getElementById("userList").value;
+  const authorListText = document.getElementById("userList").value;
+
   try
   {
-    await chrome.storage.local.set({ "userList": userListString });
-    blinkSavedMsg(); // set status text to 'saved' for gui
+    await chrome.storage.local.set({userList: authorListText});
   }
   catch(error)
   {
     console.error("chrome.storage.local.set failed", error);
     alert("Yazar listesi yerel hafızaya kaydedilemedi.");
+    return;
   }
+
+  blinkSavedMsg(); // set status text to 'saved' for gui
+  await chrome.runtime.sendMessage(null, {
+    banSource: enums.BanSource.LIST,
+    banMode,
+    authorListText
+  });
 }
 
 // send message to background.js to start banning process
-document.getElementById("startBan").addEventListener("click", function(){
-	saveAuthorListToStorage();
-	chrome.runtime.sendMessage(null, {"banSource":enums.BanSource.LIST, "banMode":enums.BanMode.BAN});
+document.getElementById("startBan").addEventListener("click", async function(){
+	await submitAuthorList(enums.BanMode.BAN);
 });
 
 // send message to background.js to start banning process
-document.getElementById("startUndoban").addEventListener("click", function(){
-	saveAuthorListToStorage();
-	chrome.runtime.sendMessage(null, {"banSource":enums.BanSource.LIST, "banMode":enums.BanMode.UNDOBAN});
+document.getElementById("startUndoban").addEventListener("click", async function(){
+	await submitAuthorList(enums.BanMode.UNDOBAN);
 });
 
 // if local storage save is successfull, show a message to the user

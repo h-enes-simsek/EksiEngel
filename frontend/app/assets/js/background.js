@@ -92,7 +92,8 @@ async function processHandler(job, {signal, scrapingHandler, relationHandler, te
     clickSource,
     titleName,
     titleId,
-    timeSpecifier
+    timeSpecifier,
+    authorListText
   } = request;
 
   const performRelationAction = (...args) => relationHandler.performAction(
@@ -220,7 +221,10 @@ async function processHandler(job, {signal, scrapingHandler, relationHandler, te
       let authorNames;
       try
       {
-        authorNames = await utils.getUserList(); // names will be loaded from storage
+        if(typeof authorListText !== "string")
+          throw new TypeError("LIST job is missing its author list snapshot");
+
+        authorNames = authorListText.split("\n");
       }
       catch(e)
       {
