@@ -26,39 +26,21 @@ export let config =
 
 export async function getConfig()
 {
-  return new Promise((resolve, reject) => {
-    chrome.storage.local.get("config", function(items){
-      if(!chrome.runtime.error)
-      {
-        if(items != undefined && items.config != undefined && Object.keys(items.config).length !== 0)
-        {
-          resolve(items.config);  
-        }
-        else 
-        {
-          resolve(false);
-        }
-      }
-      else 
-      {
-        resolve(false);
-      }
-    }); 
-  });
+  const items = await chrome.storage.local.get("config");
+
+  if(items != undefined && items.config != undefined && Object.keys(items.config).length !== 0)
+  {
+    return items.config;
+  }
+
+  return false;
 }
 
 export async function saveConfig(config)
 {
+  await chrome.storage.local.set({ "config": config });
   log.info("config", "A config saved into storage");
-  return new Promise((resolve, reject) => {
-    chrome.storage.local.set({ "config": config }, function(){
-      if(!chrome.runtime.error){
-        resolve(true);
-      }else{
-        resolve(false);
-      }
-    });
-  });
+  return true;
 }
 
 // load config from storage, if not exist save default config storage
@@ -73,6 +55,6 @@ export async function handleConfig()
   else
   {
     log.info("config", "No config in storage, hardcoded config will be saved into storage");
-    saveConfig(config);
+    await saveConfig(config);
   }
 }

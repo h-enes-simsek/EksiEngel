@@ -1,16 +1,18 @@
 import * as enums from './enums.js';
 
-function saveAuthorListToStorage()
+async function saveAuthorListToStorage()
 {
 	let userListString = document.getElementById("userList").value;
-  chrome.storage.local.set({ "userList": userListString }, function(){
-    if(!chrome.runtime.error){
-      blinkSavedMsg(); // set status text to 'saved' for gui
-    }else{
-      console.log("chrome.storage.local.set runtime error");
-      alert("chrome.storage.local.set runtime error");
-    }
-  });
+  try
+  {
+    await chrome.storage.local.set({ "userList": userListString });
+    blinkSavedMsg(); // set status text to 'saved' for gui
+  }
+  catch(error)
+  {
+    console.error("chrome.storage.local.set failed", error);
+    alert("Yazar listesi yerel hafızaya kaydedilemedi.");
+  }
 }
 
 // send message to background.js to start banning process

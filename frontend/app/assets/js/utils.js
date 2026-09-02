@@ -27,28 +27,17 @@ export function cleanUserList(arr)
 }
 
 // get userList from storage api
-// output: array (if fails, returns empty array)
+// output: array (if no saved list exists, returns empty array)
 export async function getUserList()
 {
-  return new Promise((resolve, reject) => {
-    chrome.storage.local.get("userList", function(items){
-      if(!chrome.runtime.error)
-      {
-        if(items != undefined && items.userList != undefined && items.userList.length != 0)
-        {
-          resolve(items.userList.split("\n"));  
-        }
-        else 
-        {
-          resolve([]);
-        }
-      }
-      else 
-      {
-        resolve([]);
-      }
-    }); 
-  });
+  const items = await chrome.storage.local.get("userList");
+
+  if(items != undefined && items.userList != undefined && items.userList.length != 0)
+  {
+    return items.userList.split("\n");
+  }
+
+  return [];
 }
 
 export function filterMessage(message, ...keys)

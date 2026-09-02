@@ -13,25 +13,14 @@ function debugLog(...args) {
 
   async function getConfig()
   {
-    return new Promise((resolve, reject) => {
-      chrome.storage.local.get("config", function(items){
-        if(!chrome.runtime.error)
-        {
-          if(items != undefined && items.config != undefined && Object.keys(items.config).length !== 0)
-          {
-            resolve(items.config);  
-          }
-          else 
-          {
-            resolve(false);
-          }
-        }
-        else 
-        {
-          resolve(false);
-        }
-      }); 
-    });
+    const items = await chrome.storage.local.get("config");
+
+    if(items != undefined && items.config != undefined && Object.keys(items.config).length !== 0)
+    {
+      return items.config;
+    }
+
+    return false;
   }
 
   let EksiEngel_sendMessage = (banSource, banMode, entryUrl, authorName, authorId, targetType, clickSource, titleName, titleId, timeSpecifier) =>
@@ -164,16 +153,18 @@ function debugLog(...args) {
   }
 
   (async function handleIcons () {
-    const config = await getConfig();
-    if(config && config.banPremiumIcons)
+    try
     {
-      handleYellowIcons(config); // without await
-      handleGreenIcons(config); // without await
+      const config = await getConfig();
+      if(config && config.banPremiumIcons)
+      {
+        handleYellowIcons(config); // without await
+        handleGreenIcons(config); // without await
+      }
     }
-    else
+    catch(error)
     {
-      // config could not be read maybe not exist, do nothing
-      return;
+      console.error("Eksi Engel: configuration could not be read from storage", error);
     }
   })();
 
