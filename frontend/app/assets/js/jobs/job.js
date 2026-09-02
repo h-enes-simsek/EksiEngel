@@ -8,23 +8,41 @@ import {ProcessFinishReason} from '../enums.js';
  * @typedef {Object} Job
  * @property {string} id
  * @property {Object} request
+ * @property {Readonly<Object>} settings
  * @property {string} createdAt
  * @property {string} creationDateInStr
  */
+
+function deepFreeze(value)
+{
+  if(!value || typeof value !== 'object' || Object.isFrozen(value))
+    return value;
+
+  for(const nestedValue of Object.values(value))
+    deepFreeze(nestedValue);
+
+  return Object.freeze(value);
+}
 
 /**
  * Create a serializable job record from an accepted request.
  *
  * @param {Object} request
+ * @param {Object} settings
  * @returns {Job}
  */
-export function createJob(request)
+export function createJob(request, settings)
 {
+  if(!settings || typeof settings !== 'object' || Array.isArray(settings))
+    throw new TypeError('settings must be an object');
+
   const createdAt = new Date();
+  const settingsSnapshot = deepFreeze(structuredClone(settings));
 
   return {
     id: crypto.randomUUID(),
     request,
+    settings: settingsSnapshot,
     createdAt: createdAt.toISOString(),
     creationDateInStr: createdAt.getHours() + ":" + createdAt.getMinutes()
   };

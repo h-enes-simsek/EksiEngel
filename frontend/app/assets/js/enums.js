@@ -32,6 +32,12 @@ export const ResultType = {
   FAIL:     "FAIL"
 };
 
+export const RuntimeMessageType = {
+  ENQUEUE_JOB:        "ENQUEUE_JOB",
+  CANCEL_ALL_JOBS:    "CANCEL_ALL_JOBS",
+  JOB_NOTIFICATION:   "JOB_NOTIFICATION"
+};
+
 export const ProcessFinishReason = {
   NOT_SET:                    "NOT_SET",
   SUCCESS:                    "SUCCESS",

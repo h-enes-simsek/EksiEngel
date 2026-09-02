@@ -1,4 +1,3 @@
-import {config} from './config.js';
 import {log} from './log.js';
 import * as enums from './enums.js';
 
@@ -30,7 +29,10 @@ class NotificationHandler
     };
     
     try {
-      await chrome.runtime.sendMessage(null, {"notification": message});
+      await chrome.runtime.sendMessage({
+        type: enums.RuntimeMessageType.JOB_NOTIFICATION,
+        payload: message
+      });
     } catch (err) {
       log.warn("notification", err + " :: " +JSON.stringify(message));
     }
@@ -140,9 +142,12 @@ class NotificationHandler
   updatePlannedProcessesList = (plannedProcessesList) => {
     this.#sendMessage(enums.NotificationType.UPDATE_PLANNED_PROCESSES, "", "", plannedProcessesList, null, 0, 0, 0, 0);
   }
-  notifyCooldown = (remainingTimeInSec) => {
+  notifyCooldown = (remainingTimeInSec, baseUrl) => {
+    if(typeof baseUrl !== "string" || baseUrl.length === 0)
+      throw new TypeError("baseUrl must be a non-empty string");
+
     this.#sendMessage(enums.NotificationType.COOLDOWN, 
-      `İşlem devam ediyor. (dakikada 6 engel limiti bekleniyor) <a target='_blank' href='${config.EksiSozlukURL}/eksi-sozlukun-yazar-engellemeye-sinir-getirmesi--7547420' style='color:red;'>Bu ne demek?</a>`, 
+      `İşlem devam ediyor. (dakikada 6 engel limiti bekleniyor) <a target='_blank' href='${baseUrl}/eksi-sozlukun-yazar-engellemeye-sinir-getirmesi--7547420' style='color:red;'>Bu ne demek?</a>`,
       "", [], null, 0, 0, 0, remainingTimeInSec);
   }
   notifyOngoing = (successfulAction, performedAction, plannedAction) => {

@@ -1,9 +1,11 @@
 import * as enums from './enums.js';
-import * as utils from './utils.js';
 
 document.addEventListener('DOMContentLoaded', async function () {
   document.getElementById("earlyStop").addEventListener("click", function(element) {
-    chrome.runtime.sendMessage(null, {"earlyStop":0});
+    void chrome.runtime.sendMessage({
+      type: enums.RuntimeMessageType.CANCEL_ALL_JOBS,
+      payload: null
+    }).catch(error => console.error("Cancellation request could not be sent", error));
   });
 });
 
@@ -49,60 +51,65 @@ function updatePlannedProcessesTable(plannedProcesses)
 }
 
 // listen background script
-chrome.runtime.onMessage.addListener(async function messageListener_Background(message, sender, sendResponse) {
-  sendResponse({status: 'ok'}); // added to suppress 'message port closed before a response was received' error
+chrome.runtime.onMessage.addListener(function messageListener_Background(message, sender, sendResponse) {
+  if(message?.type !== enums.RuntimeMessageType.JOB_NOTIFICATION)
+    return false;
 
-	const obj = utils.filterMessage(message, "notification");
-	if(obj.resultType === "FAIL")
-		return;
+	const notification = message.payload;
+  if(!notification || typeof notification !== "object")
+    return false;
+
+  sendResponse({ok: true});
   
-  console.log("incoming message: " + obj.notification.status);
+  console.log("incoming message: " + notification.status);
 
-  if(obj.notification.status === enums.NotificationType.FINISH)
+  if(notification.status === enums.NotificationType.FINISH)
   {
-    document.getElementById("statusText").innerHTML = obj.notification.statusText;
-    insertCompletedProcessesTable(obj.notification.completedProcess.banSource,
-                                  obj.notification.completedProcess.banMode,
-                                  obj.notification.successfulAction,
-                                  obj.notification.performedAction,
-                                  obj.notification.plannedAction,
-                                  obj.notification.errorText);
-    return;
+    document.getElementById("statusText").innerHTML = notification.statusText;
+    insertCompletedProcessesTable(notification.completedProcess.banSource,
+                                  notification.completedProcess.banMode,
+                                  notification.successfulAction,
+                                  notification.performedAction,
+                                  notification.plannedAction,
+                                  notification.errorText);
+    return false;
   }
-  if(obj.notification.status === enums.NotificationType.NOTIFY)
+  if(notification.status === enums.NotificationType.NOTIFY)
   {
-    document.getElementById("statusText").innerHTML = obj.notification.statusText;
-    return;
+    document.getElementById("statusText").innerHTML = notification.statusText;
+    return false;
   }
-  if(obj.notification.status === enums.NotificationType.COOLDOWN)
+  if(notification.status === enums.NotificationType.COOLDOWN)
   {
-    document.getElementById("statusText").innerHTML = obj.notification.statusText;
-    document.getElementById("remainingTimeInSec").innerHTML = obj.notification.remainingTimeInSec + " saniye";
-    return;
+    document.getElementById("statusText").innerHTML = notification.statusText;
+    document.getElementById("remainingTimeInSec").innerHTML = notification.remainingTimeInSec + " saniye";
+    return false;
   }
-  if(obj.notification.status === enums.NotificationType.UPDATE_PLANNED_PROCESSES)
+  if(notification.status === enums.NotificationType.UPDATE_PLANNED_PROCESSES)
   {
-    updatePlannedProcessesTable(obj.notification.plannedProcesses);
-    return;
+    updatePlannedProcessesTable(notification.plannedProcesses);
+    return false;
   }
-  if(obj.notification.status === enums.NotificationType.ONGOING)
+  if(notification.status === enums.NotificationType.ONGOING)
   {
-    document.getElementById("statusText").innerHTML = obj.notification.statusText;
+    document.getElementById("statusText").innerHTML = notification.statusText;
   
     // update values
-    document.getElementById("successfulAction").innerHTML = obj.notification.successfulAction;
-    document.getElementById("performedAction").innerHTML = obj.notification.performedAction;
-    document.getElementById("plannedAction").innerHTML = obj.notification.plannedAction;
+    document.getElementById("successfulAction").innerHTML = notification.successfulAction;
+    document.getElementById("performedAction").innerHTML = notification.performedAction;
+    document.getElementById("plannedAction").innerHTML = notification.plannedAction;
     
     // update bar
     let bar = document.getElementById("bar");   
     let barText = document.getElementById("barText");  
-    let percentage = (100 * obj.notification.performedAction) / obj.notification.plannedAction;
-    if(obj.notification.plannedAction == 0 || obj.notification.plannedAction == "0")
+    let percentage = (100 * notification.performedAction) / notification.plannedAction;
+    if(notification.plannedAction == 0 || notification.plannedAction == "0")
       percentage = 0;
     percentage = parseInt(percentage);
     barText.innerHTML = '%' + percentage;
     bar.style.width = percentage + '%'; 
-    return;
+    return false;
   }
+
+  return false;
 });

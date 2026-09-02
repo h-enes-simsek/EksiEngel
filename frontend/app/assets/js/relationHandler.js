@@ -1,6 +1,5 @@
 import {log} from './log.js';
 import * as enums from './enums.js';
-import {config} from './config.js';
 
 export const RelationActionStatus = {
   COMPLETED:      "COMPLETED",
@@ -48,8 +47,14 @@ function createIncompleteResult(status)
 // a class to manage relations (ban/undoban users/users' titles)
 export class RelationHandler
 {
-  async performAction(banMode, id, isTargetUser, isTargetTitle, isTargetMute, {signal} = {})
+  async performAction(banMode, id, isTargetUser, isTargetTitle, isTargetMute, {
+    signal,
+    baseUrl
+  } = {})
   {
+    if(typeof baseUrl !== "string" || baseUrl.length === 0)
+      throw new TypeError("baseUrl must be a non-empty string");
+
     if(signal?.aborted)
       return createIncompleteResult(RelationActionStatus.ABORTED);
 
@@ -71,7 +76,7 @@ export class RelationHandler
       if(signal?.aborted)
         return createIncompleteResult(RelationActionStatus.ABORTED);
 
-      const url = this.#prepareHTTPRequest(banMode, targetType, id);
+      const url = this.#prepareHTTPRequest(banMode, targetType, id, baseUrl);
       const outcome = await this.#performHTTPRequest(banMode, targetType, id, url, signal);
 
       if(outcome === RelationRequestOutcome.ABORTED)
@@ -90,7 +95,7 @@ export class RelationHandler
     return createCompletedResult(actionSucceeded);
   }
   
-	#prepareHTTPRequest = (banMode, targetType, id) =>
+	#prepareHTTPRequest = (banMode, targetType, id, baseUrl) =>
 	{
     let banModeText = "";
     if(banMode === enums.BanMode.BAN)
@@ -106,7 +111,7 @@ export class RelationHandler
     else if(targetType == enums.TargetType.MUTE)
       targetTypeText = "u";
     
-    let url = `${config.EksiSozlukURL}/userrelation/${banModeText}/${id}?r=${targetTypeText}`;
+    let url = `${baseUrl}/userrelation/${banModeText}/${id}?r=${targetTypeText}`;
     return url;
 	}
   

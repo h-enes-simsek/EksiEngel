@@ -2,7 +2,7 @@
 
 import * as enums from './enums.js';
 import * as utils from './utils.js';
-import {config, getConfig, saveConfig, handleConfig} from './config.js';
+import {handleConfig} from './config.js';
 import {log} from './log.js';
 import {createEksiSozlukUser, commHandler} from './commHandler.js';
 import {RelationHandler, RelationActionStatus} from './relationHandler.js';
@@ -25,22 +25,20 @@ const DEV_USE_FAKE_HANDLERS = false;
 log.info("bg", "initialized");
 let g_notificationTabId = 0;
 
-const relationHandler = new RelationHandler();
-const scrapingHandler = new EksiScrapingHandler({baseUrl: config.EksiSozlukURL});
-const fakeScrapingHandler = new FakeScrapingHandler();
-const fakeRelationHandler = new FakeRelationHandler();
-const activeScrapingHandler = DEV_USE_FAKE_HANDLERS ? fakeScrapingHandler : scrapingHandler;
-const activeRelationHandler = DEV_USE_FAKE_HANDLERS ? fakeRelationHandler : relationHandler;
 const handleJobTelemetryError = error => console.error("job telemetry failed: " + error);
 const jobTelemetryReporter = new JobTelemetryReporter({
-  isEnabled: () => config.sendData && !DEV_USE_FAKE_HANDLERS,
-  send: telemetry => commHandler.sendData(telemetry.action, telemetry.actionConfig),
+  isEnabled: () => !DEV_USE_FAKE_HANDLERS,
+  send: (telemetry, {serverUrl}) => commHandler.sendData(
+    telemetry.action,
+    telemetry.actionConfig,
+    serverUrl
+  ),
   onError: handleJobTelemetryError
 });
 
-function entryIdFromUrl(entryUrl)
+function entryIdFromUrl(entryUrl, baseUrl)
 {
-  const pathname = new URL(entryUrl, config.EksiSozlukURL).pathname;
+  const pathname = new URL(entryUrl, baseUrl).pathname;
   const match = pathname.match(/^\/entry\/(\d+)\/?$/);
 
   if(!match)
@@ -53,8 +51,12 @@ const jobManager = new JobManager({
   queue: processQueue,
   executeJob: (job, {signal}) => processHandler(job, {
     signal,
-    scrapingHandler: activeScrapingHandler,
-    relationHandler: activeRelationHandler,
+    scrapingHandler: DEV_USE_FAKE_HANDLERS
+      ? new FakeScrapingHandler()
+      : new EksiScrapingHandler({baseUrl: job.settings.EksiSozlukURL}),
+    relationHandler: DEV_USE_FAKE_HANDLERS
+      ? new FakeRelationHandler()
+      : new RelationHandler(),
     telemetryReporter: jobTelemetryReporter
   })
 });
@@ -63,25 +65,54 @@ programController.setCancelActiveJobHandler(() => jobManager.cancelActive());
 if(DEV_USE_FAKE_HANDLERS)
   log.warn("bg", "development fake scraping and relation handlers are enabled");
 
-chrome.runtime.onMessage.addListener(async function messageListener_Popup(message, sender, sendResponse) {
-  sendResponse({status: 'ok'}); // added to suppress 'message port closed before a response was received' error
+chrome.runtime.onMessage.addListener(function messageListener(message, sender, sendResponse) {
+  if(message?.type === enums.RuntimeMessageType.CANCEL_ALL_JOBS)
+  {
+    programController.earlyStop = true;
+    sendResponse({ok: true});
+    return false;
+  }
 
-	const obj = utils.filterMessage(message, "banSource", "banMode");
-	if(obj.resultType === enums.ResultType.FAIL)
-		return;
+  if(message?.type !== enums.RuntimeMessageType.ENQUEUE_JOB)
+    return false;
 
-  const request = createJobRequest(obj);
-  log.info("bg", "a new process added to the queue, banSource: " + request.banSource + ", banMode: " + request.banMode);
-  jobManager.enqueue(request);
-  log.info("bg", "number of waiting processes in the queue: " + jobManager.waitingCount);
+  const obj = utils.filterMessage(message.payload, "banSource", "banMode");
+  if(obj.resultType === enums.ResultType.FAIL)
+  {
+    sendResponse({ok: false, errorCode: "INVALID_JOB_REQUEST"});
+    return false;
+  }
 
-  // update notification page. otherwise, the user cannot see the planned processes immediately after new request.
-  notificationHandler.updatePlannedProcessesList(jobManager.waitingJobAttributes);
+  void (async () => {
+    let settings;
+    try
+    {
+      settings = await handleConfig();
+    }
+    catch(error)
+    {
+      log.err("bg", "Configuration could not be loaded before accepting the job: " + error);
+      sendResponse({ok: false, errorCode: "CONFIGURATION_LOADING_FAILED"});
+      return;
+    }
+
+    const request = createJobRequest(obj);
+    log.info("bg", "a new process added to the queue, banSource: " + request.banSource + ", banMode: " + request.banMode);
+    const {job} = jobManager.enqueue(request, settings);
+    sendResponse({ok: true, jobId: job.id});
+    log.info("bg", "number of waiting processes in the queue: " + jobManager.waitingCount);
+
+    // update notification page. otherwise, the user cannot see the planned processes immediately after new request.
+    notificationHandler.updatePlannedProcessesList(jobManager.waitingJobAttributes);
+  })();
+
+  // Configuration is loaded asynchronously before the response and enqueue.
+  return true;
 });
 
 async function processHandler(job, {signal, scrapingHandler, relationHandler, telemetryReporter})
 {
-  const {request} = job;
+  const {request, settings} = job;
   const {
     banSource,
     banMode,
@@ -98,11 +129,14 @@ async function processHandler(job, {signal, scrapingHandler, relationHandler, te
 
   const performRelationAction = (...args) => relationHandler.performAction(
     ...args,
-    {signal}
+    {signal, baseUrl: settings.EksiSozlukURL}
   );
   const waitForRelationCooldown = () => waitForCooldown({
     signal,
-    onTick: remainingSeconds => notificationHandler.notifyCooldown(remainingSeconds)
+    onTick: remainingSeconds => notificationHandler.notifyCooldown(
+      remainingSeconds,
+      settings.EksiSozlukURL
+    )
   });
 
   let processFinishReason = enums.ProcessFinishReason.NOT_SET;
@@ -162,18 +196,11 @@ async function processHandler(job, {signal, scrapingHandler, relationHandler, te
     programController.tabId = g_notificationTabId;
     notificationHandler.updatePlannedProcessesList(jobManager.waitingJobAttributes);
 
-    try
-    {
-      await handleConfig(); // load config
-    }
-    catch(e)
-    {
-      processFinishReason = enums.ProcessFinishReason.CONFIGURATION_LOADING;
-      notificationHandler.finishErrorConfigurationLoading(banSource, banMode);
-      return;
-    }
     notificationHandler.notifyControlAccess();
-    const urlAccessible = await isEksiSozlukAccessible({signal});
+    const urlAccessible = await isEksiSozlukAccessible({
+      signal,
+      baseUrl: settings.EksiSozlukURL
+    });
     if(!urlAccessible)
     {
       log.err("bg", "Program has been finished (finishErrorAccess)");
@@ -266,7 +293,7 @@ async function processHandler(job, {signal, scrapingHandler, relationHandler, te
         
         let res;
         if(banMode == enums.BanMode.BAN)
-          res = await performRelationAction(banMode, author.eksisozluk_id, !config.enableMute, config.enableTitleBan, config.enableMute);
+          res = await performRelationAction(banMode, author.eksisozluk_id, !settings.enableMute, settings.enableTitleBan, settings.enableMute);
         else
           res = await performRelationAction(banMode, author.eksisozluk_id, true, true, true);
         
@@ -275,7 +302,7 @@ async function processHandler(job, {signal, scrapingHandler, relationHandler, te
           // performAction was rate limited
           await waitForRelationCooldown();
           if(banMode == enums.BanMode.BAN)
-            res = await performRelationAction(banMode, author.eksisozluk_id, !config.enableMute, config.enableTitleBan, config.enableMute);
+            res = await performRelationAction(banMode, author.eksisozluk_id, !settings.enableMute, settings.enableTitleBan, settings.enableMute);
           else
             res = await performRelationAction(banMode, author.eksisozluk_id, true, true, true);
         }
@@ -290,13 +317,13 @@ async function processHandler(job, {signal, scrapingHandler, relationHandler, te
     {
       notificationHandler.notifyScrapeFavs();
 
-      const entryId = entryIdFromUrl(entryUrl);
+      const entryId = entryIdFromUrl(entryUrl, settings.EksiSozlukURL);
       entryMetaData = await scrapingHandler.getEntryMetadata(entryId, {signal});
       if(!entryMetaData)
         log.warn("bg", `Entry ${entryId} metadata could not be retrieved.`);
 
       let scrapedRelations = await scrapingHandler.listEntryFavoriters(entryId, {
-        includeNovices: config.enableNoobBan,
+        includeNovices: settings.enableNoobBan,
         signal
       });
       
@@ -312,7 +339,7 @@ async function processHandler(job, {signal, scrapingHandler, relationHandler, te
       }
       
       // analysis before operation 
-      if(config.enableAnalysisBeforeOperation && config.enableProtectFollowedUsers && banMode == enums.BanMode.BAN)
+      if(settings.enableAnalysisBeforeOperation && settings.enableProtectFollowedUsers && banMode == enums.BanMode.BAN)
       {
         // scrape the authors that ${clientName} follows
         notificationHandler.notifyScrapeFollowings();
@@ -325,7 +352,7 @@ async function processHandler(job, {signal, scrapingHandler, relationHandler, te
             scrapedRelations.delete(name);
         }
       }
-      if(config.enableAnalysisBeforeOperation && config.enableOnlyRequiredActions)
+      if(settings.enableAnalysisBeforeOperation && settings.enableOnlyRequiredActions)
       {
         // Note: Ekşi Sözlük API response doesn't include blocked authors, but it includes authors who muted and title blocked
         // This condition doesn't provide a simplification of the following algorithm
@@ -367,9 +394,9 @@ async function processHandler(job, {signal, scrapingHandler, relationHandler, te
           continue;
         let res = await performRelationAction(banMode,
                                                       authorId,
-                                                      (!value.isBlockedUser && !config.enableMute),
-                                                      (!value.areTitlesBlocked && config.enableTitleBan),
-                                                      (!value.isMuted && config.enableMute));
+                                                      (!value.isBlockedUser && !settings.enableMute),
+                                                      (!value.areTitlesBlocked && settings.enableTitleBan),
+                                                      (!value.isMuted && settings.enableMute));
         
         
         let author = createEksiSozlukUser(name, authorId);
@@ -382,9 +409,9 @@ async function processHandler(job, {signal, scrapingHandler, relationHandler, te
           await waitForRelationCooldown();
           res = await performRelationAction(banMode,
                                                     authorId,
-                                                    (!value.isBlockedUser && !config.enableMute),
-                                                    (!value.areTitlesBlocked && config.enableTitleBan),
-                                                    (!value.isMuted && config.enableMute));
+                                                    (!value.isBlockedUser && !settings.enableMute),
+                                                    (!value.areTitlesBlocked && settings.enableTitleBan),
+                                                    (!value.isMuted && settings.enableMute));
 
         }
         
@@ -410,7 +437,7 @@ async function processHandler(job, {signal, scrapingHandler, relationHandler, te
       }
       
       // analysis before operation 
-      if(config.enableAnalysisBeforeOperation && config.enableProtectFollowedUsers && banMode == enums.BanMode.BAN)
+      if(settings.enableAnalysisBeforeOperation && settings.enableProtectFollowedUsers && banMode == enums.BanMode.BAN)
       {
         // scrape the authors that ${clientName} follows
         notificationHandler.notifyScrapeFollowings();
@@ -423,7 +450,7 @@ async function processHandler(job, {signal, scrapingHandler, relationHandler, te
             scrapedRelations.delete(name);
         }
       }
-      if(config.enableAnalysisBeforeOperation && config.enableOnlyRequiredActions)
+      if(settings.enableAnalysisBeforeOperation && settings.enableOnlyRequiredActions)
       {
         // scrape the authors that ${clientName} blocked
         notificationHandler.notifyScrapeBanned();
@@ -469,9 +496,9 @@ async function processHandler(job, {signal, scrapingHandler, relationHandler, te
         // Relation flags are null if analysis is not enabled.
         let res = await performRelationAction(banMode,
                                                       value.authorId, 
-                                                      (!value.isBlockedUser && !config.enableMute),
-                                                      (!value.areTitlesBlocked && config.enableTitleBan),
-                                                      (!value.isMuted && config.enableMute));
+                                                      (!value.isBlockedUser && !settings.enableMute),
+                                                      (!value.areTitlesBlocked && settings.enableTitleBan),
+                                                      (!value.isMuted && settings.enableMute));
         
         if(res.status == RelationActionStatus.RETRY_REQUIRED)
         {
@@ -480,9 +507,9 @@ async function processHandler(job, {signal, scrapingHandler, relationHandler, te
           // Relation flags are null if analysis is not enabled.
           res = await performRelationAction(banMode,
                                                     value.authorId,
-                                                    (!value.isBlockedUser && !config.enableMute),
-                                                    (!value.areTitlesBlocked && config.enableTitleBan),
-                                                    (!value.isMuted && config.enableMute));
+                                                    (!value.isBlockedUser && !settings.enableMute),
+                                                    (!value.areTitlesBlocked && settings.enableTitleBan),
+                                                    (!value.isMuted && settings.enableMute));
         }
         
         // send message to notification page
@@ -557,7 +584,7 @@ async function processHandler(job, {signal, scrapingHandler, relationHandler, te
       }
       
       // analysis before operation 
-      if(config.enableAnalysisBeforeOperation && config.enableProtectFollowedUsers && banMode == enums.BanMode.BAN)
+      if(settings.enableAnalysisBeforeOperation && settings.enableProtectFollowedUsers && banMode == enums.BanMode.BAN)
       {
         // scrape the authors that ${clientName} follows
         notificationHandler.notifyScrapeFollowings();
@@ -570,7 +597,7 @@ async function processHandler(job, {signal, scrapingHandler, relationHandler, te
             scrapedRelations.delete(name);
         }
       }
-      if(config.enableAnalysisBeforeOperation && config.enableOnlyRequiredActions)
+      if(settings.enableAnalysisBeforeOperation && settings.enableOnlyRequiredActions)
       {
         // scrape the authors that ${clientName} blocked
         notificationHandler.notifyScrapeBanned();
@@ -614,9 +641,9 @@ async function processHandler(job, {signal, scrapingHandler, relationHandler, te
         // Relation flags are null if analysis is not enabled.
         let res = await performRelationAction(banMode,
                                                       value.authorId, 
-                                                      (!value.isBlockedUser && !config.enableMute),
-                                                      (!value.areTitlesBlocked && config.enableTitleBan),
-                                                      (!value.isMuted && config.enableMute));
+                                                      (!value.isBlockedUser && !settings.enableMute),
+                                                      (!value.areTitlesBlocked && settings.enableTitleBan),
+                                                      (!value.isMuted && settings.enableMute));
         
         if(res.status == RelationActionStatus.RETRY_REQUIRED)
         {
@@ -625,9 +652,9 @@ async function processHandler(job, {signal, scrapingHandler, relationHandler, te
           // Relation flags are null if analysis is not enabled.
           res = await performRelationAction(banMode,
                                                     value.authorId,
-                                                    (!value.isBlockedUser && !config.enableMute),
-                                                    (!value.areTitlesBlocked && config.enableTitleBan),
-                                                    (!value.isMuted && config.enableMute));
+                                                    (!value.isBlockedUser && !settings.enableMute),
+                                                    (!value.areTitlesBlocked && settings.enableTitleBan),
+                                                    (!value.isMuted && settings.enableMute));
         }
         
         // send message to notification page
@@ -685,7 +712,7 @@ async function processHandler(job, {signal, scrapingHandler, relationHandler, te
       {
         let telemetryLogLevel;
         let telemetryLogData;
-        if(config.sendLog && log.isEnabled)
+        if(settings.sendLog && log.isEnabled)
         {
           telemetryLogLevel = log.level;
           telemetryLogData = log.getData().toString();
@@ -710,10 +737,11 @@ async function processHandler(job, {signal, scrapingHandler, relationHandler, te
           version: chrome.runtime.getManifest().version,
           logLevel: telemetryLogLevel,
           logData: telemetryLogData,
-          settings: config
+          settings
         });
 
-        telemetryReporter.submit(telemetry);
+        if(settings.sendData)
+          telemetryReporter.submit(telemetry, {serverUrl: settings.serverURL});
       }
       catch(error)
       {

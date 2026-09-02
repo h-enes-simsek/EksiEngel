@@ -15,12 +15,32 @@ async function submitAuthorList(banMode)
     return;
   }
 
+  let response;
+  try
+  {
+    response = await chrome.runtime.sendMessage({
+      type: enums.RuntimeMessageType.ENQUEUE_JOB,
+      payload: {
+        banSource: enums.BanSource.LIST,
+        banMode,
+        authorListText
+      }
+    });
+  }
+  catch(error)
+  {
+    console.error("Job request could not be sent", error);
+    alert("İşlem isteği gönderilemedi.");
+    return;
+  }
+
+  if(response?.ok !== true)
+  {
+    alert("Ayarlar yüklenemediği için işlem sıraya eklenemedi.");
+    return;
+  }
+
   blinkSavedMsg(); // set status text to 'saved' for gui
-  await chrome.runtime.sendMessage(null, {
-    banSource: enums.BanSource.LIST,
-    banMode,
-    authorListText
-  });
 }
 
 // send message to background.js to start banning process

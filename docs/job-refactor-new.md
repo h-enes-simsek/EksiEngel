@@ -467,6 +467,25 @@ The snapshot can be stored beside `request`:
 Handlers should use that snapshot during the job instead of repeatedly reading
 the mutable exported `config` object where practical.
 
+**Implementation status: completed.**
+
+- The background message adapter now awaits configuration loading before it
+  accepts and enqueues a valid job request. Configuration read failures are
+  returned to the caller and do not create a job.
+- Every job record now contains a detached, deeply frozen, serializable
+  settings snapshot. Jobs accepted before and after a settings edit therefore
+  retain distinct execution settings.
+- The runner uses `job.settings` for feature decisions, access and relation
+  URLs, scraper construction, log inclusion, telemetry consent and telemetry
+  destination. It no longer reloads or reads mutable configuration while a job
+  is running.
+- Runtime messages now use explicit types for job enqueue, cancellation, and
+  notification updates. The service worker owns command routing, and listeners
+  ignore unrelated message types instead of competing to respond.
+- Focused tests cover snapshot isolation, snapshot-aware access, relation and
+  telemetry requests, message envelopes, and unrelated-message handling. The
+  complete frontend test suite passed with 135 tests after this change.
+
 #### 1.4 Replace update-time storage clearing
 
 Do not call `chrome.storage.local.clear()` on every extension update. Introduce

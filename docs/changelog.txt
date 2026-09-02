@@ -277,6 +277,8 @@ bug fix: Ekşi Engel serverı taşındığı için URL adresleri güncel değild
 v3.3
 gönderim: yayın: 
 bug fix: Snapshot LIST input when enqueueing so queued jobs cannot use a later edited list
+bug fix: Snapshot settings when accepting a job so queued jobs cannot use later configuration changes
+bug fix: Route runtime messages by explicit type so unrelated listeners cannot mask responses
 abortcontroller bircok modulde kullanildi
 gereksiz tabs permisson kaldirildi
 dokumantasyon guncellendi: early stop ve scraping konulari incelendi.

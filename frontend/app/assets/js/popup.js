@@ -13,10 +13,27 @@ openauthorListPage.onclick = function(element) {
   });
 };
 
-startUndobanAll.onclick = function(element) {
+startUndobanAll.onclick = async function(element) {
   commHandler.sendAnalyticsData({click_type:enums.ClickType.EXTENSION_MENU_UNDOBANALL});
 	// send message to background page
-	chrome.runtime.sendMessage(null, {"banSource":enums.BanSource.UNDOBANALL, "banMode":enums.BanMode.UNDOBAN});
+	try
+  {
+    const response = await chrome.runtime.sendMessage({
+      type: enums.RuntimeMessageType.ENQUEUE_JOB,
+      payload: {
+        banSource: enums.BanSource.UNDOBANALL,
+        banMode: enums.BanMode.UNDOBAN
+      }
+    });
+
+    if(response?.ok !== true)
+      alert("İşlem sıraya eklenemedi.");
+  }
+  catch(error)
+  {
+    console.error("Job request could not be sent", error);
+    alert("İşlem isteği gönderilemedi.");
+  }
 };
 
 openFaq.onclick = function(element) {

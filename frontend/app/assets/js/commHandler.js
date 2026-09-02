@@ -1,5 +1,4 @@
 import {log} from './log.js';
-import {config} from './config.js';
 import * as enums from './enums.js';
 
 function EksiSozlukTitle(eksisozluk_name, eksisozluk_id)
@@ -111,14 +110,17 @@ export function ActionConfig({
 
 class CommHandler 
 {
-	sendData = async (action, action_config) =>
+	sendData = async (action, action_config, serverUrl) =>
 	{
+    if(typeof serverUrl !== "string" || serverUrl.length === 0)
+      throw new TypeError("serverUrl must be a non-empty string");
+
     const actionData = {action, action_config};
     //console.log(actionData);
 
 		try
 		{
-			const response = await fetch(config.serverURL, {
+			const response = await fetch(serverUrl, {
 				method: 'POST',
 				headers: {
 				'Accept': 'application/json',

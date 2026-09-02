@@ -24,6 +24,15 @@ function stubStorage({get, set})
 
 describe('configuration storage', () =>
 {
+  it('returns the configuration loaded for an acceptance-time snapshot', async () =>
+  {
+    const storedConfig = {enableMute: true};
+    stubStorage({get: vi.fn().mockResolvedValue({config: storedConfig})});
+    const {handleConfig} = await import('../../app/assets/js/config.js');
+
+    await expect(handleConfig()).resolves.toBe(storedConfig);
+  });
+
   it('returns false only when the config key is missing', async () =>
   {
     stubStorage({get: vi.fn().mockResolvedValue({})});
@@ -88,7 +97,7 @@ describe('author-list page storage', () =>
     let finishStorageWrite;
     const storageWrite = new Promise(resolve => { finishStorageWrite = resolve; });
     const set = vi.fn().mockReturnValue(storageWrite);
-    const sendMessage = vi.fn().mockResolvedValue({status: 'ok'});
+    const sendMessage = vi.fn().mockResolvedValue({ok: true, jobId: 'job-1'});
 
     stubStorage({set});
     chrome.runtime.sendMessage = sendMessage;
@@ -106,17 +115,20 @@ describe('author-list page storage', () =>
     finishStorageWrite();
     await submission;
 
-    expect(sendMessage).toHaveBeenCalledWith(null, {
-      banSource: '4',
-      banMode: '1',
-      authorListText: 'first-author\nsecond-author'
+    expect(sendMessage).toHaveBeenCalledWith({
+      type: 'ENQUEUE_JOB',
+      payload: {
+        banSource: '4',
+        banMode: '1',
+        authorListText: 'first-author\nsecond-author'
+      }
     });
   });
 
   it('captures a separate list value for each submission', async () =>
   {
     const {listeners, elements} = createAuthorListPageElements('first-author');
-    const sendMessage = vi.fn().mockResolvedValue({status: 'ok'});
+    const sendMessage = vi.fn().mockResolvedValue({ok: true, jobId: 'job-1'});
 
     stubStorage({set: vi.fn().mockResolvedValue()});
     chrome.runtime.sendMessage = sendMessage;
@@ -131,8 +143,14 @@ describe('author-list page storage', () =>
     await listeners.startUndoban();
 
     expect(sendMessage.mock.calls).toEqual([
-      [null, {banSource: '4', banMode: '1', authorListText: 'first-author'}],
-      [null, {banSource: '4', banMode: '2', authorListText: 'second-author'}]
+      [{
+        type: 'ENQUEUE_JOB',
+        payload: {banSource: '4', banMode: '1', authorListText: 'first-author'}
+      }],
+      [{
+        type: 'ENQUEUE_JOB',
+        payload: {banSource: '4', banMode: '2', authorListText: 'second-author'}
+      }]
     ]);
   });
 
@@ -155,5 +173,51 @@ describe('author-list page storage', () =>
     expect(alert).toHaveBeenCalledWith('Yazar listesi yerel hafızaya kaydedilemedi.');
     expect(elements.status.innerHTML).toBe('');
     expect(chrome.runtime.sendMessage).not.toHaveBeenCalled();
+  });
+
+  it('does not show queued feedback when configuration prevents acceptance', async () =>
+  {
+    const {listeners, elements} = createAuthorListPageElements();
+    const alert = vi.fn();
+
+    stubStorage({set: vi.fn().mockResolvedValue()});
+    chrome.runtime.sendMessage = vi.fn().mockResolvedValue({
+      ok: false,
+      errorCode: 'CONFIGURATION_LOADING_FAILED'
+    });
+    vi.stubGlobal('document', {
+      getElementById: id => elements[id]
+    });
+    vi.stubGlobal('alert', alert);
+    vi.stubGlobal('setInterval', vi.fn());
+
+    await import('../../app/assets/js/authorListPage.js');
+    await listeners.startBan();
+
+    expect(alert).toHaveBeenCalledWith(
+      'Ayarlar yüklenemediği için işlem sıraya eklenemedi.'
+    );
+    expect(elements.status.innerHTML).toBe('');
+  });
+
+  it('reports a runtime messaging failure without showing queued feedback', async () =>
+  {
+    const {listeners, elements} = createAuthorListPageElements();
+    const alert = vi.fn();
+    const messageError = new Error('service worker unavailable');
+
+    stubStorage({set: vi.fn().mockResolvedValue()});
+    chrome.runtime.sendMessage = vi.fn().mockRejectedValue(messageError);
+    vi.stubGlobal('document', {
+      getElementById: id => elements[id]
+    });
+    vi.stubGlobal('alert', alert);
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    await import('../../app/assets/js/authorListPage.js');
+    await listeners.startBan();
+
+    expect(alert).toHaveBeenCalledWith('İşlem isteği gönderilemedi.');
+    expect(elements.status.innerHTML).toBe('');
   });
 });

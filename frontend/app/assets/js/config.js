@@ -2,7 +2,7 @@ import * as enums from './enums.js';
 import * as utils from './utils.js';
 import {log} from './log.js';
 
-export let config = 
+let config =
 {
   "EksiSozlukURL":       "https://eksisozluk.com",
   "serverURL":           "https://eksiengel.hesimsek.com/api/action/",
@@ -57,4 +57,6 @@ export async function handleConfig()
     log.info("config", "No config in storage, hardcoded config will be saved into storage");
     await saveConfig(config);
   }
+
+  return config;
 }

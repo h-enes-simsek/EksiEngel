@@ -26,18 +26,20 @@ function debugLog(...args) {
   let EksiEngel_sendMessage = (banSource, banMode, entryUrl, authorName, authorId, targetType, clickSource, titleName, titleId, timeSpecifier) =>
   {
     chrome.runtime.sendMessage(
-      null, 
       {
-        banSource:banSource, 
-        banMode:banMode,
-        entryUrl:entryUrl,
-        authorName:authorName,
-        authorId:authorId,
-        targetType:targetType,
-        clickSource:clickSource,
-        titleName: titleName,
-        titleId: titleId,
-        timeSpecifier: timeSpecifier
+        type: enums.RuntimeMessageType.ENQUEUE_JOB,
+        payload: {
+          banSource:banSource,
+          banMode:banMode,
+          entryUrl:entryUrl,
+          authorName:authorName,
+          authorId:authorId,
+          targetType:targetType,
+          clickSource:clickSource,
+          titleName: titleName,
+          titleId: titleId,
+          timeSpecifier: timeSpecifier
+        }
       }, 
       function(response) 
       {
@@ -51,8 +53,11 @@ function debugLog(...args) {
           debugLog("Eksi Engel: established a connection with a page");
           
           // notify the user about their action with using eksisozluk notification API, known classes: class="success" and class="error"
+          const accepted = response?.ok === true;
           let ul = document.createElement("ul"); 
-          ul.innerHTML = `<ul><li class="success" style=""><img src=${eksiEngelIconURL}> Ekşi Engel, istediğiniz işlemi sıraya ekledi.<a class="close">×</a></li></ul>`;
+          ul.innerHTML = accepted
+            ? `<ul><li class="success" style=""><img src=${eksiEngelIconURL}> Ekşi Engel, istediğiniz işlemi sıraya ekledi.<a class="close">×</a></li></ul>`
+            : `<ul><li class="error" style=""><img src=${eksiEngelIconURL}> Ekşi Engel ayarları yükleyemedi; işlem sıraya eklenmedi.<a class="close">×</a></li></ul>`;
           document.getElementById('user-notifications').appendChild(ul);
         
           // close the notifications after a while automatically

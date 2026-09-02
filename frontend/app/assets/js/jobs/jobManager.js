@@ -10,9 +10,9 @@ export class JobManager
     this._activeExecution = null;
   }
 
-  enqueue(request)
+  enqueue(request, settings)
   {
-    const job = createJob(request);
+    const job = createJob(request, settings);
     const completion = this._queue.enqueue(
       job,
       queuedJob => this._executeQueuedJob(queuedJob)

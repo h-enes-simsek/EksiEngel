@@ -93,7 +93,7 @@ export class JobTelemetryReporter
     this._onError = onError;
   }
 
-  submit(telemetry)
+  submit(telemetry, context)
   {
     try
     {
@@ -101,7 +101,7 @@ export class JobTelemetryReporter
         return false;
 
       void Promise.resolve()
-        .then(() => this._send(telemetry))
+        .then(() => this._send(telemetry, context))
         .catch(error => this._onError(error));
 
       return true;
