@@ -494,13 +494,28 @@ a small settings version and merge stored values over current defaults.
 This work is for configuration compatibility and preserving user state. It must
 not change telemetry defaults, consent, payload construction, or privacy copy.
 
+**Implementation status: deliberately skipped for now.**
+
+- Phase 1 is being finalized with tasks 1.1-1.3 complete. Task 1.4 is deferred
+  by an explicit project decision and is not a blocker for starting Phase 2.
+- The current update-time `chrome.storage.local.clear()` behavior therefore
+  remains in place as a known limitation. Configuration migration, preservation
+  of unrelated local storage, and the corresponding tests should be completed
+  in a separate future task before this item is marked complete.
+
 #### Phase 1 acceptance criteria
+
+**Phase status: finalized, with task 1.4 deliberately deferred as documented
+above.** The acceptance criteria for this phase-finalization decision cover
+tasks 1.1-1.3:
 
 - A LIST job cannot start before its textarea value is saved.
 - Two queued LIST jobs can carry different author lists.
 - Storage failures are visible and prevent false success feedback.
 - A queued job uses the settings captured when it was accepted.
-- Updating the extension does not erase unrelated local storage.
+
+Preserving unrelated local storage during extension updates remains the
+deferred acceptance criterion for task 1.4, not a completed Phase 1 guarantee.
 
 ### Phase 2 — Make `JobManager` the lifecycle owner
 
@@ -517,6 +532,26 @@ Removing a waiting job must create a cancellation `JobResult` and resolve its
 completion. Never discard stored `resolve` or `reject` callbacks by replacing an
 array.
 
+**Implementation status: completed.**
+
+- `JobManager` now owns its waiting entries and serial pump directly. Starting
+  a job removes it from the waiting array, establishes the single active
+  execution, and starts the next FIFO entry only after the current entry has
+  settled.
+- Each accepted entry retains its own guarded completion callbacks.
+  `clearWaiting()` atomically drains only waiting entries, creates an immutable
+  zero-counter `CANCELLED` `JobResult` for each one, resolves every completion,
+  and returns the created results. Repeated drains cannot settle an entry
+  again.
+- Production code no longer imports or runs the `processQueue` singleton.
+  Until the remaining Phase 2 cancellation cutover removes
+  `ProgramController`, that controller reads lifecycle state from `JobManager`
+  and routes active cancellation to it.
+- Focused tests cover FIFO/single-active execution, result identity, safe
+  waiting-job drainage, continued execution after a runner rejection,
+  idempotent active abort, and the transitional notification-tab cancellation
+  adapter. The complete frontend test suite passed with 141 tests.
+
 #### 2.2 Retain terminal records
 
 When execution returns:
@@ -528,6 +563,33 @@ When execution returns:
 5. Start the next job.
 
 The application must no longer create `JobResult`s that nobody observes.
+
+**Implementation status: completed.**
+
+- `JobManager` now retains completed records containing the public job summary
+  and its exact returned `JobResult`. History is bounded to 50 records by
+  default, with the oldest records removed first.
+- A finished execution is committed in the required order: its record is
+  retained, private active runtime state is cleared, a new revisioned snapshot
+  is published, its completion is resolved, and only then can the FIFO pump
+  start the next waiting job. A pump guard preserves that ordering even if a
+  snapshot publisher enqueues another job re-entrantly.
+- If the runner throws, the manager creates, retains, publishes, and resolves an
+  `UNEXPECTED_ERROR` result with zero counters and the thrown error message.
+  Runner failures therefore no longer reject into an unobserved completion or
+  make an accepted job disappear.
+- Waiting-job cancellation results created by `clearWaiting()` are also added
+  to completed history before their completions resolve.
+- `getSnapshot()` now returns the authoritative `{revision, activeJob,
+  waitingJobs, completedJobs}` shape. The active state begins in `PREPARING`
+  with zeroed progress; snapshots are deeply frozen, detached from manager
+  arrays, serializable, and exclude full requests, settings, abort controllers,
+  promises, and callbacks. The optional snapshot publisher is ready for the UI
+  cutover in Phase 3.
+- Focused tests cover terminal ordering and result identity, re-entrant enqueue,
+  increasing revisions, cancellation retention, unexpected runner failures,
+  bounded history, and snapshot privacy/immutability. The complete frontend
+  test suite passed with 145 tests.
 
 #### 2.3 Add explicit cancellation operations
 
@@ -549,12 +611,59 @@ cancelAll(reason)
 
 The active runner returns its own cancellation result with its real counters.
 
+**Implementation status: completed.**
+
+- `cancelActive()` now makes cancellation visible by changing the active phase
+  to `CANCELLING`, clearing any cooldown deadline, setting
+  `cancelRequested`, publishing the resulting snapshot, and aborting the
+  active controller at most once. It does not affect waiting jobs.
+- `cancelAll()` performs the active cancellation transition and drains every
+  waiting entry as one manager operation. Waiting jobs receive immutable,
+  zero-counter `CANCELLED` results and settle only after one combined snapshot
+  contains the cancelling active job, empty waiting queue, and completed
+  waiting-job records.
+- The active execution is not given a synthetic manager result. Its runner
+  still returns the authoritative cancellation result, including counters
+  accumulated before the abort.
+- Repeated cancellation requests are idempotent when there is no remaining
+  state to change. Focused tests cover the visible active transition, one-time
+  abort behavior, preservation of waiting jobs for `cancelActive()`, atomic
+  all-job cancellation, waiting completion settlement, and active counter
+  retention. The complete frontend test suite passed with 146 tests.
+
 #### 2.4 Introduce progress and phase reporting
 
 Create the active reporter described earlier and replace direct
 `notificationHandler.notifyOngoing()` and `notifyCooldown()` calls gradually.
 
 Do not move relation execution into a new executor during this phase.
+
+**Implementation status: completed.**
+
+- `JobManager` now supplies each active execution with a frozen reporter bound
+  to that exact execution. Phase, complete progress, and cooldown reports
+  update the public active state, increment the revision, and publish a new
+  detached snapshot. Reports from completed/replaced executions and reports
+  received after cancellation are ignored.
+- Reporter inputs are checked at the lifecycle boundary: phases must be
+  `JobPhase` values, every progress report must contain three non-negative
+  integer counters, and cooldown reports require a non-negative whole-second
+  value plus an ISO deadline or `null`.
+- The existing runner now reports access and login checks, every source-specific
+  collection path, followed-user and existing-relation collection, both
+  analysis phases, and relation execution. Each `plannedAction` assignment and
+  each counter-changing relation result publishes a complete progress object.
+- Cooldown reporting publishes one stable `cooldownEndsAt` timestamp when the
+  wait starts, publishes visible ticks while the worker remains active, and
+  clears the deadline when the wait ends. Cancellation keeps the manager-owned
+  `CANCELLING` state from being overwritten by a late cooldown or phase report.
+- Legacy ongoing and cooldown UI messages are temporarily emitted from the
+  centralized reporting helpers so the unpacked extension remains usable
+  before Phase 3 replaces the notification event protocol. Relation execution
+  and its one-retry behavior were not moved or redesigned.
+- Focused tests cover reporter publication and revisions, payload validation,
+  cooldown transitions, stale-report rejection, and cancellation precedence.
+  The complete frontend test suite passed with 149 tests.
 
 #### 2.5 Cut over cancellation and remove the transitional owners
 
@@ -576,6 +685,32 @@ This is the correct removal point for `ProgramController`: after JobManager has
 the replacement cancellation/lifecycle behavior and its tests, but before UI
 persistence or `JobRunner` extraction. Do not retain a temporary controller
 adapter that mirrors manager state.
+
+**Implementation status: completed.**
+
+- The background runtime-message adapter now routes `CANCEL_ALL_JOBS` directly
+  to `jobManager.cancelAll()`. It captures the waiting summaries only for the
+  temporary legacy notification adapter; lifecycle drainage, cancellation
+  results, completion settlement, and the active abort remain manager-owned.
+- Notification-tab identity now lives in `background.js`. Closing any unrelated
+  tab is ignored; closing the tracked notification tab clears its identity and
+  routes through the same `cancelAll()` operation with an explicit reason.
+- The runner no longer reads, resets, or otherwise depends on a global
+  early-stop flag. It selects cancellation from its active abort signal, creates
+  its authoritative `JobResult` before terminal cleanup, and bases terminal
+  branching and telemetry's `earlyStopped` value on that result's
+  `finishReason`.
+- Delayed queue clearing was removed from the runner. Waiting jobs are now
+  cancelled and settled synchronously by the manager when the cancellation
+  request is accepted, while the active runner returns its own result with the
+  counters accumulated before cancellation.
+- `programController.js`, `queue.js`, the transitional controller tests, and
+  both web-accessible-resource entries were removed. Repository checks confirm
+  that frontend production and test code contain no remaining references to
+  `ProgramController`, `AutoQueue`, or `processQueue`.
+- New background-adapter tests cover explicit cancellation, waiting-job
+  drainage, exact tab identity matching, and tab-close cancellation. The
+  complete frontend test suite passed with 149 tests.
 
 #### Phase 2 acceptance criteria
 
@@ -850,8 +985,8 @@ job behavior without requiring authenticated HTML fixtures.
 
 - LIST submission does not enqueue before storage succeeds.
 - Two LIST requests keep distinct list snapshots.
-- Stored configuration is merged with defaults.
-- Update initialization does not clear unrelated keys.
+- Stored configuration is merged with defaults (deferred with task 1.4).
+- Update initialization does not clear unrelated keys (deferred with task 1.4).
 - Snapshot serialization excludes runtime-only objects.
 - Rehydration converts a prior active job to `INTERRUPTED`.
 - Waiting jobs restore in FIFO order.
@@ -890,7 +1025,7 @@ Keep commits narrow and keep the extension usable between them:
 
 1. Add job-state types and JobManager characterization tests.
 2. Correct storage errors and make LIST input an immutable request snapshot.
-3. Add per-job settings snapshots and configuration migration.
+3. Add per-job settings snapshots.
 4. Cut lifecycle ownership over to JobManager: internal FIFO, retained results,
    settled cancellation, background cancellation wiring, and removal of
    `ProgramController`/`AutoQueue`.
@@ -900,6 +1035,10 @@ Keep commits narrow and keep the extension usable between them:
 8. Add session persistence and interrupted-job recovery.
 9. Move the job runner out of `background.js`.
 10. Remove dead analytics/unused code and shrink web-accessible resources.
+
+The configuration migration from task 1.4 is deliberately deferred. When it
+is resumed, implement and test it in its own narrow commit; it is not a
+prerequisite for the Phase 2 lifecycle cutover in step 4.
 
 A commit may be split further if its behavior is difficult to verify. Avoid
 combining UI redesign, persistence, queue replacement, and runner extraction in

@@ -7,8 +7,6 @@ import {log} from './log.js';
 import {createEksiSozlukUser, commHandler} from './commHandler.js';
 import {RelationHandler, RelationActionStatus} from './relationHandler.js';
 import {EksiScrapingHandler} from './scrapingHandler.js';
-import {processQueue} from './queue.js';
-import {programController} from './programController.js';
 import {isEksiSozlukAccessible} from './urlHandler.js';
 import { notificationHandler } from './notificationHandler.js';
 import {createJobResult} from './jobs/job.js';
@@ -21,9 +19,12 @@ import {FakeRelationHandler} from './testing/fakeRelationHandler.js';
 
 // Development-only switch. Keep disabled in production builds.
 const DEV_USE_FAKE_HANDLERS = false;
+const RELATION_COOLDOWN_SECONDS = 62;
+const USER_CANCELLATION_REASON = 'Cancellation requested by the user.';
+const NOTIFICATION_TAB_CLOSED_REASON = 'The notification tab was closed.';
 
 log.info("bg", "initialized");
-let g_notificationTabId = 0;
+let g_notificationTabId = null;
 
 const handleJobTelemetryError = error => console.error("job telemetry failed: " + error);
 const jobTelemetryReporter = new JobTelemetryReporter({
@@ -48,9 +49,9 @@ function entryIdFromUrl(entryUrl, baseUrl)
 }
 
 const jobManager = new JobManager({
-  queue: processQueue,
-  executeJob: (job, {signal}) => processHandler(job, {
+  executeJob: (job, {signal, reporter}) => processHandler(job, {
     signal,
+    reporter,
     scrapingHandler: DEV_USE_FAKE_HANDLERS
       ? new FakeScrapingHandler()
       : new EksiScrapingHandler({baseUrl: job.settings.EksiSozlukURL}),
@@ -60,7 +61,27 @@ const jobManager = new JobManager({
     telemetryReporter: jobTelemetryReporter
   })
 });
-programController.setCancelActiveJobHandler(() => jobManager.cancelActive());
+
+function cancelAllJobs(reason)
+{
+  const waitingJobs = jobManager.waitingJobAttributes;
+  const cancellationRequested = jobManager.cancelAll(reason);
+  if(!cancellationRequested)
+  {
+    log.info("bg", "Cancellation requested, but there are no active or waiting jobs.");
+    return false;
+  }
+
+  log.info("bg", "Cancellation requested, number of cancelled waiting jobs: " + waitingJobs.length);
+  if(waitingJobs.length > 0)
+  {
+    notificationHandler.updatePlannedProcessesList([]);
+    for(const waitingJob of waitingJobs)
+      notificationHandler.finishErrorEarlyStop(waitingJob.banSource, waitingJob.banMode);
+  }
+
+  return true;
+}
 
 if(DEV_USE_FAKE_HANDLERS)
   log.warn("bg", "development fake scraping and relation handlers are enabled");
@@ -68,7 +89,7 @@ if(DEV_USE_FAKE_HANDLERS)
 chrome.runtime.onMessage.addListener(function messageListener(message, sender, sendResponse) {
   if(message?.type === enums.RuntimeMessageType.CANCEL_ALL_JOBS)
   {
-    programController.earlyStop = true;
+    cancelAllJobs(USER_CANCELLATION_REASON);
     sendResponse({ok: true});
     return false;
   }
@@ -110,7 +131,22 @@ chrome.runtime.onMessage.addListener(function messageListener(message, sender, s
   return true;
 });
 
-async function processHandler(job, {signal, scrapingHandler, relationHandler, telemetryReporter})
+chrome.tabs.onRemoved.addListener(function notificationTabRemoved(tabId) {
+  if(tabId !== g_notificationTabId)
+    return;
+
+  g_notificationTabId = null;
+  log.info("bg", "The notification tab was closed; all jobs will be cancelled.");
+  cancelAllJobs(NOTIFICATION_TAB_CLOSED_REASON);
+});
+
+async function processHandler(job, {
+  signal,
+  reporter,
+  scrapingHandler,
+  relationHandler,
+  telemetryReporter
+})
 {
   const {request, settings} = job;
   const {
@@ -131,13 +167,6 @@ async function processHandler(job, {signal, scrapingHandler, relationHandler, te
     ...args,
     {signal, baseUrl: settings.EksiSozlukURL}
   );
-  const waitForRelationCooldown = () => waitForCooldown({
-    signal,
-    onTick: remainingSeconds => notificationHandler.notifyCooldown(
-      remainingSeconds,
-      settings.EksiSozlukURL
-    )
-  });
 
   let processFinishReason = enums.ProcessFinishReason.NOT_SET;
   let authorList = [];
@@ -150,13 +179,79 @@ async function processHandler(job, {signal, scrapingHandler, relationHandler, te
   let clientId = null;
   let errorMessage = null;
 
+  function reportPhase(phase, notifyLegacyUi)
+  {
+    const accepted = reporter.reportPhase(phase);
+    if(accepted && notifyLegacyUi)
+      notifyLegacyUi();
+  }
+
+  function reportProgress()
+  {
+    const progress = {
+      successfulAction,
+      performedAction,
+      plannedAction
+    };
+
+    if(reporter.reportProgress(progress))
+      notificationHandler.notifyOngoing(
+        successfulAction,
+        performedAction,
+        plannedAction
+      );
+  }
+
+  async function waitForRelationCooldown()
+  {
+    const cooldownEndsAt = new Date(
+      Date.now() + RELATION_COOLDOWN_SECONDS * 1000
+    ).toISOString();
+    reporter.reportCooldown({
+      remainingSeconds: RELATION_COOLDOWN_SECONDS,
+      cooldownEndsAt
+    });
+
+    try
+    {
+      await waitForCooldown({
+        seconds: RELATION_COOLDOWN_SECONDS,
+        signal,
+        onTick: remainingSeconds =>
+        {
+          if(reporter.reportCooldown({remainingSeconds, cooldownEndsAt}))
+          {
+            notificationHandler.notifyCooldown(
+              remainingSeconds,
+              settings.EksiSozlukURL
+            );
+          }
+        }
+      });
+    }
+    finally
+    {
+      reporter.reportCooldown({remainingSeconds: 0, cooldownEndsAt: null});
+    }
+  }
+
   function recordRelationResult(result)
   {
+    let changed = false;
     if(result.actionPerformed)
+    {
       performedAction++;
+      changed = true;
+    }
 
     if(result.actionSucceeded)
+    {
       successfulAction++;
+      changed = true;
+    }
+
+    if(changed)
+      reportProgress();
   }
 
   const run = async () =>
@@ -174,16 +269,26 @@ async function processHandler(job, {signal, scrapingHandler, relationHandler, te
             );
 
     // create a notification page if not exist
-    try
+    if(g_notificationTabId !== null)
     {
-      let tab2 = await chrome.tabs.get(g_notificationTabId);
-    }
-    catch(e)
-    {
-      // not exist, so create one
       try
       {
-        let tab = await chrome.tabs.create({ active: false, url: chrome.runtime.getURL("assets/html/notification.html") });
+        await chrome.tabs.get(g_notificationTabId);
+      }
+      catch
+      {
+        g_notificationTabId = null;
+      }
+    }
+
+    if(g_notificationTabId === null)
+    {
+      try
+      {
+        const tab = await chrome.tabs.create({
+          active: false,
+          url: chrome.runtime.getURL("assets/html/notification.html")
+        });
         g_notificationTabId = tab.id;
       }
       catch(createError)
@@ -193,10 +298,13 @@ async function processHandler(job, {signal, scrapingHandler, relationHandler, te
         return;
       }
     }
-    programController.tabId = g_notificationTabId;
+
     notificationHandler.updatePlannedProcessesList(jobManager.waitingJobAttributes);
 
-    notificationHandler.notifyControlAccess();
+    reportPhase(
+      enums.JobPhase.CHECKING_ACCESS,
+      notificationHandler.notifyControlAccess
+    );
     const urlAccessible = await isEksiSozlukAccessible({
       signal,
       baseUrl: settings.EksiSozlukURL
@@ -209,7 +317,10 @@ async function processHandler(job, {signal, scrapingHandler, relationHandler, te
       return;
     }
 
-    notificationHandler.notifyControlLogin();
+    reportPhase(
+      enums.JobPhase.CHECKING_LOGIN,
+      notificationHandler.notifyControlLogin
+    );
     userAgent = navigator.userAgent;
     const currentAccount = await scrapingHandler.getCurrentAccount({signal});
     clientName = currentAccount?.authorName ?? null;
@@ -229,7 +340,8 @@ async function processHandler(job, {signal, scrapingHandler, relationHandler, te
         authorList.push(author);
 
       plannedAction = 1;
-      notificationHandler.notifyOngoing(0, 0, plannedAction);
+      reportProgress();
+      reportPhase(enums.JobPhase.EXECUTING_RELATIONS);
       
       let res = await performRelationAction(banMode, singleAuthorId, targetType == enums.TargetType.USER, targetType == enums.TargetType.TITLE, targetType == enums.TargetType.MUTE);
       
@@ -241,10 +353,10 @@ async function processHandler(job, {signal, scrapingHandler, relationHandler, te
       }
       
       recordRelationResult(res);
-      notificationHandler.notifyOngoing(successfulAction, performedAction, plannedAction);
     }
     else if(banSource === enums.BanSource.LIST)
     {
+      reportPhase(enums.JobPhase.COLLECTING_AUTHORS);
       let authorNames;
       try
       {
@@ -271,6 +383,7 @@ async function processHandler(job, {signal, scrapingHandler, relationHandler, te
       }
       
       plannedAction = authorNames.length;
+      reportProgress();
 
       // stop if there is no user
       log.info("bg", "number of user to ban " + plannedAction);
@@ -282,7 +395,7 @@ async function processHandler(job, {signal, scrapingHandler, relationHandler, te
         return;
       }
 
-      notificationHandler.notifyOngoing(0, 0, plannedAction);
+      reportPhase(enums.JobPhase.EXECUTING_RELATIONS);
       
       for (const authorName of authorNames)
       {
@@ -309,13 +422,15 @@ async function processHandler(job, {signal, scrapingHandler, relationHandler, te
 
         // send message to notification page
         recordRelationResult(res);
-        notificationHandler.notifyOngoing(successfulAction, performedAction, plannedAction);
       }
       
     }
     else if(banSource === enums.BanSource.FAV)
     {
-      notificationHandler.notifyScrapeFavs();
+      reportPhase(
+        enums.JobPhase.COLLECTING_FAVORITERS,
+        notificationHandler.notifyScrapeFavs
+      );
 
       const entryId = entryIdFromUrl(entryUrl, settings.EksiSozlukURL);
       entryMetaData = await scrapingHandler.getEntryMetadata(entryId, {signal});
@@ -342,11 +457,17 @@ async function processHandler(job, {signal, scrapingHandler, relationHandler, te
       if(settings.enableAnalysisBeforeOperation && settings.enableProtectFollowedUsers && banMode == enums.BanMode.BAN)
       {
         // scrape the authors that ${clientName} follows
-        notificationHandler.notifyScrapeFollowings();
+        reportPhase(
+          enums.JobPhase.COLLECTING_EXISTING_RELATIONS,
+          notificationHandler.notifyScrapeFollowings
+        );
         let mapFollowing = await scrapingHandler.listFollowing(clientName, {signal});
         
         // remove the authors that ${clientName} follows from the list to protect    
-        notificationHandler.notifyAnalysisProtectFollowedUsers();  
+        reportPhase(
+          enums.JobPhase.ANALYSING_PROTECTED_USERS,
+          notificationHandler.notifyAnalysisProtectFollowedUsers
+        );
         for (let name of scrapedRelations.keys()) {
           if (mapFollowing.has(name))
             scrapedRelations.delete(name);
@@ -358,11 +479,17 @@ async function processHandler(job, {signal, scrapingHandler, relationHandler, te
         // This condition doesn't provide a simplification of the following algorithm
         
         // scrape the authors that ${clientName} blocked
-        notificationHandler.notifyScrapeBanned();
+        reportPhase(
+          enums.JobPhase.COLLECTING_EXISTING_RELATIONS,
+          notificationHandler.notifyScrapeBanned
+        );
         let mapBlocked = await scrapingHandler.listOwnRelations({}, {signal});
         
         // update the list with info obtained from mapBlocked
-        notificationHandler.notifyAnalysisOnlyRequiredActions();
+        reportPhase(
+          enums.JobPhase.ANALYSING_REQUIRED_ACTIONS,
+          notificationHandler.notifyAnalysisOnlyRequiredActions
+        );
         for (let name of scrapedRelations.keys()) {
           if (mapBlocked.has(name))
           {
@@ -385,7 +512,8 @@ async function processHandler(job, {signal, scrapingHandler, relationHandler, te
       }
       
       plannedAction = scrapedRelations.size;
-      notificationHandler.notifyOngoing(0, 0, plannedAction);
+      reportProgress();
+      reportPhase(enums.JobPhase.EXECUTING_RELATIONS);
       
       for (const [name, value] of scrapedRelations)
       {
@@ -417,12 +545,14 @@ async function processHandler(job, {signal, scrapingHandler, relationHandler, te
         
         // send message to notification page
         recordRelationResult(res);
-        notificationHandler.notifyOngoing(successfulAction, performedAction, plannedAction);
       }
     }
     else if(banSource === enums.BanSource.FOLLOW)
     {
-      notificationHandler.notifyScrapeFollowers();
+      reportPhase(
+        enums.JobPhase.COLLECTING_FOLLOWERS,
+        notificationHandler.notifyScrapeFollowers
+      );
 
       let scrapedRelations = await scrapingHandler.listFollowers(singleAuthorName, {signal});
       log.info("bg", "number of user to ban (before analysis): " + scrapedRelations.size);
@@ -440,11 +570,17 @@ async function processHandler(job, {signal, scrapingHandler, relationHandler, te
       if(settings.enableAnalysisBeforeOperation && settings.enableProtectFollowedUsers && banMode == enums.BanMode.BAN)
       {
         // scrape the authors that ${clientName} follows
-        notificationHandler.notifyScrapeFollowings();
+        reportPhase(
+          enums.JobPhase.COLLECTING_EXISTING_RELATIONS,
+          notificationHandler.notifyScrapeFollowings
+        );
         let mapFollowing = await scrapingHandler.listFollowing(clientName, {signal});
         
         // remove the authors that ${clientName} follows from the list to protect  
-        notificationHandler.notifyAnalysisProtectFollowedUsers();    
+        reportPhase(
+          enums.JobPhase.ANALYSING_PROTECTED_USERS,
+          notificationHandler.notifyAnalysisProtectFollowedUsers
+        );
         for (let name of scrapedRelations.keys()) {
           if (mapFollowing.has(name))
             scrapedRelations.delete(name);
@@ -453,11 +589,17 @@ async function processHandler(job, {signal, scrapingHandler, relationHandler, te
       if(settings.enableAnalysisBeforeOperation && settings.enableOnlyRequiredActions)
       {
         // scrape the authors that ${clientName} blocked
-        notificationHandler.notifyScrapeBanned();
+        reportPhase(
+          enums.JobPhase.COLLECTING_EXISTING_RELATIONS,
+          notificationHandler.notifyScrapeBanned
+        );
         let mapBlocked = await scrapingHandler.listOwnRelations({}, {signal});
         
         // update the list with info obtained from mapBlocked
-        notificationHandler.notifyAnalysisOnlyRequiredActions();
+        reportPhase(
+          enums.JobPhase.ANALYSING_REQUIRED_ACTIONS,
+          notificationHandler.notifyAnalysisOnlyRequiredActions
+        );
         for (let name of scrapedRelations.keys()) {
           if (mapBlocked.has(name))
           {
@@ -480,11 +622,12 @@ async function processHandler(job, {signal, scrapingHandler, relationHandler, te
       }
 
       plannedAction = scrapedRelations.size;
+      reportProgress();
       authorList = Array.from(scrapedRelations, ([name, value]) =>
         createEksiSozlukUser(name, value.authorId)
       ).filter(author => author !== null);
 
-      notificationHandler.notifyOngoing(0, 0, plannedAction);
+      reportPhase(enums.JobPhase.EXECUTING_RELATIONS);
       
       
       
@@ -514,14 +657,16 @@ async function processHandler(job, {signal, scrapingHandler, relationHandler, te
         
         // send message to notification page
         recordRelationResult(res);
-        notificationHandler.notifyOngoing(successfulAction, performedAction, plannedAction);
       }
 
       
     }
     else if(banSource === enums.BanSource.UNDOBANALL)
     {
-      notificationHandler.notifyScrapeUndobanAll();
+      reportPhase(
+        enums.JobPhase.COLLECTING_EXISTING_RELATIONS,
+        notificationHandler.notifyScrapeUndobanAll
+      );
 
       let scrapedRelations = await scrapingHandler.listOwnRelations({}, {signal});
       
@@ -536,11 +681,12 @@ async function processHandler(job, {signal, scrapingHandler, relationHandler, te
       }
 
       plannedAction = scrapedRelations.size;
+      reportProgress();
       authorList = Array.from(scrapedRelations, ([name, value]) =>
         createEksiSozlukUser(name, value.authorId)
       ).filter(author => author !== null);
 
-      notificationHandler.notifyOngoing(0, 0, plannedAction);
+      reportPhase(enums.JobPhase.EXECUTING_RELATIONS);
       
       for (const [name, value] of scrapedRelations)
       {
@@ -558,13 +704,15 @@ async function processHandler(job, {signal, scrapingHandler, relationHandler, te
         
         // send message to notification page
         recordRelationResult(res);
-        notificationHandler.notifyOngoing(successfulAction, performedAction, plannedAction);
       }
     }
     
     else if(banSource === enums.BanSource.TITLE)
     {
-      notificationHandler.notifyScrapeTitle();
+      reportPhase(
+        enums.JobPhase.COLLECTING_TITLE_AUTHORS,
+        notificationHandler.notifyScrapeTitle
+      );
 
       // scrapedRelations does not hold duplicated records, scraping handler is responsible to keep it clean
       let scrapedRelations = await scrapingHandler.listTitleAuthors({
@@ -587,11 +735,17 @@ async function processHandler(job, {signal, scrapingHandler, relationHandler, te
       if(settings.enableAnalysisBeforeOperation && settings.enableProtectFollowedUsers && banMode == enums.BanMode.BAN)
       {
         // scrape the authors that ${clientName} follows
-        notificationHandler.notifyScrapeFollowings();
+        reportPhase(
+          enums.JobPhase.COLLECTING_EXISTING_RELATIONS,
+          notificationHandler.notifyScrapeFollowings
+        );
         let mapFollowing = await scrapingHandler.listFollowing(clientName, {signal});
         
         // remove the authors that ${clientName} follows from the list to protect  
-        notificationHandler.notifyAnalysisProtectFollowedUsers();    
+        reportPhase(
+          enums.JobPhase.ANALYSING_PROTECTED_USERS,
+          notificationHandler.notifyAnalysisProtectFollowedUsers
+        );
         for (let name of scrapedRelations.keys()) {
           if (mapFollowing.has(name))
             scrapedRelations.delete(name);
@@ -600,11 +754,17 @@ async function processHandler(job, {signal, scrapingHandler, relationHandler, te
       if(settings.enableAnalysisBeforeOperation && settings.enableOnlyRequiredActions)
       {
         // scrape the authors that ${clientName} blocked
-        notificationHandler.notifyScrapeBanned();
+        reportPhase(
+          enums.JobPhase.COLLECTING_EXISTING_RELATIONS,
+          notificationHandler.notifyScrapeBanned
+        );
         let mapBlocked = await scrapingHandler.listOwnRelations({}, {signal});
         
         // update the list with info obtained from mapBlocked
-        notificationHandler.notifyAnalysisOnlyRequiredActions();
+        reportPhase(
+          enums.JobPhase.ANALYSING_REQUIRED_ACTIONS,
+          notificationHandler.notifyAnalysisOnlyRequiredActions
+        );
         for (let name of scrapedRelations.keys()) {
           if (mapBlocked.has(name))
           {
@@ -627,11 +787,12 @@ async function processHandler(job, {signal, scrapingHandler, relationHandler, te
       }
 
       plannedAction = scrapedRelations.size;
+      reportProgress();
       authorList = Array.from(scrapedRelations, ([name, value]) =>
         createEksiSozlukUser(name, value.authorId)
       ).filter(author => author !== null);
 
-      notificationHandler.notifyOngoing(0, 0, plannedAction);
+      reportPhase(enums.JobPhase.EXECUTING_RELATIONS);
       
       for (const [name, value] of scrapedRelations)
       {
@@ -659,7 +820,6 @@ async function processHandler(job, {signal, scrapingHandler, relationHandler, te
         
         // send message to notification page
         recordRelationResult(res);
-        notificationHandler.notifyOngoing(successfulAction, performedAction, plannedAction);
       }
     }
     
@@ -668,6 +828,7 @@ async function processHandler(job, {signal, scrapingHandler, relationHandler, te
       : enums.ProcessFinishReason.SUCCESS;
   };
 
+  let result;
   try
   {
     await run();
@@ -688,20 +849,15 @@ async function processHandler(job, {signal, scrapingHandler, relationHandler, te
   }
   finally
   {
-
-    // if early stop was generated, erase planned processes in notification page
-    if(programController.earlyStop)
-    {
-      log.info("bg", "(updatePlannedProcessesList just before finished) notification page's queue will be updated.");
-      notificationHandler.updatePlannedProcessesList(""); // erase the processes in the planned processes table
-      // add the remaining processes to completed process table
-      let remainingProcessesArray = jobManager.waitingJobAttributes;
-      for (const element of remainingProcessesArray)
-        notificationHandler.finishErrorEarlyStop(element.banSource, element.banMode);
-      jobManager.clearWaiting(); // clear the remaining planned processes in the queue
-    }
+    result = createJobResult(job, {
+      finishReason: processFinishReason,
+      successfulAction,
+      performedAction,
+      plannedAction,
+      errorMessage
+    });
     
-    if(processFinishReason === enums.ProcessFinishReason.SUCCESS) 
+    if(result.finishReason === enums.ProcessFinishReason.SUCCESS)
     {
       notificationHandler.finishSuccess(banSource, banMode, successfulAction, performedAction, plannedAction);
       
@@ -733,7 +889,7 @@ async function processHandler(job, {signal, scrapingHandler, relationHandler, te
           successfulAction,
           performedAction,
           plannedAction,
-          earlyStopped: programController.earlyStop,
+          earlyStopped: result.finishReason === enums.ProcessFinishReason.CANCELLED,
           version: chrome.runtime.getManifest().version,
           logLevel: telemetryLogLevel,
           logData: telemetryLogData,
@@ -749,23 +905,15 @@ async function processHandler(job, {signal, scrapingHandler, relationHandler, te
       }
 
     }
-    else if(processFinishReason === enums.ProcessFinishReason.CANCELLED)
+    else if(result.finishReason === enums.ProcessFinishReason.CANCELLED)
     {
       notificationHandler.finishErrorEarlyStop(banSource, banMode);
     }
     
-    // common cleanup
-    programController.earlyStop = false; // reset to reuse
     log.resetData();
   }
 
-  return createJobResult(job, {
-    finishReason: processFinishReason,
-    successfulAction,
-    performedAction,
-    plannedAction,
-    errorMessage
-  });
+  return result;
 }
 
 // this listener fired every time when the extension installed or updated.

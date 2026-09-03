@@ -37,19 +37,7 @@ describe('job settings snapshots', () =>
 
   it('keeps distinct settings for jobs accepted at different times', () =>
   {
-    const queuedJobs = [];
-    const queue = {
-      enqueue: vi.fn((job) =>
-      {
-        queuedJobs.push(job);
-        return new Promise(() => {});
-      }),
-      get size() { return queuedJobs.length; },
-      get itemAttributes() { return []; },
-      get isRunning() { return false; },
-      clear: vi.fn()
-    };
-    const manager = new JobManager({queue, executeJob: vi.fn()});
+    const manager = new JobManager({executeJob: () => new Promise(() => {})});
     const settings = {enableMute: false};
 
     const first = manager.enqueue({banSource: 'list', banMode: 'ban'}, settings).job;

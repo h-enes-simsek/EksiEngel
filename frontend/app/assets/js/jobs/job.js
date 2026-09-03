@@ -1,7 +1,7 @@
 import {ProcessFinishReason} from '../enums.js';
 
 /**
- * Data kept by the process queue for one requested operation.
+ * Data kept by JobManager for one requested operation.
  * Runtime state, such as AbortController, is intentionally kept outside this
  * serializable record.
  *

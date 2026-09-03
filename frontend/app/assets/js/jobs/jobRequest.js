@@ -21,7 +21,7 @@
 
 /**
  * Copy an accepted runtime message into the request shape used by the process
- * queue. Source-specific validation will be introduced in a later refactor.
+ * manager. Source-specific validation will be introduced in a later refactor.
  *
  * @param {JobRequest} message
  * @returns {JobRequest}

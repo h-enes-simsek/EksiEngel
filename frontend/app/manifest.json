@@ -72,8 +72,6 @@
 				"assets/js/faq.js",
         "assets/js/popup.js",
         "assets/js/authorListPage.js",
-				"assets/js/queue.js",
-				"assets/js/programController.js",
 				"assets/js/script.js"
       ],
       "matches": [
