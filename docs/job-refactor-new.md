@@ -217,9 +217,9 @@ accepted input:
 }
 ```
 
-That complete record is used by the runner and recovery code. It should not be
-sent wholesale to the notification UI because the UI does not need author lists
-or complete settings.
+That complete record is used by the runner. It should not be sent wholesale to
+the notification UI because the UI does not need author lists or complete
+settings.
 
 The manager's public active-job state should contain only serializable display
 data:
@@ -301,9 +301,9 @@ Rules:
 - A snapshot must remain valid after serialization through a Chrome runtime
   message or `chrome.storage`.
 
-This public snapshot is the notification UI contract. Phase 4 adds a separate
-private recovery checkpoint containing full accepted requests/settings for
-active and waiting jobs. Never broadcast that private checkpoint as UI state.
+This public snapshot is the notification UI contract. It is an in-memory
+presentation model, not a service-worker recovery checkpoint. Full accepted
+requests/settings must not be broadcast as UI state.
 
 ## Active-job reporting contract
 
@@ -881,72 +881,26 @@ The UI should still tell users when the program is:
 - `UNEXPECTED_ERROR` no longer leaves the page looking active.
 - Queue and completed history are derived from one snapshot.
 
-### Phase 4 — Add service-worker interruption handling
+### Phase 4 — Service-worker interruption handling (deliberately skipped)
 
-This phase follows the snapshot because the snapshot defines what must be
-stored.
+Session persistence and recovery will not be implemented as part of this
+refactor. The current jobs make frequent network and extension API calls, and
+cooldown state is published every second, so there is no known normal workflow
+with a long idle period that clearly justifies the additional persistence and
+rehydration machinery.
 
-#### 4.1 Persist minimal serializable state
+This is an accepted limitation, not a guarantee that interruption cannot occur.
+If Chrome terminates or restarts the Manifest V3 service worker, the in-memory
+active job, waiting queue, completed history, snapshot revision, and tracked
+notification-tab ID may be lost. The interrupted job will not be recovered or
+reported with a new `INTERRUPTED` finish reason, waiting jobs will not resume,
+and a later job may create a second notification tab if the original tab is
+still open.
 
-Use `chrome.storage.session` for job-session state that must survive service
-worker shutdown and restart:
-
-- revision;
-- active job record and last reported state;
-- waiting job records;
-- bounded completed records.
-- tracked notification-tab ID, while the ID-based adapter remains in use.
-
-Never persist `AbortController`, promises, callbacks, service instances, or
-functions.
-
-Persist after important transitions:
-
-- enqueue accepted;
-- waiting job becomes active;
-- phase changes;
-- action counters change;
-- cooldown starts or ends;
-- cancellation is requested;
-- terminal result is committed;
-- waiting jobs are drained;
-- the notification tab is created, identified by its page-load state request,
-  or removed.
-
-Store `cooldownEndsAt` instead of persisting every countdown tick.
-
-#### 4.2 Rehydrate safely
-
-At service-worker startup:
-
-1. Load persisted state before accepting or starting new work.
-2. Restore waiting jobs with their original IDs, requests, settings, and
-   creation times.
-3. If a persisted job was active, do not pretend that its old
-   `AbortController` or promise still exists.
-4. Mark that job with a new terminal finish reason such as `INTERRUPTED` using
-   the last persisted counters.
-5. Publish the recovered snapshot.
-6. Continue waiting jobs only after interrupted-state handling has completed.
-7. Validate a restored notification-tab ID with `chrome.tabs.get()` before
-   reusing it; clear it when the tab no longer exists. The notification page's
-   state request may refresh the tracked ID from `sender.tab.id`.
-
-Do not automatically replay the interrupted active job. The accepted partial
-relation semantics do not support precise mid-action recovery.
-
-Browser-restart durability can be considered separately later. This phase is
-primarily for service-worker restarts within the browser session.
-
-#### Phase 4 acceptance criteria
-
-- A worker restart does not silently erase the waiting queue or UI history.
-- A previously active job becomes visibly `INTERRUPTED` rather than remaining
-  falsely active.
-- Waiting jobs can continue after rehydration.
-- The notification page can reopen and render recovered state.
-- A worker restart does not create a second notification tab merely because the
-  original in-memory tab ID was lost.
+Do not add keep-alive polling, `chrome.storage.session` job checkpoints,
+rehydration, or interrupted-job replay during this refactor. Revisit this only
+as a separate product task if real-world reports show that service-worker
+termination causes material job loss.
 
 ### Phase 5 — Move the runner out of `background.js`
 
@@ -974,6 +928,23 @@ After the move, evaluate duplication again. Extract source-specific functions
 or shared analysis only when doing so makes the runner materially easier to
 understand. Do not create a generic collector/executor pipeline merely because
 it appeared in the old plan.
+
+**Implementation status: completed.**
+
+- The complete job workflow now lives in `jobs/jobRunner.js` as the exported
+  `runJob()` function. It receives the settings snapshot, abort signal,
+  manager-bound reporter, scraping and relation handlers, telemetry boundary,
+  access checker, cooldown waiter, and runtime metadata explicitly.
+- The runner has no Chrome, tab, notification-page, or service-worker listener
+  dependency. `background.js` owns notification-tab creation, maps a creation
+  failure to its terminal `JobResult`, constructs the execution dependencies,
+  and registers the Chrome listeners.
+- Source branches and their existing one-retry relation behavior were moved
+  without introducing a collector/executor framework.
+- Focused runner tests execute without a Chrome global and cover progress and
+  phase reporting, early terminal results, unexpected errors, injected
+  telemetry metadata, and the rate-limit cooldown followed by exactly one
+  retry. The complete frontend test suite passed with 177 tests.
 
 #### Phase 5 acceptance criteria
 
@@ -1067,15 +1038,13 @@ job behavior without requiring authenticated HTML fixtures.
 - The runner does not call terminal notification methods.
 - Existing composite relation retry behavior is preserved.
 
-### Storage and recovery tests
+### Storage and input tests
 
 - LIST submission does not enqueue before storage succeeds.
 - Two LIST requests keep distinct list snapshots.
 - Stored configuration is merged with defaults (deferred with task 1.4).
 - Update initialization does not clear unrelated keys (deferred with task 1.4).
 - Snapshot serialization excludes runtime-only objects.
-- Rehydration converts a prior active job to `INTERRUPTED`.
-- Waiting jobs restore in FIFO order.
 
 ### UI-state tests
 
@@ -1101,9 +1070,8 @@ At the end of each phase, load the unpacked extension and verify:
 7. Closing the notification tab and confirming existing cancellation behavior.
 8. Reloading the notification page during an active job.
 9. An intentionally forced unexpected runner error.
-10. Service-worker restart during an active job and with waiting jobs.
-11. Popup, FAQ/settings, welcome, and author-list pages.
-12. Injected Ekşi Sözlük menu actions and their icon.
+10. Popup, FAQ/settings, welcome, and author-list pages.
+11. Injected Ekşi Sözlük menu actions and their icon.
 
 ## Recommended commit sequence
 
@@ -1118,9 +1086,8 @@ Keep commits narrow and keep the extension usable between them:
 5. Add active phase/progress reporting and snapshots.
 6. Make notification UI hydrate and render snapshots.
 7. Move all terminal UI output to `JobResult` presentation.
-8. Add session persistence and interrupted-job recovery.
-9. Move the job runner out of `background.js`.
-10. Remove dead analytics/unused code and shrink web-accessible resources.
+8. Move the job runner out of `background.js`.
+9. Remove dead analytics/unused code and shrink web-accessible resources.
 
 The configuration migration from task 1.4 is deliberately deferred. When it
 is resumed, implement and test it in its own narrow commit; it is not a
@@ -1143,6 +1110,8 @@ changes the scope:
 - building a broad request-validation/security framework;
 - changing telemetry consent, defaults, payloads, server behavior, or privacy
   documentation;
+- service-worker keep-alive polling, job-session persistence, interruption
+  recovery, or automatic replay of interrupted jobs;
 - replacing or reducing `jsdom.js`;
 - redesigning content-script observers;
 - changing entry-menu/metadata index pairing;
@@ -1169,8 +1138,6 @@ This refactor is complete when all of the following are true:
 - The UI reports meaningful business phases while work is active.
 - All terminal UI output is derived from returned job results.
 - The notification page can load or reload from an authoritative snapshot.
-- Minimal job state survives service-worker interruption, and uncertain active
-  work becomes visibly `INTERRUPTED` rather than being replayed silently.
 - `ProgramController` and `AutoQueue` are removed.
 - `background.js` primarily composes Chrome adapters and the job runner.
 - LIST jobs execute the exact input captured when they were enqueued.

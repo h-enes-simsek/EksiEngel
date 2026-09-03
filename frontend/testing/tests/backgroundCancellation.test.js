@@ -4,6 +4,7 @@ import {
   BanMode,
   BanSource,
   JobPhase,
+  ProcessFinishReason,
   RuntimeMessageType,
   TargetType
 } from '../../app/assets/js/enums.js';
@@ -55,6 +56,7 @@ async function loadBackground()
   let runtimeMessageListener;
   let tabRemovedListener;
   const runtimeSendMessage = vi.fn().mockResolvedValue({ok: true});
+  const tabsCreate = vi.fn().mockResolvedValue({id: 42});
 
   vi.stubGlobal('chrome', {
     runtime: {
@@ -72,7 +74,7 @@ async function loadBackground()
         addListener: vi.fn(listener => { tabRemovedListener = listener; })
       },
       get: vi.fn(),
-      create: vi.fn().mockResolvedValue({id: 42})
+      create: tabsCreate
     },
     storage: {
       local: {
@@ -85,7 +87,12 @@ async function loadBackground()
   vi.spyOn(console, 'log').mockImplementation(() => {});
 
   await import('../../app/assets/js/background.js');
-  return {runtimeMessageListener, runtimeSendMessage, tabRemovedListener};
+  return {
+    runtimeMessageListener,
+    runtimeSendMessage,
+    tabRemovedListener,
+    tabsCreate
+  };
 }
 
 async function startSingleJob(runtimeMessageListener)
@@ -149,6 +156,42 @@ afterEach(() =>
 
 describe('background cancellation routing', () =>
 {
+  it('commits notification-tab creation failure before invoking the runner', async () =>
+  {
+    const {
+      runtimeMessageListener,
+      runtimeSendMessage,
+      tabsCreate
+    } = await loadBackground();
+    tabsCreate.mockRejectedValueOnce(new Error('tab creation failed'));
+    const sendResponse = vi.fn();
+
+    runtimeMessageListener({
+      type: RuntimeMessageType.ENQUEUE_JOB,
+      payload: {
+        banSource: BanSource.SINGLE,
+        banMode: BanMode.BAN,
+        authorName: 'target',
+        authorId: '7',
+        targetType: TargetType.USER
+      }
+    }, {}, sendResponse);
+
+    await vi.waitFor(() => expect(runtimeSendMessage).toHaveBeenLastCalledWith({
+      type: RuntimeMessageType.JOB_SNAPSHOT,
+      payload: expect.objectContaining({
+        activeJob: null,
+        completedJobs: [expect.objectContaining({
+          result: expect.objectContaining({
+            finishReason: ProcessFinishReason.NOTIFICATION_TAB_CREATION
+          })
+        })]
+      })
+    }));
+    expect(fakes.checkAccess).not.toHaveBeenCalled();
+    expect(fakes.performAction).not.toHaveBeenCalled();
+  });
+
   it('publishes complete snapshots for visible JobManager transitions', async () =>
   {
     const {runtimeMessageListener, runtimeSendMessage} = await loadBackground();

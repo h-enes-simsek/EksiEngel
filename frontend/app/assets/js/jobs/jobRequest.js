@@ -3,7 +3,7 @@
  *
  * Fields that do not apply to a particular ban source remain undefined. This
  * intentionally matches the current message contract while replacing the
- * positional processHandler arguments with one explicit object.
+ * legacy positional runner arguments with one explicit object.
  *
  * @typedef {Object} JobRequest
  * @property {string} banSource
