@@ -43,6 +43,8 @@ export function createEksiSozlukUser(eksisozluk_name, eksisozluk_id)
 export function Action({
   eksi_engel_user,
   version,
+  job_id,
+  job_duration,
   user_agent,
   ban_source,
   ban_mode,
@@ -64,6 +66,8 @@ export function Action({
 {
   this.eksi_engel_user = eksi_engel_user; 
   this.version = version;
+  this.job_id = job_id;
+  this.job_duration = job_duration;
   this.user_agent = user_agent;
   this.ban_source = ban_source;
   this.ban_mode = ban_mode;

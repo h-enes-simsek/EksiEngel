@@ -22,6 +22,8 @@ function deepFreeze(value)
  * The returned value does not retain mutable job-owned collections.
  */
 export function createJobTelemetry({
+  jobId,
+  jobDuration,
   request,
   authorList,
   entryMetaData,
@@ -49,6 +51,8 @@ export function createJobTelemetry({
   const action = new Action({
     eksi_engel_user: eksiEngelUser,
     version,
+    job_id: jobId,
+    job_duration: jobDuration,
     user_agent: userAgent,
     ban_source: request.banSource,
     ban_mode: request.banMode,

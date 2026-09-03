@@ -274,8 +274,9 @@ v3.2
 gönderim: 09.04.2024 yayın: 09.04.2024
 bug fix: Ekşi Engel serverı taşındığı için URL adresleri güncel değildi.
 
-v3.3
+v4.0
 gönderim: yayın: 
+veritabanı model değişikliği: Action modeline job_id ve milisaniye cinsinden job_duration alanları eklendi. 4.0 ve sonraki sürümlerde bu alanların gönderilmesi zorunludur; eski sürümlerle geriye dönük uyumluluk için veritabanında boş bırakılabilir.
 bug fix: Snapshot LIST input when enqueueing so queued jobs cannot use a later edited list
 bug fix: Snapshot settings when accepting a job so queued jobs cannot use later configuration changes
 bug fix: Route runtime messages by explicit type so unrelated listeners cannot mask responses
@@ -298,7 +299,6 @@ bug: eksi engel kullanadan once engele maruz kalan kullanicilarin first activity
 YÜKSEK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
 
 loglar daha düzgün yazılmalı başlangıç ve bitişi net olmalı
-action başlangıç ve bitiş süresi ölçülebilir
 backendte 0 idli yazarlar kaydedilmemeli özellikle LIST için, (frontendte 0idli yazarlar filtrelendi) 
 frontend tarafında arraylerden author_list verimsiz bir biçimde oluşturuluyor.
 notification sayfasında ve loglarda enumların ne olduğu anlaşılmıyor.

@@ -651,6 +651,8 @@ export async function runJob(job, {
         }
 
         const telemetry = createJobTelemetry({
+          jobId: job.id,
+          jobDuration: durationMs,
           request,
           authorList,
           entryMetaData,

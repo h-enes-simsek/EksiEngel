@@ -62,6 +62,10 @@ class Action(models.Model):
     eksi_engel_user = models.ForeignKey(EksiSozlukUser, on_delete=models.CASCADE, related_name="eksi_engel_user_in_action", blank=False, null=False)
     date = models.DateTimeField(auto_now_add=True, blank=True, null=False)
     version = models.CharField(max_length=16, blank=False, null=False)
+    # job_id is added with version 4.0+ and its mandatory. We need to keep it nullable for backward compatibility.
+    job_id = models.CharField(max_length=36, blank=True, null=True)
+    # job_duration is added with version 4.0+ and its mandatory. We need to keep it nullable for backward compatibility.
+    job_duration = models.IntegerField(blank=True, null=True)
     user_agent = models.CharField(max_length=1024, blank=False, null=False)
     ban_source = models.ForeignKey(BanSource, on_delete=models.PROTECT, blank=False, null=False)
     ban_mode = models.ForeignKey(BanMode, on_delete=models.PROTECT, blank=False, null=False)

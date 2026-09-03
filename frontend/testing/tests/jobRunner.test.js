@@ -350,6 +350,10 @@ describe('runJob', () =>
     const [telemetry, context] = telemetryReporter.submit.mock.calls[0];
     expect(telemetry.action.version).toBe('3.3-test');
     expect(telemetry.action.user_agent).toBe('job-runner-test-agent');
+    expect(telemetry.action.job_id).toBe('job-runner-test');
+    expect(telemetry.action.job_duration).toEqual(expect.any(Number));
+    expect(Number.isInteger(telemetry.action.job_duration)).toBe(true);
+    expect(telemetry.action.job_duration).toBeGreaterThanOrEqual(0);
     expect(context).toEqual({serverUrl: settings.serverURL});
   });
 });
