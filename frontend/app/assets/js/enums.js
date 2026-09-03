@@ -35,6 +35,8 @@ export const ResultType = {
 export const RuntimeMessageType = {
   ENQUEUE_JOB:        "ENQUEUE_JOB",
   CANCEL_ALL_JOBS:    "CANCEL_ALL_JOBS",
+  GET_JOB_SNAPSHOT:   "GET_JOB_SNAPSHOT",
+  JOB_SNAPSHOT:       "JOB_SNAPSHOT",
   JOB_NOTIFICATION:   "JOB_NOTIFICATION"
 };
 

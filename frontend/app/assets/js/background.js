@@ -8,7 +8,6 @@ import {createEksiSozlukUser, commHandler} from './commHandler.js';
 import {RelationHandler, RelationActionStatus} from './relationHandler.js';
 import {EksiScrapingHandler} from './scrapingHandler.js';
 import {isEksiSozlukAccessible} from './urlHandler.js';
-import { notificationHandler } from './notificationHandler.js';
 import {createJobResult} from './jobs/job.js';
 import {waitForCooldown} from './jobs/cooldown.js';
 import {createJobRequest} from './jobs/jobRequest.js';
@@ -37,6 +36,14 @@ const jobTelemetryReporter = new JobTelemetryReporter({
   onError: handleJobTelemetryError
 });
 
+function publishJobSnapshot(snapshot)
+{
+  return chrome.runtime.sendMessage({
+    type: enums.RuntimeMessageType.JOB_SNAPSHOT,
+    payload: snapshot
+  }).catch(() => undefined);
+}
+
 function entryIdFromUrl(entryUrl, baseUrl)
 {
   const pathname = new URL(entryUrl, baseUrl).pathname;
@@ -49,6 +56,7 @@ function entryIdFromUrl(entryUrl, baseUrl)
 }
 
 const jobManager = new JobManager({
+  publishSnapshot: publishJobSnapshot,
   executeJob: (job, {signal, reporter}) => processHandler(job, {
     signal,
     reporter,
@@ -64,7 +72,7 @@ const jobManager = new JobManager({
 
 function cancelAllJobs(reason)
 {
-  const waitingJobs = jobManager.waitingJobAttributes;
+  const waitingJobCount = jobManager.waitingCount;
   const cancellationRequested = jobManager.cancelAll(reason);
   if(!cancellationRequested)
   {
@@ -72,13 +80,7 @@ function cancelAllJobs(reason)
     return false;
   }
 
-  log.info("bg", "Cancellation requested, number of cancelled waiting jobs: " + waitingJobs.length);
-  if(waitingJobs.length > 0)
-  {
-    notificationHandler.updatePlannedProcessesList([]);
-    for(const waitingJob of waitingJobs)
-      notificationHandler.finishErrorEarlyStop(waitingJob.banSource, waitingJob.banMode);
-  }
+  log.info("bg", "Cancellation requested, number of cancelled waiting jobs: " + waitingJobCount);
 
   return true;
 }
@@ -87,6 +89,12 @@ if(DEV_USE_FAKE_HANDLERS)
   log.warn("bg", "development fake scraping and relation handlers are enabled");
 
 chrome.runtime.onMessage.addListener(function messageListener(message, sender, sendResponse) {
+  if(message?.type === enums.RuntimeMessageType.GET_JOB_SNAPSHOT)
+  {
+    sendResponse({ok: true, snapshot: jobManager.getSnapshot()});
+    return false;
+  }
+
   if(message?.type === enums.RuntimeMessageType.CANCEL_ALL_JOBS)
   {
     cancelAllJobs(USER_CANCELLATION_REASON);
@@ -123,8 +131,6 @@ chrome.runtime.onMessage.addListener(function messageListener(message, sender, s
     sendResponse({ok: true, jobId: job.id});
     log.info("bg", "number of waiting processes in the queue: " + jobManager.waitingCount);
 
-    // update notification page. otherwise, the user cannot see the planned processes immediately after new request.
-    notificationHandler.updatePlannedProcessesList(jobManager.waitingJobAttributes);
   })();
 
   // Configuration is loaded asynchronously before the response and enqueue.
@@ -179,11 +185,9 @@ async function processHandler(job, {
   let clientId = null;
   let errorMessage = null;
 
-  function reportPhase(phase, notifyLegacyUi)
+  function reportPhase(phase)
   {
-    const accepted = reporter.reportPhase(phase);
-    if(accepted && notifyLegacyUi)
-      notifyLegacyUi();
+    reporter.reportPhase(phase);
   }
 
   function reportProgress()
@@ -194,12 +198,7 @@ async function processHandler(job, {
       plannedAction
     };
 
-    if(reporter.reportProgress(progress))
-      notificationHandler.notifyOngoing(
-        successfulAction,
-        performedAction,
-        plannedAction
-      );
+    reporter.reportProgress(progress);
   }
 
   async function waitForRelationCooldown()
@@ -218,15 +217,7 @@ async function processHandler(job, {
         seconds: RELATION_COOLDOWN_SECONDS,
         signal,
         onTick: remainingSeconds =>
-        {
-          if(reporter.reportCooldown({remainingSeconds, cooldownEndsAt}))
-          {
-            notificationHandler.notifyCooldown(
-              remainingSeconds,
-              settings.EksiSozlukURL
-            );
-          }
-        }
+          reporter.reportCooldown({remainingSeconds, cooldownEndsAt})
       });
     }
     finally
@@ -299,12 +290,7 @@ async function processHandler(job, {
       }
     }
 
-    notificationHandler.updatePlannedProcessesList(jobManager.waitingJobAttributes);
-
-    reportPhase(
-      enums.JobPhase.CHECKING_ACCESS,
-      notificationHandler.notifyControlAccess
-    );
+    reportPhase(enums.JobPhase.CHECKING_ACCESS);
     const urlAccessible = await isEksiSozlukAccessible({
       signal,
       baseUrl: settings.EksiSozlukURL
@@ -312,15 +298,11 @@ async function processHandler(job, {
     if(!urlAccessible)
     {
       log.err("bg", "Program has been finished (finishErrorAccess)");
-      notificationHandler.finishErrorAccess(banSource, banMode);
       processFinishReason = enums.ProcessFinishReason.EKSI_SOZLUK_UNREACHABLE;
       return;
     }
 
-    reportPhase(
-      enums.JobPhase.CHECKING_LOGIN,
-      notificationHandler.notifyControlLogin
-    );
+    reportPhase(enums.JobPhase.CHECKING_LOGIN);
     userAgent = navigator.userAgent;
     const currentAccount = await scrapingHandler.getCurrentAccount({signal});
     clientName = currentAccount?.authorName ?? null;
@@ -328,7 +310,6 @@ async function processHandler(job, {
     if(!clientName || !clientId)
     {
       log.err("bg", "Program has been finished (finishErrorLogin)");
-      notificationHandler.finishErrorLogin(banSource, banMode);
       processFinishReason = enums.ProcessFinishReason.CLIENT_NOT_LOGGED_IN;
       return;
     }
@@ -368,7 +349,6 @@ async function processHandler(job, {
       catch(e)
       {
         processFinishReason = enums.ProcessFinishReason.USER_LIST_LOADING;
-        notificationHandler.finishErrorUserListLoading(banSource, banMode);
         return;
       }
       try
@@ -378,7 +358,6 @@ async function processHandler(job, {
       catch(e)
       {
         processFinishReason = enums.ProcessFinishReason.USER_LIST_CLEANING;
-        notificationHandler.finishErrorUserListCleaning(banSource, banMode);
         return;
       }
       
@@ -389,7 +368,6 @@ async function processHandler(job, {
       log.info("bg", "number of user to ban " + plannedAction);
       if(plannedAction === 0)
       {
-        notificationHandler.finishErrorNoAccount(banSource, banMode);
         log.err("bg", "Program has been finished (finishErrorNoAccount)");
         processFinishReason = enums.ProcessFinishReason.NO_ACCOUNTS_FOUND;
         return;
@@ -427,10 +405,7 @@ async function processHandler(job, {
     }
     else if(banSource === enums.BanSource.FAV)
     {
-      reportPhase(
-        enums.JobPhase.COLLECTING_FAVORITERS,
-        notificationHandler.notifyScrapeFavs
-      );
+      reportPhase(enums.JobPhase.COLLECTING_FAVORITERS);
 
       const entryId = entryIdFromUrl(entryUrl, settings.EksiSozlukURL);
       entryMetaData = await scrapingHandler.getEntryMetadata(entryId, {signal});
@@ -447,7 +422,6 @@ async function processHandler(job, {
       // stop if there is no user
       if(scrapedRelations.size === 0)
       {
-        notificationHandler.finishErrorNoAccount(banSource, banMode);
         log.err("bg", "Program has been finished (finishErrorNoAccount)");
         processFinishReason = enums.ProcessFinishReason.NO_ACCOUNTS_FOUND;
         return;
@@ -457,17 +431,11 @@ async function processHandler(job, {
       if(settings.enableAnalysisBeforeOperation && settings.enableProtectFollowedUsers && banMode == enums.BanMode.BAN)
       {
         // scrape the authors that ${clientName} follows
-        reportPhase(
-          enums.JobPhase.COLLECTING_EXISTING_RELATIONS,
-          notificationHandler.notifyScrapeFollowings
-        );
+        reportPhase(enums.JobPhase.COLLECTING_EXISTING_RELATIONS);
         let mapFollowing = await scrapingHandler.listFollowing(clientName, {signal});
         
         // remove the authors that ${clientName} follows from the list to protect    
-        reportPhase(
-          enums.JobPhase.ANALYSING_PROTECTED_USERS,
-          notificationHandler.notifyAnalysisProtectFollowedUsers
-        );
+        reportPhase(enums.JobPhase.ANALYSING_PROTECTED_USERS);
         for (let name of scrapedRelations.keys()) {
           if (mapFollowing.has(name))
             scrapedRelations.delete(name);
@@ -479,17 +447,11 @@ async function processHandler(job, {
         // This condition doesn't provide a simplification of the following algorithm
         
         // scrape the authors that ${clientName} blocked
-        reportPhase(
-          enums.JobPhase.COLLECTING_EXISTING_RELATIONS,
-          notificationHandler.notifyScrapeBanned
-        );
+        reportPhase(enums.JobPhase.COLLECTING_EXISTING_RELATIONS);
         let mapBlocked = await scrapingHandler.listOwnRelations({}, {signal});
         
         // update the list with info obtained from mapBlocked
-        reportPhase(
-          enums.JobPhase.ANALYSING_REQUIRED_ACTIONS,
-          notificationHandler.notifyAnalysisOnlyRequiredActions
-        );
+        reportPhase(enums.JobPhase.ANALYSING_REQUIRED_ACTIONS);
         for (let name of scrapedRelations.keys()) {
           if (mapBlocked.has(name))
           {
@@ -505,7 +467,6 @@ async function processHandler(job, {
       // stop if there is no user
       if(scrapedRelations.size === 0)
       {
-        notificationHandler.finishErrorNoAccount(banSource, banMode);
         log.err("bg", "Program has been finished (finishErrorNoAccount)");
         processFinishReason = enums.ProcessFinishReason.NO_ACCOUNTS_AFTER_FILTERING;
         return;
@@ -549,10 +510,7 @@ async function processHandler(job, {
     }
     else if(banSource === enums.BanSource.FOLLOW)
     {
-      reportPhase(
-        enums.JobPhase.COLLECTING_FOLLOWERS,
-        notificationHandler.notifyScrapeFollowers
-      );
+      reportPhase(enums.JobPhase.COLLECTING_FOLLOWERS);
 
       let scrapedRelations = await scrapingHandler.listFollowers(singleAuthorName, {signal});
       log.info("bg", "number of user to ban (before analysis): " + scrapedRelations.size);
@@ -560,7 +518,6 @@ async function processHandler(job, {
       // stop if there is no user
       if(scrapedRelations.size === 0)
       {
-        notificationHandler.finishErrorNoAccount(banSource, banMode);
         log.err("bg", "Program has been finished (error_NoAccount)");
         processFinishReason = enums.ProcessFinishReason.NO_ACCOUNTS_FOUND;
         return;
@@ -570,17 +527,11 @@ async function processHandler(job, {
       if(settings.enableAnalysisBeforeOperation && settings.enableProtectFollowedUsers && banMode == enums.BanMode.BAN)
       {
         // scrape the authors that ${clientName} follows
-        reportPhase(
-          enums.JobPhase.COLLECTING_EXISTING_RELATIONS,
-          notificationHandler.notifyScrapeFollowings
-        );
+        reportPhase(enums.JobPhase.COLLECTING_EXISTING_RELATIONS);
         let mapFollowing = await scrapingHandler.listFollowing(clientName, {signal});
         
         // remove the authors that ${clientName} follows from the list to protect  
-        reportPhase(
-          enums.JobPhase.ANALYSING_PROTECTED_USERS,
-          notificationHandler.notifyAnalysisProtectFollowedUsers
-        );
+        reportPhase(enums.JobPhase.ANALYSING_PROTECTED_USERS);
         for (let name of scrapedRelations.keys()) {
           if (mapFollowing.has(name))
             scrapedRelations.delete(name);
@@ -589,17 +540,11 @@ async function processHandler(job, {
       if(settings.enableAnalysisBeforeOperation && settings.enableOnlyRequiredActions)
       {
         // scrape the authors that ${clientName} blocked
-        reportPhase(
-          enums.JobPhase.COLLECTING_EXISTING_RELATIONS,
-          notificationHandler.notifyScrapeBanned
-        );
+        reportPhase(enums.JobPhase.COLLECTING_EXISTING_RELATIONS);
         let mapBlocked = await scrapingHandler.listOwnRelations({}, {signal});
         
         // update the list with info obtained from mapBlocked
-        reportPhase(
-          enums.JobPhase.ANALYSING_REQUIRED_ACTIONS,
-          notificationHandler.notifyAnalysisOnlyRequiredActions
-        );
+        reportPhase(enums.JobPhase.ANALYSING_REQUIRED_ACTIONS);
         for (let name of scrapedRelations.keys()) {
           if (mapBlocked.has(name))
           {
@@ -615,7 +560,6 @@ async function processHandler(job, {
       // stop if there is no user
       if(scrapedRelations.size === 0)
       {
-        notificationHandler.finishErrorNoAccount(banSource, banMode);
         log.err("bg", "Program has been finished (error_NoAccount)");
         processFinishReason = enums.ProcessFinishReason.NO_ACCOUNTS_AFTER_FILTERING;
         return;
@@ -663,10 +607,7 @@ async function processHandler(job, {
     }
     else if(banSource === enums.BanSource.UNDOBANALL)
     {
-      reportPhase(
-        enums.JobPhase.COLLECTING_EXISTING_RELATIONS,
-        notificationHandler.notifyScrapeUndobanAll
-      );
+      reportPhase(enums.JobPhase.COLLECTING_EXISTING_RELATIONS);
 
       let scrapedRelations = await scrapingHandler.listOwnRelations({}, {signal});
       
@@ -674,7 +615,6 @@ async function processHandler(job, {
       log.info("bg", "number of user to ban " + scrapedRelations.size);
       if(scrapedRelations.size === 0)
       {
-        notificationHandler.finishErrorNoAccount(banSource, banMode);
         log.err("bg", "Program has been finished (error_NoAccount)");
         processFinishReason = enums.ProcessFinishReason.NO_ACCOUNTS_FOUND;
         return;
@@ -709,10 +649,7 @@ async function processHandler(job, {
     
     else if(banSource === enums.BanSource.TITLE)
     {
-      reportPhase(
-        enums.JobPhase.COLLECTING_TITLE_AUTHORS,
-        notificationHandler.notifyScrapeTitle
-      );
+      reportPhase(enums.JobPhase.COLLECTING_TITLE_AUTHORS);
 
       // scrapedRelations does not hold duplicated records, scraping handler is responsible to keep it clean
       let scrapedRelations = await scrapingHandler.listTitleAuthors({
@@ -725,7 +662,6 @@ async function processHandler(job, {
       // stop if there is no user
       if(scrapedRelations.size === 0)
       {
-        notificationHandler.finishErrorNoAccount(banSource, banMode);
         log.err("bg", "Program has been finished (error_NoAccount)");
         processFinishReason = enums.ProcessFinishReason.NO_ACCOUNTS_FOUND;
         return;
@@ -735,17 +671,11 @@ async function processHandler(job, {
       if(settings.enableAnalysisBeforeOperation && settings.enableProtectFollowedUsers && banMode == enums.BanMode.BAN)
       {
         // scrape the authors that ${clientName} follows
-        reportPhase(
-          enums.JobPhase.COLLECTING_EXISTING_RELATIONS,
-          notificationHandler.notifyScrapeFollowings
-        );
+        reportPhase(enums.JobPhase.COLLECTING_EXISTING_RELATIONS);
         let mapFollowing = await scrapingHandler.listFollowing(clientName, {signal});
         
         // remove the authors that ${clientName} follows from the list to protect  
-        reportPhase(
-          enums.JobPhase.ANALYSING_PROTECTED_USERS,
-          notificationHandler.notifyAnalysisProtectFollowedUsers
-        );
+        reportPhase(enums.JobPhase.ANALYSING_PROTECTED_USERS);
         for (let name of scrapedRelations.keys()) {
           if (mapFollowing.has(name))
             scrapedRelations.delete(name);
@@ -754,17 +684,11 @@ async function processHandler(job, {
       if(settings.enableAnalysisBeforeOperation && settings.enableOnlyRequiredActions)
       {
         // scrape the authors that ${clientName} blocked
-        reportPhase(
-          enums.JobPhase.COLLECTING_EXISTING_RELATIONS,
-          notificationHandler.notifyScrapeBanned
-        );
+        reportPhase(enums.JobPhase.COLLECTING_EXISTING_RELATIONS);
         let mapBlocked = await scrapingHandler.listOwnRelations({}, {signal});
         
         // update the list with info obtained from mapBlocked
-        reportPhase(
-          enums.JobPhase.ANALYSING_REQUIRED_ACTIONS,
-          notificationHandler.notifyAnalysisOnlyRequiredActions
-        );
+        reportPhase(enums.JobPhase.ANALYSING_REQUIRED_ACTIONS);
         for (let name of scrapedRelations.keys()) {
           if (mapBlocked.has(name))
           {
@@ -780,7 +704,6 @@ async function processHandler(job, {
       // stop if there is no user
       if(scrapedRelations.size === 0)
       {
-        notificationHandler.finishErrorNoAccount(banSource, banMode);
         log.err("bg", "Program has been finished (error_NoAccount)");
         processFinishReason = enums.ProcessFinishReason.NO_ACCOUNTS_AFTER_FILTERING;
         return;
@@ -859,9 +782,6 @@ async function processHandler(job, {
     
     if(result.finishReason === enums.ProcessFinishReason.SUCCESS)
     {
-      notificationHandler.finishSuccess(banSource, banMode, successfulAction, performedAction, plannedAction);
-      
-      
       log.info("bg", "Program has been finished (successful:" + successfulAction + ", performed:" + performedAction + ", planned:" + plannedAction + ")");
 
       try
@@ -903,11 +823,6 @@ async function processHandler(job, {
       {
         handleJobTelemetryError(error);
       }
-
-    }
-    else if(result.finishReason === enums.ProcessFinishReason.CANCELLED)
-    {
-      notificationHandler.finishErrorEarlyStop(banSource, banMode);
     }
     
     log.resetData();

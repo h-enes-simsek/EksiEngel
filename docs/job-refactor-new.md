@@ -737,6 +737,19 @@ loading.
 The existing runtime message shapes can be edited as necessary. A large generic
 message-validation framework is not required.
 
+**Implementation status: completed.**
+
+- `GET_JOB_SNAPSHOT` is now an explicit runtime-message type. The background
+  adapter handles it synchronously and returns the authoritative detached
+  snapshot from `JobManager.getSnapshot()` without changing lifecycle state.
+- On `DOMContentLoaded`, the notification page requests and retains that
+  snapshot before relying on later updates. A failed or malformed response is
+  logged instead of becoming an unhandled rejection.
+- Focused routing tests cover both the page-load request and a background
+  response containing the active job's current phase and counters. Rendering
+  the retained snapshot and publishing subsequent state changes remain scoped
+  to tasks 3.2-3.4.
+
 #### 3.2 Publish complete state changes
 
 After a phase, progress, queue, cancellation, or terminal change, publish the
@@ -745,6 +758,22 @@ Sending the full snapshot is initially simpler and is acceptable at the current
 queue sizes.
 
 Use the snapshot revision to avoid rendering an older update after a newer one.
+
+**Implementation status: completed.**
+
+- The production `JobManager` publisher now sends a complete `JOB_SNAPSHOT`
+  message after every visible state commit. This covers queue, active phase,
+  progress, cooldown, cancellation and terminal transitions through the
+  manager's existing centralized commit path.
+- Snapshot delivery is best-effort because the notification page may not exist
+  yet; page-load hydration remains the recovery path for a missed publication.
+- The notification page accepts only snapshots with a revision newer than its
+  retained state. The same rule applies to both live publications and the
+  page-load response, so a delayed hydration response cannot replace a newer
+  live update.
+- Focused tests cover complete production publications, monotonically
+  increasing revisions, stale/duplicate rejection and the hydration race.
+  Rendering accepted snapshots remains task 3.3.
 
 #### 3.3 Use one renderer
 
@@ -761,6 +790,26 @@ Create a single `renderJobState(snapshot)` path that updates:
 The renderer may continue using the existing DOM structure and `innerHTML`.
 Changing its HTML/accessibility strategy is not part of this refactor.
 
+**Implementation status: completed.**
+
+- `notification.js` now has one `renderJobState(snapshot)` path used by both
+  page-load hydration and newer live snapshots. Snapshots received before the
+  DOM is ready are retained and rendered after `DOMContentLoaded`.
+- The renderer maps every `JobPhase` to user-facing Turkish status text,
+  updates all three counters and the bounded progress percentage, derives the
+  visible cooldown from `cooldownEndsAt`, and disables early stop when there is
+  no cancellable active job.
+- Waiting and completed tables are cleared and rebuilt from their snapshot
+  arrays on every accepted revision. Completed rows currently show the
+  authoritative `finishReason` value; task 3.4 replaces that value with the
+  complete terminal presentation mapping.
+- Legacy `JOB_NOTIFICATION` events no longer mutate the page, preventing old
+  imperative messages from disagreeing with snapshot state. Their remaining
+  background emitters can be removed as terminal presentation is completed.
+- Focused UI-state tests cover hydration rendering, active/cooldown progress,
+  waiting and completed rows, no-active reset behavior, early-stop state and
+  every phase-to-text mapping.
+
 #### 3.4 Derive terminal rows from results
 
 Completed rows must be generated from `completedJobs[].result`, never from a
@@ -770,6 +819,24 @@ Turkish status/error text.
 Re-rendering the same snapshot must not duplicate a completed row. Rebuilding
 the bounded completed table from the snapshot is simpler than append-only DOM
 state.
+
+**Implementation status: completed.**
+
+- The notification presenter now maps every `ProcessFinishReason` to terminal
+  Turkish status and error text. `UNEXPECTED_ERROR` includes the result's
+  captured error message in its completed row.
+- When there is no active job, the latest completed `JobResult` supplies the
+  page status. Completed rows use `result.completedAt` and always display the
+  result's real successful, performed and planned counters.
+- Completed rows are rebuilt from `snapshot.completedJobs` on every accepted
+  revision. Replaying the same bounded history therefore cannot append or
+  duplicate rows.
+- The runner and cancellation adapter no longer call terminal
+  `notificationHandler` methods. Those methods were removed, leaving terminal
+  UI output exclusively owned by the result committed through `JobManager`.
+- Focused tests cover every finish-reason mapping, preservation of real
+  counters, unexpected-error presentation, active-state clearing and
+  duplicate-free rebuilding.
 
 #### 3.5 Preserve business-phase visibility
 
@@ -785,7 +852,26 @@ The UI should still tell users when the program is:
 - waiting for rate-limit cooldown;
 - cancelling.
 
+**Implementation status: completed.**
+
+- The runner now reports all running UI state exclusively through its
+  manager-bound phase, progress and cooldown reporter. Its remaining legacy
+  `notificationHandler` import and calls were removed.
+- Access, login, each selected-source collection, existing-relation
+  collection, both analysis stages, relation execution and cooldown still
+  report their explicit `JobPhase` values. Cancellation remains the
+  manager-owned `CANCELLING` transition.
+- The notification renderer has a user-facing Turkish mapping for every
+  `JobPhase`, including a source-aware message for collecting relations during
+  `UNDOBANALL`.
+- Focused background tests verify that the production snapshot sequence
+  exposes preparing, access, login, execution and cancellation phases. UI
+  tests cover the complete phase enum, while the existing reporter tests cover
+  phase, progress and cooldown snapshot publication.
+
 #### Phase 3 acceptance criteria
+
+**Phase status: completed.**
 
 - Opening or reloading the notification page shows the current state.
 - The page does not miss initial progress after `tabs.create()`.

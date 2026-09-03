@@ -269,11 +269,11 @@ describe('JobManager queue ownership', () =>
       waitingJobs: [],
       completedJobs: [
         {
-          job: {id: waiting1.job.id},
+          job: {id: waiting2.job.id},
           result: {finishReason: ProcessFinishReason.CANCELLED}
         },
         {
-          job: {id: waiting2.job.id},
+          job: {id: waiting1.job.id},
           result: {finishReason: ProcessFinishReason.CANCELLED}
         }
       ]
@@ -397,9 +397,9 @@ describe('JobManager queue ownership', () =>
       waitingJobs: [],
       completedJobs: [
         {
-          job: {id: waiting1.job.id},
+          job: {id: waiting2.job.id},
           result: {
-            jobId: waiting1.job.id,
+            jobId: waiting2.job.id,
             finishReason: ProcessFinishReason.CANCELLED,
             successfulAction: 0,
             performedAction: 0,
@@ -407,9 +407,9 @@ describe('JobManager queue ownership', () =>
           }
         },
         {
-          job: {id: waiting2.job.id},
+          job: {id: waiting1.job.id},
           result: {
-            jobId: waiting2.job.id,
+            jobId: waiting1.job.id,
             finishReason: ProcessFinishReason.CANCELLED,
             successfulAction: 0,
             performedAction: 0,
@@ -435,6 +435,11 @@ describe('JobManager queue ownership', () =>
     });
     activeGate.resolve(activeResult);
     await expect(active.completion).resolves.toBe(activeResult);
+    expect(manager.getSnapshot().completedJobs.map(({job}) => job.id)).toEqual([
+      waiting2.job.id,
+      waiting1.job.id,
+      active.job.id
+    ]);
     expect(manager.getSnapshot().completedJobs.at(-1)).toEqual({
       job: expect.objectContaining({id: active.job.id}),
       result: activeResult
@@ -492,9 +497,9 @@ describe('JobManager queue ownership', () =>
       `start:${second.job.id}`
     ]);
     expect(manager.getSnapshot().completedJobs.map(({job}) => job.id)).toEqual([
-      first.job.id,
+      third.job.id,
       second.job.id,
-      third.job.id
+      first.job.id
     ]);
   });
 
@@ -586,7 +591,7 @@ describe('JobManager queue ownership', () =>
     expect(manager.getSnapshot().completedJobs).toHaveLength(1);
   });
 
-  it('bounds completed history and preserves the newest terminal records', async () =>
+  it('bounds completed history and preserves the newest accepted jobs', async () =>
   {
     const manager = new JobManager({
       executeJob: job => successResult(job),
@@ -600,12 +605,12 @@ describe('JobManager queue ownership', () =>
 
     const snapshot = manager.getSnapshot();
     expect(snapshot.completedJobs.map(({job}) => job.id)).toEqual([
-      second.job.id,
-      third.job.id
+      third.job.id,
+      second.job.id
     ]);
     expect(snapshot.completedJobs.map(({result}) => result.jobId)).toEqual([
-      second.job.id,
-      third.job.id
+      third.job.id,
+      second.job.id
     ]);
   });
 });

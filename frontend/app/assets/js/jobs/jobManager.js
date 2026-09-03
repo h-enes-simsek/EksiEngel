@@ -79,6 +79,7 @@ export class JobManager
     this._completedRecords = [];
     this._activeExecution = null;
     this._isPumping = false;
+    this._nextAcceptanceOrder = 0;
     this._revision = 0;
   }
 
@@ -88,7 +89,13 @@ export class JobManager
     let entry;
     const completion = new Promise((resolve, reject) =>
     {
-      entry = {job, resolve, reject, settled: false};
+      entry = {
+        job,
+        resolve,
+        reject,
+        settled: false,
+        acceptanceOrder: this._nextAcceptanceOrder++
+      };
     });
 
     this._waitingEntries.push(entry);
@@ -146,7 +153,7 @@ export class JobManager
     }
 
     activeExecution.result = result;
-    this._recordCompleted(entry.job, result);
+    this._recordCompleted(entry, result);
 
     if(this._activeExecution === activeExecution)
       this._activeExecution = null;
@@ -223,16 +230,20 @@ export class JobManager
     return true;
   }
 
-  _recordCompleted(job, result)
+  _recordCompleted(entry, result)
   {
     this._completedRecords.push(Object.freeze({
-      job: Object.freeze(createJobSummary(job)),
-      result
+      job: Object.freeze(createJobSummary(entry.job)),
+      result,
+      acceptanceOrder: entry.acceptanceOrder
     }));
+    this._completedRecords.sort((left, right) =>
+      right.acceptanceOrder - left.acceptanceOrder
+    );
 
     const overflow = this._completedRecords.length - this._completedHistoryLimit;
     if(overflow > 0)
-      this._completedRecords.splice(0, overflow);
+      this._completedRecords.splice(this._completedHistoryLimit, overflow);
   }
 
   _commitVisibleState()
@@ -289,7 +300,7 @@ export class JobManager
       const result = createJobResult(entry.job, {
         finishReason: ProcessFinishReason.CANCELLED
       });
-      this._recordCompleted(entry.job, result);
+      this._recordCompleted(entry, result);
       return result;
     });
 
@@ -342,7 +353,7 @@ export class JobManager
       revision: this._revision,
       activeJob: this._activeExecution?.displayState ?? null,
       waitingJobs: this._waitingEntries.map(({job}) => createJobSummary(job)),
-      completedJobs: this._completedRecords
+      completedJobs: this._completedRecords.map(({job, result}) => ({job, result}))
     }));
   }
 

@@ -1,19 +1,17 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 
-import {BanMode, BanSource, RuntimeMessageType, TargetType} from '../../app/assets/js/enums.js';
+import {
+  BanMode,
+  BanSource,
+  JobPhase,
+  RuntimeMessageType,
+  TargetType
+} from '../../app/assets/js/enums.js';
 
 const fakes = vi.hoisted(() => ({
   checkAccess: vi.fn(),
   getCurrentAccount: vi.fn(),
-  performAction: vi.fn(),
-  notification: {
-    updatePlannedProcessesList: vi.fn(),
-    finishErrorEarlyStop: vi.fn(),
-    notifyControlAccess: vi.fn(),
-    notifyControlLogin: vi.fn(),
-    notifyOngoing: vi.fn(),
-    finishSuccess: vi.fn()
-  }
+  performAction: vi.fn()
 }));
 
 vi.mock('../../app/assets/js/urlHandler.js', () => ({
@@ -33,10 +31,6 @@ vi.mock('../../app/assets/js/relationHandler.js', () => ({
   {
     performAction = fakes.performAction;
   }
-}));
-
-vi.mock('../../app/assets/js/notificationHandler.js', () => ({
-  notificationHandler: fakes.notification
 }));
 
 function settings()
@@ -60,9 +54,11 @@ async function loadBackground()
 {
   let runtimeMessageListener;
   let tabRemovedListener;
+  const runtimeSendMessage = vi.fn().mockResolvedValue({ok: true});
 
   vi.stubGlobal('chrome', {
     runtime: {
+      sendMessage: runtimeSendMessage,
       onMessage: {
         addListener: vi.fn(listener => { runtimeMessageListener = listener; })
       },
@@ -89,7 +85,7 @@ async function loadBackground()
   vi.spyOn(console, 'log').mockImplementation(() => {});
 
   await import('../../app/assets/js/background.js');
-  return {runtimeMessageListener, tabRemovedListener};
+  return {runtimeMessageListener, runtimeSendMessage, tabRemovedListener};
 }
 
 async function startSingleJob(runtimeMessageListener)
@@ -153,9 +149,87 @@ afterEach(() =>
 
 describe('background cancellation routing', () =>
 {
-  it('routes the explicit cancellation message to the active JobManager execution', async () =>
+  it('publishes complete snapshots for visible JobManager transitions', async () =>
+  {
+    const {runtimeMessageListener, runtimeSendMessage} = await loadBackground();
+    await startSingleJob(runtimeMessageListener);
+
+    const publications = runtimeSendMessage.mock.calls.map(([message]) => message);
+    expect(publications.length).toBeGreaterThan(0);
+    expect(publications.every(message =>
+      message.type === RuntimeMessageType.JOB_SNAPSHOT
+    )).toBe(true);
+    const revisions = publications.map(({payload}) => payload.revision);
+    expect(revisions).toEqual(revisions.toSorted((a, b) => a - b));
+    expect(new Set(revisions).size).toBe(revisions.length);
+    expect(publications.map(({payload}) => payload.activeJob?.phase)).toEqual(
+      expect.arrayContaining([
+        JobPhase.PREPARING,
+        JobPhase.CHECKING_ACCESS,
+        JobPhase.CHECKING_LOGIN,
+        JobPhase.EXECUTING_RELATIONS
+      ])
+    );
+    expect(publications.at(-1).payload).toMatchObject({
+      activeJob: {
+        job: {
+          id: expect.any(String),
+          banSource: BanSource.SINGLE,
+          banMode: BanMode.BAN
+        },
+        progress: {
+          successfulAction: 0,
+          performedAction: 0,
+          plannedAction: 1
+        }
+      },
+      waitingJobs: [],
+      completedJobs: []
+    });
+  });
+
+  it('returns the authoritative JobManager snapshot on request', async () =>
   {
     const {runtimeMessageListener} = await loadBackground();
+    const activeSignal = await startSingleJob(runtimeMessageListener);
+    const sendResponse = vi.fn();
+
+    const listenerResult = runtimeMessageListener({
+      type: RuntimeMessageType.GET_JOB_SNAPSHOT,
+      payload: null
+    }, {}, sendResponse);
+
+    expect(listenerResult).toBe(false);
+    expect(sendResponse).toHaveBeenCalledWith({
+      ok: true,
+      snapshot: {
+        revision: expect.any(Number),
+        activeJob: {
+          job: {
+            id: expect.any(String),
+            banSource: BanSource.SINGLE,
+            banMode: BanMode.BAN,
+            createdAt: expect.any(String)
+          },
+          phase: expect.any(String),
+          progress: {
+            successfulAction: 0,
+            performedAction: 0,
+            plannedAction: 1
+          },
+          cooldownEndsAt: null,
+          cancelRequested: false
+        },
+        waitingJobs: [],
+        completedJobs: []
+      }
+    });
+    expect(activeSignal.aborted).toBe(false);
+  });
+
+  it('routes the explicit cancellation message to the active JobManager execution', async () =>
+  {
+    const {runtimeMessageListener, runtimeSendMessage} = await loadBackground();
     const activeSignal = await startSingleJob(runtimeMessageListener);
     await enqueueWaitingSingleJob(runtimeMessageListener);
     const sendResponse = vi.fn();
@@ -169,10 +243,16 @@ describe('background cancellation routing', () =>
     expect(activeSignal.aborted).toBe(true);
     expect(activeSignal.reason).toBe('Cancellation requested by the user.');
     expect(fakes.performAction).toHaveBeenCalledOnce();
-    expect(fakes.notification.updatePlannedProcessesList).toHaveBeenLastCalledWith([]);
-    expect(fakes.notification.finishErrorEarlyStop).toHaveBeenCalledOnce();
-    expect(fakes.notification.finishErrorEarlyStop)
-      .toHaveBeenCalledWith(BanSource.SINGLE, BanMode.BAN);
+    expect(runtimeSendMessage).toHaveBeenLastCalledWith({
+      type: RuntimeMessageType.JOB_SNAPSHOT,
+      payload: expect.objectContaining({
+        activeJob: expect.objectContaining({
+          phase: JobPhase.CANCELLING,
+          cancelRequested: true
+        }),
+        waitingJobs: []
+      })
+    });
   });
 
   it('cancels only when the tracked notification tab is removed', async () =>
