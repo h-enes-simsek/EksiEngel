@@ -971,6 +971,17 @@ the no-op path end to end if it still has no implementation:
 
 Do not remove `commHandler.sendData()` or the job telemetry path.
 
+**Implementation status: completed.**
+
+- Removed the four popup analytics calls and the install/update analytics call.
+- Removed the no-op `CommHandler.sendAnalyticsData()` method, the unused popup
+  `commHandler` import, and the now-unreferenced `ClickType` enum.
+- Removed the related unused imports from `commHandler.js` while preserving
+  `commHandler.sendData()` and the complete job telemetry path.
+- Repository-wide searches find no remaining `sendAnalyticsData` or
+  `ClickType` references. The complete frontend test suite passed with 177
+  tests.
+
 #### 6.2 Remove unused imports and variables
 
 Examples to verify rather than remove blindly:

@@ -1,6 +1,3 @@
-import {log} from './log.js';
-import * as enums from './enums.js';
-
 function EksiSozlukTitle(eksisozluk_name, eksisozluk_id)
 {
   this.eksisozluk_name = eksisozluk_name;
@@ -137,10 +134,6 @@ class CommHandler
 			console.error("commHandler: err: " + err); 
 		}
 	}
-
-  sendAnalyticsData = async (data) => {
-    return;
-  }
 }
 
 export let commHandler = new CommHandler();
