@@ -143,6 +143,8 @@ class WriteEksiEngelUserSerializer(serializers.ModelSerializer):
         if eksi_engel_user:
             # the user is exist so update the relevant fields
             eksi_engel_user.is_eksiengel_user = True
+            if eksi_engel_user.first_activity_date is None:
+                eksi_engel_user.first_activity_date = timezone.now()
             eksi_engel_user.last_activity_date = timezone.now()
             eksi_engel_user.last_activity_user_agent = self.context.get('user_agent')
             eksi_engel_user.last_activity_version = self.context.get('version')

@@ -39,6 +39,7 @@ export async function runJob(job, {
   onTelemetryError
 })
 {
+  const startedAt = performance.now();
   const {request} = job;
   const {
     banSource,
@@ -626,6 +627,9 @@ export async function runJob(job, {
       plannedAction,
       errorMessage
     });
+
+    const durationMs = Math.round(performance.now() - startedAt);
+    log.info('job-runner', `Job ${job.id} finished in ${durationMs} ms (${result.finishReason})`);
     
     if(result.finishReason === enums.ProcessFinishReason.SUCCESS)
     {
