@@ -43,36 +43,7 @@
     {
       "resources": [
         "assets/img/eksiengel16.png",
-        "assets/img/eksiengel32.png",
-        "assets/img/eksiengel48.png",
-        "assets/img/eksiengel128.png",
-        "assets/img/semsiye.png",
-        "assets/img/mailicon.svg",
-        "assets/img/linkedinicon.svg",
-        "assets/img/questionicon.svg",
-        "assets/img/githubicon.svg",
-        "assets/img/authorMenu.png",
-        "assets/img/entryMenu.png",
-        "assets/img/venus.svg",
-        "assets/img/mars.svg",
-        "assets/img/blog.svg",
-        "assets/html/faq.html",
-        "assets/html/popup.html",
-        "assets/html/authorListPage.html",
-        "assets/html/welcome.html",
-        "assets/js/commHandler.js",
-        "assets/js/relationHandler.js",
-        "assets/js/scrapingHandler.js",
-        "assets/js/config.js",
-        "assets/js/enums.js",
-        "assets/js/log.js",
-        "assets/js/utils.js",
-        "assets/js/welcome.js",
-        "assets/js/jsdom.js",
-				"assets/js/faq.js",
-        "assets/js/popup.js",
-        "assets/js/authorListPage.js",
-				"assets/js/script.js"
+        "assets/js/enums.js"
       ],
       "matches": [
         "https://eksisozluk.com/*"

@@ -994,6 +994,17 @@ Examples to verify rather than remove blindly:
 
 Use repository-wide reference searches before deleting exported symbols.
 
+**Implementation status: completed.**
+
+- Removed the redundant `notificationHandler.js` module script from
+  `notification.html`; the page uses `notification.js` for its UI.
+- Removed the unused `element` parameters from all three popup handlers.
+- Verified that the documented `background.js` and `faq.js` imports are used,
+  and that notification-tab variables are required for tab tracking.
+- Kept the unused `sender` parameters in Chrome message listeners because
+  `sendResponse` must remain the third callback argument.
+- The complete frontend test suite passed with 177 tests after this cleanup.
+
 #### 6.3 Shrink `web_accessible_resources`
 
 The content script currently appears to require only:
@@ -1011,6 +1022,19 @@ resource proves necessary, add only that resource back with a short explanatory
 comment in this document or the commit message.
 
 The already-removed `tabs` permission is not part of this phase.
+
+**Implementation status: completed.**
+
+- Reduced `manifest.json` to `assets/img/eksiengel16.png` and
+  `assets/js/enums.js`, the only resources loaded by the content script through
+  `chrome.runtime.getURL()`.
+- Removed extension-page HTML, JavaScript, and image entries that do not need
+  to be web-accessible.
+- Repository references confirm that popup, FAQ, welcome, notification, and
+  author-list resources are opened as extension pages, not injected into
+  Ekşi Sözlük pages.
+- The complete frontend test suite passed with 177 tests. Manual unpacked
+  extension verification remains to be performed in Chrome.
 
 #### Phase 6 acceptance criteria
 

@@ -2,14 +2,14 @@ import * as enums from './enums.js';
 
 console.log("popup.js: has been started.");
 
-openauthorListPage.onclick = function(element) {
+openauthorListPage.onclick = function() {
   chrome.tabs.create({ url: chrome.runtime.getURL("assets/html/authorListPage.html") }, function (){
   // automatically close the popup.html if operation is successful
     window.close();
   });
 };
 
-startUndobanAll.onclick = async function(element) {
+startUndobanAll.onclick = async function() {
 	// send message to background page
 	try
   {
@@ -31,6 +31,6 @@ startUndobanAll.onclick = async function(element) {
   }
 };
 
-openFaq.onclick = function(element) {
+openFaq.onclick = function() {
   chrome.tabs.create({ url: chrome.runtime.getURL("assets/html/faq.html") });
 };
