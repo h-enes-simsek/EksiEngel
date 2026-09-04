@@ -370,12 +370,12 @@ describe('runtime message routing', () =>
     expect(elements.earlyStop.disabled).toBe(false);
     expect(elements.plannedProcesses.tBodies[0].rows[0].cells.slice(1).map(
       cell => cell.innerHTML
-    )).toEqual([enums.BanSource.LIST, enums.BanMode.UNDOBAN]);
+    )).toEqual(['Yazar listesi', 'Engeli kaldır']);
     expect(elements.completedProcesses.tBodies[0].rows[0].cells.slice(1).map(
       cell => cell.innerHTML
     )).toEqual([
-      enums.BanSource.SINGLE,
-      enums.BanMode.BAN,
+      'Tekil işlem',
+      'Engelle',
       4,
       5,
       5,
@@ -676,7 +676,7 @@ describe('runtime message routing', () =>
     expect(elements.earlyStop.disabled).toBe(false);
     expect(elements.plannedProcesses.tBodies[0].rows.map(row =>
       row.cells.slice(1).map(cell => cell.innerHTML)
-    )).toEqual([[enums.BanSource.FAV, enums.BanMode.BAN]]);
+    )).toEqual([['Favorileyenler', 'Engelle']]);
 
     pushSnapshot(snapshot(3, {
       activeJob: {
@@ -767,9 +767,9 @@ describe('runtime message routing', () =>
       row.cells[5].innerHTML,
       row.cells[6].innerHTML
     ])).toEqual([
-      [enums.BanSource.LIST, 0, 'yazar listesi boş'],
-      [enums.BanSource.FAV, 0, 'iptal edildi'],
-      [enums.BanSource.FAV, 288, 'iptal edildi']
+      ['Yazar listesi', 0, 'yazar listesi boş'],
+      ['Favorileyenler', 0, 'iptal edildi'],
+      ['Favorileyenler', 288, 'iptal edildi']
     ]);
   });
 
@@ -850,7 +850,7 @@ describe('runtime message routing', () =>
 
     expect(elements.statusText.innerHTML).toBe('Yazar listesi hazırlanıyor.');
     expect(tableRows(elements, 'plannedProcesses').map(row => row[1]))
-      .toEqual([enums.BanSource.SINGLE, enums.BanSource.TITLE]);
+      .toEqual(['Tekil işlem', 'Başlıktaki yazarlar']);
 
     deliverSnapshot(messageListener, snapshot(2, {
       activeJob: activeTestJob(
@@ -877,7 +877,7 @@ describe('runtime message routing', () =>
     expect(elements.statusText.innerHTML).toBe('İşlem başlayacak.');
     expect(elements.plannedAction.innerHTML).toBe(0);
     expect(tableRows(elements, 'plannedProcesses').map(row => row[1]))
-      .toEqual([enums.BanSource.TITLE]);
+      .toEqual(['Başlıktaki yazarlar']);
 
     deliverSnapshot(messageListener, snapshot(4, {
       activeJob: activeTestJob(
@@ -921,9 +921,9 @@ describe('runtime message routing', () =>
     ]).toEqual([0, 0, 0]);
     expect(tableRows(elements, 'completedProcesses').map(row => row[1]))
       .toEqual([
-        enums.BanSource.TITLE,
-        enums.BanSource.SINGLE,
-        enums.BanSource.LIST
+        'Başlıktaki yazarlar',
+        'Tekil işlem',
+        'Yazar listesi'
       ]);
     expect(tableRows(elements, 'completedProcesses').map(row =>
       row.slice(3, 7)
@@ -1028,7 +1028,7 @@ describe('runtime message routing', () =>
     expect(tableRows(elements, 'plannedProcesses')).toHaveLength(0);
     expect(tableRows(elements, 'completedProcesses')).toHaveLength(2);
     expect(tableRows(elements, 'completedProcesses').map(row => row[1]))
-      .toEqual([enums.BanSource.FAV, enums.BanSource.SINGLE]);
+      .toEqual(['Favorileyenler', 'Tekil işlem']);
   });
 
   it('renders cooldown across reload and retains counters after cancellation', async () =>
@@ -1263,11 +1263,11 @@ describe('runtime message routing', () =>
     expect(tableRows(elements, 'completedProcesses')).toHaveLength(5);
     expect(tableRows(elements, 'completedProcesses').map(row => row[1]))
       .toEqual([
-        enums.BanSource.FAV,
-        enums.BanSource.LIST,
-        enums.BanSource.FAV,
-        enums.BanSource.SINGLE,
-        enums.BanSource.TITLE
+        'Favorileyenler',
+        'Yazar listesi',
+        'Favorileyenler',
+        'Tekil işlem',
+        'Başlıktaki yazarlar'
       ]);
     expect(tableRows(elements, 'completedProcesses').map(row => row[6]))
       .toEqual([

@@ -23,6 +23,20 @@ const EMPTY_PROGRESS = Object.freeze({
   plannedAction: 0
 });
 
+const BAN_SOURCE_TEXT = Object.freeze({
+  [enums.BanSource.SINGLE]: "Tekil işlem",
+  [enums.BanSource.FAV]: "Favorileyenler",
+  [enums.BanSource.FOLLOW]: "Takipçiler",
+  [enums.BanSource.LIST]: "Yazar listesi",
+  [enums.BanSource.UNDOBANALL]: "Tüm engellenenler",
+  [enums.BanSource.TITLE]: "Başlıktaki yazarlar"
+});
+
+const BAN_MODE_TEXT = Object.freeze({
+  [enums.BanMode.BAN]: "Engelle",
+  [enums.BanMode.UNDOBAN]: "Engeli kaldır"
+});
+
 const TERMINAL_PRESENTATION = Object.freeze({
   [enums.ProcessFinishReason.NOT_SET]: {
     statusText: "İşlem sonucu belirlenemedi.",
@@ -147,6 +161,16 @@ function cooldownText(activeJob)
   return `${remainingSeconds} saniye`;
 }
 
+function banSourceText(banSource)
+{
+  return BAN_SOURCE_TEXT[banSource] ?? banSource;
+}
+
+function banModeText(banMode)
+{
+  return BAN_MODE_TEXT[banMode] ?? banMode;
+}
+
 function resetTable(tableId)
 {
   const tableBody = document.getElementById(tableId).tBodies[0];
@@ -170,8 +194,8 @@ function renderWaitingJobs(waitingJobs)
   {
     addTableRow(tableBody, [
       formatTime(job.createdAt),
-      job.banSource,
-      job.banMode
+      banSourceText(job.banSource),
+      banModeText(job.banMode)
     ]);
   }
 }
@@ -183,8 +207,8 @@ function renderCompletedJobs(completedJobs)
   {
     addTableRow(tableBody, [
       formatTime(result.completedAt),
-      job.banSource,
-      job.banMode,
+      banSourceText(job.banSource),
+      banModeText(job.banMode),
       result.successfulAction,
       result.performedAction,
       result.plannedAction,
