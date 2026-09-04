@@ -10,6 +10,12 @@ import {createJobTelemetry} from './jobTelemetry.js';
 
 const RELATION_COOLDOWN_SECONDS = 62;
 
+function throwIfAborted(signal)
+{
+  if(signal?.aborted)
+    throw signal.reason ?? new DOMException('The operation was aborted.', 'AbortError');
+}
+
 function entryIdFromUrl(entryUrl, baseUrl)
 {
   const pathname = new URL(entryUrl, baseUrl).pathname;
@@ -104,6 +110,7 @@ export async function runJob(job, {
         onTick: remainingSeconds =>
           reporter.reportCooldown({remainingSeconds, cooldownEndsAt})
       });
+      throwIfAborted(signal);
     }
     finally
     {

@@ -180,6 +180,32 @@ describe('runJob', () =>
     });
   });
 
+  it('does not retry when cancellation arrives during cooldown', async () =>
+  {
+    const abortController = new AbortController();
+    const relationHandler = {
+      performAction: vi.fn().mockResolvedValue({
+        status: RelationActionStatus.RETRY_REQUIRED,
+        actionPerformed: false,
+        actionSucceeded: null
+      })
+    };
+    const cooldownWaiter = vi.fn(async () =>
+    {
+      abortController.abort('test cancellation');
+    });
+    const dependencies = createDependencies({
+      signal: abortController.signal,
+      relationHandler,
+      cooldownWaiter
+    });
+
+    const result = await runJob(createTestJob(singleRequest()), dependencies);
+
+    expect(result.finishReason).toBe(ProcessFinishReason.CANCELLED);
+    expect(relationHandler.performAction).toHaveBeenCalledOnce();
+  });
+
   it('returns the access-check terminal result', async () =>
   {
     const dependencies = createDependencies({
