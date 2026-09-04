@@ -295,6 +295,7 @@ logların daha kolay okunması için harici bir html sayfası debug tool olarak 
 yeni API /api/total_action eklendi. günlere göre Action sayısını dönüyor.
 yeni HTML /api/total_action_html eklendi. /api/total_action APIsini görselleştiriyor. 
 bug: eksi engel kullanadan once engele maruz kalan kullanicilarin first activity tarihi bos gorunuyordu. bos olan degerler action tablosu sayesinde geriye yonelik olarak duzeltildi, django shell kullanildi. 
+content script, yazar sayfasinda daha fazla goster butonuna basildiginda gelen yeni entryler icin eksi engel buttonlarini guncelliyor.
 
 YÜKSEK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
 
@@ -310,14 +311,4 @@ takip edilen kullanıcıları engelleme ve sadece gerekli işlemleri yap ayarı 
 DÜŞÜK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
 JSDOM yerine boyutu kucuk html parser ya da "mv3 offscreen" kullanilir.  
 kullanıcılar doğrulanmadığı için alınan veriler güvenli değil.
-sayfa kapatıldığında iki kere earlyStop sinyali üretiliyor. Buga neden olmuyor. Muhtemelen notification sayfasına bilgi gönderme 
-işlemi asenkron olmadığı için buna neden oluyor.
 [çok zor] firefox desteği (hiçbir şey düzgün çalışmıyor, manifest v3 desteği bile tam gelmemiş)
-[çok zor] google analytics (extension için kullanmak sorun, mv3 daha ayrı sorun, ga4 ayrı sorun)
-[zor] engel limitine ulaşıldığında durması sağlanmalı ve belki uyarı verebilir.
-[belki] istatiki sonuçlar görüntülenebilmeli
-[belki] istatistiki verilere göre engel yapılabilmeli
-[gerekli mi]test yazılımı (geliştirme süreci yarım kaldı)
-[gerekli mi]yazar sayfasındayken scroll ile yeni entryler açıldığında yeni açılan entrylerin content script tarafından menuleri güncellenmiyor.
-[is necessary]menus in 'sorunsal' and 'sorunsallar' pages unnecessarily have 'fav ban' option (doesn't lead a bug or error log) (artık ediyor favdan dolayı 2 kişiyi engelledi, nedenini araştırmadım ama butonu silmek daha doğrusu eklememek en kolayı)
-[is necessary]buttons are not bypassed in 'takip' and 'takipci' pages.

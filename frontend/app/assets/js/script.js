@@ -213,18 +213,18 @@ function debugLog(...args) {
   if(page == "sorunsal")
     clickSource = enums.ClickSource.QUESTION;
       
-  // select all dropdown menus for each entry in the page
-  let entryMenus = await waitForElm(".other.dropdown .dropdown-menu.right.toggles-menu", "entry menu");
-
-  // select all meta tags for each entry in the page
-  let entryMetas = await waitForElm("[data-author-id]", "meta in entry");
-
   let eksiSozlukURL = window.location.origin;
 
-  for (let i = 0; i < entryMenus.length; i++) 
+  function injectEntryMenu(entryMenu)
   {
-    let entryMenu = entryMenus[i];
-    let entryMeta = entryMetas[i];
+    if(entryMenu.dataset.eksiEngelInjected === "true")
+      return;
+
+    let entryMeta = entryMenu.closest("[data-author-id]");
+    if(!entryMeta)
+      return;
+
+    entryMenu.dataset.eksiEngelInjected = "true";
     
     // extract some info from meta tag
     let authorName = entryMeta.getAttribute("data-author");
@@ -254,6 +254,21 @@ function debugLog(...args) {
     newButtonBanFav.addEventListener("click", function(){ EksiEngel_sendMessage(enums.BanSource.FAV, enums.BanMode.BAN, entryUrl, authorName, authorId, null, clickSource) });
     newButtonBanFollow.addEventListener("click", function(){ EksiEngel_sendMessage(enums.BanSource.FOLLOW, enums.BanMode.BAN, entryUrl, authorName, authorId, null, clickSource) });
   }
+
+  function injectEntryMenus()
+  {
+    document.querySelectorAll(".other.dropdown .dropdown-menu.right.toggles-menu")
+      .forEach(injectEntryMenu);
+  }
+
+  await waitForElm(".other.dropdown .dropdown-menu.right.toggles-menu", "entry menu");
+  injectEntryMenus();
+
+  const entryMenuObserver = new MutationObserver(() => injectEntryMenus());
+  entryMenuObserver.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
 
   //console.log("Eksi Engel: handleEntryMenus: done");
 
