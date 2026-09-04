@@ -224,6 +224,43 @@ describe('runJob', () =>
       .resolves.toMatchObject({finishReason: ProcessFinishReason.NO_ACCOUNTS_FOUND});
   });
 
+  it('skips unresolved list authors and continues with the remaining authors', async () =>
+  {
+    const scrapingHandler = {
+      getCurrentAccount: vi.fn().mockResolvedValue({
+        authorName: 'owner',
+        authorId: '1'
+      }),
+      getAuthor: vi.fn()
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce({authorName: 'valid-author', authorId: '7'})
+    };
+    const dependencies = createDependencies({scrapingHandler});
+    const job = createTestJob({
+      banSource: BanSource.LIST,
+      banMode: BanMode.BAN,
+      authorListText: 'typo-author\nvalid-author'
+    });
+
+    const result = await runJob(job, dependencies);
+
+    expect(result).toMatchObject({
+      finishReason: ProcessFinishReason.SUCCESS,
+      successfulAction: 1,
+      performedAction: 1,
+      plannedAction: 2
+    });
+    expect(dependencies.relationHandler.performAction).toHaveBeenCalledOnce();
+    expect(dependencies.relationHandler.performAction).toHaveBeenCalledWith(
+      BanMode.BAN,
+      '7',
+      true,
+      true,
+      false,
+      {signal: dependencies.signal, baseUrl: BASE_SETTINGS.EksiSozlukURL}
+    );
+  });
+
   it('converts an execution exception into an unexpected-error result', async () =>
   {
     const dependencies = createDependencies({

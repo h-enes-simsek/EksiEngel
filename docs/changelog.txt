@@ -299,8 +299,6 @@ bug: eksi engel kullanadan once engele maruz kalan kullanicilarin first activity
 YÜKSEK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
 
 loglar daha düzgün yazılmalı başlangıç ve bitişi net olmalı
-backendte 0 idli yazarlar kaydedilmemeli özellikle LIST için, (frontendte 0idli yazarlar filtrelendi) 
-frontend tarafında arraylerden author_list verimsiz bir biçimde oluşturuluyor.
 notification sayfasında ve loglarda enumların ne olduğu anlaşılmıyor.
 loglar incelenmeli, bitişte bittiğine dair bir bilgi olmalı
 takip edilen kullanıcıları engelleme ve sadece gerekli işlemleri yap ayarı çok uzun sürüyor.
@@ -309,19 +307,6 @@ takip edilen kullanıcıları engelleme ve sadece gerekli işlemleri yap ayarı 
   yeni durumda engellenmiş ve takip edilen yazarların scrape işlemleri için bir limit gelmeli.
   [düşük] takip edilen ve engellenen kişiler listesi localde tutulup arada sync edilerek scrape işlemi süreci azaltılabilir
   [düşük] localde tutulursa scrape için belki bir sınır getirmeye gerek yoktur
-ayarlar sayfası tasarımı
-list ban için kaydedilen liste string değil bir string queue olmalı.
-kullanıcı VPN kullandığında eski url, yönlendiriliyor. şu anda bu durum erişim eksikliği olarak yorumlanıyor ama yönlendirilen url, yeni url olarak yorumlanabilir.
-notification sayfasındaki BAN/UNDOBAN gibi ifadeler türkçeleştirilmeli
-notification sayfasına yapılabilecek tüm işlemlerin anlatıldığı bir diyagram konulmalı.
-unique identifier ile, bazı butonlara ve yükleme sonrasında bildirim gitsin.
-notification kısmında tahmini bitiş süresi
-performans analizi yapılmalı
-  map.clear memory leak?
-  logger'ın etkisi gözlemlenmeli
-    array silindiğinde gerçekten bellekten siliniyor mu, reflerden dolayı memory leak oluşuyor mu?
-    log.getData yeni arraylere kopyalanıyor mu, ref değeri mi dönüyor?
-    obje içinde array silindiğinde reflerin durumu ne oluyor?
 
 DÜŞÜK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
 JSDOM yerine boyutu kucuk html parser ya da "mv3 offscreen" kullanilir.  

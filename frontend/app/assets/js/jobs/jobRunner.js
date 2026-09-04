@@ -232,8 +232,12 @@ export async function runJob(job, {
       {
         const scrapedAuthor = await scrapingHandler.getAuthor(authorName, {signal});
         let author = createEksiSozlukUser(authorName, scrapedAuthor?.authorId);
-        if(author)
-          authorList.push(author);
+        if(!author)
+        {
+          log.info("bg", "Author could not be resolved and will be skipped: " + authorName);
+          continue;
+        }
+        authorList.push(author);
         
         let res;
         if(banMode == enums.BanMode.BAN)
