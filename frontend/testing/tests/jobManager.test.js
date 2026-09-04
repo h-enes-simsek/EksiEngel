@@ -446,6 +446,31 @@ describe('JobManager queue ownership', () =>
     });
   });
 
+  it('does not start a drained job from a stale pump after cancelAll', async () =>
+  {
+    const firstGate = deferred();
+    const started = [];
+    const manager = new JobManager({
+      executeJob: job =>
+      {
+        started.push(job.id);
+        return started.length === 1 ? firstGate.promise : successResult(job);
+      }
+    });
+    const first = manager.enqueue(request(1), {});
+    const waiting = manager.enqueue(request(2), {});
+
+    manager.cancelAll('stop');
+    firstGate.resolve(createJobResult(first.job, {
+      finishReason: ProcessFinishReason.CANCELLED
+    }));
+
+    await first.completion;
+    await waiting.completion;
+
+    expect(started).toEqual([first.job.id]);
+  });
+
   it('publishes terminal state before settling and starting the next job', async () =>
   {
     const firstGate = deferred();

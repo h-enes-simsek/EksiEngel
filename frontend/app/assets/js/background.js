@@ -108,7 +108,8 @@ async function executeJob(job, {signal, reporter})
 
 const jobManager = new JobManager({
   publishSnapshot: publishJobSnapshot,
-  executeJob
+  executeJob,
+  loadSettings: handleConfig
 });
 
 function cancelAllJobs(reason)
@@ -153,26 +154,29 @@ chrome.runtime.onMessage.addListener(function messageListener(message, sender, s
   }
 
   void (async () => {
-    let settings;
     try
     {
-      settings = await handleConfig();
+      const request = createJobRequest(obj);
+      const acceptedJob = await jobManager.enqueueRequest(request);
+      if(!acceptedJob)
+      {
+        sendResponse({ok: false, errorCode: "CANCELLED"});
+        return;
+      }
+
+      const {job} = acceptedJob;
+      log.info("bg", "a new process added to the queue, banSource: " + request.banSource + ", banMode: " + request.banMode);
+      sendResponse({ok: true, jobId: job.id});
+      log.info("bg", "number of waiting processes in the queue: " + jobManager.waitingCount);
     }
     catch(error)
     {
       log.err("bg", "Configuration could not be loaded before accepting the job: " + error);
       sendResponse({ok: false, errorCode: "CONFIGURATION_LOADING_FAILED"});
-      return;
     }
-
-    const request = createJobRequest(obj);
-    log.info("bg", "a new process added to the queue, banSource: " + request.banSource + ", banMode: " + request.banMode);
-    const {job} = jobManager.enqueue(request, settings);
-    sendResponse({ok: true, jobId: job.id});
-    log.info("bg", "number of waiting processes in the queue: " + jobManager.waitingCount);
   })();
 
-  // Configuration is loaded asynchronously before the response and enqueue.
+  // JobManager owns the pending request until configuration is loaded.
   return true;
 });
 

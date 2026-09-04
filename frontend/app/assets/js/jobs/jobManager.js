@@ -61,30 +61,37 @@ export class JobManager
 {
   constructor({
     executeJob,
+    loadSettings = null,
     publishSnapshot = null,
     completedHistoryLimit = DEFAULT_COMPLETED_HISTORY_LIMIT
   })
   {
     if(typeof executeJob !== 'function')
       throw new TypeError('executeJob must be a function');
+    if(loadSettings !== null && typeof loadSettings !== 'function')
+      throw new TypeError('loadSettings must be a function or null');
     if(publishSnapshot !== null && typeof publishSnapshot !== 'function')
       throw new TypeError('publishSnapshot must be a function or null');
     if(!Number.isInteger(completedHistoryLimit) || completedHistoryLimit <= 0)
       throw new TypeError('completedHistoryLimit must be a positive integer');
 
     this._executeJob = executeJob;
+    this._loadSettings = loadSettings;
     this._publishSnapshot = publishSnapshot;
     this._completedHistoryLimit = completedHistoryLimit;
     this._waitingEntries = [];
     this._completedRecords = [];
+    this._pendingEnqueueRequests = new Set();
     this._activeExecution = null;
     this._isPumping = false;
+    this._pumpBlocked = false;
     this._nextAcceptanceOrder = 0;
     this._revision = 0;
   }
 
   enqueue(request, settings)
   {
+    this._pumpBlocked = false;
     const job = createJob(request, settings);
     let entry;
     const completion = new Promise((resolve, reject) =>
@@ -105,9 +112,36 @@ export class JobManager
     return {job, completion};
   }
 
+  async enqueueRequest(request)
+  {
+    if(!this._loadSettings)
+      throw new TypeError('loadSettings is required for enqueueRequest');
+
+    const abortController = new AbortController();
+    this._pendingEnqueueRequests.add(abortController);
+    try
+    {
+      const settings = await this._loadSettings({signal: abortController.signal});
+      if(abortController.signal.aborted)
+        return null;
+
+      return this.enqueue(request, settings);
+    }
+    catch(error)
+    {
+      if(abortController.signal.aborted)
+        return null;
+      throw error;
+    }
+    finally
+    {
+      this._pendingEnqueueRequests.delete(abortController);
+    }
+  }
+
   async _pump()
   {
-    if(this._activeExecution || this._isPumping)
+    if(this._pumpBlocked || this._activeExecution || this._isPumping)
       return false;
 
     const entry = this._waitingEntries.shift();
@@ -325,10 +359,15 @@ export class JobManager
 
   cancelAll(reason)
   {
+    this._pumpBlocked = true;
+    const pendingEnqueueRequests = [...this._pendingEnqueueRequests];
+    pendingEnqueueRequests.forEach(abortController => abortController.abort(reason));
     const activeCancellationRequested = this._requestActiveCancellation(reason);
     const {drainedEntries, drainedResults} = this._drainWaiting();
 
-    if(!activeCancellationRequested && drainedEntries.length === 0)
+    if(!activeCancellationRequested &&
+       drainedEntries.length === 0 &&
+       pendingEnqueueRequests.length === 0)
       return false;
 
     this._commitVisibleState();

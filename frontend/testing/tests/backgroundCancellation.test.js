@@ -51,7 +51,7 @@ function settings()
   };
 }
 
-async function loadBackground()
+async function loadBackground({storageGet = vi.fn().mockResolvedValue({config: settings()})} = {})
 {
   let runtimeMessageListener;
   let tabRemovedListener;
@@ -78,7 +78,7 @@ async function loadBackground()
     },
     storage: {
       local: {
-        get: vi.fn().mockResolvedValue({config: settings()}),
+        get: storageGet,
         set: vi.fn(),
         clear: vi.fn()
       }
@@ -296,6 +296,43 @@ describe('background cancellation routing', () =>
         waitingJobs: []
       })
     });
+  });
+
+  it('does not enqueue a request whose configuration load finishes after cancellation', async () =>
+  {
+    let resolveSettings;
+    const storageGet = vi.fn(() => new Promise(resolve =>
+    {
+      resolveSettings = resolve;
+    }));
+    const {runtimeMessageListener} = await loadBackground({storageGet});
+    const sendResponse = vi.fn();
+
+    runtimeMessageListener({
+      type: RuntimeMessageType.ENQUEUE_JOB,
+      payload: {
+        banSource: BanSource.SINGLE,
+        banMode: BanMode.BAN,
+        authorName: 'late-target',
+        authorId: '9',
+        targetType: TargetType.USER
+      }
+    }, {}, sendResponse);
+
+    await vi.waitFor(() => expect(resolveSettings).toEqual(expect.any(Function)));
+    const cancelResponse = vi.fn();
+    runtimeMessageListener({
+      type: RuntimeMessageType.CANCEL_ALL_JOBS
+    }, {}, cancelResponse);
+
+    resolveSettings({config: settings()});
+
+    await vi.waitFor(() => expect(sendResponse).toHaveBeenCalledWith({
+      ok: false,
+      errorCode: 'CANCELLED'
+    }));
+    expect(cancelResponse).toHaveBeenCalledWith({ok: true});
+    expect(fakes.performAction).not.toHaveBeenCalled();
   });
 
   it('cancels only when the tracked notification tab is removed', async () =>
