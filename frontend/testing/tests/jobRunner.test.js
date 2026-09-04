@@ -206,6 +206,38 @@ describe('runJob', () =>
     expect(relationHandler.performAction).toHaveBeenCalledOnce();
   });
 
+  it('does not accept a relation result completed after cancellation', async () =>
+  {
+    const abortController = new AbortController();
+    let resolveRelation;
+    const relationHandler = {
+      performAction: vi.fn().mockImplementation(() => new Promise(resolve =>
+      {
+        resolveRelation = resolve;
+      }))
+    };
+    const dependencies = createDependencies({
+      signal: abortController.signal,
+      relationHandler
+    });
+    const runPromise = runJob(createTestJob(singleRequest()), dependencies);
+
+    await vi.waitFor(() => expect(resolveRelation).toEqual(expect.any(Function)));
+    abortController.abort('test cancellation');
+    resolveRelation({
+      status: RelationActionStatus.COMPLETED,
+      actionPerformed: true,
+      actionSucceeded: true
+    });
+
+    await expect(runPromise).resolves.toMatchObject({
+      finishReason: ProcessFinishReason.CANCELLED,
+      successfulAction: 0,
+      performedAction: 0
+    });
+    expect(relationHandler.performAction).toHaveBeenCalledOnce();
+  });
+
   it('returns the access-check terminal result', async () =>
   {
     const dependencies = createDependencies({

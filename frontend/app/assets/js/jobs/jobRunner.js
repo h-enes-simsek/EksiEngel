@@ -61,10 +61,16 @@ export async function runJob(job, {
     authorListText
   } = request;
 
-  const performRelationAction = (...args) => relationHandler.performAction(
-    ...args,
-    {signal, baseUrl: settings.EksiSozlukURL}
-  );
+  const performRelationAction = async (...args) =>
+  {
+    throwIfAborted(signal);
+    const result = await relationHandler.performAction(
+      ...args,
+      {signal, baseUrl: settings.EksiSozlukURL}
+    );
+    throwIfAborted(signal);
+    return result;
+  };
 
   let processFinishReason = enums.ProcessFinishReason.NOT_SET;
   let authorList = [];
