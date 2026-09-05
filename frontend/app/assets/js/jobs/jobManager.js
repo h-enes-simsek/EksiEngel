@@ -100,7 +100,6 @@ export class JobManager
         job,
         resolve,
         reject,
-        settled: false,
         acceptanceOrder: this._nextAcceptanceOrder++
       };
     });
@@ -193,7 +192,7 @@ export class JobManager
       this._activeExecution = null;
 
     this._commitVisibleState();
-    this._settleEntry(entry, 'resolve', result);
+    entry.resolve(result);
     this._isPumping = false;
     void this._pump();
 
@@ -302,16 +301,6 @@ export class JobManager
     return snapshot;
   }
 
-  _settleEntry(entry, method, value)
-  {
-    if(entry.settled)
-      return false;
-
-    entry.settled = true;
-    entry[method](value);
-    return true;
-  }
-
   _requestActiveCancellation(reason)
   {
     const activeExecution = this._activeExecution;
@@ -344,17 +333,8 @@ export class JobManager
   _settleDrainedEntries(drainedEntries, drainedResults)
   {
     drainedEntries.forEach((entry, index) =>
-      this._settleEntry(entry, 'resolve', drainedResults[index])
+      entry.resolve(drainedResults[index])
     );
-  }
-
-  cancelActive(reason)
-  {
-    if(!this._requestActiveCancellation(reason))
-      return false;
-
-    this._commitVisibleState();
-    return true;
   }
 
   cancelAll(reason)
@@ -375,17 +355,6 @@ export class JobManager
     return true;
   }
 
-  clearWaiting()
-  {
-    const {drainedEntries, drainedResults} = this._drainWaiting();
-    if(drainedEntries.length === 0)
-      return drainedResults;
-
-    this._commitVisibleState();
-    this._settleDrainedEntries(drainedEntries, drainedResults);
-    return drainedResults;
-  }
-
   getSnapshot()
   {
     return deepFreeze(structuredClone({
@@ -401,22 +370,4 @@ export class JobManager
     return this._waitingEntries.length;
   }
 
-  get waitingJobAttributes()
-  {
-    return this._waitingEntries.map(({job}) => ({
-      banSource: job.request.banSource,
-      banMode: job.request.banMode,
-      creationDateInStr: job.creationDateInStr
-    }));
-  }
-
-  get isRunning()
-  {
-    return this._activeExecution !== null;
-  }
-
-  get activeJob()
-  {
-    return this._activeExecution?.job ?? null;
-  }
 }

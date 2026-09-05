@@ -1,5 +1,5 @@
 // Hardcoded records used when DEV_USE_FAKE_HANDLERS is enabled in background.js.
-const ARTIFICIAL_DELAY_MS = 3000;
+const ARTIFICIAL_DELAY_MS = 500;
 
 function waitForArtificialDelay(signal)
 {

@@ -148,7 +148,7 @@ describe('JobManager queue ownership', () =>
     })).toBe(false);
     expect(manager.getSnapshot().revision).toBe(revisionBeforeStaleReport);
 
-    expect(manager.cancelActive('stop')).toBe(true);
+    expect(manager.cancelAll('stop')).toBe(true);
     const cancellingSnapshot = manager.getSnapshot();
     expect(reporters[1].reportPhase(JobPhase.CHECKING_LOGIN)).toBe(false);
     expect(reporters[1].reportCooldown({
@@ -181,18 +181,20 @@ describe('JobManager queue ownership', () =>
     const third = manager.enqueue(request(3), {});
 
     expect(started).toEqual([first.job.id]);
-    expect(manager.activeJob).toBe(first.job);
+    expect(manager.getSnapshot().activeJob.job.id).toBe(first.job.id);
     expect(manager.waitingCount).toBe(2);
-    expect(manager.waitingJobAttributes).toEqual([
+    expect(manager.getSnapshot().waitingJobs).toEqual([
       {
+        id: second.job.id,
         banSource: second.job.request.banSource,
         banMode: second.job.request.banMode,
-        creationDateInStr: second.job.creationDateInStr
+        createdAt: second.job.createdAt
       },
       {
+        id: third.job.id,
         banSource: third.job.request.banSource,
         banMode: third.job.request.banMode,
-        creationDateInStr: third.job.creationDateInStr
+        createdAt: third.job.createdAt
       }
     ]);
 
@@ -201,7 +203,7 @@ describe('JobManager queue ownership', () =>
     await expect(first.completion).resolves.toBe(firstResult);
 
     expect(started).toEqual([first.job.id, second.job.id]);
-    expect(manager.activeJob).toBe(second.job);
+    expect(manager.getSnapshot().activeJob.job.id).toBe(second.job.id);
     expect(manager.waitingCount).toBe(1);
 
     const secondResult = successResult(second.job);
@@ -209,14 +211,13 @@ describe('JobManager queue ownership', () =>
     await expect(second.completion).resolves.toBe(secondResult);
 
     expect(started).toEqual([first.job.id, second.job.id, third.job.id]);
-    expect(manager.activeJob).toBe(third.job);
+    expect(manager.getSnapshot().activeJob.job.id).toBe(third.job.id);
 
     const thirdResult = successResult(third.job);
     gates.get(third.job.id).resolve(thirdResult);
     await expect(third.completion).resolves.toBe(thirdResult);
 
-    expect(manager.isRunning).toBe(false);
-    expect(manager.activeJob).toBeNull();
+    expect(manager.getSnapshot().activeJob).toBeNull();
     expect(manager.waitingCount).toBe(0);
   });
 
@@ -230,10 +231,8 @@ describe('JobManager queue ownership', () =>
     const waiting1 = manager.enqueue(request(2), {});
     const waiting2 = manager.enqueue(request(3), {});
 
-    const drainedResults = manager.clearWaiting();
-
-    expect(drainedResults).toHaveLength(2);
-    expect(manager.clearWaiting()).toEqual([]);
+    expect(manager.cancelAll('stop')).toBe(true);
+    expect(manager.cancelAll('stop again')).toBe(false);
     expect(manager.waitingCount).toBe(0);
     expect(executeJob).toHaveBeenCalledTimes(1);
 
@@ -242,8 +241,6 @@ describe('JobManager queue ownership', () =>
       waiting2.completion
     ]);
 
-    expect(waiting1Result).toBe(drainedResults[0]);
-    expect(waiting2Result).toBe(drainedResults[1]);
     expect(waiting1Result).toMatchObject({
       jobId: waiting1.job.id,
       finishReason: ProcessFinishReason.CANCELLED,
@@ -279,7 +276,9 @@ describe('JobManager queue ownership', () =>
       ]
     });
 
-    const activeResult = successResult(active.job);
+    const activeResult = createJobResult(active.job, {
+      finishReason: ProcessFinishReason.CANCELLED
+    });
     activeGate.resolve(activeResult);
     await expect(active.completion).resolves.toBe(activeResult);
 
@@ -313,10 +312,10 @@ describe('JobManager queue ownership', () =>
       first.job.id,
       second.job.id
     ]);
-    expect(manager.isRunning).toBe(false);
+    expect(manager.getSnapshot().activeJob).toBeNull();
   });
 
-  it('marks and aborts the active execution once without draining waiting jobs', async () =>
+  it('marks and aborts the active execution once when no jobs are waiting', async () =>
   {
     const activeGate = deferred();
     const snapshots = [];
@@ -330,11 +329,10 @@ describe('JobManager queue ownership', () =>
       publishSnapshot: snapshot => snapshots.push(snapshot)
     });
     const active = manager.enqueue(request(1), {});
-    const waiting = manager.enqueue(request(2), {});
     const snapshotCountBeforeCancellation = snapshots.length;
 
-    expect(manager.cancelActive('requested')).toBe(true);
-    expect(manager.cancelActive('requested again')).toBe(false);
+    expect(manager.cancelAll('requested')).toBe(true);
+    expect(manager.cancelAll('requested again')).toBe(false);
     expect(snapshots).toHaveLength(snapshotCountBeforeCancellation + 1);
     expect(snapshots.at(-1)).toMatchObject({
       activeJob: {
@@ -343,14 +341,11 @@ describe('JobManager queue ownership', () =>
         cooldownEndsAt: null,
         cancelRequested: true
       },
-      waitingJobs: [{id: waiting.job.id}]
+      waitingJobs: []
     });
     expect(activeSignal.aborted).toBe(true);
     expect(activeSignal.reason).toBe('requested');
-    expect(manager.waitingCount).toBe(1);
-
-    manager.clearWaiting();
-    await waiting.completion;
+    expect(manager.waitingCount).toBe(0);
     const activeResult = createJobResult(active.job, {
       finishReason: ProcessFinishReason.CANCELLED
     });
@@ -471,7 +466,7 @@ describe('JobManager queue ownership', () =>
     expect(started).toEqual([first.job.id]);
   });
 
-  it('publishes terminal state before settling and starting the next job', async () =>
+  it('publishes terminal state before starting the next job when publication enqueues more work', async () =>
   {
     const firstGate = deferred();
     const events = [];
@@ -500,13 +495,6 @@ describe('JobManager queue ownership', () =>
         }
       }
     });
-    const originalSettleEntry = manager._settleEntry.bind(manager);
-    vi.spyOn(manager, '_settleEntry').mockImplementation((entry, method, value) =>
-    {
-      events.push(`settle:${entry.job.id}`);
-      return originalSettleEntry(entry, method, value);
-    });
-
     const first = manager.enqueue(request(1), {});
     const second = manager.enqueue(request(2), {});
     const firstResult = successResult(first.job);
@@ -516,9 +504,8 @@ describe('JobManager queue ownership', () =>
     await second.completion;
     await third.completion;
 
-    expect(events.slice(0, 3)).toEqual([
+    expect(events.slice(0, 2)).toEqual([
       'publish:terminal',
-      `settle:${first.job.id}`,
       `start:${second.job.id}`
     ]);
     expect(manager.getSnapshot().completedJobs.map(({job}) => job.id)).toEqual([
@@ -533,7 +520,9 @@ describe('JobManager queue ownership', () =>
     const activeGate = deferred();
     const snapshots = [];
     const manager = new JobManager({
-      executeJob: job => activeGate.promise.then(() => successResult(job)),
+      executeJob: (job, {signal}) => activeGate.promise.then(() => createJobResult(job, {
+        finishReason: signal.aborted ? ProcessFinishReason.CANCELLED : ProcessFinishReason.SUCCESS
+      })),
       publishSnapshot: snapshot => snapshots.push(snapshot)
     });
 
@@ -557,7 +546,7 @@ describe('JobManager queue ownership', () =>
       expect.objectContaining({id: waiting.job.id})
     ]);
 
-    manager.clearWaiting();
+    manager.cancelAll('stop');
     await waiting.completion;
     activeGate.resolve();
     await active.completion;

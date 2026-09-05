@@ -1,6 +1,6 @@
 import {RelationActionStatus} from '../relationHandler.js';
 
-const ARTIFICIAL_DELAY_MS = 500;
+const ARTIFICIAL_DELAY_MS = 100;
 
 function waitForArtificialDelay(signal)
 {
