@@ -24,13 +24,21 @@ function stubStorage({get, set})
 
 describe('configuration storage', () =>
 {
-  it('returns the configuration loaded for an acceptance-time snapshot', async () =>
+  it('merges stored values over defaults and persists the result', async () =>
   {
     const storedConfig = {enableMute: true};
-    stubStorage({get: vi.fn().mockResolvedValue({config: storedConfig})});
-    const {handleConfig} = await import('../../app/assets/js/config.js');
+    const set = vi.fn().mockResolvedValue();
+    stubStorage({get: vi.fn().mockResolvedValue({config: storedConfig}), set});
+    const {handleConfig, CONFIG_VERSION} = await import('../../app/assets/js/config.js');
 
-    await expect(handleConfig()).resolves.toBe(storedConfig);
+    const loadedConfig = await handleConfig();
+
+    expect(loadedConfig).toMatchObject({
+      configVersion: CONFIG_VERSION,
+      enableMute: true,
+      enableTitleBan: true
+    });
+    expect(set).toHaveBeenCalledWith({config: loadedConfig});
   });
 
   it('returns false only when the config key is missing', async () =>

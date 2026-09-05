@@ -296,6 +296,7 @@ yeni API /api/total_action eklendi. günlere göre Action sayısını dönüyor.
 yeni HTML /api/total_action_html eklendi. /api/total_action APIsini görselleştiriyor. 
 bug: eksi engel kullanadan once engele maruz kalan kullanicilarin first activity tarihi bos gorunuyordu. bos olan degerler action tablosu sayesinde geriye yonelik olarak duzeltildi, django shell kullanildi. 
 content script, yazar sayfasinda daha fazla goster butonuna basildiginda gelen yeni entryler icin eksi engel buttonlarini guncelliyor.
+eski config korundu, bundan sonra config hep geriye donuk uyumlu olacak.
 
 YÜKSEK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
 

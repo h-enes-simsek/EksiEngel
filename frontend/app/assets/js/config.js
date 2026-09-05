@@ -1,8 +1,11 @@
 import * as enums from './enums.js';
 import {log} from './log.js';
 
+export const CONFIG_VERSION = 1;
+
 let config =
 {
+  "configVersion":     CONFIG_VERSION,                               // integer config schema version
   "EksiSozlukURL":       "https://eksisozluk.com",
   "serverURL":           "https://eksiengel.hesimsek.com/api/action/",
 
@@ -45,11 +48,19 @@ export async function saveConfig(config)
 // load config from storage, if not exist save default config storage
 export async function handleConfig()
 {
-  let c = await getConfig();
-  if(c)
+  const storedConfig = await getConfig();
+
+  if (storedConfig)
   {
     log.info("config", "Config restored from storage");
-    config = c;
+
+    config = {
+      ...config,          // default/hardcoded values
+      ...storedConfig,    // preserve user's existing values
+      configVersion: CONFIG_VERSION // ensure configVersion is always the latest
+    };
+
+    await saveConfig(config);
   }
   else
   {
