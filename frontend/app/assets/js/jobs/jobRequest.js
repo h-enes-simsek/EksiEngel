@@ -37,6 +37,16 @@ export function createJobRequest(message)
   if(!Object.values(BanMode).includes(message.banMode))
     throw new TypeError('banMode must be a supported BanMode');
 
+  const optionalFields = [
+    'entryUrl', 'authorName', 'authorId', 'targetType', 'clickSource',
+    'titleName', 'titleId', 'timeSpecifier', 'authorListText'
+  ];
+  for(const field of optionalFields)
+  {
+    if(message[field] !== undefined && message[field] !== null && typeof message[field] !== 'string')
+      throw new TypeError(`${field} must be a string, null, or omitted`);
+  }
+
   const request = {
     banSource: message.banSource,
     banMode: message.banMode,

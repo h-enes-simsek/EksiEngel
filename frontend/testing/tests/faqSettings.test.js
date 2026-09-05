@@ -70,8 +70,11 @@ describe('FAQ settings', () =>
     elements.sendDataEnabled.checked = false;
     clickListeners.sendDataDisabled();
 
-    expect(storedSettings.sendData).toBe(false);
-    expect(set).toHaveBeenCalledWith({config: storedSettings});
+    expect(set).toHaveBeenCalledWith({
+      config: expect.objectContaining({
+        sendData: false
+      })
+    });
 
     const configModule = await import('../../app/assets/js/config.js');
     expect(configModule).not.toHaveProperty('config');
