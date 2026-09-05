@@ -38,10 +38,20 @@ export async function getConfig()
   return false;
 }
 
-export async function saveConfig(config)
+export async function saveConfig(configToSave)
 {
-  await chrome.storage.local.set({ "config": config });
-  log.info("config", "A config saved into storage");
+  const mergedConfig = {
+    ...config,
+    ...configToSave,
+    configVersion: CONFIG_VERSION
+  };
+
+  await chrome.storage.local.set({
+    config: mergedConfig
+  });
+
+  log.info("config", "Config saved into storage");
+
   return true;
 }
 
