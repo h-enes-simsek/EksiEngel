@@ -1,7 +1,6 @@
 'use strict';
 
 import * as enums from '../enums.js';
-import * as utils from '../utils.js';
 import {log} from '../log.js';
 import {createEksiSozlukUser} from '../commHandler.js';
 import {RelationActionStatus} from '../relationHandler.js';
@@ -9,6 +8,32 @@ import {createJobResult} from './job.js';
 import {createJobTelemetry} from './jobTelemetry.js';
 
 const RELATION_COOLDOWN_SECONDS = 62;
+
+// clean collected user list by erasing empty inputs
+// whitespaces will be converted into - according to ekşisözlük name rules
+function cleanUserList(arr)
+{
+  for(let i = arr.length - 1; i >= 0; i--) 
+  {
+		// if first char is '@', remove the char
+		if(arr[i][0] === "@")
+			arr[i] = arr[i].substring(1);
+		
+    // remove whitespaces from both end
+    arr[i] = arr[i].trim();
+    
+    // if empty, delete it
+    if(arr[i] == '')
+		{
+      arr.splice(i, 1); // remove ith element
+    }
+    else
+		{			
+      // replace every whitespace with -
+      arr[i] = arr[i].replace(/ /gi, "-");
+    }
+  }
+}
 
 function throwIfAborted(signal)
 {
@@ -219,7 +244,7 @@ export async function runJob(job, {
       }
       try
       {
-        utils.cleanUserList(authorNames);
+        cleanUserList(authorNames);
       }
       catch(e)
       {

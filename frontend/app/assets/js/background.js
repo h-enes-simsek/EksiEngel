@@ -1,7 +1,6 @@
 'use strict';
 
 import * as enums from './enums.js';
-import * as utils from './utils.js';
 import {handleConfig} from './config.js';
 import {log} from './log.js';
 import {commHandler} from './commHandler.js';
@@ -146,8 +145,12 @@ chrome.runtime.onMessage.addListener(function messageListener(message, sender, s
   if(message?.type !== enums.RuntimeMessageType.ENQUEUE_JOB)
     return false;
 
-  const obj = utils.filterMessage(message.payload, "banSource", "banMode");
-  if(obj.resultType === enums.ResultType.FAIL)
+  let request;
+  try
+  {
+    request = createJobRequest(message.payload);
+  }
+  catch
   {
     sendResponse({ok: false, errorCode: "INVALID_JOB_REQUEST"});
     return false;
@@ -156,7 +159,6 @@ chrome.runtime.onMessage.addListener(function messageListener(message, sender, s
   void (async () => {
     try
     {
-      const request = createJobRequest(obj);
       const acceptedJob = await jobManager.enqueueRequest(request);
       if(!acceptedJob)
       {

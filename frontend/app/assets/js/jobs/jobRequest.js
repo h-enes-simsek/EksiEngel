@@ -1,34 +1,43 @@
+import {BanSource, BanMode} from '../enums.js';
+
 /**
  * Normalized input for one queued Ekşi Engel process.
  *
- * Fields that do not apply to a particular ban source remain undefined. This
- * intentionally matches the current message contract while replacing the
- * legacy positional runner arguments with one explicit object.
+ * Fields that do not apply to a particular ban source may be omitted or null.
  *
  * @typedef {Object} JobRequest
  * @property {string} banSource
  * @property {string} banMode
- * @property {string} [entryUrl]
- * @property {string} [authorName]
- * @property {string} [authorId]
- * @property {string} [targetType]
- * @property {string} [clickSource]
- * @property {string} [titleName]
- * @property {string} [titleId]
- * @property {string} [timeSpecifier]
- * @property {string} [authorListText]
+ * @property {string|null} [entryUrl]
+ * @property {string|null} [authorName]
+ * @property {string|null} [authorId]
+ * @property {string|null} [targetType]
+ * @property {string|null} [clickSource]
+ * @property {string|null} [titleName]
+ * @property {string|null} [titleId]
+ * @property {string|null} [timeSpecifier]
+ * @property {string|null} [authorListText]
  */
 
 /**
- * Copy an accepted runtime message into the request shape used by the process
- * manager. Source-specific validation will be introduced in a later refactor.
+ * Check the payload shape, source/mode values, and supplied field types.
+ * Optional fields may be strings, null, or omitted; no source-specific rules
+ * or string-format checks are applied.
  *
  * @param {JobRequest} message
  * @returns {JobRequest}
+ * @throws {TypeError} If the payload, source/mode, or a supplied field type is invalid.
  */
 export function createJobRequest(message)
 {
-  return {
+  if(!message || typeof message !== 'object' || Array.isArray(message))
+    throw new TypeError('Job request must be an object');
+  if(!Object.values(BanSource).includes(message.banSource))
+    throw new TypeError('banSource must be a supported BanSource');
+  if(!Object.values(BanMode).includes(message.banMode))
+    throw new TypeError('banMode must be a supported BanMode');
+
+  const request = {
     banSource: message.banSource,
     banMode: message.banMode,
     entryUrl: message.entryUrl,
@@ -41,4 +50,6 @@ export function createJobRequest(message)
     timeSpecifier: message.timeSpecifier,
     authorListText: message.authorListText
   };
+
+  return request;
 }

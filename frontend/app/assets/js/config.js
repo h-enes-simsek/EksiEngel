@@ -1,5 +1,4 @@
 import * as enums from './enums.js';
-import * as utils from './utils.js';
 import {log} from './log.js';
 
 let config =
