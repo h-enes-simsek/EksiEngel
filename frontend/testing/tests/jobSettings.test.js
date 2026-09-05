@@ -7,7 +7,7 @@ import {JobManager} from '../../app/assets/js/jobs/jobManager.js';
 import {JobTelemetryReporter} from '../../app/assets/js/jobs/jobTelemetry.js';
 import {notificationHandler} from '../../app/assets/js/notificationHandler.js';
 import {RelationHandler} from '../../app/assets/js/relationHandler.js';
-import {isEksiSozlukAccessible} from '../../app/assets/js/urlHandler.js';
+import {isEksiSozlukAccessible} from '../../app/assets/js/isEksiSozlukAccessible.js';
 
 afterEach(() =>
 {

@@ -15,7 +15,7 @@ const fakes = vi.hoisted(() => ({
   performAction: vi.fn()
 }));
 
-vi.mock('../../app/assets/js/urlHandler.js', () => ({
+vi.mock('../../app/assets/js/isEksiSozlukAccessible.js', () => ({
   isEksiSozlukAccessible: fakes.checkAccess
 }));
 

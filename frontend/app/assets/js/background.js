@@ -6,7 +6,7 @@ import {log} from './log.js';
 import {commHandler} from './commHandler.js';
 import {RelationHandler} from './relationHandler.js';
 import {EksiScrapingHandler} from './scrapingHandler.js';
-import {isEksiSozlukAccessible} from './urlHandler.js';
+import {isEksiSozlukAccessible} from './isEksiSozlukAccessible.js';
 import {createJobResult} from './jobs/job.js';
 import {waitForCooldown} from './jobs/cooldown.js';
 import {createJobRequest} from './jobs/jobRequest.js';
@@ -15,6 +15,7 @@ import {runJob} from './jobs/jobRunner.js';
 import {JobTelemetryReporter} from './jobs/jobTelemetry.js';
 import {FakeScrapingHandler} from './testing/fakeScrapingHandler.js';
 import {FakeRelationHandler} from './testing/fakeRelationHandler.js';
+import {fakeIsEksiSozlukAccessible} from './testing/fakeIsEksiSozlukAccessible.js';
 
 // Development-only switch. Keep disabled in production builds.
 const DEV_USE_FAKE_HANDLERS = false;
@@ -97,7 +98,9 @@ async function executeJob(job, {signal, reporter})
       ? new FakeRelationHandler()
       : new RelationHandler(),
     telemetryReporter: jobTelemetryReporter,
-    accessChecker: isEksiSozlukAccessible,
+    accessChecker: DEV_USE_FAKE_HANDLERS
+      ? fakeIsEksiSozlukAccessible
+      : isEksiSozlukAccessible,
     cooldownWaiter: waitForCooldown,
     userAgent: navigator.userAgent,
     extensionVersion: chrome.runtime.getManifest().version,
@@ -126,7 +129,7 @@ function cancelAllJobs(reason)
 }
 
 if(DEV_USE_FAKE_HANDLERS)
-  log.warn("bg", "development fake scraping and relation handlers are enabled");
+  log.warn("bg", "development fake scraping, relation, and access handlers are enabled");
 
 chrome.runtime.onMessage.addListener(function messageListener(message, sender, sendResponse) {
   if(message?.type === enums.RuntimeMessageType.GET_JOB_SNAPSHOT)
@@ -167,7 +170,7 @@ chrome.runtime.onMessage.addListener(function messageListener(message, sender, s
       }
 
       const {job} = acceptedJob;
-      log.info("bg", "a new process added to the queue, banSource: " + request.banSource + ", banMode: " + request.banMode);
+      log.info("bg", "new job added to the queue jobId: " + job.id + ", banSource: " + request.banSource + ", banMode: " + request.banMode);
       sendResponse({ok: true, jobId: job.id});
       log.info("bg", "number of waiting processes in the queue: " + jobManager.waitingCount);
     }
