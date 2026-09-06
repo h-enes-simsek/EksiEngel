@@ -380,6 +380,38 @@ describe('runJob', () =>
     expect(relationHandler.performAction).toHaveBeenCalledTimes(2);
   });
 
+  it('submits active-job telemetry when execution is cancelled', async () =>
+  {
+    const abortController = new AbortController();
+    const telemetryReporter = {submit: vi.fn()};
+    const relationHandler = {
+      performAction: vi.fn().mockImplementation(async () =>
+      {
+        abortController.abort('test cancellation');
+        return {
+          status: RelationActionStatus.ABORTED,
+          actionPerformed: false,
+          actionSucceeded: null
+        };
+      })
+    };
+    const settings = {...BASE_SETTINGS, sendData: true};
+    const dependencies = createDependencies({
+      signal: abortController.signal,
+      settings,
+      relationHandler,
+      telemetryReporter
+    });
+
+    const result = await runJob(createTestJob(singleRequest()), dependencies);
+
+    expect(result.finishReason).toBe(ProcessFinishReason.CANCELLED);
+    expect(telemetryReporter.submit).toHaveBeenCalledOnce();
+    const [telemetry, context] = telemetryReporter.submit.mock.calls[0];
+    expect(telemetry.action.is_early_stopped).toBe(true);
+    expect(context).toEqual({serverUrl: settings.serverURL});
+  });
+
   it('reports collection and analysis phases through the injected reporter', async () =>
   {
     const relation = {

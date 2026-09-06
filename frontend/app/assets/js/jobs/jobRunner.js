@@ -628,7 +628,8 @@ export async function runJob(job, {
     const durationMs = Math.round(performance.now() - startedAt);
     log.info("job-runner", `Job ${job.id} finished with code: ${result.finishReason} in ${durationMs} ms (successful:${successfulAction}, performed:${performedAction}, planned:${plannedAction})`);
     
-    if(result.finishReason === enums.ProcessFinishReason.SUCCESS)
+    if(result.finishReason === enums.ProcessFinishReason.SUCCESS ||
+       result.finishReason === enums.ProcessFinishReason.CANCELLED)
     {
       try
       {
