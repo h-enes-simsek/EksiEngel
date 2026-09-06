@@ -42,6 +42,42 @@ describe('configuration storage', () =>
     expect(set).toHaveBeenCalledWith({config: loadedConfig});
   });
 
+  it('always uses the latest application-controlled configuration values', async () =>
+  {
+    const storedConfig = {
+      configVersion: 0,
+      EksiSozlukURL: 'https://old-eksi.example',
+      serverURL: 'https://old-server.example',
+      enableMute: true
+    };
+    const set = vi.fn().mockResolvedValue();
+    stubStorage({get: vi.fn().mockResolvedValue({config: storedConfig}), set});
+    const {handleConfig, saveConfig, CONFIG_VERSION} = await import('../../app/assets/js/config.js');
+
+    const loadedConfig = await handleConfig();
+
+    expect(loadedConfig).toMatchObject({
+      configVersion: CONFIG_VERSION,
+      EksiSozlukURL: 'https://eksisozluk.com',
+      serverURL: 'https://eksiengel.hesimsek.com/api/action/',
+      enableMute: true
+    });
+
+    await saveConfig({
+      configVersion: 0,
+      EksiSozlukURL: 'https://overridden-eksi.example',
+      serverURL: 'https://overridden-server.example'
+    });
+
+    expect(set).toHaveBeenLastCalledWith({
+      config: expect.objectContaining({
+        configVersion: CONFIG_VERSION,
+        EksiSozlukURL: 'https://eksisozluk.com',
+        serverURL: 'https://eksiengel.hesimsek.com/api/action/'
+      })
+    });
+  });
+
   it('returns false only when the config key is missing', async () =>
   {
     stubStorage({get: vi.fn().mockResolvedValue({})});

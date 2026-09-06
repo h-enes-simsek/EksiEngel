@@ -1,10 +1,15 @@
 export const CONFIG_VERSION = 1;
 
+const authoritativeConfigValues =
+{
+  "configVersion":       CONFIG_VERSION,
+  "EksiSozlukURL":       "https://eksisozluk.com",
+  "serverURL":           "https://eksiengel.hesimsek.com/api/action/"
+};
+
 let config =
 {
-  "configVersion":     CONFIG_VERSION,                               // integer config schema version
-  "EksiSozlukURL":       "https://eksisozluk.com",
-  "serverURL":           "https://eksiengel.hesimsek.com/api/action/",
+  ...authoritativeConfigValues,
 
   "sendData":           true,                             /* send data to server */   
     "sendLog":          true,                             /* send log data to server */
@@ -40,7 +45,7 @@ export async function saveConfig(configToSave)
   const mergedConfig = {
     ...config,
     ...configToSave,
-    configVersion: CONFIG_VERSION
+    ...authoritativeConfigValues
   };
 
   await chrome.storage.local.set({
@@ -59,7 +64,7 @@ export async function handleConfig()
     config = {
       ...config,          // default/hardcoded values
       ...storedConfig,    // preserve user's existing values
-      configVersion: CONFIG_VERSION // ensure configVersion is always the latest
+      ...authoritativeConfigValues // ensure application-controlled values are always the latest
     };
 
     await saveConfig(config);
