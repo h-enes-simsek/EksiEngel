@@ -44,7 +44,7 @@ class MostBannedUsersUniqueView(generics.ListAPIView):
     serializer_class = MostBannedUsersUniqueSerializer
     
     def get_queryset(self):
-        return EksiSozlukUser.objects.annotate(banned_by_unique_count=Count('author_list_in_action__eksi_engel_user', distinct=True,  filter=Q(author_list_in_action__ban_mode__ban_mode='BAN'))).order_by('-banned_by_unique_count')
+        return EksiSozlukUser.objects.annotate(banned_by_unique_count=Count('author_list_in_action__eksi_engel_user', distinct=True,  filter=Q(author_list_in_action__ban_mode__ban_mode='BAN'))).order_by('-banned_by_unique_count', 'pk')[:50]
 
 class MostBannedUsersView(generics.ListAPIView):
     permission_classes = [IsAdminUser]
@@ -52,7 +52,7 @@ class MostBannedUsersView(generics.ListAPIView):
     serializer_class = MostBannedUsersSerializer
     
     def get_queryset(self):
-        return EksiSozlukUser.objects.annotate(banned_by_count=Count('author_list_in_action', distinct=False,  filter=Q(author_list_in_action__ban_mode__ban_mode='BAN'))).order_by('-banned_by_count')
+        return EksiSozlukUser.objects.annotate(banned_by_count=Count('author_list_in_action', distinct=False,  filter=Q(author_list_in_action__ban_mode__ban_mode='BAN'))).order_by('-banned_by_count', 'pk')[:50]
   
 class EksiSozlukUserStatView(generics.ListAPIView):
     permission_classes = [IsAdminUser]
