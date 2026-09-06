@@ -170,7 +170,7 @@ export async function runJob(job, {
 
   const run = async () =>
   {
-    log.info("bg", "Process has been started with " + 
+    log.info("job-runner", "Process has been started with " + 
             "banSource: "          + banSource + 
             ", banMode: "          + banMode + 
             ", entryUrl: "         + entryUrl + 
@@ -189,7 +189,6 @@ export async function runJob(job, {
     });
     if(!urlAccessible)
     {
-      log.err("bg", "Program has been finished (finishErrorAccess)");
       processFinishReason = enums.ProcessFinishReason.EKSI_SOZLUK_UNREACHABLE;
       return;
     }
@@ -200,7 +199,6 @@ export async function runJob(job, {
     clientId = currentAccount?.authorId ?? null;
     if(!clientName || !clientId)
     {
-      log.err("bg", "Program has been finished (finishErrorLogin)");
       processFinishReason = enums.ProcessFinishReason.CLIENT_NOT_LOGGED_IN;
       return;
     }
@@ -256,10 +254,9 @@ export async function runJob(job, {
       reportProgress();
 
       // stop if there is no user
-      log.info("bg", "number of user to ban " + plannedAction);
+      log.info("job-runner", "number of user to ban " + plannedAction);
       if(plannedAction === 0)
       {
-        log.err("bg", "Program has been finished (finishErrorNoAccount)");
         processFinishReason = enums.ProcessFinishReason.NO_ACCOUNTS_FOUND;
         return;
       }
@@ -272,7 +269,7 @@ export async function runJob(job, {
         let author = createEksiSozlukUser(authorName, scrapedAuthor?.authorId);
         if(!author)
         {
-          log.info("bg", "Author could not be resolved and will be skipped: " + authorName);
+          log.info("job-runner", "Author could not be resolved and will be skipped: " + authorName);
           continue;
         }
         authorList.push(author);
@@ -304,19 +301,18 @@ export async function runJob(job, {
       const entryId = entryIdFromUrl(entryUrl, settings.EksiSozlukURL);
       entryMetaData = await scrapingHandler.getEntryMetadata(entryId, {signal});
       if(!entryMetaData)
-        log.warn("bg", `Entry ${entryId} metadata could not be retrieved.`);
+        log.warn("job-runner", `Entry ${entryId} metadata could not be retrieved.`);
 
       let scrapedRelations = await scrapingHandler.listEntryFavoriters(entryId, {
         includeNovices: settings.enableNoobBan,
         signal
       });
       
-      log.info("bg", "number of user to ban (before analysis): " + scrapedRelations.size);
+      log.info("job-runner", "number of user to ban (before analysis): " + scrapedRelations.size);
       
       // stop if there is no user
       if(scrapedRelations.size === 0)
       {
-        log.err("bg", "Program has been finished (finishErrorNoAccount)");
         processFinishReason = enums.ProcessFinishReason.NO_ACCOUNTS_FOUND;
         return;
       }
@@ -356,12 +352,11 @@ export async function runJob(job, {
         }
       }
       
-      log.info("bg", "number of user to ban (after analysis): " + scrapedRelations.size);
+      log.info("job-runner", "number of user to ban (after analysis): " + scrapedRelations.size);
       
       // stop if there is no user
       if(scrapedRelations.size === 0)
       {
-        log.err("bg", "Program has been finished (finishErrorNoAccount)");
         processFinishReason = enums.ProcessFinishReason.NO_ACCOUNTS_AFTER_FILTERING;
         return;
       }
@@ -406,12 +401,11 @@ export async function runJob(job, {
       reportPhase(enums.JobPhase.COLLECTING_FOLLOWERS);
 
       let scrapedRelations = await scrapingHandler.listFollowers(singleAuthorName, {signal});
-      log.info("bg", "number of user to ban (before analysis): " + scrapedRelations.size);
+      log.info("job-runner", "number of user to ban (before analysis): " + scrapedRelations.size);
       
       // stop if there is no user
       if(scrapedRelations.size === 0)
       {
-        log.err("bg", "Program has been finished (error_NoAccount)");
         processFinishReason = enums.ProcessFinishReason.NO_ACCOUNTS_FOUND;
         return;
       }
@@ -448,12 +442,11 @@ export async function runJob(job, {
         }
       }
         
-      log.info("bg", "number of user to ban (after analysis): " + scrapedRelations.size);
+      log.info("job-runner", "number of user to ban (after analysis): " + scrapedRelations.size);
       
       // stop if there is no user
       if(scrapedRelations.size === 0)
       {
-        log.err("bg", "Program has been finished (error_NoAccount)");
         processFinishReason = enums.ProcessFinishReason.NO_ACCOUNTS_AFTER_FILTERING;
         return;
       }
@@ -504,10 +497,9 @@ export async function runJob(job, {
       let scrapedRelations = await scrapingHandler.listOwnRelations({}, {signal});
       
       // stop if there is no user
-      log.info("bg", "number of user to ban " + scrapedRelations.size);
+      log.info("job-runner", "number of user to ban " + scrapedRelations.size);
       if(scrapedRelations.size === 0)
       {
-        log.err("bg", "Program has been finished (error_NoAccount)");
         processFinishReason = enums.ProcessFinishReason.NO_ACCOUNTS_FOUND;
         return;
       }
@@ -548,12 +540,11 @@ export async function runJob(job, {
         titleId,
         period: timeSpecifier
       }, {signal});
-      log.info("bg", "number of user to ban (before analysis): " + scrapedRelations.size);
+      log.info("job-runner", "number of user to ban (before analysis): " + scrapedRelations.size);
       
       // stop if there is no user
       if(scrapedRelations.size === 0)
       {
-        log.err("bg", "Program has been finished (error_NoAccount)");
         processFinishReason = enums.ProcessFinishReason.NO_ACCOUNTS_FOUND;
         return;
       }
@@ -590,12 +581,11 @@ export async function runJob(job, {
         }
       }
         
-      log.info("bg", "number of user to ban (after analysis): " + scrapedRelations.size);
+      log.info("job-runner", "number of user to ban (after analysis): " + scrapedRelations.size);
       
       // stop if there is no user
       if(scrapedRelations.size === 0)
       {
-        log.err("bg", "Program has been finished (error_NoAccount)");
         processFinishReason = enums.ProcessFinishReason.NO_ACCOUNTS_AFTER_FILTERING;
         return;
       }
@@ -651,13 +641,13 @@ export async function runJob(job, {
     if(signal.aborted)
     {
       processFinishReason = enums.ProcessFinishReason.CANCELLED;
-      log.info("bg", "Early stop signal stopped the process.");
+      log.info("job-runner", "Early stop signal stopped the process.");
     }
     else
     {
       processFinishReason = enums.ProcessFinishReason.UNEXPECTED_ERROR;
       errorMessage = error instanceof Error ? error.message : String(error);
-      log.err("bg", "Error thrown: " + error);
+      log.err("job-runner", "Error thrown: " + error);
     }
   }
   finally
@@ -671,12 +661,10 @@ export async function runJob(job, {
     });
 
     const durationMs = Math.round(performance.now() - startedAt);
-    log.info('job-runner', `Job ${job.id} finished in ${durationMs} ms (${result.finishReason})`);
+    log.info("job-runner", `Job ${job.id} finished with code: ${result.finishReason} in ${durationMs} ms (successful:${successfulAction}, performed:${performedAction}, planned:${plannedAction})`);
     
     if(result.finishReason === enums.ProcessFinishReason.SUCCESS)
     {
-      log.info("bg", "Program has been finished (successful:" + successfulAction + ", performed:" + performedAction + ", planned:" + plannedAction + ")");
-
       try
       {
         let telemetryLogLevel;

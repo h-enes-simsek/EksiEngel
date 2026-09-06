@@ -1,6 +1,3 @@
-import * as enums from './enums.js';
-import {log} from './log.js';
-
 export const CONFIG_VERSION = 1;
 
 let config =
@@ -49,9 +46,6 @@ export async function saveConfig(configToSave)
   await chrome.storage.local.set({
     config: mergedConfig
   });
-
-  log.info("config", "Config saved into storage");
-
   return true;
 }
 
@@ -62,8 +56,6 @@ export async function handleConfig()
 
   if (storedConfig)
   {
-    log.info("config", "Config restored from storage");
-
     config = {
       ...config,          // default/hardcoded values
       ...storedConfig,    // preserve user's existing values
@@ -74,7 +66,6 @@ export async function handleConfig()
   }
   else
   {
-    log.info("config", "No config in storage, hardcoded config will be saved into storage");
     await saveConfig(config);
   }
 

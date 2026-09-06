@@ -137,23 +137,17 @@ export class RelationHandler
       });
       if(!response.ok)
       {
-        log.err("relation", "http response: " + response.status);
         if(response.status == 429)
         {
-          //const responseText = await response.text();
-          //log.err("relation", "url: " + url + " response: " + responseText);
           return RelationRequestOutcome.RATE_LIMITED;
         }
         else
         {
-          // If status is not 429, yet still erroneous, then something should have gone wrong.
-          // dont re-try the operation, assume it was failed.
+          // errors other than 429 are considered as failure and no need for retry.
           const responseText = await response.text();
-          log.err("relation", "url: " + url + " response: " + responseText);
+          log.err("relation", "http response code: " + response.status + " response: " + responseText);
           return RelationRequestOutcome.FAILED;
-        }
-          
-        
+        } 
       }
       const responseText = await response.text();
       const responseJson = JSON.parse(responseText);
@@ -166,14 +160,13 @@ export class RelationHandler
         res = RelationRequestOutcome.SUCCEEDED;
       else
         res = RelationRequestOutcome.FAILED;
-      // log.info("relation", "banMode: " + banMode + ", targetType: " + targetType + ", id: " + id + ", response text: " + responseText);
     }
     catch(err)
     {
       if(signal?.aborted || err?.name === "AbortError")
         return RelationRequestOutcome.ABORTED;
 
-      log.err("relation", err);
+      log.err("relation", "unexpected error: " + err);
       res = RelationRequestOutcome.FAILED;
     }
     return res;

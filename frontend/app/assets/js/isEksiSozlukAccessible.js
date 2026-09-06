@@ -11,11 +11,14 @@ export async function isEksiSozlukAccessible({signal, baseUrl} = {})
   {
     let response = await fetch(baseUrl, {signal});
     let isAccessible = response.status === 200;
-    log.info("url", "is EksiSozluk accessible: " + isAccessible + " at " + baseUrl);
 
     if(!isAccessible)
     {
-      log.warn("url", "EksiSozluk is not accessible at: " + baseUrl);
+      log.err("access", "EksiSozluk is not accessible at: " + baseUrl);
+    }
+    else
+    {
+      log.info("access", "EksiSozluk is accessible at: " + baseUrl);
     }
 
     return isAccessible;
@@ -25,7 +28,7 @@ export async function isEksiSozlukAccessible({signal, baseUrl} = {})
     if(signal?.aborted)
       throw err;
 
-    log.warn("url", "Error checking EksiSozluk accessibility: " + err);
+    log.err("access", "Error checking EksiSozluk accessibility: " + err);
     return false;
   }
 }

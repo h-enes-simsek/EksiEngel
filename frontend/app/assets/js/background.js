@@ -170,9 +170,11 @@ chrome.runtime.onMessage.addListener(function messageListener(message, sender, s
       }
 
       const {job} = acceptedJob;
-      log.info("bg", "new job added to the queue jobId: " + job.id + ", banSource: " + request.banSource + ", banMode: " + request.banMode);
       sendResponse({ok: true, jobId: job.id});
-      log.info("bg", "number of waiting processes in the queue: " + jobManager.waitingCount);
+      log.info("bg", "new job added to the queue jobId: " + job.id + 
+        ", banSource: " + request.banSource + 
+        ", banMode: " + request.banMode + 
+        ", pending job count: " + jobManager.waitingCount);
     }
     catch(error)
     {
