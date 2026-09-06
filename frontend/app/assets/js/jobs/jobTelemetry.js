@@ -73,6 +73,7 @@ export function createJobTelemetry({
   });
 
   const actionConfig = new ActionConfig({
+    config_version: settings.configVersion,
     eksi_sozluk_url: settings.EksiSozlukURL,
     send_data: settings.sendData,
     enable_noob_ban: settings.enableNoobBan,

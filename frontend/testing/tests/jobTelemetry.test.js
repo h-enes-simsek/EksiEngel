@@ -22,10 +22,11 @@ describe('createJobTelemetry', () =>
       version: '3.3',
       logLevel: 'DISABLED',
       logData: null,
-      settings: {}
+      settings: {configVersion: 7}
     });
 
     expect(telemetry.action.job_id).toBe('job-123');
     expect(telemetry.action.job_duration).toBe(456);
+    expect(telemetry.actionConfig.config_version).toBe(7);
   });
 });

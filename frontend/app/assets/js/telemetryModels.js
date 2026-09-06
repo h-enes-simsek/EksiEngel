@@ -88,6 +88,7 @@ export function Action({
 }
 
 export function ActionConfig({
+  config_version,
   eksi_sozluk_url,
   send_data,
   enable_noob_ban,
@@ -98,6 +99,7 @@ export function ActionConfig({
   enable_protect_followed_users,
   ban_premium_icons})
 {
+  this.config_version = config_version;
   this.eksi_sozluk_url = eksi_sozluk_url;
   this.send_data = send_data;
   this.enable_noob_ban = enable_noob_ban;
