@@ -9,6 +9,12 @@ from .models import Action, ActionConfig, EksiSozlukUser
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication 
 from django.db.models.functions import TruncDay
 from django.shortcuts import render
+from django.contrib.admin.views.decorators import staff_member_required
+
+
+@staff_member_required
+def admin_dashboard(request):
+    return render(request, 'api/admin_dashboard.html')
 
 class CsrfExemptSessionAuthentication(SessionAuthentication):
 
@@ -70,6 +76,7 @@ class FailedActionsView(generics.ListAPIView):
                
 # List Total Action Number day by day
 class TotalActionView(generics.ListAPIView):
+    permission_classes = [IsAdminUser]
     serializer_class = TotalActionViewSerializer
 
     def get_queryset(self):
@@ -79,7 +86,3 @@ class TotalActionView(generics.ListAPIView):
             .annotate(total=Count('id'))                 # Count actions per day
             .order_by('day')                             # Sort by day
         )
-
-# Visualize Total Action Number day by day 
-def TotalActionHTMLView(request):
-    return render(request, 'api/total_action.html')
