@@ -9,30 +9,16 @@ import {createJobTelemetry} from './jobTelemetry.js';
 
 const RELATION_COOLDOWN_SECONDS = 62;
 
-// clean collected user list by erasing empty inputs
-// whitespaces will be converted into - according to ekşisözlük name rules
-function cleanUserList(arr)
+function parseAuthorList(authorListText)
 {
-  for(let i = arr.length - 1; i >= 0; i--) 
-  {
-		// if first char is '@', remove the char
-		if(arr[i][0] === "@")
-			arr[i] = arr[i].substring(1);
-		
-    // remove whitespaces from both end
-    arr[i] = arr[i].trim();
-    
-    // if empty, delete it
-    if(arr[i] == '')
-		{
-      arr.splice(i, 1); // remove ith element
-    }
-    else
-		{			
-      // replace every whitespace with -
-      arr[i] = arr[i].replace(/ /gi, "-");
-    }
-  }
+  return authorListText
+    .split("\n")
+    .map(authorName => authorName.trim())
+    .map(authorName => authorName.startsWith("@")
+      ? authorName.substring(1).trim()
+      : authorName)
+    .filter(authorName => authorName.length > 0)
+    .map(authorName => authorName.replace(/ /g, "-"));
 }
 
 function throwIfAborted(signal)
@@ -227,28 +213,7 @@ export async function runJob(job, {
     else if(banSource === enums.BanSource.LIST)
     {
       reportPhase(enums.JobPhase.COLLECTING_AUTHORS);
-      let authorNames;
-      try
-      {
-        if(typeof authorListText !== "string")
-          throw new TypeError("LIST job is missing its author list snapshot");
-
-        authorNames = authorListText.split("\n");
-      }
-      catch(e)
-      {
-        processFinishReason = enums.ProcessFinishReason.USER_LIST_LOADING;
-        return;
-      }
-      try
-      {
-        cleanUserList(authorNames);
-      }
-      catch(e)
-      {
-        processFinishReason = enums.ProcessFinishReason.USER_LIST_CLEANING;
-        return;
-      }
+      const authorNames = parseAuthorList(authorListText);
       
       plannedAction = authorNames.length;
       reportProgress();

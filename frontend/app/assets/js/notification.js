@@ -58,10 +58,6 @@ const TERMINAL_PRESENTATION = Object.freeze({
     statusText: "Bildirim sayfası açılamadı.",
     errorText: "bildirim sayfası açılamadı"
   },
-  [enums.ProcessFinishReason.CONFIGURATION_LOADING]: {
-    statusText: "Ayarlar yüklenemedi.",
-    errorText: "ayarlar yüklenemedi"
-  },
   [enums.ProcessFinishReason.EKSI_SOZLUK_UNREACHABLE]: {
     statusText: "Ekşi Sözlük'e erişilemedi.",
     errorText: "ekşi sözlük'e erişilemedi"
@@ -69,14 +65,6 @@ const TERMINAL_PRESENTATION = Object.freeze({
   [enums.ProcessFinishReason.CLIENT_NOT_LOGGED_IN]: {
     statusText: "Ekşi Sözlük hesabınıza giriş yapmanız gerekiyor.",
     errorText: "giriş yapılmadı"
-  },
-  [enums.ProcessFinishReason.USER_LIST_LOADING]: {
-    statusText: "Yazar listesi yüklenemedi.",
-    errorText: "yazar listesi yüklenemedi"
-  },
-  [enums.ProcessFinishReason.USER_LIST_CLEANING]: {
-    statusText: "Yazar listesi temizlenemedi.",
-    errorText: "yazar listesi temizlenemedi"
   },
   [enums.ProcessFinishReason.NO_ACCOUNTS_FOUND]: {
     statusText: "Engellenecek yazar listesi boş.",

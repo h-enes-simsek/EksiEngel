@@ -264,20 +264,14 @@ describe('runJob', () =>
     expect(dependencies.relationHandler.performAction).not.toHaveBeenCalled();
   });
 
-  it('returns the list-loading and no-account terminal results', async () =>
+  it('returns the no-account terminal result for an empty list', async () =>
   {
-    const missingListJob = createTestJob({
-      banSource: BanSource.LIST,
-      banMode: BanMode.BAN
-    });
     const emptyListJob = createTestJob({
       banSource: BanSource.LIST,
       banMode: BanMode.BAN,
       authorListText: '\n  \n'
     });
 
-    await expect(runJob(missingListJob, createDependencies()))
-      .resolves.toMatchObject({finishReason: ProcessFinishReason.USER_LIST_LOADING});
     await expect(runJob(emptyListJob, createDependencies()))
       .resolves.toMatchObject({finishReason: ProcessFinishReason.NO_ACCOUNTS_FOUND});
   });
@@ -297,7 +291,7 @@ describe('runJob', () =>
     const job = createTestJob({
       banSource: BanSource.LIST,
       banMode: BanMode.BAN,
-      authorListText: 'typo-author\nvalid-author'
+      authorListText: '  @typo author  \n\n @valid author '
     });
 
     const result = await runJob(job, dependencies);
@@ -308,6 +302,8 @@ describe('runJob', () =>
       performedAction: 1,
       plannedAction: 2
     });
+    expect(scrapingHandler.getAuthor.mock.calls.map(([authorName]) => authorName))
+      .toEqual(['typo-author', 'valid-author']);
     expect(dependencies.relationHandler.performAction).toHaveBeenCalledOnce();
     expect(dependencies.relationHandler.performAction).toHaveBeenCalledWith(
       BanMode.BAN,

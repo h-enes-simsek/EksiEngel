@@ -180,7 +180,10 @@ chrome.runtime.onMessage.addListener(function messageListener(message, sender, s
   }
   catch
   {
-    sendResponse({ok: false, errorCode: "INVALID_JOB_REQUEST"});
+    sendResponse({
+      ok: false,
+      errorCode: enums.RuntimeMessageResponseErrorCode.INVALID_JOB_REQUEST
+    });
     return false;
   }
 
@@ -190,7 +193,10 @@ chrome.runtime.onMessage.addListener(function messageListener(message, sender, s
       const acceptedJob = await jobManager.enqueueRequest(request);
       if(!acceptedJob)
       {
-        sendResponse({ok: false, errorCode: "CANCELLED"});
+        sendResponse({
+          ok: false,
+          errorCode: enums.RuntimeMessageResponseErrorCode.JOB_ENQUEUE_FAILED
+        });
         return;
       }
 
@@ -203,8 +209,11 @@ chrome.runtime.onMessage.addListener(function messageListener(message, sender, s
     }
     catch(error)
     {
-      log.err("bg", "Configuration could not be loaded before accepting the job: " + error);
-      sendResponse({ok: false, errorCode: "CONFIGURATION_LOADING_FAILED"});
+      log.err("bg", "Job could not be added to the queue: " + error);
+      sendResponse({
+        ok: false,
+        errorCode: enums.RuntimeMessageResponseErrorCode.JOB_ENQUEUE_FAILED
+      });
     }
   })();
 

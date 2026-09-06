@@ -5,6 +5,7 @@ import {
   BanSource,
   JobPhase,
   ProcessFinishReason,
+  RuntimeMessageResponseErrorCode,
   RuntimeMessageType,
   TargetType
 } from '../../app/assets/js/enums.js';
@@ -329,7 +330,7 @@ describe('background cancellation routing', () =>
 
     await vi.waitFor(() => expect(sendResponse).toHaveBeenCalledWith({
       ok: false,
-      errorCode: 'CANCELLED'
+      errorCode: RuntimeMessageResponseErrorCode.JOB_ENQUEUE_FAILED
     }));
     expect(cancelResponse).toHaveBeenCalledWith({ok: true});
     expect(fakes.performAction).not.toHaveBeenCalled();

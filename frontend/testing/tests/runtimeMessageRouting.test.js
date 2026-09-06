@@ -400,10 +400,6 @@ describe('runtime message routing', () =>
         'Bildirim sayfası açılamadı.',
         'bildirim sayfası açılamadı'
       ],
-      [enums.ProcessFinishReason.CONFIGURATION_LOADING]: [
-        'Ayarlar yüklenemedi.',
-        'ayarlar yüklenemedi'
-      ],
       [enums.ProcessFinishReason.EKSI_SOZLUK_UNREACHABLE]: [
         "Ekşi Sözlük'e erişilemedi.",
         "ekşi sözlük'e erişilemedi"
@@ -411,14 +407,6 @@ describe('runtime message routing', () =>
       [enums.ProcessFinishReason.CLIENT_NOT_LOGGED_IN]: [
         'Ekşi Sözlük hesabınıza giriş yapmanız gerekiyor.',
         'giriş yapılmadı'
-      ],
-      [enums.ProcessFinishReason.USER_LIST_LOADING]: [
-        'Yazar listesi yüklenemedi.',
-        'yazar listesi yüklenemedi'
-      ],
-      [enums.ProcessFinishReason.USER_LIST_CLEANING]: [
-        'Yazar listesi temizlenemedi.',
-        'yazar listesi temizlenemedi'
       ],
       [enums.ProcessFinishReason.NO_ACCOUNTS_FOUND]: [
         'Engellenecek yazar listesi boş.',

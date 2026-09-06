@@ -1,4 +1,5 @@
 import {afterEach, describe, expect, it, vi} from 'vitest';
+import {RuntimeMessageResponseErrorCode} from '../../app/assets/js/enums.js';
 
 afterEach(() =>
 {
@@ -191,7 +192,7 @@ describe('author-list page storage', () =>
     stubStorage({set: vi.fn().mockResolvedValue()});
     chrome.runtime.sendMessage = vi.fn().mockResolvedValue({
       ok: false,
-      errorCode: 'CONFIGURATION_LOADING_FAILED'
+      errorCode: RuntimeMessageResponseErrorCode.JOB_ENQUEUE_FAILED
     });
     vi.stubGlobal('document', {
       getElementById: id => elements[id]

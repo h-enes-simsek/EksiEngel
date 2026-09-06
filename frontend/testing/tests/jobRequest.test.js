@@ -30,6 +30,15 @@ describe('job request snapshots', () =>
     expect(() => createJobRequest(payload)).toThrow(TypeError);
   });
 
+  it.each([undefined, null])('requires authorListText for LIST requests: %j', authorListText =>
+  {
+    expect(() => createJobRequest({
+      banSource: BanSource.LIST,
+      banMode: BanMode.BAN,
+      authorListText
+    })).toThrow('LIST job requires authorListText');
+  });
+
   it.each([
     'entryUrl', 'authorName', 'authorId', 'targetType', 'clickSource',
     'titleName', 'titleId', 'timeSpecifier', 'authorListText'

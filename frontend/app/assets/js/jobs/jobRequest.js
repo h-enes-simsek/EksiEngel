@@ -21,8 +21,8 @@ import {BanSource, BanMode} from '../enums.js';
 
 /**
  * Check the payload shape, source/mode values, and supplied field types.
- * Optional fields may be strings, null, or omitted; no source-specific rules
- * or string-format checks are applied.
+ * Optional fields may be strings, null, or omitted. LIST requests require an
+ * author-list snapshot; no other source-specific or string-format checks apply.
  *
  * @param {JobRequest} message
  * @returns {JobRequest}
@@ -46,6 +46,9 @@ export function createJobRequest(message)
     if(message[field] !== undefined && message[field] !== null && typeof message[field] !== 'string')
       throw new TypeError(`${field} must be a string, null, or omitted`);
   }
+
+  if(message.banSource === BanSource.LIST && typeof message.authorListText !== 'string')
+    throw new TypeError('LIST job requires authorListText');
 
   const request = {
     banSource: message.banSource,
