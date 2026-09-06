@@ -4,7 +4,7 @@ import {
   createEksiSozlukEntry,
   createEksiSozlukTitle,
   createEksiSozlukUser
-} from '../commHandler.js';
+} from '../telemetryModels.js';
 
 function deepFreeze(value)
 {

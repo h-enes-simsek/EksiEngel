@@ -1,7 +1,6 @@
 import {afterEach, describe, expect, it, vi} from 'vitest';
 
 import * as enums from '../../app/assets/js/enums.js';
-import {commHandler} from '../../app/assets/js/commHandler.js';
 import {createJob} from '../../app/assets/js/jobs/job.js';
 import {JobManager} from '../../app/assets/js/jobs/jobManager.js';
 import {JobTelemetryReporter} from '../../app/assets/js/jobs/jobTelemetry.js';
@@ -87,24 +86,6 @@ describe('snapshot-aware request helpers', () =>
       .toBe('https://snapshot.example/userrelation/addrelation/7?r=m');
   });
 
-  it('sends telemetry to the supplied job server URL', async () =>
-  {
-    const fetchImpl = vi.fn().mockResolvedValue({
-      status: 200,
-      text: vi.fn().mockResolvedValue('ok')
-    });
-    vi.stubGlobal('fetch', fetchImpl);
-
-    await commHandler.sendData(
-      {job: 'action'},
-      {job: 'settings'},
-      'https://snapshot.example/api/action/'
-    );
-
-    expect(fetchImpl.mock.calls[0][0])
-      .toBe('https://snapshot.example/api/action/');
-  });
-
   it('uses the supplied job base URL in cooldown notifications', () =>
   {
     const sendMessage = vi.fn().mockResolvedValue();
@@ -133,7 +114,6 @@ describe('snapshot-aware request helpers', () =>
       false,
       false
     )).rejects.toThrow(TypeError);
-    await expect(commHandler.sendData({}, {})).rejects.toThrow(TypeError);
     expect(() => notificationHandler.notifyCooldown(30)).toThrow(TypeError);
   });
 

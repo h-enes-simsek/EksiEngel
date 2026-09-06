@@ -2,7 +2,7 @@
 
 import * as enums from '../enums.js';
 import {log} from '../log.js';
-import {createEksiSozlukUser} from '../commHandler.js';
+import {createEksiSozlukUser} from '../telemetryModels.js';
 import {RelationActionStatus} from '../relationHandler.js';
 import {createJobResult} from './job.js';
 import {createJobTelemetry} from './jobTelemetry.js';

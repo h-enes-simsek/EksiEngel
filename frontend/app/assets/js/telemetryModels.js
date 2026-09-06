@@ -108,36 +108,3 @@ export function ActionConfig({
   this.enable_protect_followed_users = enable_protect_followed_users;
   this.ban_premium_icons = ban_premium_icons;
 }
-
-class CommHandler 
-{
-	sendData = async (action, action_config, serverUrl) =>
-	{
-    if(typeof serverUrl !== "string" || serverUrl.length === 0)
-      throw new TypeError("serverUrl must be a non-empty string");
-
-    const actionData = {action, action_config};
-    //console.log(actionData);
-
-		try
-		{
-			const response = await fetch(serverUrl, {
-				method: 'POST',
-				headers: {
-				'Accept': 'application/json',
-				'Content-Type': 'application/json'
-				},
-				body: JSON.stringify(actionData)
-			});
-      const responseText = await response.text();
-			console.log("commHandler: response status: " + response.status); 
-			console.log("commHandler: response : " + responseText); 
-		}
-		catch(err)
-		{
-			console.error("commHandler: err: " + err); 
-		}
-	}
-}
-
-export let commHandler = new CommHandler();

@@ -3,7 +3,6 @@
 import * as enums from './enums.js';
 import {handleConfig} from './config.js';
 import {log} from './log.js';
-import {commHandler} from './commHandler.js';
 import {RelationHandler} from './relationHandler.js';
 import {EksiScrapingHandler} from './scrapingHandler.js';
 import {isEksiSozlukAccessible} from './isEksiSozlukAccessible.js';
@@ -26,9 +25,35 @@ log.info("bg", "initialized");
 let g_notificationTabId = null;
 
 const handleJobTelemetryError = error => console.error("job telemetry failed: " + error);
+
+async function sendJobTelemetry(action, actionConfig, serverUrl)
+{
+  if(typeof serverUrl !== "string" || serverUrl.length === 0)
+    throw new TypeError("serverUrl must be a non-empty string");
+
+  try
+  {
+    const response = await fetch(serverUrl, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({action, action_config: actionConfig})
+    });
+    const responseText = await response.text();
+    console.log("job telemetry response status: " + response.status);
+    console.log("job telemetry response: " + responseText);
+  }
+  catch(error)
+  {
+    console.error("job telemetry request failed: " + error);
+  }
+}
+
 const jobTelemetryReporter = new JobTelemetryReporter({
   isEnabled: () => !DEV_USE_FAKE_HANDLERS,
-  send: (telemetry, {serverUrl}) => commHandler.sendData(
+  send: (telemetry, {serverUrl}) => sendJobTelemetry(
     telemetry.action,
     telemetry.actionConfig,
     serverUrl
