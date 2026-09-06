@@ -3,19 +3,27 @@
 const releases = [
   {
     version: "4.0",
-    releaseDate: "Mevcut sürüm",
+    releaseDate: "mevcut sürüm",
     changes: [
       {
         type: "yeni özellik",
-        description: "Ekşi Sözlük'ün alan adının engellenmesi nedeniyle alınan önlemler kaldırıldı; böylece artık gereksiz olan geniş izinler de kaldırılmış oldu."
+        description: "Eklentinin tüm arayüzü baştan tasarlandı."
       },
       {
         type: "yeni özellik",
-        description: "Tüm arayüz yeniden tasarlandı."
+        description: "Eklenti güncellendiğinde kullanıcı ayarlarının korunması sağlandı."
       },
       {
-        type: "bug fix",
-        description: "Tüm engelleri kaldırma (undobanall) fonksiyonunun düzgün çalışmaması sorunu giderildi."
+        type: "yeni özellik",
+        description: "Yazar sayfasında \"daha fazla göster\" seçeneğiyle yüklenen yeni entry'lere Ekşi Engel butonlarının eklenmesi sağlandı."
+      },
+      {
+        type: "yeni özellik",
+        description: "Ekşi Sözlük'ün alan adına uygulanan erişim engeli için geliştirilen geçici çözüm artık gerekli olmadığı için kaldırıldı. Eklentinin erişim izinleri sınırlandırıldı."
+      },
+      {
+        type: "hata düzeltmesi",
+        description: "Sırada bekleyen işlemlerin sonradan değiştirilen yazar listesini veya ayarları kullanması önlendi."
       }
     ]
   },
@@ -24,8 +32,8 @@ const releases = [
     releaseDate: "09.04.2024",
     changes: [
       {
-        type: "bug fix",
-        description: "Ekşi Engel sunucusu taşındığı için URL adresleri güncel değildi."
+        type: "hata düzeltmesi",
+        description: "Ekşi Engel sunucusunun taşınmasının ardından güncelliğini yitiren sunucu adresleri yenilendi."
       }
     ]
   },
@@ -35,7 +43,7 @@ const releases = [
     changes: [
       {
         type: "yeni özellik",
-        description: "Bir başlıkta yazısı olan herkesi engelleme özelliği eklendi. Son 24 saatte yazanlar ve tümü olmak üzere iki ayrı seçenek mevcut."
+        description: "Bir başlıkta entry'si bulunan yazarları topluca engelleme özelliği eklendi. Son 24 saatte yazanlar veya tüm yazarlar seçilebiliyor."
       }
     ]
   },
@@ -45,11 +53,11 @@ const releases = [
     changes: [
       {
         type: "yeni özellik",
-        description: "Başlıklarını engelle ayarı eklendi. Önceden varsayılan olarak uygulanıyordu ve kapatmak mümkün değildi."
+        description: "Engellenen yazarların başlıklarını da engelleme ayarı eklendi. Önceden bu işlem varsayılan olarak uygulanıyor ve kapatılamıyordu."
       },
       {
         type: "yeni özellik",
-        description: "Anonim veri gönderme özelliği iptal edildi."
+        description: "Anonim veri gönderme seçeneği kaldırıldı."
       }
     ]
   },
@@ -59,23 +67,23 @@ const releases = [
     changes: [
       {
         type: "yeni özellik",
-        description: "Yeşil ve sarı tikleri gizleme özelliği eklendi; yalnızca tikler gizlenir."
+        description: "Yeşil ve sarı tikleri gizleme seçeneği eklendi. Bu seçenek yalnızca tikleri gizler."
       },
       {
         type: "yeni özellik",
-        description: "Devam eden süreçle ilgili daha fazla bilgi notification.html üzerinden gösterilmeye başlandı."
+        description: "İşlem durumu sayfasında devam eden süreç hakkında daha ayrıntılı bilgi gösterilmeye başlandı."
       },
       {
         type: "yeni özellik",
-        description: "Bir Ekşi Engel butonuna tıklandığında kullanıcıya Ekşi Sözlük API'si üzerinden geri bildirim verilmeye başlandı."
+        description: "Ekşi Sözlük arayüzündeki bir Ekşi Engel butonuna basıldığında işlemin sıraya alındığını bildiren geri bildirim eklendi."
       },
       {
         type: "yeni özellik",
         description: "Analitik verilerin toplanması durduruldu."
       },
       {
-        type: "bug fix",
-        description: "Kuyruğa eklenen işlemlerin saat bilgisi düzeltildi."
+        type: "hata düzeltmesi",
+        description: "Sıraya eklenen işlemlerin saat bilgisi düzeltildi."
       }
     ]
   },
@@ -85,23 +93,23 @@ const releases = [
     changes: [
       {
         type: "yeni özellik",
-        description: "Ekşi Sözlük ikinci kez engellendi ve eksisozluk1923.com alan adına taşındı. Sık yaşanan alan adı değişiklikleri, güncel adresin Ekşi Engel sunucularından alınmasıyla çözüldü."
+        description: "Ekşi Sözlük'ün eksisozluk1923.com alan adına taşınması desteklendi. Sık yaşanan alan adı değişikliklerine uyum sağlamak için güncel adres Ekşi Engel sunucusundan alınmaya başlandı."
       },
       {
         type: "yeni özellik",
-        description: "Favori ve takipçi engelleme işlemleri için takip ettiğim kullanıcıları yanlışlıkla engelleme ayarı eklendi."
+        description: "Favorileyenleri ve takipçileri engelleme işlemlerinde, takip ettiğiniz yazarları koruyan bir ayar eklendi."
       },
       {
         type: "yeni özellik",
-        description: "Favori ve takipçi engelleme işlemlerinde yalnızca gereken işlemleri yaparak toplam işlem sayısını ve geçen zamanı azaltan ayar eklendi. Tüm engelleri kaldırma işlemi zaten bu şekilde çalışıyordu."
+        description: "Favorileyenleri ve takipçileri engelleme işlemlerinde yalnızca gerekli adımları uygulayarak işlem süresini kısaltan bir ayar eklendi. Tüm engelleri kaldırma özelliği zaten bu şekilde çalışıyordu."
       },
       {
         type: "yeni özellik",
-        description: "Yazar profil sayfasına takipçilerini engelle butonu eklendi."
+        description: "Yazar profil sayfasına, yazarın takipçilerini engelleme butonu eklendi."
       },
       {
         type: "yeni özellik",
-        description: "Sayfalardaki footer kaldırıldı."
+        description: "Eklenti sayfalarındaki alt bilgi bölümleri kaldırıldı."
       }
     ]
   },
@@ -110,8 +118,8 @@ const releases = [
     releaseDate: "06.04.2023",
     changes: [
       {
-        type: "bug fix",
-        description: "Ekşi Engel'in, Ekşi Sözlük'ün mahkeme kararıyla engellenmesi üzerine geçtiği eksisozluk2023.com alan adında çalışması sağlandı."
+        type: "hata düzeltmesi",
+        description: "Ekşi Engel'in, Ekşi Sözlük'ün erişim engelinin ardından kullanmaya başladığı eksisozluk2023.com alan adında çalışması sağlandı."
       }
     ]
   },
@@ -120,8 +128,8 @@ const releases = [
     releaseDate: "28.03.2023",
     changes: [
       {
-        type: "bug fix",
-        description: "Ekşi Sözlük tarafından taşıma yetkisi verilen kullanıcıların entry menüsünü düzgün görememesine neden olan hata giderildi."
+        type: "hata düzeltmesi",
+        description: "Ekşi Sözlük tarafından entry taşıma yetkisi verilen kullanıcıların entry menüsünü düzgün görememesine neden olan sorun giderildi."
       }
     ]
   },
@@ -142,8 +150,8 @@ const releases = [
         description: "Bazı analitik veriler toplanmaya başlandı."
       },
       {
-        type: "bug fix",
-        description: "Başka bir engelleme işlemi devam ederken cooldown sürecinde arayüzdeki butonların çalışmaması, alternatif butonların yazar menüsüne eklenip işlemlerin kuyruğa alınmasıyla çözüldü."
+        type: "hata düzeltmesi",
+        description: "Başka bir engelleme işlemi devam ederken bekleme süresi nedeniyle kullanılamayan Ekşi Engel butonları, işlemleri sıraya alacak şekilde yenilendi."
       }
     ]
   },
@@ -153,19 +161,19 @@ const releases = [
     changes: [
       {
         type: "yeni özellik",
-        description: "Engelle veya sessize al tercihi ayar menüsüne eklendi."
+        description: "Yazarları engelleme veya sessize alma seçeneği ayarlar menüsüne eklendi."
       },
       {
         type: "yeni özellik",
-        description: "Çaylakları da engelleme tercihi ayar menüsüne eklendi."
+        description: "Çaylak yazarları da engelleme tercihi ayarlar menüsüne eklendi."
       },
       {
         type: "yeni özellik",
-        description: "Tüm yazarların engelini kaldırma işlemi optimize edilerek süreç hızlandırıldı."
+        description: "Tüm yazarların engelini kaldırma işlemi optimize edilerek hızlandırıldı."
       },
       {
-        type: "bug fix",
-        description: "Yükleme ve güncellemeden sonra geriye dönük uyumluluk sağlanamadığı için eklenti ayarlarının sıfırlanması sağlandı."
+        type: "hata düzeltmesi",
+        description: "Geriye dönük uyumluluk sorunlarını önlemek için eklenti yüklendiğinde veya güncellendiğinde ayarların sıfırlanması sağlandı."
       }
     ]
   },
@@ -175,18 +183,18 @@ const releases = [
     changes: [
       {
         type: "yeni özellik",
-        description: "Ekşi Sözlük tarafından engelleme hızına limit getirildiği için işlemlere cooldown süresi eklendi. Mevcut limitler dakikada 6 engelleme ve 10 engel kaldırmadır."
+        description: "Ekşi Sözlük'ün getirdiği hız sınırına uyum sağlamak için işlemlere bekleme süresi eklendi. (mevcut işlem hızı limiti: 6 engel/dakika, 10 engeli kaldır/dakika)"
       },
       {
         type: "yeni özellik",
-        description: "Uzun süren işlemler için işlem kuyruğu geliştirildi; devam eden bir işlem sırasında başlatılan yeni işlemler sıraya alınıyor."
+        description: "Uzun süren işlemler için işlem sırası eklendi. Devam eden bir işlem sırasında başlatılan yeni işlemler sıraya alınarak zamanı geldiğinde uygulanıyor."
       },
       {
         type: "yeni özellik",
-        description: "Devam eden engelleme işleminin cooldown ve kuyruk bilgileri yeni açılan sekmelerde görüntülenebilir hale getirildi."
+        description: "Devam eden işlemin bekleme süresi ve işlem sırası ayrı bir durum sekmesinde gösterilmeye başlandı."
       },
       {
-        type: "bug fix",
+        type: "hata düzeltmesi",
         description: "Ekşi Sözlük güncellemesi nedeniyle bozulan tüm engelleri kaldırma özelliği düzeltildi."
       }
     ]
@@ -197,7 +205,7 @@ const releases = [
     changes: [
       {
         type: "yeni özellik",
-        description: "Engelleme ve engeli kaldırma işlemleri hızlandırıldı; tüm işlemler arka planda gerçekleşmeye başladı."
+        description: "Engelleme ve engel kaldırma işlemleri hızlandırıldı. Tüm işlemler arka planda gerçekleştirilmeye başlandı."
       }
     ]
   },
@@ -211,14 +219,14 @@ const releases = [
       },
       {
         type: "yeni özellik",
-        description: "Engelleme ve engeli kaldırma işlemleri hızlandırıldı."
+        description: "Engelleme ve engel kaldırma işlemleri hızlandırıldı."
       },
       {
         type: "yeni özellik",
-        description: "Kullanıcının Ekşi Sözlük kullanıcı adı ve engellediği yazarların isimleri toplanmaya ve işlenmeye başlandı. Veri toplama ayarlardan kapatılabilir hale getirildi."
+        description: "Kullanıcının Ekşi Sözlük kullanıcı adı ile engellediği yazarların adları toplanmaya ve işlenmeye başlandı. Veri gönderimi ayarlar menüsünden kapatılabiliyor."
       },
       {
-        type: "bug fix",
+        type: "hata düzeltmesi",
         description: "URL yönlendirmenin zaman zaman çalışmaması sorunu düzeltildi."
       }
     ]
@@ -229,22 +237,22 @@ const releases = [
     changes: [
       {
         type: "yeni özellik",
-        description: "Bir entry'yi favorileyen yazarları engelleme özelliği eklendi."
+        description: "Bir entry'yi favorileyen yazarları topluca engelleme özelliği eklendi."
       },
       {
         type: "yeni özellik",
         description: "Arayüz sadeleştirildi."
       },
       {
-        type: "bug fix",
-        description: "Adblocker gibi sayfaya müdahale eden eklentilerin neden olduğu sorunlar giderildi."
+        type: "hata düzeltmesi",
+        description: "Reklam engelleyici gibi sayfaya müdahale eden eklentilerin neden olduğu sorunlar giderildi."
       },
       {
-        type: "bug fix",
-        description: "Engelleme devam ederken sayfa kapatıldığında uygulamanın çökmesi engellendi."
+        type: "hata düzeltmesi",
+        description: "Engelleme devam ederken sayfa kapatıldığında eklentinin çökmesi önlendi."
       },
       {
-        type: "bug fix",
+        type: "hata düzeltmesi",
         description: "Kullanıcı adında boşluk bulunan yazarların engellenememesi sorunu çözüldü."
       }
     ]
@@ -254,8 +262,8 @@ const releases = [
     releaseDate: "09.05.2022",
     changes: [
       {
-        type: "bug fix",
-        description: "Market sayfasındaki görseller güncellendi."
+        type: "hata düzeltmesi",
+        description: "Chrome Web Mağazası sayfasındaki görseller güncellendi."
       }
     ]
   },
@@ -265,7 +273,7 @@ const releases = [
     changes: [
       {
         type: "yeni özellik",
-        description: "Kullanıcıdan alınan listedeki yazarları engelleme özelliği eklendi."
+        description: "Kullanıcının girdiği listedeki yazarları topluca engelleme özelliği eklendi."
       }
     ]
   }

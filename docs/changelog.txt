@@ -2,104 +2,97 @@ Versiyon notları (son kullanıcı için)
 -------------------------------------------------
 
 v4.0
-yayin: mevcut surum
-yeni ozellik: eksi sozlukun domaini engellendigi icin getirilen onlemler kaldirildi, bundan dolayi artik gereksiz hale gelen genis izinler kaldirildi
-yeni özellik: tum arayuz yeniden dizayn edildi.
-bug fix: undobanall fonksiyonu duzgun calismiyordu.
+yayın: mevcut sürüm
+yeni özellik: Eklentinin tüm arayüzü baştan tasarlandı.
+yeni özellik: Eklenti güncellendiğinde kullanıcı ayarlarının korunması sağlandı.
+yeni özellik: Yazar sayfasında "daha fazla göster" seçeneğiyle yüklenen yeni entry'lere Ekşi Engel butonlarının eklenmesi sağlandı.
+yeni özellik: Ekşi Sözlük'ün alan adına uygulanan erişim engeli için geliştirilen geçici çözüm artık gerekli olmadığı için kaldırıldı. Eklentinin erişim izinleri sınırlandırıldı.
+hata düzeltmesi: Sırada bekleyen işlemlerin sonradan değiştirilen yazar listesini veya ayarları kullanması önlendi.
 
 v3.2
 yayın: 09.04.2024
-bug fix: Ekşi Engel serverı taşındığı için URL adresleri güncel değildi.
+hata düzeltmesi: Ekşi Engel sunucusunun taşınmasının ardından güncelliğini yitiren sunucu adresleri yenilendi.
 
-v3.1 
-yayın: 03.03.2024  
-yeni özellik: bir başlıkta yazısı olan herkesi engelleme özelliği eklendi. son 24 saatte yazan ve tümü olmak üzere iki ayrı seçenek mevcut.
+v3.1
+yayın: 03.03.2024
+yeni özellik: Bir başlıkta entry'si bulunan yazarları topluca engelleme özelliği eklendi. Son 24 saatte yazanlar veya tüm yazarlar seçilebiliyor.
 
 v3.0
-yayın: 17.09.2023 
-yeni özellik: başlıklarını engelle ayarı eklendi. eskiden default olarak engelleniyordu ve kapatmak mümkün değildi.
-yeni özellik: anonim veri gönderme özelliği iptal edildi.
+yayın: 17.09.2023
+yeni özellik: Engellenen yazarların başlıklarını da engelleme ayarı eklendi. Önceden bu işlem varsayılan olarak uygulanıyor ve kapatılamıyordu.
+yeni özellik: Anonim veri gönderme seçeneği kaldırıldı.
 
 v2.7
 yayın: 06.06.2023
-yeni özellik: yeşil ve sarı tikleri gizleme özelliği (sadece tik)
-yeni özellik: devam eden süreçle ilgili daha fazla bilgi notification.html üzerinden verildi.
-yeni özellik: bir ekşi engel butonuna tıklandığında artık kullanıcıya ekşi sözlük üzerinden ekşi sözlük API kullanılarak bir geri bildirim veriliyor.
-yeni özellik: analitik verilerin toplanması durduruldu.
-bug fix: queue'ya eklenen işlemlerin saati düzeltildi.
+yeni özellik: Yeşil ve sarı tikleri gizleme seçeneği eklendi. Bu seçenek yalnızca tikleri gizler.
+yeni özellik: İşlem durumu sayfasında devam eden süreç hakkında daha ayrıntılı bilgi gösterilmeye başlandı.
+yeni özellik: Ekşi Sözlük arayüzündeki bir Ekşi Engel butonuna basıldığında işlemin sıraya alındığını bildiren geri bildirim eklendi.
+yeni özellik: Analitik verilerin toplanması durduruldu.
+hata düzeltmesi: Sıraya eklenen işlemlerin saat bilgisi düzeltildi.
 
 v2.6
 yayın: 21.05.2023
-yeni özellik: Ekşi Sözlük ikinci kez engellendi ve yeni domainine taşındı eksisozluk1923.com 
-              Sık yaşanan domain değişiklikleri, son domain'nin ekşi engel sunucularından elde edilmesiyle çözüldü.
-yeni özellik: takip ettiğim kullanıcıları yanlışlıkla engelleme ayarı (fav ve follow ban için)
-yeni özellik: sadece gereken işlemleri yaparak toplam işlem sayısını ve dolayısıyla geçen zamanı kısalt ayarı (fav ve follow ban için) 
-              (undobanall için bir ayara gerek yok, önceden de böyle çalışıyordu)
-yeni özellik: yazarın profil sayfasına takipçilerini engelle butonu eklendi
-yeni özellik: sayfalardan footer kaldırıldı
+yeni özellik: Ekşi Sözlük'ün eksisozluk1923.com alan adına taşınması desteklendi. Sık yaşanan alan adı değişikliklerine uyum sağlamak için güncel adres Ekşi Engel sunucusundan alınmaya başlandı.
+yeni özellik: Favorileyenleri ve takipçileri engelleme işlemlerinde, takip ettiğiniz yazarları koruyan bir ayar eklendi.
+yeni özellik: Favorileyenleri ve takipçileri engelleme işlemlerinde yalnızca gerekli adımları uygulayarak işlem süresini kısaltan bir ayar eklendi. Tüm engelleri kaldırma özelliği zaten bu şekilde çalışıyordu.
+yeni özellik: Yazar profil sayfasına, yazarın takipçilerini engelleme butonu eklendi.
+yeni özellik: Eklenti sayfalarındaki alt bilgi bölümleri kaldırıldı.
 
 v2.5
 yayın: 06.04.2023
-bug fix: Ekşi Engel'in, Ekşi Sözlük'ün mahkeme kararı ile engellenmesi üzerine geçtiği yeni domain 
-         eksisozluk2023.com üzerinde çalışması sağlandı. 
+hata düzeltmesi: Ekşi Engel'in, Ekşi Sözlük'ün erişim engelinin ardından kullanmaya başladığı eksisozluk2023.com alan adında çalışması sağlandı.
 
 v2.4
 yayın: 28.03.2023
-bug fix: Ekşi Sözlük tarafından taşıma yetkisi verilen kullanıcıların entry menüsünü düzgün görememesine neden olan bug giderildi.
+hata düzeltmesi: Ekşi Sözlük tarafından entry taşıma yetkisi verilen kullanıcıların entry menüsünü düzgün görememesine neden olan sorun giderildi.
 
 v2.3
 yayın: 23.03.2023
-yeni özellik: bir yazarı takip eden herkesi engelleme butonu eklendi.
-yeni özellik: eklenti menüsündeki bazı butonlar ekşi sözlük arayüzüne taşındı. 
-yeni özellik: bazı analitik verileri toplanmaya başlandı.
-bug fix: bir başka engel işlemi devam ederken cooldown sürecinde ekşi sözlük arayüzündeki butonlar çalışmıyordu (engel limitinden dolayı).
-         alternatif ekşi engel butonlarının, ekşi sözlük yazar sayfasındaki menüye eklenmesiyle bu işlemler de kuyruğa alınarak problem çözüldü.
-
-v2.0
-yayın: 19.11.2022
-yeni özellik: engelleme/engeli kaldırma işlemi hızlandırıldı. 
-              tüm işlemler artık arka planda gerçekleşiyor.
-
-v2.1
-yayın: 02.03.2023
-yeni özellik: ekşi sözlük tarafından engelleme hızına limit getirildiği için işlemlere cooldown süresi eklendi. 
-              (mevcut işlem hızı limiti: 6 engel/dakika, 10 engeli kaldır/dakika)
-yeni özellik: engel hızı limitinden dolayı işlemler uzun sürdüğü için işlem kuyruğu özelliği geliştirildi.
-              bir engel işlemi sürerken yeni bir işlem yapmak isterseniz kuyruğa alınıyor ve zamanı gelince işleniyor.
-yeni özellik: engel işlemi sürerken yeni açılan bir sekmede bahsi geçen cooldown ve işlem kuyruğunu görebilirsiniz.
-bug fix: tüm engelleri kaldırma özelliği ekşisözlük.com güncellemesi nedeniyle bozulmuştu, düzeltildi.
+yeni özellik: Bir yazarı takip eden herkesi engelleme butonu eklendi.
+yeni özellik: Eklenti menüsündeki bazı butonlar Ekşi Sözlük arayüzüne taşındı.
+yeni özellik: Bazı analitik veriler toplanmaya başlandı.
+hata düzeltmesi: Başka bir engelleme işlemi devam ederken bekleme süresi nedeniyle kullanılamayan Ekşi Engel butonları, işlemleri sıraya alacak şekilde yenilendi.
 
 v2.2
 yayın: 06.03.2023
-yeni özellik: engelle veya sessize al tercihi ayar menüsüne eklendi.
-yeni özellik: çaylakları da engelleme tercihi ayar menüsüne eklendi.
-yeni özellik: tüm yazarların engelini kaldırma işlemi optimize edilerek süreç hızlandırıldı.
-bug fix: yükleme ve güncellemeden sonra geriye dönük uyumluluk sağlanamadığı için eklentinin ayarlarının sıfırlanması sağlandı.
+yeni özellik: Yazarları engelleme veya sessize alma seçeneği ayarlar menüsüne eklendi.
+yeni özellik: Çaylak yazarları da engelleme tercihi ayarlar menüsüne eklendi.
+yeni özellik: Tüm yazarların engelini kaldırma işlemi optimize edilerek hızlandırıldı.
+hata düzeltmesi: Geriye dönük uyumluluk sorunlarını önlemek için eklenti yüklendiğinde veya güncellendiğinde ayarların sıfırlanması sağlandı.
+
+v2.1
+yayın: 02.03.2023
+yeni özellik: Ekşi Sözlük'ün getirdiği hız sınırına uyum sağlamak için işlemlere bekleme süresi eklendi. (mevcut işlem hızı limiti: 6 engel/dakika, 10 engeli kaldır/dakika)
+yeni özellik: Uzun süren işlemler için işlem sırası eklendi. Devam eden bir işlem sırasında başlatılan yeni işlemler sıraya alınarak zamanı geldiğinde uygulanıyor.
+yeni özellik: Devam eden işlemin bekleme süresi ve işlem sırası ayrı bir durum sekmesinde gösterilmeye başlandı.
+hata düzeltmesi: Ekşi Sözlük güncellemesi nedeniyle bozulan tüm engelleri kaldırma özelliği düzeltildi.
+
+v2.0
+yayın: 19.11.2022
+yeni özellik: Engelleme ve engel kaldırma işlemleri hızlandırıldı. Tüm işlemler arka planda gerçekleştirilmeye başlandı.
 
 v1.3
 yayın: 14.11.2022
-yeni özellik: tüm kullanıcıların engelini kaldırma özelliği eklendi.
-yeni özellik: engelleme/engeli kaldırma işlemi hızlandırıldı.
-yeni özellik: kullanıcının ekşi sözlük kullanıcı ismi ve engellediği yazarların isimleri toplanmaya ve işlenmeye başlandı.
-              ayarlar menüsünden verilerin toplanması engellenebiliyor.
-              detaylı liste için versiyon notlarına göz atın.
-bug fix: url yönlendirmenin bazen çalışmaması durumu düzeltildi.
+yeni özellik: Tüm kullanıcıların engelini kaldırma özelliği eklendi.
+yeni özellik: Engelleme ve engel kaldırma işlemleri hızlandırıldı.
+yeni özellik: Kullanıcının Ekşi Sözlük kullanıcı adı ile engellediği yazarların adları toplanmaya ve işlenmeye başlandı. Veri gönderimi ayarlar menüsünden kapatılabiliyor.
+hata düzeltmesi: URL yönlendirmenin zaman zaman çalışmaması sorunu düzeltildi.
 
 v1.2
 yayın: 27.09.2022
-yeni özellik: bir entry'i favlayan yazarların engellemesi
-yeni özellik: arayüz sadeleştirildi. 
-bug fix: adblocker gibi sayfaya müdahale eden eklentilerin neden olduğu sorunlar giderildi.
-bug fix: engelleme devam ederken sayfa kapatıldığında uygulamanın çökmesi engellendi. 
-bug fix: nickinde whitespace olan yazarların engellenememesi sorunu çözüldü.
+yeni özellik: Bir entry'yi favorileyen yazarları topluca engelleme özelliği eklendi.
+yeni özellik: Arayüz sadeleştirildi.
+hata düzeltmesi: Reklam engelleyici gibi sayfaya müdahale eden eklentilerin neden olduğu sorunlar giderildi.
+hata düzeltmesi: Engelleme devam ederken sayfa kapatıldığında eklentinin çökmesi önlendi.
+hata düzeltmesi: Kullanıcı adında boşluk bulunan yazarların engellenememesi sorunu çözüldü.
 
-v1.1 
+v1.1
 yayın: 09.05.2022
-bug fix: market sayfasındaki resimler güncellendi.
+hata düzeltmesi: Chrome Web Mağazası sayfasındaki görseller güncellendi.
 
-v1.0 
+v1.0
 yayın: 06.05.2022
-yeni özellik: kullanıcıdan alınan listedeki yazarlar engellendi. 
+yeni özellik: Kullanıcının girdiği listedeki yazarları topluca engelleme özelliği eklendi.
 
 Versiyon notları (detaylı) 
 -------------------------------------------------
@@ -276,27 +269,40 @@ bug fix: Ekşi Engel serverı taşındığı için URL adresleri güncel değild
 
 v4.0
 gönderim: yayın: 
-veritabanı model değişikliği: Action modeline job_id ve milisaniye cinsinden job_duration alanları eklendi. 4.0 ve sonraki sürümlerde bu alanların gönderilmesi zorunludur; eski sürümlerle geriye dönük uyumluluk için veritabanında boş bırakılabilir.
-bug fix: Snapshot LIST input when enqueueing so queued jobs cannot use a later edited list
-bug fix: Snapshot settings when accepting a job so queued jobs cannot use later configuration changes
-bug fix: Route runtime messages by explicit type so unrelated listeners cannot mask responses
-abortcontroller bircok modulde kullanildi
-gereksiz tabs permisson kaldirildi
-dokumantasyon guncellendi: early stop ve scraping konulari incelendi.
-bug fix: add notify for scraping process while gathering all authors for case UNDOBANALL
-tum frontend yenilendi.
-refactor: bircok eski kod.
-yeni req-lock.txt versionlu dependcensileri, req.txt versiyonsuz olanlari tutacak.
-bug fix: correct UNDOBANALL function arguments
-where_is_eksisozluk endpoint kaldirildi. DBde degisiklik yok.
-eksiengel artik sadece predefined url uzerinde calisacak tum websiteleri uzerinde degil.
-admin panelinde bir Action, ActionConfig veya EksiSozlukEntry'e göz atılmak istendiğinde ForeignKeylerden dolayı tüm veriler drop-down list için serverdan fetch ediliyordu. salt okunur hale getirilerek bunun önüne geçildi. ayrıca Action içideki yazar listesi, sadece ilgili yazarları fetch edecek şekilde filtrelendi.
-logların daha kolay okunması için harici bir html sayfası debug tool olarak kodlandı. log formatı güncellendi.
-yeni API /api/total_action eklendi. günlere göre Action sayısını dönüyor.
-yeni HTML /api/total_action_html eklendi. /api/total_action APIsini görselleştiriyor. 
-bug: eksi engel kullanadan once engele maruz kalan kullanicilarin first activity tarihi bos gorunuyordu. bos olan degerler action tablosu sayesinde geriye yonelik olarak duzeltildi, django shell kullanildi. 
-content script, yazar sayfasinda daha fazla goster butonuna basildiginda gelen yeni entryler icin eksi engel buttonlarini guncelliyor.
-eski config korundu, bundan sonra config hep geriye donuk uyumlu olacak.
+extension değişiklikleri:
+  Eklenti sürümü 4.0'a yükseltildi. Popup, ayarlar, yazar listesi, işlem durumu, karşılama ve dokümantasyon sayfaları ortak bir tasarım sistemiyle baştan tasarlandı.
+  Kullanım kılavuzu genişletildi; entry, yazar ve başlık menülerinden kullanım görselleri eklendi.
+  İş kuyruğu ve çalışma akışı JobRequest, JobManager ve JobRunner modülleri etrafında yeniden tasarlandı. İş kabulü, sıralı çalıştırma, yaşam döngüsü, sonuçlar ve tamamlanan iş geçmişi merkezîleştirildi.
+  Scraping ve ilişki katmanları yeni, test edilebilir API'lerle yeniden yazıldı; farklı kaynaklardan toplanan yazarlar ortak bir veri yapısında birleştirildi ve işlem sonuçları standart durum kodlarına taşındı.
+  İşlem durumu sayfası, değişmez iş anlık görüntülerinden oluşturulacak şekilde yenilendi. Sayfa yeniden açıldığında mevcut durumu arka plandan alıyor; sıradaki ve tamamlanan işler ile işlem aşamaları tek bir tutarlı durum üzerinden gösteriliyor.
+  İşlem kaynağı, eylem, aşama ve bitiş nedenlerinin sayısal kodlar yerine okunabilir metinlerle gösterilmesi sağlandı. Saatlere saniye, cooldown bilgisine saniye bazlı geri sayım eklendi.
+  Chrome runtime mesajları açık mesaj türleri ve standart yanıtlarla yeniden düzenlendi; ilgisiz listener'ların yanıtları maskelemesi önlendi.
+  LIST işlemi kuyruğa eklenirken girdi listesinin, her iş kabul edilirken de ayarların anlık görüntüsü alındı. Böylece bekleyen işler sonradan değiştirilen liste veya ayarları kullanmıyor.
+  Config için şema sürümü eklendi. Eski ayarlar varsayılanlarla birleştirilerek korunuyor; uygulama tarafından yönetilen configVersion, Ekşi Sözlük URL'si ve sunucu URL'sinin güncel değerleri öncelikli tutuluyor.
+  Eklenti güncellendiğinde local storage'ın temizlenmesi kaldırıldı; böylece kullanıcı ayarlarının sürümler arasında korunması sağlandı.
+  Uzun sürebilen "Takip ettiğim yazarları engelleme" ve "Sadece gerekli işlemleri yap" seçenekleri etkinleştirildiğinde ayarlar sayfasında uyarı gösterilmeye başlandı.
+  AbortController tabanlı iptal desteği scraping, ilişki işlemleri ve cooldown beklemelerine yayıldı. Erken durdurma; hazırlanmakta olan, çalışan ve sırada bekleyen işleri güvenli biçimde iptal edecek şekilde merkezîleştirildi.
+  bug fix: Erken durdurmanın bazı aşamalarda çalışmaması, cooldown sonrasında iptal edilmiş işlemin yeniden denenmesi ve eş zamanlı iptal isteklerinden doğan race condition'lar giderildi.
+  İşlem hataları standart bitiş nedenlerine dönüştürülerek bildirim sayfasına aktarılmaya başlandı; beklenmeyen hataların kuyruğun durumunu bozması önlendi.
+  bug fix: UNDOBANALL fonksiyonuna iletilen hatalı argümanlar düzeltildi.
+  UNDOBANALL işleminde engeli kaldırılacak yazarlar toplanırken scraping aşamasını bildiren durum mesajları eklendi.
+  Content script, yazar sayfasındaki "daha fazla göster" düğmesiyle sonradan yüklenen entry'lere Ekşi Engel düğmelerini otomatik olarak ekliyor.
+  Artık işlevsiz olan eski tıklama analitiği kodu kaldırıldı.
+  Gereksiz tabs izni kaldırıldı. Host izinleri, content script eşleşmeleri ve web_accessible_resources kapsamı tüm web siteleri yerine yalnızca gereken Ekşi Sözlük ve Ekşi Engel adresleri/dosyalarıyla sınırlandırıldı.
+  Frontend için Vitest tabanlı otomatik test altyapısı ile sahte scraping, ilişki ve erişim modülleri eklendi. İş kuyruğu, iptal, ayar anlık görüntüleri, runtime mesajlaşması, storage hata yönetimi, scraping ve telemetry akışları için testler yazıldı.
+  Dokümantasyon ile ekran görüntüleri yenilendi; Türkçe karakter gösterimi düzeltildi ve erken durdurma/scraping süreçleri ayrıntılandırıldı.
+
+backend değişiklikleri:
+  Action modeline job_id ve milisaniye cinsinden job_duration alanları eklendi. API, bu alanları v4.0 ve sonraki istemciler için zorunlu tutuyor; eski sürümlerle uyumluluk için veritabanı alanları nullable bırakıldı.
+  ActionConfig modeline config_version alanı eklendi ve frontend telemetry verisine config şema sürümü dahil edildi.
+  bug fix: Daha önce başka işlemlerin hedefi olarak kaydedilmiş kullanıcı ilk kez Ekşi Engel kullandığında boş kalan first_activity_date alanının doldurulması sağlandı. Mevcut boş değerler Action kayıtlarından yararlanılarak Django shell üzerinden geriye dönük dolduruldu.
+  Yeni /api/total_action/ endpoint'i günlere göre işlem sayılarını, /api/unique_users_per_day/ endpoint'i ise günlük tekil kullanıcı sayılarını döndürecek şekilde eklendi.
+  Yalnızca yetkili personelin erişebildiği yeni admin dashboard eklendi. Dashboard'a API bağlantıları ile günlük işlem ve tekil kullanıcı grafiklerinin yakınlaştırma destekli görselleştirmeleri yerleştirildi.
+  En çok engellenen yazarları döndüren most_banned ve most_banned_unique sorguları performans ve çıktı boyutu için ilk 50 kayıtla sınırlandırıldı.
+  Admin panelinde Action, ActionConfig ve EksiSozlukEntry kayıtları açılırken ForeignKey alanları için tüm verilerin sunucudan getirilmesi önlendi. Action içindeki yazar listesi yalnızca ilgili yazarları gösterecek şekilde filtrelendi.
+  Artık gerekmeyen where_is_eksisozluk endpoint'i ve Django uygulaması kaldırıldı; bu değişiklik için veritabanı güncellemesi gerekmedi.
+  Dependency dosyaları yeniden düzenlendi: requirements-lock.txt sabitlenmiş sürümleri, requirements.txt ise sürümü sabitlenmemiş doğrudan bağımlılıkları tutuyor.
+  Logların daha kolay incelenmesi için harici HTML hata ayıklama aracı geliştirildi; log formatı ve modül adları güncellendi.
 
 YÜKSEK ÖNCELİKLİ OLARAK YAPILMASI PLANLANANLAR
 
