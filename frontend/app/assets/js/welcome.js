@@ -2,7 +2,7 @@
 // Add new releases or change records here; the table is generated automatically.
 const releases = [
   {
-    version: "3.3",
+    version: "4.0",
     releaseDate: "Mevcut sürüm",
     changes: [
       {

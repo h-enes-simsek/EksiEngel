@@ -1,7 +1,7 @@
 Versiyon notları (son kullanıcı için)
 -------------------------------------------------
 
-v3.3
+v4.0
 yayin: mevcut surum
 yeni ozellik: eksi sozlukun domaini engellendigi icin getirilen onlemler kaldirildi, bundan dolayi artik gereksiz hale gelen genis izinler kaldirildi
 yeni özellik: tum arayuz yeniden dizayn edildi.
