@@ -229,6 +229,10 @@
             box-shadow: var(--shadow);
         }
 
+        .chart-panel + .chart-panel {
+            margin-top: 20px;
+        }
+
         .chart-header {
             display: flex;
             align-items: center;
@@ -423,6 +427,16 @@
                             <span class="endpoint-arrow" aria-hidden="true">&rsaquo;</span>
                         </a>
                     </li>
+                    <li>
+                        <a class="endpoint-card" href="{% url 'unique_users_per_day' %}">
+                            <span class="endpoint-icon" aria-hidden="true">1</span>
+                            <span class="endpoint-content">
+                                <span class="endpoint-title">Daily unique users</span>
+                                <span class="endpoint-path">{% url 'unique_users_per_day' %}</span>
+                            </span>
+                            <span class="endpoint-arrow" aria-hidden="true">&rsaquo;</span>
+                        </a>
+                    </li>
                 </ul>
             </nav>
         </section>
@@ -433,57 +447,102 @@
                     <h2 id="chart-heading">Total actions per day</h2>
                     <p>Scroll or drag over the chart to inspect a date range.</p>
                 </div>
-                <button type="button" onclick="resetZoom()">Reset zoom</button>
+                <button type="button" onclick="resetZoom('actionChart')">Reset zoom</button>
             </div>
             <div class="chart-container">
                 <div class="chart-status" id="chartStatus">Loading activity data&hellip;</div>
                 <canvas id="actionChart" aria-label="Daily total actions chart" role="img"></canvas>
             </div>
         </section>
+
+        <section class="chart-panel" aria-labelledby="users-chart-heading">
+            <div class="chart-header">
+                <div>
+                    <h2 id="users-chart-heading">Unique users per day</h2>
+                    <p>Distinct EksiEngel users who submitted at least one action each day.</p>
+                </div>
+                <button type="button" onclick="resetZoom('uniqueUsersChart')">Reset zoom</button>
+            </div>
+            <div class="chart-container">
+                <div class="chart-status" id="uniqueUsersChartStatus">Loading user data&hellip;</div>
+                <canvas id="uniqueUsersChart" aria-label="Daily unique EksiEngel users chart" role="img"></canvas>
+            </div>
+        </section>
     </main>
 
     <script>
-        let chart;
+        const charts = {};
 
-        fetch("{% url 'total_action' %}")
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`Request failed with status ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (!data.length) {
-                    document.getElementById('chartStatus').textContent = 'No activity data is available yet.';
-                    return;
-                }
+        loadDailyChart({
+            endpoint: "{% url 'total_action' %}",
+            canvasId: 'actionChart',
+            statusId: 'chartStatus',
+            label: 'Total Actions Per Day',
+            yAxisTitle: 'Number of Actions',
+            colors: {
+                background: 'rgba(79, 119, 45, 0.28)',
+                border: '#4f772d',
+                hover: 'rgba(79, 119, 45, 0.5)'
+            }
+        });
 
-                document.getElementById('chartStatus').hidden = true;
-                createChart(
-                    data.map(entry => entry.day),
-                    data.map(entry => entry.total)
-                );
-            })
-            .catch(error => {
-                document.getElementById('chartStatus').textContent = 'Activity data could not be loaded.';
-                console.error('Error fetching action statistics:', error);
-            });
+        loadDailyChart({
+            endpoint: "{% url 'unique_users_per_day' %}",
+            canvasId: 'uniqueUsersChart',
+            statusId: 'uniqueUsersChartStatus',
+            label: 'Unique Users Per Day',
+            yAxisTitle: 'Number of Unique Users',
+            colors: {
+                background: 'rgba(57, 106, 115, 0.25)',
+                border: '#396a73',
+                hover: 'rgba(57, 106, 115, 0.5)'
+            }
+        });
 
-        function createChart(labels, values) {
-            const context = document.getElementById('actionChart').getContext('2d');
+        function loadDailyChart(config) {
+            const statusElement = document.getElementById(config.statusId);
 
-            chart = new Chart(context, {
+            fetch(config.endpoint)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Request failed with status ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (!data.length) {
+                        statusElement.textContent = 'No data is available yet.';
+                        return;
+                    }
+
+                    statusElement.hidden = true;
+                    createChart(
+                        config,
+                        data.map(entry => entry.day),
+                        data.map(entry => entry.total)
+                    );
+                })
+                .catch(error => {
+                    statusElement.textContent = 'Data could not be loaded.';
+                    console.error(`Error loading ${config.label}:`, error);
+                });
+        }
+
+        function createChart(config, labels, values) {
+            const context = document.getElementById(config.canvasId).getContext('2d');
+
+            charts[config.canvasId] = new Chart(context, {
                 type: 'bar',
                 data: {
                     labels,
                     datasets: [{
-                        label: 'Total Actions Per Day',
+                        label: config.label,
                         data: values,
-                        backgroundColor: 'rgba(79, 119, 45, 0.28)',
-                        borderColor: '#4f772d',
+                        backgroundColor: config.colors.background,
+                        borderColor: config.colors.border,
                         borderWidth: 1.5,
                         borderRadius: 5,
-                        hoverBackgroundColor: 'rgba(79, 119, 45, 0.5)'
+                        hoverBackgroundColor: config.colors.hover
                     }]
                 },
                 options: {
@@ -525,7 +584,7 @@
                             grid: { color: '#e5ebe2' },
                             title: {
                                 display: true,
-                                text: 'Number of Actions'
+                                text: config.yAxisTitle
                             }
                         }
                     }
@@ -533,9 +592,9 @@
             });
         }
 
-        function resetZoom() {
-            if (chart) {
-                chart.resetZoom();
+        function resetZoom(canvasId) {
+            if (charts[canvasId]) {
+                charts[canvasId].resetZoom();
             }
         }
     </script>

@@ -86,3 +86,17 @@ class TotalActionView(generics.ListAPIView):
             .annotate(total=Count('id'))                 # Count actions per day
             .order_by('day')                             # Sort by day
         )
+
+
+# List unique active users day by day
+class UniqueUsersPerDayView(generics.ListAPIView):
+    permission_classes = [IsAdminUser]
+    serializer_class = TotalActionViewSerializer
+
+    def get_queryset(self):
+        return (
+            Action.objects.annotate(day=TruncDay('date'))
+            .values('day')
+            .annotate(total=Count('eksi_engel_user', distinct=True))
+            .order_by('day')
+        )
