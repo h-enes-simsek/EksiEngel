@@ -8,12 +8,14 @@ const settingControls = [
   {
     key: "enableProtectFollowedUsers",
     enabledId: "protectFollowedUsersEnabled",
-    disabledId: "protectFollowedUsersDisabled"
+    disabledId: "protectFollowedUsersDisabled",
+    warningId: "protectFollowedUsersWarning"
   },
   {
     key: "enableOnlyRequiredActions",
     enabledId: "onlyRequiredActionsEnabled",
-    disabledId: "onlyRequiredActionsDisabled"
+    disabledId: "onlyRequiredActionsDisabled",
+    warningId: "onlyRequiredActionsWarning"
   },
   {
     key: "banPremiumIcons",
@@ -22,18 +24,23 @@ const settingControls = [
   }
 ];
 
-function bindSettingControl(settings, {key, enabledId, disabledId})
+function bindSettingControl(settings, {key, enabledId, disabledId, warningId})
 {
   const enabledInput = document.getElementById(enabledId);
   const disabledInput = document.getElementById(disabledId);
+  const warning = warningId ? document.getElementById(warningId) : null;
   const isEnabled = settings[key] === true;
 
   enabledInput.checked = isEnabled;
   disabledInput.checked = !isEnabled;
+  if(warning)
+    warning.hidden = !isEnabled;
 
   const saveSelectedValue = () =>
   {
     settings[key] = enabledInput.checked;
+    if(warning)
+      warning.hidden = !settings[key];
     console.log(`${key}:${settings[key]}`);
     void saveConfig(settings).catch(error =>
       console.error(`Failed to save ${key}:`, error)

@@ -147,6 +147,18 @@ textarea:focus { border-color: var(--color-brand) !important; box-shadow: 0 0 0 
 }
 .settings-page .grid-container.two-column .grid-item { padding: 16px !important; background: var(--color-surface); }
 .settings-page .grid-container.two-column > a { color: var(--color-ink); text-decoration: none; }
+.settings-page .setting-description > a { color: var(--color-ink); text-decoration: none; }
+.settings-page .setting-warning {
+  margin: 10px 0 0;
+  padding: 8px 10px;
+  border-left: 3px solid var(--color-danger);
+  border-radius: 4px;
+  background: #fff1ef;
+  color: #762722;
+  font-size: .82rem;
+  line-height: 1.45;
+}
+.settings-page .setting-warning[hidden] { display: none; }
 .settings-page .switch-toggle {
   position: relative;
   display: inline-block;

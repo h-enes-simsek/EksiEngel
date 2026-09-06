@@ -78,30 +78,40 @@
         <input id="protectFollowedUsersDisabled" value="protectFollowedUsersDisabled" name="state-d-protectFollowedUsers" type="radio" checked="checked">
         <label for="protectFollowedUsersDisabled">Kapalı</label>
 
-        <input id="protectFollowedUsersEnabled" value="protectFollowedUsersEnabled" name="state-d-protectFollowedUsers" type="radio" checked="">
+        <input id="protectFollowedUsersEnabled" value="protectFollowedUsersEnabled" name="state-d-protectFollowedUsers" type="radio" checked="" aria-describedby="protectFollowedUsersWarning">
         <label for="protectFollowedUsersEnabled">Açık</label>
 
         <a></a>
       </div>
     </div>
-    <a class="grid-item tooltip bottom" tip="Bu ayar sadece favori ve takipçi engeli için geçerlidir.
-    Aktifken sizin takip ettiğiniz yazarlar engellenmez." 
-    id="protectFollowedUsersSwitchText">Takip ettiğim yazarları engelleme.</a>
+    <div class="grid-item setting-description">
+      <a class="tooltip bottom" tip="Bu ayar sadece favori ve takipçi engeli için geçerlidir.
+      Aktifken sizin takip ettiğiniz yazarlar engellenmez."
+      id="protectFollowedUsersSwitchText">Takip ettiğim yazarları engelleme.</a>
+      <p class="setting-warning" id="protectFollowedUsersWarning" role="note" hidden>
+        Çok fazla yazarı takip ediyorsanız bu seçenek işlemin uzun sürmesine neden olabilir.
+      </p>
+    </div>
 
     <div class="grid-item">
       <div id="onlyRequiredActionsSwitch" class="switch-toggle switch-3 switch-candy">
         <input id="onlyRequiredActionsDisabled" value="onlyRequiredActionsDisabled" name="state-d-onlyRequiredActions" type="radio" checked="">
         <label for="onlyRequiredActionsDisabled">Kapalı</label>
 
-        <input id="onlyRequiredActionsEnabled" value="onlyRequiredActionsEnabled" name="state-d-onlyRequiredActions" type="radio" checked="">
+        <input id="onlyRequiredActionsEnabled" value="onlyRequiredActionsEnabled" name="state-d-onlyRequiredActions" type="radio" checked="" aria-describedby="onlyRequiredActionsWarning">
         <label for="onlyRequiredActionsEnabled">Açık</label>
 
         <a></a>
       </div>
     </div>
-    <a class="grid-item tooltip bottom" tip="Bu ayar sadece favori ve takipçi engeli için geçerlidir.
-    Aktifken sadece gerekli işlemleri yapılır, yani engellenmiş yazar tekrar engellenmeye çalışılmaz." 
-    id="onlyRequiredActions">Sadece gerekli işlemleri yap.</a>
+    <div class="grid-item setting-description">
+      <a class="tooltip bottom" tip="Bu ayar sadece favori ve takipçi engeli için geçerlidir.
+      Aktifken sadece gerekli işlemler yapılır, yani engellenmiş yazar tekrar engellenmeye çalışılmaz."
+      id="onlyRequiredActions">Sadece gerekli işlemleri yap.</a>
+      <p class="setting-warning" id="onlyRequiredActionsWarning" role="note" hidden>
+        Çok fazla yazarı engellediyseniz bu seçenek işlemin uzun sürmesine neden olabilir.
+      </p>
+    </div>
 
     <div class="grid-item">
       <div id="banPremiumIconsSwitch" class="switch-toggle switch-3 switch-candy">
